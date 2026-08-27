@@ -1,0 +1,6 @@
+name: yield
+version: '${version}'
+main: me.dontshare.yield.Yield
+api-version: '1.21'
+depend: [packetevents]
+softdepend: [PlaceholderAPI, FastAsyncWorldEdit]

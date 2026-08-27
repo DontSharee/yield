@@ -1,0 +1,7 @@
+# MongoDB connection settings.
+# Do NOT put real production credentials here if this file is ever committed with real values -
+# this template ships with the plugin; the live version with real credentials lives only in
+# plugins/yield/config.yml on the actual server, which is never part of the git repo.
+mongodb:
+  connection-string: "mongodb://localhost:27017"
+  database: "yield"

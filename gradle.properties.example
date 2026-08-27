@@ -1,0 +1,9 @@
+# Copy this file to gradle.properties (already gitignored) and fill in
+# your real SFTP credentials. Never commit gradle.properties itself.
+
+sftpHost=your.server.host
+sftpPort=22
+sftpUser=your-username
+sftpPassword=your-password
+# Remote folder plugin jars should be uploaded into, e.g. /plugins
+sftpRemotePath=/plugins
