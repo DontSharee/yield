@@ -91,7 +91,7 @@ subprojects {
     version = "0.0.1"
 
     extensions.configure<JavaPluginExtension> {
-        toolchain.languageVersion.set(JavaLanguageVersion.of(21))
+        toolchain.languageVersion.set(JavaLanguageVersion.of(25))
     }
 
     repositories {
@@ -100,7 +100,7 @@ subprojects {
     }
 
     dependencies {
-        "compileOnly"("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
+        "compileOnly"("io.papermc.paper:paper-api:26.2.build.119-stable")
     }
 
     // Uploads just this plugin's own shaded jar - not every subproject's -

@@ -99,7 +99,7 @@ public final class PacketEntityManager {
      * (as FancyNpcs does for its player-type NPCs) so there's no frame where
      * the entity exists client-side without a profile to resolve a skin
      * from yet. Requires 1.19.4+ clients - fine here since the server only
-     * targets 1.21.
+     * targets 26.2.
      */
     public static void beginBundle(Player viewer) {
         user(viewer).sendPacket(new WrapperPlayServerBundle());

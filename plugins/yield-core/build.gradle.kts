@@ -1,4 +1,4 @@
-version = "0.0.1"
+version = "0.0.2"
 
 repositories {
     maven("https://repo.extendedclip.com/releases/")
@@ -18,7 +18,7 @@ dependencies {
 
 tasks {
     runServer {
-        minecraftVersion("1.21")
+        minecraftVersion("26.2")
         downloadPlugins {
             modrinth("packetevents", "2.13.0+spigot")
         }

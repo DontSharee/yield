@@ -1,6 +1,6 @@
 name: yield-core
 version: '${version}'
 main: me.dontshare.yieldcore.YieldCore
-api-version: '1.21'
+api-version: '26.2'
 depend: [packetevents]
 softdepend: [PlaceholderAPI, FastAsyncWorldEdit]
