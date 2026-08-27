@@ -43,7 +43,7 @@ fun uploadFile(project: Project, file: File) {
     channel.connect(10_000)
     try {
         // The uploaded filename bakes in the plugin's version (e.g.
-        // "yield-0.1.2.jar" - see the per-plugin versioning scheme in
+        // "yield-core-0.1.2.jar" - see the per-plugin versioning scheme in
         // CLAUDE.md), so every version bump would otherwise leave the
         // previous jar behind on the server forever, and Paper doesn't like
         // multiple jars claiming the same plugin name.
@@ -152,14 +152,14 @@ subprojects {
 }
 
 // Handy after a bulk redeploy to confirm there's exactly one jar per
-// plugin on the server - reuses yield's gradle.properties SFTP config
+// plugin on the server - reuses yield-core's gradle.properties SFTP config
 // since it's the same server/credentials for every module.
 tasks.register("listRemotePlugins") {
     group = "deployment"
     description = "Lists every .jar currently on the configured SFTP server's plugins folder."
 
     doLast {
-        val project = project(":yield")
+        val project = project(":yield-core")
         val host = project.findProperty("sftpHost") as String
         val port = (project.findProperty("sftpPort") as String?)?.toInt() ?: 22
         val user = project.findProperty("sftpUser") as String
