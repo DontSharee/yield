@@ -91,6 +91,12 @@ public final class ItemBuilder {
         return this;
     }
 
+    /** Suppresses the tooltip box entirely on hover - for GUI filler that shouldn't show anything, not even a blank box. */
+    public ItemBuilder hideTooltip() {
+        meta.setHideTooltip(true);
+        return this;
+    }
+
     /** Stores custom plugin data on the item via PersistentDataContainer. */
     public <T, Z> ItemBuilder tag(NamespacedKey key, PersistentDataType<T, Z> type, Z value) {
         meta.getPersistentDataContainer().set(key, type, value);

@@ -1,0 +1,93 @@
+# Example starter content for yield-packs - fully data-driven, edit freely.
+# Run /packsadmin reload after editing to apply changes without restarting
+# the server.
+#
+# Pets can render as a HeadDatabase player head instead of a plain material:
+# set "head-database-id" to the id of a head from your HeadDatabase catalog
+# (requires the HeadDatabase plugin installed - it's a softdepend). Leave it
+# out (or the HeadDatabase plugin absent) and "material" is used instead.
+
+rarities:
+  common:
+    display-name: "&7Common"
+    color: "#AAAAAA"
+    sort: 0
+    luck-exponent: 0.0
+  rare:
+    display-name: "&9Rare"
+    color: "#5599FF"
+    sort: 1
+    luck-exponent: 0.5
+  epic:
+    display-name: "&5Epic"
+    color: "#AA55FF"
+    sort: 2
+    luck-exponent: 0.75
+  legendary:
+    display-name: "&6&lLegendary"
+    color: "#FFAA00"
+    sort: 3
+    luck-exponent: 1.0
+
+items:
+  stray_cat:
+    display-name: "&7Stray Cat"
+    material: PLAYER_HEAD
+    # head-database-id: "12345"   # uncomment and set once you have a real HeadDatabase id
+    rarity: common
+    value-per-second: 1
+    track-exists: false
+  puppy:
+    display-name: "&fPuppy"
+    material: PLAYER_HEAD
+    rarity: common
+    value-per-second: 3
+    track-exists: false
+  golden_retriever:
+    display-name: "&eGolden Retriever"
+    material: PLAYER_HEAD
+    rarity: rare
+    value-per-second: 15
+    track-exists: false
+  emerald_lizard:
+    display-name: "&aEmerald Lizard"
+    material: PLAYER_HEAD
+    rarity: rare
+    value-per-second: 40
+    track-exists: false
+  diamond_wolf:
+    display-name: "&bDiamond Wolf"
+    material: PLAYER_HEAD
+    rarity: epic
+    value-per-second: 150
+    track-exists: true
+  star_dragon:
+    display-name: "&6&lStar Dragon"
+    material: PLAYER_HEAD
+    rarity: legendary
+    value-per-second: 1000
+    track-exists: true
+
+packs:
+  starter_pack:
+    display-name: "&fStarter Pack"
+    material: CHEST
+    coin-cost: 25
+    gem-cost: 0
+    sort: 0
+    pool:
+      - { item: stray_cat, weight: 100 }
+      - { item: puppy, weight: 50 }
+      - { item: golden_retriever, weight: 10 }
+      - { item: diamond_wolf, weight: 1 }
+  rare_pack:
+    display-name: "&9Rare Pack"
+    material: ENDER_CHEST
+    coin-cost: 500
+    gem-cost: 5
+    sort: 1
+    pool:
+      - { item: golden_retriever, weight: 50 }
+      - { item: emerald_lizard, weight: 30 }
+      - { item: diamond_wolf, weight: 10 }
+      - { item: star_dragon, weight: 1 }

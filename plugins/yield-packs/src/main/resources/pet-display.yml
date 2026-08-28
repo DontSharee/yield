@@ -1,0 +1,33 @@
+# Formation grid your equipped pets follow you around in, behind you:
+#
+#    X          (you)
+#  T T T        (row 0 - closest)
+#  T T T        (row 1)
+#  T T T        (row 2)
+#
+# Rows fill automatically as you equip more pets - there's no hard cap here,
+# "columns" just controls how wide each row is before wrapping to the next.
+# Run /packsadmin reload after editing to apply changes without restarting.
+grid:
+  columns: 3
+  column-spacing: 0.9 # blocks between adjacent pets in a row
+  row-spacing: 0.9    # blocks between rows, going back from the player
+  start-distance: 1.5 # blocks directly behind the player to the first row
+  height-offset: 0.2  # blocks above the player's feet
+
+# Pets bob gently in place while you stand still, and stop bobbing (just
+# follow smoothly) while you're moving.
+hover:
+  amplitude: 0.15           # blocks of vertical bob
+  period-ticks: 40          # ticks for one full bob cycle
+  movement-threshold: 0.05  # blocks moved per update below which you count as "standing still"
+
+update-interval-ticks: 4 # how often position packets are sent (paired with matching client-side interpolation)
+view-distance: 48        # blocks - only players within this radius of someone see their pets
+
+# The item's own visual orientation - a fixed tilt/facing, independent of
+# the player's look direction (it never tracks camera movement).
+item:
+  scale: 0.85
+  pitch-degrees: -5
+  yaw-degrees: 180

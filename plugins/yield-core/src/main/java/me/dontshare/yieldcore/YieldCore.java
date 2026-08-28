@@ -35,6 +35,7 @@ public final class YieldCore extends JavaPlugin {
     private PlayerProfileManager playerProfileManager;
     private GuiManager guiManager;
     private SchematicService schematicService;
+    private YieldScoreboardDisplay scoreboardDisplay;
 
     @Override
     public void onLoad() {
@@ -78,7 +79,7 @@ public final class YieldCore extends JavaPlugin {
             getLogger().warning("FastAsyncWorldEdit not found - schematic pasting will not work.");
         }
 
-        YieldScoreboardDisplay scoreboardDisplay = new YieldScoreboardDisplay(this, scoreboardManager);
+        scoreboardDisplay = new YieldScoreboardDisplay(this, scoreboardManager);
         listenerManager.register(scoreboardDisplay);
         scoreboardDisplay.start();
 
@@ -133,6 +134,10 @@ public final class YieldCore extends JavaPlugin {
 
     public GuiManager getGuiManager() {
         return guiManager;
+    }
+
+    public YieldScoreboardDisplay getScoreboardDisplay() {
+        return scoreboardDisplay;
     }
 
     /** Null if FastAsyncWorldEdit isn't installed - always check before using. */

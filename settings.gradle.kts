@@ -8,3 +8,9 @@ rootProject.name = "yield"
 
 include("yield-core")
 project(":yield-core").projectDir = file("plugins/yield-core")
+
+include("yield-packs")
+project(":yield-packs").projectDir = file("plugins/yield-packs")
+
+include("yield-rebirth")
+project(":yield-rebirth").projectDir = file("plugins/yield-rebirth")

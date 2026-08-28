@@ -1,0 +1,6 @@
+# Rebirth cost curve: requiredCoins(n) = base-cost * growth^n
+# Rebirthing only deducts the cost of the rebirth(s) actually taken from the
+# player's coin balance - it never resets the balance to zero, and never
+# touches the bag or equipped pets.
+base-cost: 10000
+growth: 1.5

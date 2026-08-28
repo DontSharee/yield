@@ -1,0 +1,9 @@
+name: yield-packs
+version: '${version}'
+main: me.dontshare.yieldpacks.YieldPacks
+api-version: '26.2'
+depend: [yield-core]
+softdepend: [PlaceholderAPI, HeadDatabase]
+permissions:
+  yieldpacks.admin:
+    default: op

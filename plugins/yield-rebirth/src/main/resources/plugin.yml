@@ -1,0 +1,8 @@
+name: yield-rebirth
+version: '${version}'
+main: me.dontshare.yieldrebirth.YieldRebirth
+api-version: '26.2'
+depend: [yield-packs]
+permissions:
+  yieldrebirth.admin:
+    default: op

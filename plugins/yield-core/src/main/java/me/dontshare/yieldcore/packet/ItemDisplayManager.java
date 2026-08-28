@@ -94,6 +94,25 @@ public final class ItemDisplayManager {
         sendMetadata(viewer, entityId, new EntityData<>(13, EntityDataTypes.QUATERNION, rotation));
     }
 
+    /**
+     * A fixed pitch (X-axis tilt) + yaw (Y-axis spin) orientation, combined
+     * into one quaternion - unlike {@link #setYRotation}, this doesn't
+     * track anything about the viewer or any entity's live look direction,
+     * it's just a constant tilt/facing for the display itself. Set once at
+     * spawn time; no need to resend unless the desired fixed angle changes.
+     */
+    public static void setRotation(Player viewer, int entityId, float pitchDegrees, float yawDegrees) {
+        double halfPitch = Math.toRadians(pitchDegrees) / 2.0;
+        double halfYaw = Math.toRadians(yawDegrees) / 2.0;
+        float sp = (float) Math.sin(halfPitch);
+        float cp = (float) Math.cos(halfPitch);
+        float sy = (float) Math.sin(halfYaw);
+        float cy = (float) Math.cos(halfYaw);
+        // Quaternion product yaw(Y) * pitch(X): yaw applied after pitch.
+        Quaternion4f rotation = new Quaternion4f(cy * sp, sy * cp, -sy * sp, cy * cp);
+        sendMetadata(viewer, entityId, new EntityData<>(13, EntityDataTypes.QUATERNION, rotation));
+    }
+
     private static void sendMetadata(Player viewer, int entityId, EntityData<?>... data) {
         user(viewer).sendPacket(new WrapperPlayServerEntityMetadata(entityId, List.of(data)));
     }
