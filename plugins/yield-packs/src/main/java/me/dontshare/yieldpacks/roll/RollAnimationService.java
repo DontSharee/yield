@@ -1,11 +1,13 @@
 package me.dontshare.yieldpacks.roll;
 
+import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.data.ItemDefinition;
 import me.dontshare.yieldpacks.data.PackDefinition;
 import me.dontshare.yieldpacks.data.Rarity;
 import me.dontshare.yieldpacks.data.RarityRegistry;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -43,13 +45,20 @@ public final class RollAnimationService {
         ItemDefinition item = best.item();
         Rarity rarity = rarityRegistry.get().find(item.rarityId()).orElse(null);
         String rarityColor = rarity != null ? rarity.colorHex() : "#FFFFFF";
+        // Both item names and rarity labels carry their own embedded legacy
+        // color code in packs.yml - stripped before composing a larger
+        // templated string around them, and bold applied via
+        // Component#decorate rather than a raw "<bold>...</bold>" wrapper.
+        // See Formatting#stripLeadingColorCodes for why the naive version
+        // renders a literal "</bold>"/"</gray>" artifact instead.
+        String plainItemName = Formatting.stripLeadingColorCodes(item.displayName());
 
         Component mainTitle = rolls.size() == 1
-                ? Text.parse("<" + rarityColor + "><bold>" + item.displayName() + "</bold>")
-                : Text.parse("<#4BD9FF><bold>" + rolls.size() + "x Opened!</bold>");
+                ? Text.parse("<" + rarityColor + ">" + plainItemName).decorate(TextDecoration.BOLD)
+                : Text.parse("<#4BD9FF>" + rolls.size() + "x Opened!").decorate(TextDecoration.BOLD);
         Component subtitle = rolls.size() == 1
-                ? (rarity != null ? Text.parse("<gray>" + rarity.displayName() + "</gray>") : Component.empty())
-                : Text.parse("<gray>Best: </gray><" + rarityColor + ">" + item.displayName());
+                ? (rarity != null ? Text.parse(rarity.displayName()) : Component.empty())
+                : Text.parse("<gray>Best: </gray><" + rarityColor + ">" + plainItemName);
 
         player.showTitle(Title.title(mainTitle, subtitle, Title.Times.times(FADE_IN, STAY, FADE_OUT)));
 

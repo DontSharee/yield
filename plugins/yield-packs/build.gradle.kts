@@ -1,4 +1,4 @@
-version = "0.0.7"
+version = "0.0.9"
 
 dependencies {
     // yield-core's own classes (Gui, PlayerDataStore, ItemBuilder, etc.) -

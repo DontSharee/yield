@@ -2,12 +2,15 @@ package me.dontshare.yieldcore.text;
 
 import java.math.BigDecimal;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 /**
  * Number/text formatting helpers ({@code format}, {@code spaced},
  * {@code unformat}, {@code fancyFont}).
  */
 public final class Formatting {
+
+    private static final Pattern LEADING_LEGACY_CODES = Pattern.compile("^(&[0-9a-fk-or])+", Pattern.CASE_INSENSITIVE);
 
     /** {@link #format(double, Style, boolean)} suffixes, index 0 = "K" (i.e. divisor 1000^1). */
     private static final String[] SUFFIXES = {
@@ -98,6 +101,24 @@ public final class Formatting {
             result = result.replace("&" + tiny, "&" + normal);
         }
         return result;
+    }
+
+    /**
+     * Strips any color codes (not format codes like bold/italic) this
+     * string starts with, e.g. {@code "&aEmerald Lizard"} -> {@code
+     * "Emerald Lizard"}. Content authored with its own leading color (item
+     * names, rarity labels, etc. in packs.yml) is meant to be re-colored by
+     * the caller instead - {@link Text#parse} translates a leading legacy
+     * color code to a MiniMessage {@code <reset>} tag, which clears
+     * whatever tag the caller wrapped the text in. Wrapping it in something
+     * like {@code "<bold>" + rawName + "</bold>"} would then leave
+     * {@code </bold>} with nothing left on the tag stack to close, and
+     * MiniMessage prints it as literal text instead of matching it - call
+     * this first to strip the embedded code before composing a larger
+     * templated string around raw content.
+     */
+    public static String stripLeadingColorCodes(String text) {
+        return LEADING_LEGACY_CODES.matcher(text).replaceFirst("");
     }
 
     /** Reverses {@link #abbreviate}, e.g. "1.5K" -> 1500. */

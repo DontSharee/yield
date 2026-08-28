@@ -13,6 +13,7 @@ import me.dontshare.yieldpacks.data.RarityRegistry;
 import me.dontshare.yieldpacks.item.ItemIconFactory;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -118,7 +119,8 @@ public final class PetDisplayService {
             boolean shouldSeeNow = shouldSee.contains(viewerId);
             boolean seeingNow = currentlySeeing.contains(viewerId);
             if (shouldSeeNow && !seeingNow) {
-                spawnFor(viewer, instances, positionsFor(owner, instances.size(), 0));
+                float petYaw = owner.getLocation().getYaw() + config.yawDegrees();
+                spawnFor(viewer, instances, positionsFor(owner, instances.size(), 0), petYaw);
                 currentlySeeing.add(viewerId);
             } else if (!shouldSeeNow && seeingNow) {
                 despawnFor(viewer, instances);
@@ -173,6 +175,10 @@ public final class PetDisplayService {
                 ? config.hoverAmplitude() * Math.sin(2 * Math.PI * elapsedTicks / config.hoverPeriodTicks())
                 : 0.0;
         List<Location> positions = positionsFor(owner, instances.size(), hoverOffset);
+        // Tracks the owner's live yaw (not a fixed world-space constant), so
+        // the pets keep facing back toward the player as they turn, rather
+        // than freezing at whatever direction the player faced on spawn.
+        float petYaw = owner.getLocation().getYaw() + config.yawDegrees();
 
         Set<UUID> shouldSee = computeViewers(owner);
         Set<UUID> currentlySeeing = viewersByOwner.computeIfAbsent(ownerId, id -> ConcurrentHashMap.newKeySet());
@@ -182,13 +188,13 @@ public final class PetDisplayService {
             boolean shouldSeeNow = shouldSee.contains(viewerId);
             boolean seeingNow = currentlySeeing.contains(viewerId);
             if (shouldSeeNow && !seeingNow) {
-                spawnFor(viewer, instances, positions);
+                spawnFor(viewer, instances, positions, petYaw);
                 currentlySeeing.add(viewerId);
             } else if (!shouldSeeNow && seeingNow) {
                 despawnFor(viewer, instances);
                 currentlySeeing.remove(viewerId);
             } else if (shouldSeeNow) {
-                moveFor(viewer, instances, positions);
+                moveFor(viewer, instances, positions, petYaw);
             }
         }
     }
@@ -232,7 +238,7 @@ public final class PetDisplayService {
         return result;
     }
 
-    private void spawnFor(Player viewer, List<PetDisplayInstance> instances, List<Location> positions) {
+    private void spawnFor(Player viewer, List<PetDisplayInstance> instances, List<Location> positions, float petYaw) {
         for (int i = 0; i < instances.size(); i++) {
             PetDisplayInstance instance = instances.get(i);
             Location pos = positions.get(i);
@@ -242,9 +248,10 @@ public final class PetDisplayService {
                 ItemDisplayManager.spawn(viewer, instance.itemEntityId(), pos);
                 ItemDisplayManager.setItem(viewer, instance.itemEntityId(), iconFactory.baseIcon(item).build());
                 ItemDisplayManager.setScale(viewer, instance.itemEntityId(), config.scale(), config.scale(), config.scale());
-                // Fixed tilt/facing, set once - never re-sent per tick, since it
-                // never changes and must never track the owner's live look direction.
-                ItemDisplayManager.setRotation(viewer, instance.itemEntityId(), config.pitchDegrees(), config.yawDegrees());
+                // Pitch is a fixed tilt; yaw tracks the owner's live facing
+                // (see updateOwner) so the pets keep facing back toward
+                // whichever way the player is currently looking.
+                ItemDisplayManager.setRotation(viewer, instance.itemEntityId(), config.pitchDegrees(), petYaw);
                 ItemDisplayManager.setInterpolation(viewer, instance.itemEntityId(), 0,
                         config.updateIntervalTicks(), config.updateIntervalTicks());
 
@@ -264,12 +271,17 @@ public final class PetDisplayService {
         }
     }
 
-    private void moveFor(Player viewer, List<PetDisplayInstance> instances, List<Location> positions) {
+    private void moveFor(Player viewer, List<PetDisplayInstance> instances, List<Location> positions, float petYaw) {
         for (int i = 0; i < instances.size(); i++) {
             PetDisplayInstance instance = instances.get(i);
             Location pos = positions.get(i);
             PacketEntityManager.teleportEntity(viewer, instance.itemEntityId(), pos);
             PacketEntityManager.teleportEntity(viewer, instance.textEntityId(), pos.clone().add(0, 0.4, 0));
+            // Re-sent every cycle (unlike the fixed-at-spawn scale/interpolation
+            // settings) since this must track the owner's live yaw, not a
+            // one-time constant - the client-side interpolation duration
+            // already set at spawn keeps this looking like a smooth turn.
+            ItemDisplayManager.setRotation(viewer, instance.itemEntityId(), config.pitchDegrees(), petYaw);
         }
     }
 
@@ -283,7 +295,12 @@ public final class PetDisplayService {
     private Component labelFor(ItemDefinition item) {
         Rarity rarity = rarityRegistry.get().find(item.rarityId()).orElse(null);
         String rarityColor = rarity != null ? rarity.colorHex() : "#FFFFFF";
-        Component nameLine = Text.parse("<" + rarityColor + "><bold>" + item.displayName() + "</bold>");
+        // Bold applied via Component#decorate (not a raw "<bold>...</bold>"
+        // wrapper) and the item's own embedded color code stripped first -
+        // see Formatting#stripLeadingColorCodes for why the naive string
+        // version renders a literal "</bold>" artifact.
+        String plainName = Formatting.stripLeadingColorCodes(item.displayName());
+        Component nameLine = Text.parse("<" + rarityColor + ">" + plainName).decorate(TextDecoration.BOLD);
         Component valueLine = Text.parse("<#55FF7F>$" + Formatting.format(item.valuePerSecond()) + "<#7F7F7F>/sec");
         return nameLine.append(Component.newline()).append(valueLine);
     }
