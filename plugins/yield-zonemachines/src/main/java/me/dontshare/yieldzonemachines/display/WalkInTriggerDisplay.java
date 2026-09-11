@@ -13,6 +13,7 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -65,8 +66,21 @@ public final class WalkInTriggerDisplay {
         insideByPlayer.clear();
     }
 
+    /** One trigger's fully-resolved ring for this exact tick - identical for every viewer watching it (rotation only depends on the shared tick counter), computed once and reused rather than redone per viewer. */
+    private record RingFrame(double[] x, double[] z, Particle.DustOptions[] dust) {
+    }
+
     private void tick() {
         tick += TICK_INTERVAL;
+        // See RingFrame's own javadoc - this used to be recomputed inside
+        // renderRing, once per viewer per trigger, even though every one of
+        // those RING_POINTS cos/sin pairs (and RAINBOW_FUSION's own per-
+        // point hue) comes out identical for every viewer this same tick.
+        Map<WalkInTrigger, RingFrame> framesThisTick = new HashMap<>();
+        for (WalkInTrigger trigger : triggers) {
+            framesThisTick.put(trigger, buildRingFrame(trigger));
+        }
+
         for (Player viewer : Bukkit.getOnlinePlayers()) {
             Set<WalkInTrigger> currentlyInside = insideByPlayer.computeIfAbsent(viewer.getUniqueId(), k -> ConcurrentHashMap.newKeySet());
             for (WalkInTrigger trigger : triggers) {
@@ -74,7 +88,7 @@ public final class WalkInTriggerDisplay {
                     continue;
                 }
                 if (trigger.center().distanceSquared(viewer.getLocation()) <= VIEW_DISTANCE_SQUARED) {
-                    renderRing(viewer, trigger);
+                    renderRing(viewer, trigger, framesThisTick.get(trigger));
                 }
                 boolean inside = isInside(viewer.getLocation(), trigger.center());
                 boolean wasInside = currentlyInside.contains(trigger);
@@ -95,17 +109,29 @@ public final class WalkInTriggerDisplay {
                 && Math.abs(playerLoc.getY() - center.getY()) <= ACTIVATION_HEIGHT;
     }
 
-    private void renderRing(Player viewer, WalkInTrigger trigger) {
+    /** {@link RingFrame} for one trigger, this tick - the only place that still does the actual cos/sin/hue math, once per trigger regardless of how many viewers end up watching it. */
+    private RingFrame buildRingFrame(WalkInTrigger trigger) {
         Location center = trigger.center();
         // A slow, continuous spin (one full rotation every 5s) - purely
         // cosmetic, just makes the ring read as "alive" rather than a
         // static decal on the ground.
         double rotation = (tick % 100) / 100.0 * Math.PI * 2;
+        double[] x = new double[RING_POINTS];
+        double[] z = new double[RING_POINTS];
+        Particle.DustOptions[] dust = new Particle.DustOptions[RING_POINTS];
         for (int i = 0; i < RING_POINTS; i++) {
             double angle = rotation + (Math.PI * 2 * i / RING_POINTS);
-            double x = center.getX() + Math.cos(angle) * RING_RADIUS;
-            double z = center.getZ() + Math.sin(angle) * RING_RADIUS;
-            viewer.spawnParticle(Particle.DUST, x, center.getY() + 0.1, z, 1, 0, 0, 0, 0, dustFor(trigger, i));
+            x[i] = center.getX() + Math.cos(angle) * RING_RADIUS;
+            z[i] = center.getZ() + Math.sin(angle) * RING_RADIUS;
+            dust[i] = dustFor(trigger, i);
+        }
+        return new RingFrame(x, z, dust);
+    }
+
+    private void renderRing(Player viewer, WalkInTrigger trigger, RingFrame frame) {
+        double y = trigger.center().getY() + 0.1;
+        for (int i = 0; i < RING_POINTS; i++) {
+            viewer.spawnParticle(Particle.DUST, frame.x()[i], y, frame.z()[i], 1, 0, 0, 0, 0, frame.dust()[i]);
         }
     }
 

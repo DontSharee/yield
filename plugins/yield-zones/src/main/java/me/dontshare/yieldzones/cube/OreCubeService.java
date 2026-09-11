@@ -141,6 +141,15 @@ public final class OreCubeService implements Listener {
     // not just the summed amount, so a kill can grant XP to exactly the
     // pets that fought for it.
     private final Map<UUID, Map<OreCube, PendingDamage>> pendingDamageByPlayer = new ConcurrentHashMap<>();
+    // Which players are currently INSIDE a flushDamage() call, for the "play
+    // the shared hit sound only once" gate below - flushDamage can genuinely
+    // re-enter itself (see its own javadoc: a kill fires OreCubeKilledEvent
+    // synchronously, which re-runs the same player's tick and ends in its
+    // own nested flushDamage call). Gating the sound on "is queued non-
+    // empty" alone plays it once per INVOCATION, not once per real game
+    // tick - a nested call during exactly the scenario most likely to
+    // involve several pets (a kill) would otherwise double-play it.
+    private final Set<UUID> flushingPlayers = ConcurrentHashMap.newKeySet();
     // Every health-bar text_display entity id currently believed spawned for
     // a player - reconciled once per tick() cycle against liveCubes() so a
     // nametag can never outlive its cube for more than one cycle, no matter
@@ -820,24 +829,34 @@ public final class OreCubeService implements Listener {
         // cube's, so it doesn't favor whichever cube happens to iterate
         // first) covers every cube this flush touches; the particle sparks
         // stay per-cube since those are purely visual, at each cube's own
-        // location.
-        if (!queued.isEmpty()) {
+        // location. Gated on flushingPlayers (not just "queued non-empty")
+        // so the OUTERMOST call in a reentrant chain is the only one that
+        // plays it - see that field's own javadoc on why a plain per-
+        // invocation gate isn't enough.
+        boolean isOutermostFlush = flushingPlayers.add(player.getUniqueId());
+        if (isOutermostFlush) {
             playHitImpactSound(player, player.getLocation());
             playAttackSound(player, player.getLocation());
         }
-        for (Map.Entry<OreCube, PendingDamage> entry : queued.entrySet()) {
-            OreCube cube = entry.getKey();
-            int amount = entry.getValue().amount();
-            Location center = cube.location().clone().add(0.5, 0.5, 0.5);
-            showDamageIndicator(player, center, amount);
-            showHitImpact(player, center);
-            boolean dead = cube.damage(amount);
-            if (dead) {
-                killCube(player, zone, cube, entry.getValue().contributingInstanceIds());
-            } else {
-                updateBossBar(player, cube);
-                TextDisplayManager.setText(player, cube.textEntityId(), healthBarText(cube));
-                playHitSquish(player, cube);
+        try {
+            for (Map.Entry<OreCube, PendingDamage> entry : queued.entrySet()) {
+                OreCube cube = entry.getKey();
+                int amount = entry.getValue().amount();
+                Location center = cube.location().clone().add(0.5, 0.5, 0.5);
+                showDamageIndicator(player, center, amount);
+                showHitImpact(player, center);
+                boolean dead = cube.damage(amount);
+                if (dead) {
+                    killCube(player, zone, cube, entry.getValue().contributingInstanceIds());
+                } else {
+                    updateBossBar(player, cube);
+                    TextDisplayManager.setText(player, cube.textEntityId(), healthBarText(cube));
+                    playHitSquish(player, cube);
+                }
+            }
+        } finally {
+            if (isOutermostFlush) {
+                flushingPlayers.remove(player.getUniqueId());
             }
         }
     }

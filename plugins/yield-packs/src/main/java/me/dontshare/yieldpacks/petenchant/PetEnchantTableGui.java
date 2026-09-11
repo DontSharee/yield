@@ -222,12 +222,25 @@ public final class PetEnchantTableGui {
         cancelAutoTask(playerId);
         BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             if (!player.isOnline()) {
-                autoTaskByPlayer.remove(playerId);
+                // Must go through cancelAutoTask (not a bare map remove) -
+                // this lambda can't reference its own "task" local (not yet
+                // assigned at lambda-definition time), so the map is the
+                // only remaining handle on the BukkitTask; removing the
+                // entry without cancelling it orphans a live repeating task
+                // that runs forever, un-cancellable, since nothing will
+                // ever hold a reference to it again.
+                cancelAutoTask(playerId);
                 return;
             }
             PackPlayerProfile profile = store.getOrCreate(playerId);
             UUID loadedId = enchantService.currentlyLoaded(player);
-            if (loadedId == null || !loadedId.equals(pet.getInstanceId())) {
+            // currentlyLoaded() only checks the in-memory "selected" pointer,
+            // not whether this exact PetInstance still exists in the
+            // profile - an admin /admin packs reset (or any other bulk pet
+            // wipe) clears profile.getPets() without touching that pointer,
+            // which would otherwise leave this loop spending gems against an
+            // orphaned pet object forever with zero effect and zero feedback.
+            if (loadedId == null || !loadedId.equals(pet.getInstanceId()) || profile.findPet(pet.getInstanceId()).isEmpty()) {
                 cancelAutoTask(playerId);
                 player.sendMessage(Text.parse("<gray>Auto Enchant stopped - pet changed.</gray>"));
                 refreshTableSlots(player);

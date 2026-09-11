@@ -413,33 +413,29 @@ public final class PetDisplayService {
     private List<Location> resolvePositions(Player owner, List<PetDisplayInstance> instances, double hoverOffset) {
         int count = instances.size();
         Map<Integer, Location> overrides = attackOverrides.get(owner.getUniqueId());
-        List<Location> positions;
-        if (overrides == null || overrides.isEmpty()) {
-            positions = positionsFor(owner, count, hoverOffset);
-        } else {
+        // Always start from the full bulk formation (one shared facing/right
+        // trig derivation for every slot - see PetFormation#positionsFor),
+        // even when some slots will be overwritten with a ring position
+        // below. Combat with only SOME slots ringed (a partial single-send
+        // spread, or a squad bigger than the current target's own ring) is
+        // the common case, not the rare one the old per-slot PetFormation
+        // #positionFor fallback loop here used to assume - falling back to
+        // that per-slot call for every uncovered slot silently reintroduced
+        // the exact per-pet trig cost this class was fixed to eliminate.
+        List<Location> positions = positionsFor(owner, count, hoverOffset);
+        if (overrides != null && !overrides.isEmpty()) {
             Map<Location, List<Integer>> slotsByTarget = new LinkedHashMap<>();
             for (Map.Entry<Integer, Location> entry : overrides.entrySet()) {
                 slotsByTarget.computeIfAbsent(entry.getValue(), k -> new ArrayList<>()).add(entry.getKey());
             }
-            Map<Integer, Location> ringPositionBySlot = new HashMap<>();
             for (Map.Entry<Location, List<Integer>> group : slotsByTarget.entrySet()) {
                 List<Integer> slots = group.getValue();
                 for (int i = 0; i < slots.size(); i++) {
-                    ringPositionBySlot.put(slots.get(i), ringPositionFor(group.getKey(), i, slots.size()));
-                }
-            }
-
-            Location ownerLocation = owner.getLocation();
-            positions = new ArrayList<>(count);
-            for (int i = 0; i < count; i++) {
-                Location pos = ringPositionBySlot.get(i);
-                if (pos == null) {
-                    pos = PetFormation.positionFor(ownerLocation, i, config);
-                    if (hoverOffset != 0.0) {
-                        pos.setY(pos.getY() + hoverOffset);
+                    int slot = slots.get(i);
+                    if (slot < positions.size()) {
+                        positions.set(slot, ringPositionFor(group.getKey(), i, slots.size()));
                     }
                 }
-                positions.add(pos);
             }
         }
         return applyHugeSeparation(positions, instances);

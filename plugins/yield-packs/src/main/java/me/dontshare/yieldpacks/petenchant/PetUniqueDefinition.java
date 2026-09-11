@@ -10,7 +10,7 @@ import java.util.Map;
  * specialEffect} is null for a pure-stat Unique; a non-null id (e.g.
  * {@code "BONUS_GEM_DROP"}) is checked by name at the one call site that
  * needs real behavior beyond a flat stat (see {@link
- * PetEnchantService#bonusGemDropChance}).
+ * PetEnchantService#hasBonusGemDropEnchant}).
  */
 public record PetUniqueDefinition(String id, String displayName, String colorHex,
                                    Map<PetEnchantType, Double> statBonuses, String specialEffect) {
