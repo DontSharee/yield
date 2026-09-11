@@ -1,0 +1,61 @@
+# Server-wide chat announcements for the game's own "big moments" - each
+# block below is independently toggleable. Run /admin broadcasts reload
+# after editing.
+#
+# Placeholders available per section are listed above each one.
+
+# Fires when a player rolls a pet whose rarity is in "rarities" below
+# (must match a rarity id from packs.yml, e.g. legendary/mythic/exclusive).
+# Placeholders: <player>, <pet_name> (already colored), <rarity_name> (already colored)
+pack-open:
+  enabled: true
+  rarities: [legendary, mythic, exclusive]
+  message: "<gold><bold>★</bold></gold> <white><player></white> <gray>just pulled a</gray> <rarity_name> <gray>pet:</gray> <pet_name><gold><bold> ★</bold></gold>"
+
+# Fires when a fusion produces one of the tiers listed below (RAINBOW,
+# DARK_MATTER - GOLDEN is intentionally excluded by default, too common to
+# be worth a server-wide message).
+# Placeholders: <player>, <pet_name> (already colored/tagged)
+fusion:
+  enabled: true
+  tiers: [RAINBOW, DARK_MATTER]
+  message: "<gradient:#8A2BE2:#1E90FF><bold>⬥</bold></gradient> <white><player></white> <gray>just fused</gray> <pet_name><gray>!</gray>"
+
+# Fires every "every"-th rebirth milestone (10, 20, 30, ... by default) -
+# not on every single rebirth, which would spam chat constantly once
+# players are rebirthing often.
+# Placeholders: <player>, <total>
+rebirth:
+  enabled: true
+  every: 10
+  message: "<#55FF7F><bold>⬆</bold></#55FF7F> <white><player></white> <gray>just hit</gray> <white><total></white> <gray>rebirths!</gray>"
+
+# Placeholders: <player>, <total>
+prestige:
+  enabled: true
+  message: "<#FFD700><bold>♛</bold></#FFD700> <white><player></white> <gray>just PRESTIGED for the</gray> <white><total></white><gray>. time!</gray>"
+
+# Placeholders: <player>, <zone>
+zone-unlock:
+  enabled: true
+  message: "<#4BD9FF><bold>⚑</bold></#4BD9FF> <white><player></white> <gray>unlocked the</gray> <white><zone></white> <gray>zone!</gray>"
+
+# Placeholders: <player>, <team>
+team-create:
+  enabled: true
+  message: "<#4BD9FF><bold>⚐</bold></#4BD9FF> <gray>Team</gray> <white><team></white> <gray>was founded by</gray> <white><player></white><gray>!</gray>"
+
+# Fires whenever a Perfect (not common) Shard drops (see yield-blocktree's
+# UNLOCK_SHARD_DROP effect) - the rare, 10x-value variant of a permanent
+# stat shard.
+# Placeholders: <player>, <shard_type>
+shard-find:
+  enabled: true
+  message: "<gradient:#FFD700:#FF66CC><bold>◆</bold></gradient> <white><player></white> <gray>just found a</gray> <white>Perfect <shard_type> Shard</white><gray>!</gray>"
+
+# Fires whenever a world boss (see yield-zones' worldboss.yml) is defeated.
+# Placeholders: <boss>, <top_player> (whoever dealt the most damage),
+# <top_damage>, <contributors> (how many players dealt any damage at all)
+world-boss:
+  enabled: true
+  message: "<#FF5555><bold>☠</bold></#FF5555> <white><boss></white> <gray>has been defeated! Top damage:</gray> <white><top_player></white> <gray>(</gray><white><top_damage></white><gray>) -</gray> <white><contributors></white> <gray>player(s) contributed.</gray>"

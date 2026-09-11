@@ -1,0 +1,488 @@
+# Zones are cuboid regions where ore cubes fall from the sky and can be
+# fought (see OreCubeService). Run /admin zones reload after editing this
+# file to apply changes without restarting the server.
+#
+# "world" must match a currently-loaded world's name exactly - if it
+# doesn't, this zone is skipped (with a warning) rather than crashing the
+# whole file's load. corner-one/corner-two are two opposite block
+# coordinates [x, y, z]; any two opposite corners work, order doesn't
+# matter.
+#
+# "unlock:" - omit this section entirely for a zone that's free and already
+# unlocked for everyone (meadow, below). Configure it (any combination of
+# coins/gems/items) to gate a zone behind a purchase. A zone with a real
+# unlock cost also needs a "walls:" list (one or more cuboids - same
+# corner-one/corner-two shape as the zone region itself) to actually
+# barricade it; walking into a locked zone's own region is blocked
+# server-side regardless of whether a wall is configured, so "walls:" is
+# about the VISUAL barricade, not the enforcement itself.
+#
+# "teleport: [x, y, z, yaw, pitch]" - where fast travel and a locked zone's
+# purchase-confirm both send the player. yaw/pitch are optional (default 0).
+# Omit entirely to fall back to the zone region's own horizontal center,
+# standing on whatever terrain is actually there.
+#
+# Zones 2-20 below are time-balanced: each one's "unlock" cost is calibrated
+# so that, under a documented reference play state (~10 total party DPS, a
+# modest 1.5x coin multiplier, 85% combat uptime), actively grinding the
+# PREVIOUS zone earns that cost in roughly the target time for that zone -
+# 5 minutes for zone 1, +2 minutes per zone after that (5, 7, 9, ... 43).
+# Every zone keeps meadow's own 3-tier weight split (100/25/5) with HP/coin/
+# XP scaled by a constant 1.75x-per-zone growth factor, so kill-time-per-cube
+# stays roughly constant while the actual pacing lives entirely in the
+# unlock-cost curve. Real players will vary from the reference assumption in
+# either direction - these are a calibrated starting point, not a guarantee.
+#
+# Geometry: every zone is a real, measured 23 (X) x 59 (Z) block cuboid,
+# floor at Y 98 and ceiling at Y 150, laid out down the real spawn corridor
+# along +Z with a 35-block empty gap between each zone's cube-spawn area and
+# the next. Each locked zone's glass wall sits 18 blocks past the PREVIOUS
+# zone's corner-two (i.e. centered in that 35/36-block gap, 18 blocks from
+# either side) - 43 blocks wide (wider than the zone itself so it fully
+# blocks the corridor), 1 block thick, 35 tall, floor-anchored. The per-zone
+# Z pitch is therefore 59 (zone length) + 35 (gap, fencepost-corrected to 36
+# between center coordinates) = 94.
+
+zones:
+  meadow:
+    display-name: "&aMeadow"
+    world: world
+    corner-one: [10.5, 98, 51.5]
+    corner-two: [-10.5, 150, 109.5]
+    respawn-delay-seconds: 3
+    # How many cubes any one player can have live at once in this zone -
+    # each player's cubes are their own private, client-side instance, so
+    # there's no server-wide total to also cap.
+    max-concurrent-cubes: 10
+    cube-tiers:
+      - { material: STONE, max-hp: 20, coin-value: 5, xp-value: 5, weight: 100 }
+      - { material: COPPER_BLOCK, max-hp: 60, coin-value: 20, xp-value: 15, weight: 25 }
+      - { material: IRON_BLOCK, max-hp: 150, coin-value: 60, xp-value: 40, weight: 5 }
+    # Independent of which tier gets rolled above - every spawned cube also
+    # rolls each of these on its own. If more than one hits at once, the
+    # highest multiplier wins. "color" must be one of vanilla's 16 named
+    # team colors (gold/aqua/light_purple/etc) - glow color is a hard
+    # vanilla limitation, not an arbitrary hex value.
+    cube-bonuses:
+      - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
+      - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+    teleport: [0, 99, 51, 0, 0]
+
+  frostpeak:
+    display-name: "&bFrostpeak"
+    world: world
+    corner-one: [10.5, 98, 145.5]
+    corner-two: [-10.5, 150, 203.5]
+    respawn-delay-seconds: 3
+    max-concurrent-cubes: 10
+    cube-tiers:
+      - { material: SNOW_BLOCK, max-hp: 35, coin-value: 9, xp-value: 9, weight: 100 }
+      - { material: PACKED_ICE, max-hp: 105, coin-value: 35, xp-value: 26, weight: 25 }
+      - { material: BLUE_ICE, max-hp: 263, coin-value: 105, xp-value: 70, weight: 5 }
+    cube-bonuses:
+      - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
+      - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+    unlock:
+      coins: 1170
+      items:
+        - { material: IRON_INGOT, amount: 32 }
+    walls:
+      - { material: LIGHT_BLUE_STAINED_GLASS, corner-one: [21, 98, 127.5], corner-two: [-21, 133, 127.5] }
+    teleport: [0, 99, 145, 0, 0]
+
+  iron_foothills:
+    display-name: "&7Iron Foothills"
+    world: world
+    corner-one: [10.5, 98, 239.5]
+    corner-two: [-10.5, 150, 297.5]
+    respawn-delay-seconds: 3
+    max-concurrent-cubes: 10
+    cube-tiers:
+      - { material: COBBLESTONE, max-hp: 61, coin-value: 15, xp-value: 15, weight: 100 }
+      - { material: IRON_BLOCK, max-hp: 184, coin-value: 61, xp-value: 46, weight: 25 }
+      - { material: RAW_IRON_BLOCK, max-hp: 459, coin-value: 184, xp-value: 123, weight: 5 }
+    cube-bonuses:
+      - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
+      - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+    unlock:
+      coins: 2866
+      items:
+        - { material: PACKED_ICE, amount: 32 }
+    walls:
+      - { material: GRAY_STAINED_GLASS, corner-one: [21, 98, 221.5], corner-two: [-21, 133, 221.5] }
+    teleport: [0, 99, 239, 0, 0]
+
+  sulfur_flats:
+    display-name: "&eSulfur Flats"
+    world: world
+    corner-one: [10.5, 98, 333.5]
+    corner-two: [-10.5, 150, 391.5]
+    respawn-delay-seconds: 3
+    max-concurrent-cubes: 10
+    cube-tiers:
+      - { material: NETHERRACK, max-hp: 107, coin-value: 27, xp-value: 27, weight: 100 }
+      - { material: GOLD_BLOCK, max-hp: 322, coin-value: 107, xp-value: 80, weight: 25 }
+      - { material: MAGMA_BLOCK, max-hp: 804, coin-value: 322, xp-value: 214, weight: 5 }
+    cube-bonuses:
+      - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
+      - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+    unlock:
+      coins: 6450
+      items:
+        - { material: RAW_IRON_BLOCK, amount: 32 }
+    walls:
+      - { material: YELLOW_STAINED_GLASS, corner-one: [21, 98, 315.5], corner-two: [-21, 133, 315.5] }
+    teleport: [0, 99, 333, 0, 0]
+
+  scorched_wastes:
+    display-name: "&cScorched Wastes"
+    world: world
+    corner-one: [10.5, 98, 427.5]
+    corner-two: [-10.5, 150, 485.5]
+    respawn-delay-seconds: 3
+    max-concurrent-cubes: 10
+    cube-tiers:
+      - { material: BASALT, max-hp: 188, coin-value: 47, xp-value: 47, weight: 100 }
+      - { material: BLACKSTONE, max-hp: 563, coin-value: 188, xp-value: 141, weight: 25 }
+      - { material: MAGMA_BLOCK, max-hp: 1407, coin-value: 563, xp-value: 375, weight: 5 }
+    cube-bonuses:
+      - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
+      - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+    unlock:
+      coins: 13795
+      items:
+        - { material: MAGMA_BLOCK, amount: 32 }
+    walls:
+      - { material: RED_STAINED_GLASS, corner-one: [21, 98, 409.5], corner-two: [-21, 133, 409.5] }
+    teleport: [0, 99, 427, 0, 0]
+
+  crystal_caverns:
+    display-name: "&dCrystal Caverns"
+    world: world
+    corner-one: [10.5, 98, 521.5]
+    corner-two: [-10.5, 150, 579.5]
+    respawn-delay-seconds: 3
+    max-concurrent-cubes: 10
+    cube-tiers:
+      - { material: CALCITE, max-hp: 328, coin-value: 82, xp-value: 82, weight: 100 }
+      - { material: AMETHYST_BLOCK, max-hp: 985, coin-value: 328, xp-value: 246, weight: 25 }
+      - { material: DRIPSTONE_BLOCK, max-hp: 2462, coin-value: 985, xp-value: 657, weight: 5 }
+    cube-bonuses:
+      - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
+      - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+    unlock:
+      coins: 28531
+      items:
+        - { material: MAGMA_BLOCK, amount: 32 }
+    walls:
+      - { material: PURPLE_STAINED_GLASS, corner-one: [21, 98, 503.5], corner-two: [-21, 133, 503.5] }
+    teleport: [0, 99, 521, 0, 0]
+
+  diamond_hollow:
+    display-name: "&bDiamond Hollow"
+    world: world
+    corner-one: [10.5, 98, 615.5]
+    corner-two: [-10.5, 150, 673.5]
+    respawn-delay-seconds: 3
+    max-concurrent-cubes: 10
+    cube-tiers:
+      - { material: DEEPSLATE, max-hp: 574, coin-value: 144, xp-value: 144, weight: 100 }
+      - { material: DEEPSLATE_DIAMOND_ORE, max-hp: 1723, coin-value: 574, xp-value: 431, weight: 25 }
+      - { material: DIAMOND_BLOCK, max-hp: 4308, coin-value: 1723, xp-value: 1149, weight: 5 }
+    cube-bonuses:
+      - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
+      - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+    unlock:
+      coins: 57610
+      items:
+        - { material: AMETHYST_BLOCK, amount: 32 }
+    walls:
+      - { material: CYAN_STAINED_GLASS, corner-one: [21, 98, 597.5], corner-two: [-21, 133, 597.5] }
+    teleport: [0, 99, 615, 0, 0]
+
+  emerald_depths:
+    display-name: "&2Emerald Depths"
+    world: world
+    corner-one: [10.5, 98, 709.5]
+    corner-two: [-10.5, 150, 767.5]
+    respawn-delay-seconds: 3
+    max-concurrent-cubes: 10
+    cube-tiers:
+      - { material: DEEPSLATE, max-hp: 1005, coin-value: 251, xp-value: 251, weight: 100 }
+      - { material: DEEPSLATE_EMERALD_ORE, max-hp: 3016, coin-value: 1005, xp-value: 754, weight: 25 }
+      - { material: EMERALD_BLOCK, max-hp: 7540, coin-value: 3016, xp-value: 2011, weight: 5 }
+    cube-bonuses:
+      - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
+      - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+    unlock:
+      coins: 114260
+      items:
+        - { material: DIAMOND_BLOCK, amount: 32 }
+    walls:
+      - { material: GREEN_STAINED_GLASS, corner-one: [21, 98, 691.5], corner-two: [-21, 133, 691.5] }
+    teleport: [0, 99, 709, 0, 0]
+
+  obsidian_rift:
+    display-name: "&8Obsidian Rift"
+    world: world
+    corner-one: [10.5, 98, 803.5]
+    corner-two: [-10.5, 150, 861.5]
+    respawn-delay-seconds: 3
+    max-concurrent-cubes: 10
+    cube-tiers:
+      - { material: BLACKSTONE, max-hp: 1759, coin-value: 440, xp-value: 440, weight: 100 }
+      - { material: OBSIDIAN, max-hp: 5278, coin-value: 1759, xp-value: 1319, weight: 25 }
+      - { material: CRYING_OBSIDIAN, max-hp: 13195, coin-value: 5278, xp-value: 3519, weight: 5 }
+    cube-bonuses:
+      - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
+      - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+    unlock:
+      coins: 223479
+      items:
+        - { material: EMERALD_BLOCK, amount: 32 }
+    walls:
+      - { material: BLACK_STAINED_GLASS, corner-one: [21, 98, 785.5], corner-two: [-21, 133, 785.5] }
+    teleport: [0, 99, 803, 0, 0]
+
+  void_expanse:
+    display-name: "&5Void Expanse"
+    world: world
+    corner-one: [10.5, 98, 897.5]
+    corner-two: [-10.5, 150, 955.5]
+    respawn-delay-seconds: 3
+    max-concurrent-cubes: 10
+    cube-tiers:
+      - { material: OBSIDIAN, max-hp: 3079, coin-value: 770, xp-value: 770, weight: 100 }
+      - { material: CRYING_OBSIDIAN, max-hp: 9236, coin-value: 3079, xp-value: 2309, weight: 25 }
+      - { material: NETHERITE_BLOCK, max-hp: 23091, coin-value: 9236, xp-value: 6157, weight: 5 }
+    cube-bonuses:
+      - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
+      - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+    unlock:
+      coins: 432255
+      items:
+        - { material: CRYING_OBSIDIAN, amount: 32 }
+    walls:
+      - { material: PURPLE_STAINED_GLASS, corner-one: [21, 98, 879.5], corner-two: [-21, 133, 879.5] }
+    teleport: [0, 99, 897, 0, 0]
+
+  netherite_wastes:
+    display-name: "&4Netherite Wastes"
+    world: world
+    corner-one: [10.5, 98, 991.5]
+    corner-two: [-10.5, 150, 1049.5]
+    respawn-delay-seconds: 3
+    max-concurrent-cubes: 10
+    cube-tiers:
+      - { material: ANCIENT_DEBRIS, max-hp: 5388, coin-value: 1347, xp-value: 1347, weight: 100 }
+      - { material: NETHERITE_BLOCK, max-hp: 16163, coin-value: 5388, xp-value: 4041, weight: 25 }
+      - { material: RESPAWN_ANCHOR, max-hp: 40408, coin-value: 16163, xp-value: 10776, weight: 5 }
+    cube-bonuses:
+      - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
+      - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+    unlock:
+      coins: 828488
+      items:
+        - { material: NETHERITE_INGOT, amount: 32 }
+    walls:
+      - { material: BLACK_STAINED_GLASS, corner-one: [21, 98, 973.5], corner-two: [-21, 133, 973.5] }
+    teleport: [0, 99, 991, 0, 0]
+
+  ancient_ruins:
+    display-name: "&8Ancient Ruins"
+    world: world
+    corner-one: [10.5, 98, 1085.5]
+    corner-two: [-10.5, 150, 1143.5]
+    respawn-delay-seconds: 3
+    max-concurrent-cubes: 10
+    cube-tiers:
+      - { material: COBBLED_DEEPSLATE, max-hp: 9429, coin-value: 2357, xp-value: 2357, weight: 100 }
+      - { material: ANCIENT_DEBRIS, max-hp: 28286, coin-value: 9429, xp-value: 7071, weight: 25 }
+      - { material: CHISELED_DEEPSLATE, max-hp: 70715, coin-value: 28286, xp-value: 18857, weight: 5 }
+    cube-bonuses:
+      - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
+      - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+    unlock:
+      coins: 1575928
+      items:
+        - { material: NETHERITE_BLOCK, amount: 32 }
+    walls:
+      - { material: GRAY_STAINED_GLASS, corner-one: [21, 98, 1067.5], corner-two: [-21, 133, 1067.5] }
+    teleport: [0, 99, 1085, 0, 0]
+
+  end_barrens:
+    display-name: "&eEnd Barrens"
+    world: world
+    corner-one: [10.5, 98, 1179.5]
+    corner-two: [-10.5, 150, 1237.5]
+    respawn-delay-seconds: 3
+    max-concurrent-cubes: 10
+    cube-tiers:
+      - { material: END_STONE, max-hp: 16500, coin-value: 4125, xp-value: 4125, weight: 100 }
+      - { material: END_STONE_BRICKS, max-hp: 49500, coin-value: 16500, xp-value: 12375, weight: 25 }
+      - { material: PURPUR_BLOCK, max-hp: 123751, coin-value: 49500, xp-value: 33000, weight: 5 }
+    cube-bonuses:
+      - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
+      - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+    unlock:
+      coins: 2978504
+      items:
+        - { material: ANCIENT_DEBRIS, amount: 32 }
+    walls:
+      - { material: YELLOW_STAINED_GLASS, corner-one: [21, 98, 1161.5], corner-two: [-21, 133, 1161.5] }
+    teleport: [0, 99, 1179, 0, 0]
+
+  purpur_spires:
+    display-name: "&dPurpur Spires"
+    world: world
+    corner-one: [10.5, 98, 1273.5]
+    corner-two: [-10.5, 150, 1331.5]
+    respawn-delay-seconds: 3
+    max-concurrent-cubes: 10
+    cube-tiers:
+      - { material: PURPUR_BLOCK, max-hp: 28875, coin-value: 7219, xp-value: 7219, weight: 100 }
+      - { material: PURPUR_PILLAR, max-hp: 86626, coin-value: 28875, xp-value: 21656, weight: 25 }
+      - { material: SHULKER_BOX, max-hp: 216564, coin-value: 86626, xp-value: 57750, weight: 5 }
+    cube-bonuses:
+      - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
+      - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+    unlock:
+      coins: 5598484
+      items:
+        - { material: END_STONE_BRICKS, amount: 32 }
+    walls:
+      - { material: MAGENTA_STAINED_GLASS, corner-one: [21, 98, 1255.5], corner-two: [-21, 133, 1255.5] }
+    teleport: [0, 99, 1273, 0, 0]
+
+  celestial_sanctum:
+    display-name: "&e&lCelestial Sanctum"
+    world: world
+    corner-one: [10.5, 98, 1367.5]
+    corner-two: [-10.5, 150, 1425.5]
+    respawn-delay-seconds: 3
+    max-concurrent-cubes: 10
+    cube-tiers:
+      - { material: END_STONE, max-hp: 50532, coin-value: 12633, xp-value: 12633, weight: 100 }
+      - { material: PURPUR_BLOCK, max-hp: 151595, coin-value: 50532, xp-value: 37899, weight: 25 }
+      - { material: BEACON, max-hp: 378987, coin-value: 151595, xp-value: 101063, weight: 5 }
+    cube-bonuses:
+      - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
+      - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+    unlock:
+      coins: 10473026
+      items:
+        - { material: PURPUR_PILLAR, amount: 32 }
+    walls:
+      - { material: WHITE_STAINED_GLASS, corner-one: [21, 98, 1349.5], corner-two: [-21, 133, 1349.5] }
+    teleport: [0, 99, 1367, 0, 0]
+
+  starlight_fields:
+    display-name: "&bStarlight Fields"
+    world: world
+    corner-one: [10.5, 98, 1461.5]
+    corner-two: [-10.5, 150, 1519.5]
+    respawn-delay-seconds: 3
+    max-concurrent-cubes: 10
+    cube-tiers:
+      - { material: GLOWSTONE, max-hp: 88430, coin-value: 22108, xp-value: 22108, weight: 100 }
+      - { material: SEA_LANTERN, max-hp: 265291, coin-value: 88430, xp-value: 66323, weight: 25 }
+      - { material: BEACON, max-hp: 663227, coin-value: 265291, xp-value: 176860, weight: 5 }
+    cube-bonuses:
+      - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
+      - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+    unlock:
+      coins: 19510234
+      items:
+        - { material: PURPUR_BLOCK, amount: 32 }
+    walls:
+      - { material: LIGHT_BLUE_STAINED_GLASS, corner-one: [21, 98, 1443.5], corner-two: [-21, 133, 1443.5] }
+    teleport: [0, 99, 1461, 0, 0]
+
+  cosmic_abyss:
+    display-name: "&5Cosmic Abyss"
+    world: world
+    corner-one: [10.5, 98, 1555.5]
+    corner-two: [-10.5, 150, 1613.5]
+    respawn-delay-seconds: 3
+    max-concurrent-cubes: 10
+    cube-tiers:
+      - { material: OBSIDIAN, max-hp: 154753, coin-value: 38688, xp-value: 38688, weight: 100 }
+      - { material: NETHERITE_BLOCK, max-hp: 464259, coin-value: 154753, xp-value: 116065, weight: 25 }
+      - { material: BEACON, max-hp: 1160647, coin-value: 464259, xp-value: 309506, weight: 5 }
+    cube-bonuses:
+      - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
+      - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+    unlock:
+      coins: 36212177
+      items:
+        - { material: SEA_LANTERN, amount: 32 }
+    walls:
+      - { material: BLACK_STAINED_GLASS, corner-one: [21, 98, 1537.5], corner-two: [-21, 133, 1537.5] }
+    teleport: [0, 99, 1555, 0, 0]
+
+  eternal_forge:
+    display-name: "&6Eternal Forge"
+    world: world
+    corner-one: [10.5, 98, 1649.5]
+    corner-two: [-10.5, 150, 1707.5]
+    respawn-delay-seconds: 3
+    max-concurrent-cubes: 10
+    cube-tiers:
+      - { material: NETHERITE_BLOCK, max-hp: 270818, coin-value: 67704, xp-value: 67704, weight: 100 }
+      - { material: ANCIENT_DEBRIS, max-hp: 812453, coin-value: 270818, xp-value: 203113, weight: 25 }
+      - { material: BEACON, max-hp: 2031132, coin-value: 812453, xp-value: 541635, weight: 5 }
+    cube-bonuses:
+      - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
+      - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+    unlock:
+      coins: 66992527
+      items:
+        - { material: NETHERITE_BLOCK, amount: 32 }
+    walls:
+      - { material: ORANGE_STAINED_GLASS, corner-one: [21, 98, 1631.5], corner-two: [-21, 133, 1631.5] }
+    teleport: [0, 99, 1649, 0, 0]
+
+  astral_peak:
+    display-name: "&dAstral Peak"
+    world: world
+    corner-one: [10.5, 98, 1743.5]
+    corner-two: [-10.5, 150, 1801.5]
+    respawn-delay-seconds: 3
+    max-concurrent-cubes: 10
+    cube-tiers:
+      - { material: AMETHYST_BLOCK, max-hp: 473931, coin-value: 118483, xp-value: 118483, weight: 100 }
+      - { material: DIAMOND_BLOCK, max-hp: 1421792, coin-value: 473931, xp-value: 355448, weight: 25 }
+      - { material: BEACON, max-hp: 3554480, coin-value: 1421792, xp-value: 947861, weight: 5 }
+    cube-bonuses:
+      - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
+      - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+    unlock:
+      coins: 123574053
+      items:
+        - { material: ANCIENT_DEBRIS, amount: 32 }
+    walls:
+      - { material: PINK_STAINED_GLASS, corner-one: [21, 98, 1725.5], corner-two: [-21, 133, 1725.5] }
+    teleport: [0, 99, 1743, 0, 0]
+
+  genesis_core:
+    display-name: "&e&lGenesis Core"
+    world: world
+    corner-one: [10.5, 98, 1837.5]
+    corner-two: [-10.5, 150, 1895.5]
+    respawn-delay-seconds: 3
+    max-concurrent-cubes: 10
+    cube-tiers:
+      - { material: DIAMOND_BLOCK, max-hp: 829379, coin-value: 207345, xp-value: 207345, weight: 100 }
+      - { material: EMERALD_BLOCK, max-hp: 2488136, coin-value: 829379, xp-value: 622034, weight: 25 }
+      - { material: BEACON, max-hp: 6220341, coin-value: 2488136, xp-value: 1658758, weight: 5 }
+    cube-bonuses:
+      - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
+      - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+    unlock:
+      coins: 227344572
+      items:
+        - { material: DIAMOND_BLOCK, amount: 32 }
+    walls:
+      - { material: WHITE_STAINED_GLASS, corner-one: [21, 98, 1819.5], corner-two: [-21, 133, 1819.5] }
+    teleport: [0, 99, 1837, 0, 0]
+

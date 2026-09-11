@@ -37,7 +37,7 @@ public final class RollAnimationService {
 
     public void play(Player player, List<PackRollService.RollResult> rolls) {
         PackRollService.RollResult best = rolls.stream()
-                .max(Comparator.comparingDouble(r -> r.item().valuePerSecond()))
+                .max(Comparator.comparingDouble(r -> r.item().damage()))
                 .orElse(null);
         if (best == null) {
             return;

@@ -1,0 +1,33 @@
+# Donor rank definitions - purchased via /buy (yield-achievements' store,
+# see store.yml's "vip_rank"/"celestial_rank" products), applied via
+# "/admin ranks apply <player> <id>" (run as one of that product's own
+# console commands on a completed purchase). Run /admin ranks reload
+# after editing.
+ranks:
+  vip:
+    display-name: "VIP"
+    sort-order: 0
+    icon: GOLD_BLOCK
+    coin-multiplier: 1.5
+    gem-multiplier: 1.0
+    xp-multiplier: 1.5
+    luck-bonus: 0.0
+    bonus-pet-slots: 20
+    bonus-enchant-slots: 1
+    chat-color: white
+    tag: vip
+  celestial:
+    display-name: "Celestial"
+    sort-order: 1
+    icon: NETHER_STAR
+    coin-multiplier: 3.0
+    gem-multiplier: 3.0
+    xp-multiplier: 3.0
+    luck-bonus: 1.0
+    bonus-pet-slots: 80
+    # The full P2W total for this tier (not incremental on top of VIP's 1) -
+    # DonorRankService reads only the CURRENTLY-owned rank's own field
+    # directly, same as bonus-pet-slots (VIP=20, Celestial=80, not 20+60).
+    bonus-enchant-slots: 3
+    chat-color: white
+    tag: celestial

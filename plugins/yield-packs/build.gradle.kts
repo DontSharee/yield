@@ -1,4 +1,8 @@
-version = "0.0.9"
+version = "0.28.0"
+
+repositories {
+    maven("https://repo.codemc.io/repository/maven-releases/")
+}
 
 dependencies {
     // yield-core's own classes (Gui, PlayerDataStore, ItemBuilder, etc.) -
@@ -13,4 +17,9 @@ dependencies {
     // HeadDatabase plugin - see plugin.yml's "softdepend" list. Published on
     // Maven Central directly, no extra repository needed.
     compileOnly("com.arcaniax:HeadDatabase-API:1.3.2")
+    // The Enchanting Table's own packet-button display (PetEnchantTableDisplay)
+    // builds packetevents Vector3f values itself for BlockDisplayManager's
+    // non-uniform setTransformation overload - same dependency yield-zones/
+    // yield-mining already needed for their own packet-entity stations.
+    compileOnly("com.github.retrooper:packetevents-spigot:2.13.0")
 }

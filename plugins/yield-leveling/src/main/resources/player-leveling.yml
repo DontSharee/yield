@@ -1,0 +1,16 @@
+# Whole-player level/XP - a good stat to have, separate from any individual
+# pet's own level/XP. Every ore cube kill grants the PLAYER XP (the cube
+# tier's own "xp-value" from zones.yml - the same number already used to
+# grant pet XP), not just contributing pets. Rendered via the player's real
+# vanilla XP bar (no custom UI) and a "Level" line on the scoreboard.
+# Run /admin leveling reload after editing.
+
+# xpForLevel(level) = base * level^exponent
+level-curve:
+  base: 100
+  exponent: 1.4
+
+# No real gameplay effect at max level beyond the bar simply stopping there -
+# this is a stat to have, not a power curve. High enough that reaching it is
+# a genuine long-term milestone.
+max-level: 500

@@ -1,0 +1,8 @@
+name: yield-zonemachines
+version: '${version}'
+main: me.dontshare.yieldzonemachines.YieldZoneMachines
+api-version: '26.2'
+depend: [yield-core, yield-packs, yield-zones, yield-rebirth]
+permissions:
+  yieldzonemachines.admin:
+    default: op

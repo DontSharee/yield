@@ -1,6 +1,7 @@
 package me.dontshare.yieldpacks.roll;
 
 import me.dontshare.yieldcore.database.PlayerDataStore;
+import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldpacks.data.ItemDefinition;
 import me.dontshare.yieldpacks.data.PackContentLoader;
 import me.dontshare.yieldpacks.data.PackDefinition;
@@ -9,19 +10,33 @@ import me.dontshare.yieldpacks.data.Rarity;
 import me.dontshare.yieldpacks.display.PetDisplayService;
 import me.dontshare.yieldpacks.economy.EquipmentService;
 import me.dontshare.yieldpacks.economy.LuckService;
+import me.dontshare.yieldpacks.event.PetEquippedEvent;
+import me.dontshare.yieldpacks.fusion.FusionTier;
+import me.dontshare.yieldpacks.pity.PityService;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
+import me.dontshare.yieldpacks.shop.ShopStockService;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * The heart of the game loop: validates a purchase, rolls weighted-random
- * pets from a pack's pool (luck-adjusted), applies them to the player's bag
- * and equip slots, and tracks collection progress + global exists counters.
+ * The heart of the game loop, split into two independent steps per the
+ * pack-storage redesign: {@link #buyIntoStorage} only ever moves currency
+ * into unopened-pack inventory (no rolling at all), and
+ * {@link #openOneFromStorage} is the only thing that actually rolls a pet -
+ * always exactly one at a time, never in bulk (see
+ * {@code me.dontshare.yieldpacks.roll.PackOpenService}, the only caller,
+ * which layers the open cooldown/auto-open loop on top of this).
  */
 public final class PackRollService {
 
@@ -29,14 +44,18 @@ public final class PackRollService {
     public record RollResult(ItemDefinition item, boolean firstTimeCollected) {
     }
 
-    /** Outcome of a purchase-and-open call. */
-    public record PurchaseResult(boolean success, String failureReason, List<RollResult> rolls) {
+    /** One pool entry's actual, luck-adjusted odds for a given roll - see {@link #oddsFor}. */
+    public record WeightedOdds(ItemDefinition item, double probability) {
+    }
+
+    /** Outcome of a buy-into-storage or open-one-from-storage call. {@code luckMultiplier} is the exact value used for THIS roll (1.0, unused, for a buy-only result) - callers displaying "1 in N" odds after the fact must reuse this rather than recomputing it, since the profile's own rollCount/pity state has already moved on by the time any animation plays. */
+    public record PurchaseResult(boolean success, String failureReason, List<RollResult> rolls, double luckMultiplier) {
         public static PurchaseResult failure(String reason) {
-            return new PurchaseResult(false, reason, List.of());
+            return new PurchaseResult(false, reason, List.of(), 1.0);
         }
 
-        public static PurchaseResult success(List<RollResult> rolls) {
-            return new PurchaseResult(true, null, rolls);
+        public static PurchaseResult success(List<RollResult> rolls, double luckMultiplier) {
+            return new PurchaseResult(true, null, rolls, luckMultiplier);
         }
     }
 
@@ -46,30 +65,82 @@ public final class PackRollService {
     private final LuckService luckService;
     private final ExistsCounterStore existsCounterStore;
     private final PetDisplayService petDisplayService;
+    private final ShopStockService shopStockService;
+    private final PityService pityService;
+
+    /** Keyed, composable "chance to override this roll with a random Exclusive-rarity pet" registry (see yield-blocktree) - same shape as {@code LuckService#extraLuckProviders}, summed additively. */
+    private final Map<String, Function<PackPlayerProfile, Double>> exclusiveFindChanceProviders = new ConcurrentHashMap<>();
+
+    public void registerExclusiveFindChanceProvider(String key, Function<PackPlayerProfile, Double> provider) {
+        exclusiveFindChanceProviders.put(key, provider);
+    }
+
+    public void unregisterExclusiveFindChanceProvider(String key) {
+        exclusiveFindChanceProviders.remove(key);
+    }
+
+    private double totalExclusiveFindChance(PackPlayerProfile profile) {
+        double total = 0.0;
+        for (Function<PackPlayerProfile, Double> provider : exclusiveFindChanceProviders.values()) {
+            total += provider.apply(profile);
+        }
+        return total;
+    }
+
+    /** A uniformly-random base-form (non-fused) Exclusive-rarity item, or null if none are configured. */
+    private ItemDefinition rollRandomExclusive() {
+        List<ItemDefinition> exclusives = content.get().items().all().stream()
+                .filter(item -> item.fusionTier() == FusionTier.NORMAL)
+                .filter(item -> "exclusive".equals(item.rarityId()))
+                .toList();
+        if (exclusives.isEmpty()) {
+            return null;
+        }
+        return exclusives.get(ThreadLocalRandom.current().nextInt(exclusives.size()));
+    }
 
     public PackRollService(Supplier<PackContentLoader.ContentSnapshot> content, PlayerDataStore<PackPlayerProfile> store,
                             EquipmentService equipmentService, LuckService luckService, ExistsCounterStore existsCounterStore,
-                            PetDisplayService petDisplayService) {
+                            PetDisplayService petDisplayService, ShopStockService shopStockService, PityService pityService) {
         this.content = content;
         this.store = store;
         this.equipmentService = equipmentService;
         this.luckService = luckService;
         this.existsCounterStore = existsCounterStore;
         this.petDisplayService = petDisplayService;
+        this.shopStockService = shopStockService;
+        this.pityService = pityService;
     }
 
-    /** The most opens of {@code packId} the player can currently afford, capped at {@code hardCap} (e.g. for "Buy Max"). */
+    /** The most units of {@code packId} the player can currently afford AND has remaining in shop stock. */
     public int maxAffordable(Player player, String packId, int hardCap) {
         PackDefinition pack = content.get().packs().getOrThrow(packId);
         PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
-        int byCoins = pack.coinCost() <= 0 ? hardCap : (int) Math.min(hardCap, profile.getCoins() / pack.coinCost());
-        int byGems = pack.gemCost() <= 0 ? hardCap : (int) Math.min(hardCap, profile.getGems() / pack.gemCost());
-        return Math.max(0, Math.min(byCoins, byGems));
+        int byCoins = pack.coinCost() <= 0 ? hardCap : affordableUnits(profile.getCoins(), pack.coinCost(), hardCap);
+        int byGems = pack.gemCost() <= 0 ? hardCap : affordableUnits(profile.getGems(), pack.gemCost(), hardCap);
+        int byStock = shopStockService.remainingStock(player, packId);
+        return Math.max(0, Math.min(Math.min(byCoins, byGems), byStock));
     }
 
-    public PurchaseResult buyAndOpen(Player player, String packId, int quantity) {
+    /** {@code balance / unitCost}, clamped to {@code hardCap} BEFORE narrowing to int - never lets the division's own result overflow int on its way down. */
+    private int affordableUnits(BigInteger balance, long unitCost, int hardCap) {
+        BigInteger units = balance.divide(BigInteger.valueOf(unitCost));
+        return units.min(BigInteger.valueOf(hardCap)).max(BigInteger.ZERO).intValue();
+    }
+
+    /** Buys {@code quantity} of {@code packId} into unopened storage - deducts currency and shop stock, rolls nothing. */
+    public PurchaseResult buyIntoStorage(Player player, String packId, int quantity) {
+        return buyIntoStorage(player, packId, quantity, true);
+    }
+
+    /** Same as {@link #buyIntoStorage(Player, String, int)} but never consults {@link ShopStockService} - for a physical pack station's own unlimited-supply, cost-only purchase (see yield-packstations), where the pack's own coin/gem cost is the sole gate. */
+    public PurchaseResult buyStationPack(Player player, String packId, int quantity) {
+        return buyIntoStorage(player, packId, quantity, false);
+    }
+
+    private PurchaseResult buyIntoStorage(Player player, String packId, int quantity, boolean checkStock) {
         if (quantity <= 0) {
-            return PurchaseResult.failure("Nothing to open.");
+            return PurchaseResult.failure("Nothing to buy.");
         }
         PackDefinition pack;
         try {
@@ -79,33 +150,92 @@ public final class PackRollService {
         }
 
         PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
-        long totalCoinCost = pack.coinCost() * quantity;
-        long totalGemCost = pack.gemCost() * quantity;
-        if (profile.getCoins() < totalCoinCost || profile.getGems() < totalGemCost) {
-            return PurchaseResult.failure("You can't afford " + quantity + "x " + pack.displayName() + ".");
+        BigInteger totalCoinCost = BigInteger.valueOf(pack.coinCost()).multiply(BigInteger.valueOf(quantity));
+        BigInteger totalGemCost = BigInteger.valueOf(pack.gemCost()).multiply(BigInteger.valueOf(quantity));
+        if (profile.getCoins().compareTo(totalCoinCost) < 0 || profile.getGems().compareTo(totalGemCost) < 0) {
+            return PurchaseResult.failure("You can't afford " + quantity + "x " + Formatting.stripLeadingColorCodes(pack.displayName()) + ".");
+        }
+        if (checkStock && shopStockService.remainingStock(player, packId) < quantity) {
+            return PurchaseResult.failure("Not enough " + Formatting.stripLeadingColorCodes(pack.displayName()) + " left in stock this cycle.");
         }
 
-        profile.setCoins(profile.getCoins() - totalCoinCost);
-        profile.setGems(profile.getGems() - totalGemCost);
-
-        double luckMultiplier = luckService.totalLuckMultiplier(profile);
-        List<RollResult> rolls = new ArrayList<>(quantity);
-        for (int i = 0; i < quantity; i++) {
-            ItemDefinition rolled = rollOne(pack, luckMultiplier);
-            boolean firstTime = !hasCollected(profile, packId, rolled.id());
-            profile.addOwnedItem(packId, rolled.id());
-            equipmentService.autoEquipOnRoll(profile, rolled.id());
-            if (rolled.trackExists()) {
-                existsCounterStore.increment(rolled.id());
-            }
-            rolls.add(new RollResult(rolled, firstTime));
-        }
+        profile.setCoins(profile.getCoins().subtract(totalCoinCost));
+        profile.setGems(profile.getGems().subtract(totalGemCost));
+        profile.getStoredPacks().merge(packId, quantity, Integer::sum);
         store.save(player.getUniqueId());
-        // Once for the whole batch, not per-roll - a "Buy 10K" shouldn't rebuild
-        // (and re-spawn, for every nearby viewer) the pet display thousands of
-        // times in one instant just because auto-equip may have swapped mid-loop.
+        if (checkStock) {
+            shopStockService.recordPurchase(player, packId, quantity);
+        }
+        return PurchaseResult.success(List.of(), 1.0);
+    }
+
+    /** Opens exactly one stored, already-paid-for pack - the only thing that ever rolls a pet. */
+    public PurchaseResult openOneFromStorage(Player player, String packId) {
+        PackDefinition pack;
+        try {
+            pack = content.get().packs().getOrThrow(packId);
+        } catch (IllegalArgumentException e) {
+            return PurchaseResult.failure("That pack no longer exists.");
+        }
+
+        PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
+        int stored = profile.getStoredPacks().getOrDefault(packId, 0);
+        if (stored <= 0) {
+            return PurchaseResult.failure("You don't have any " + Formatting.stripLeadingColorCodes(pack.displayName()) + " to open.");
+        }
+        profile.getStoredPacks().put(packId, stored - 1);
+        advanceActivePackIfExhausted(profile, packId);
+
+        double luckMultiplier = luckService.totalLuckMultiplier(profile) * pityService.multiplierFor(profile.getRollCount());
+        ItemDefinition rolled = rollOne(pack, luckMultiplier);
+        double exclusiveChance = totalExclusiveFindChance(profile);
+        if (exclusiveChance > 0 && ThreadLocalRandom.current().nextDouble() < exclusiveChance) {
+            ItemDefinition exclusiveOverride = rollRandomExclusive();
+            if (exclusiveOverride != null) {
+                rolled = exclusiveOverride;
+            }
+        }
+        boolean firstTime = !hasCollected(profile, packId, rolled.id());
+        var newPet = profile.addOwnedItem(packId, rolled.id());
+        if (equipmentService.autoEquipOnRoll(profile, newPet)) {
+            // A tutorial-tracking auto-equip is exactly as real as a manual
+            // one from the Bag - fire the same event so its EQUIP_PET step
+            // (and anything else listening) doesn't need to know there are
+            // two different ways to end up equipped.
+            Bukkit.getPluginManager().callEvent(new PetEquippedEvent(player, newPet.getInstanceId()));
+        }
+        if (rolled.trackExists()) {
+            existsCounterStore.increment(rolled.id());
+        }
+        profile.setRollCount(profile.getRollCount() + 1);
+        store.save(player.getUniqueId());
         petDisplayService.refresh(player);
-        return PurchaseResult.success(rolls);
+        return PurchaseResult.success(List.of(new RollResult(rolled, firstTime)), luckMultiplier);
+    }
+
+    /**
+     * Once the just-opened pack (if it was the active one) hits zero in
+     * storage, silently switches the active pack to whichever OTHER pack
+     * this player still has the most of stored, ranked best-to-worst by
+     * {@link PackDefinition#sortOrder}, falling back to no selection if
+     * nothing's left - so opening never dead-ends on "you don't have any of
+     * that to open" while a lesser pack sits unused in storage.
+     */
+    private void advanceActivePackIfExhausted(PackPlayerProfile profile, String justOpenedPackId) {
+        if (!justOpenedPackId.equals(profile.getActivePackId())
+                || profile.getStoredPacks().getOrDefault(justOpenedPackId, 0) > 0) {
+            return;
+        }
+        profile.setActivePackId(bestStoredPackId(profile));
+    }
+
+    /** Whichever pack this player currently has the most VALUE of stored (ranked by {@link PackDefinition#sortOrder}, not quantity) - null if storage is empty. Used both by the auto-advance above and by a top-level "start auto-opening" action that doesn't require picking a pack first (see yield-packs' PackStorageGui). */
+    public String bestStoredPackId(PackPlayerProfile profile) {
+        return content.get().packs().all().stream()
+                .filter(p -> profile.getStoredPacks().getOrDefault(p.id(), 0) > 0)
+                .max(Comparator.comparingInt(PackDefinition::sortOrder))
+                .map(PackDefinition::id)
+                .orElse(null);
     }
 
     private boolean hasCollected(PackPlayerProfile profile, String packId, String itemId) {
@@ -113,7 +243,8 @@ public final class PackRollService {
         return collected != null && collected.contains(itemId);
     }
 
-    private ItemDefinition rollOne(PackDefinition pack, double luckMultiplier) {
+    /** Every pool entry's actual, luck-adjusted probability for this roll (normalized, sums to 1.0) - the same weighting {@link #rollOne} picks from, exposed for callers that need to display real odds (see yield-packs' pack-reveal reel) or sample statistically-plausible decoys. */
+    public List<WeightedOdds> oddsFor(PackDefinition pack, double luckMultiplier) {
         PackContentLoader.ContentSnapshot snapshot = content.get();
         List<PackPoolEntry> pool = pack.pool();
 
@@ -128,15 +259,25 @@ public final class PackRollService {
             totalWeight += adjusted;
         }
 
-        double roll = ThreadLocalRandom.current().nextDouble() * totalWeight;
-        double cumulative = 0;
+        List<WeightedOdds> result = new ArrayList<>(pool.size());
         for (int i = 0; i < pool.size(); i++) {
-            cumulative += adjustedWeights[i];
+            ItemDefinition item = snapshot.items().getOrThrow(pool.get(i).itemId());
+            result.add(new WeightedOdds(item, totalWeight > 0 ? adjustedWeights[i] / totalWeight : 0));
+        }
+        return result;
+    }
+
+    private ItemDefinition rollOne(PackDefinition pack, double luckMultiplier) {
+        List<WeightedOdds> odds = oddsFor(pack, luckMultiplier);
+        double roll = ThreadLocalRandom.current().nextDouble();
+        double cumulative = 0;
+        for (WeightedOdds w : odds) {
+            cumulative += w.probability();
             if (roll < cumulative) {
-                return snapshot.items().getOrThrow(pool.get(i).itemId());
+                return w.item();
             }
         }
         // Floating-point rounding fallback - land on the last entry rather than throwing.
-        return snapshot.items().getOrThrow(pool.get(pool.size() - 1).itemId());
+        return odds.get(odds.size() - 1).item();
     }
 }

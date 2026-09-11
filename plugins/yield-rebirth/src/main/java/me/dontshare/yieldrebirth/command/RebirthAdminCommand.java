@@ -4,7 +4,6 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
-import me.dontshare.yieldcore.command.CommandPermissions;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldrebirth.YieldRebirth;
 
@@ -14,8 +13,7 @@ public final class RebirthAdminCommand {
     }
 
     public static LiteralCommandNode<CommandSourceStack> build(YieldRebirth plugin) {
-        return Commands.literal("rebirthadmin")
-                .requires(CommandPermissions.permission("yieldrebirth.admin"))
+        return Commands.literal("rebirth")
                 .then(Commands.literal("reload")
                         .executes(ctx -> {
                             plugin.reloadRebirthConfig();

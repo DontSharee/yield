@@ -1,0 +1,177 @@
+# Two physical machines per zone, "smacked" (left-click/attack, same
+# convention as the pack stations) to trigger:
+#   REBIRTH      - performs a real rebirth right there (as many as you can
+#                  currently afford in one smack) - previously /rebirth only.
+#   CANDY_APPLY  - opens a small drag-and-drop menu (see CandyApplyGui) -
+#                  drop a candy in to feed it straight to your strongest
+#                  equipped pet. The existing "hold a candy, click a pet in
+#                  /bag" gesture (PetLevelingService#feedCandy) still works
+#                  too - this is a second, discoverable, in-world path to it.
+# A straight candy-for-coins purchase and a coins-to-gems exchange machine
+# both used to live here too - removed by design (see git history / the
+# session plan if it matters later); REBIRTH is deliberately still every
+# zone (not gated to a subset like the walk-in upgrades below).
+# Run /admin zonemachines reload after editing this file.
+#
+# Coordinates extend the same real, F3-verified pack-station pavilion
+# layout (see yield-packstations' own pack-stations.yml) rather than
+# guessing fresh ones: x=-19.5 continues that row (candy-apply 4 blocks past
+# the pack station in +Z); x=-15.5 is a second, parallel row 4 blocks east
+# (rebirth level with the pack station). Adjust in-game once these are
+# actually built, same as every other station in this repo.
+
+machines:
+  - zone: meadow
+    type: REBIRTH
+    location: [world, -15.5, 99, 81.5, 90, 0]
+  - zone: meadow
+    type: CANDY_APPLY
+    location: [world, -19.5, 99, 77.5, 90, 0]
+  - zone: frostpeak
+    type: REBIRTH
+    location: [world, -15.5, 99, 176.5, 90, 0]
+  - zone: frostpeak
+    type: CANDY_APPLY
+    location: [world, -19.5, 99, 172.5, 90, 0]
+  - zone: iron_foothills
+    type: REBIRTH
+    location: [world, -15.5, 99, 271.5, 90, 0]
+  - zone: iron_foothills
+    type: CANDY_APPLY
+    location: [world, -19.5, 99, 267.5, 90, 0]
+  - zone: sulfur_flats
+    type: REBIRTH
+    location: [world, -15.5, 99, 366.5, 90, 0]
+  - zone: sulfur_flats
+    type: CANDY_APPLY
+    location: [world, -19.5, 99, 362.5, 90, 0]
+  - zone: scorched_wastes
+    type: REBIRTH
+    location: [world, -15.5, 99, 461.5, 90, 0]
+  - zone: scorched_wastes
+    type: CANDY_APPLY
+    location: [world, -19.5, 99, 457.5, 90, 0]
+  - zone: crystal_caverns
+    type: REBIRTH
+    location: [world, -15.5, 99, 556.5, 90, 0]
+  - zone: crystal_caverns
+    type: CANDY_APPLY
+    location: [world, -19.5, 99, 552.5, 90, 0]
+  - zone: diamond_hollow
+    type: REBIRTH
+    location: [world, -15.5, 99, 651.5, 90, 0]
+  - zone: diamond_hollow
+    type: CANDY_APPLY
+    location: [world, -19.5, 99, 647.5, 90, 0]
+  - zone: emerald_depths
+    type: REBIRTH
+    location: [world, -15.5, 99, 746.5, 90, 0]
+  - zone: emerald_depths
+    type: CANDY_APPLY
+    location: [world, -19.5, 99, 742.5, 90, 0]
+  - zone: obsidian_rift
+    type: REBIRTH
+    location: [world, -15.5, 99, 841.5, 90, 0]
+  - zone: obsidian_rift
+    type: CANDY_APPLY
+    location: [world, -19.5, 99, 837.5, 90, 0]
+  - zone: void_expanse
+    type: REBIRTH
+    location: [world, -15.5, 99, 936.5, 90, 0]
+  - zone: void_expanse
+    type: CANDY_APPLY
+    location: [world, -19.5, 99, 932.5, 90, 0]
+  - zone: netherite_wastes
+    type: REBIRTH
+    location: [world, -15.5, 99, 1031.5, 90, 0]
+  - zone: netherite_wastes
+    type: CANDY_APPLY
+    location: [world, -19.5, 99, 1027.5, 90, 0]
+  - zone: ancient_ruins
+    type: REBIRTH
+    location: [world, -15.5, 99, 1126.5, 90, 0]
+  - zone: ancient_ruins
+    type: CANDY_APPLY
+    location: [world, -19.5, 99, 1122.5, 90, 0]
+  - zone: end_barrens
+    type: REBIRTH
+    location: [world, -15.5, 99, 1221.5, 90, 0]
+  - zone: end_barrens
+    type: CANDY_APPLY
+    location: [world, -19.5, 99, 1217.5, 90, 0]
+  - zone: purpur_spires
+    type: REBIRTH
+    location: [world, -15.5, 99, 1316.5, 90, 0]
+  - zone: purpur_spires
+    type: CANDY_APPLY
+    location: [world, -19.5, 99, 1312.5, 90, 0]
+  - zone: celestial_sanctum
+    type: REBIRTH
+    location: [world, -15.5, 99, 1411.5, 90, 0]
+  - zone: celestial_sanctum
+    type: CANDY_APPLY
+    location: [world, -19.5, 99, 1407.5, 90, 0]
+  - zone: starlight_fields
+    type: REBIRTH
+    location: [world, -15.5, 99, 1506.5, 90, 0]
+  - zone: starlight_fields
+    type: CANDY_APPLY
+    location: [world, -19.5, 99, 1502.5, 90, 0]
+  - zone: cosmic_abyss
+    type: REBIRTH
+    location: [world, -15.5, 99, 1601.5, 90, 0]
+  - zone: cosmic_abyss
+    type: CANDY_APPLY
+    location: [world, -19.5, 99, 1597.5, 90, 0]
+  - zone: eternal_forge
+    type: REBIRTH
+    location: [world, -15.5, 99, 1696.5, 90, 0]
+  - zone: eternal_forge
+    type: CANDY_APPLY
+    location: [world, -19.5, 99, 1692.5, 90, 0]
+  - zone: astral_peak
+    type: REBIRTH
+    location: [world, -15.5, 99, 1791.5, 90, 0]
+  - zone: astral_peak
+    type: CANDY_APPLY
+    location: [world, -19.5, 99, 1787.5, 90, 0]
+  - zone: genesis_core
+    type: REBIRTH
+    location: [world, -15.5, 99, 1886.5, 90, 0]
+  - zone: genesis_core
+    type: CANDY_APPLY
+    location: [world, -19.5, 99, 1882.5, 90, 0]
+
+# Walk-in triggers: NOT smacked - a spinning particle ring you physically
+# walk into. Unlike the machines above, these are NOT one-per-zone - each of
+# the 4 types below sits at exactly ONE specific zone (not every zone),
+# deliberately spread out through progression rather than bunched at the
+# easy starting zones (meadow through sulfur_flats, zones 0-3, have none of
+# these on purpose):
+#   GOLDEN_FUSION      - zone 5  (crystal_caverns)
+#   ENCHANTS           - zone 4  (scorched_wastes) - opens /enchants; the
+#                        first "big kid" zone, right after the free starting
+#                        ones - reconsider this placement if it feels off.
+#   RAINBOW_FUSION     - zone 10 (netherite_wastes)
+#   DARK_MATTER_FUSION - zone 15 (starlight_fields)
+# GOLDEN/RAINBOW/DARK_MATTER_FUSION each open the SAME Fusion GUI, but
+# locked to producing ONLY that one tier - there is no "fuse into anything"
+# screen anymore, so a Rainbow-eligible pet can only actually become Rainbow
+# by walking into the Rainbow ring specifically. RANKUP was removed from
+# here - Ranks are bought with gems at any time, so gating that behind one
+# physical zone was odd friction; it's a plain "/rankup" command now (see
+# RankupCommand), meant for an NPC at spawn to run instead.
+# Run /admin zonemachines reload after editing this file.
+walk-in-triggers:
+  - zone: scorched_wastes
+    type: ENCHANTS
+    location: [world, -7.5, 99, 457.5, 90, 0]
+  - zone: crystal_caverns
+    type: GOLDEN_FUSION
+    location: [world, -11.5, 99, 556.5, 90, 0]
+  - zone: netherite_wastes
+    type: RAINBOW_FUSION
+    location: [world, -11.5, 99, 1027.5, 90, 0]
+  - zone: starlight_fields
+    type: DARK_MATTER_FUSION
+    location: [world, -7.5, 99, 1506.5, 90, 0]

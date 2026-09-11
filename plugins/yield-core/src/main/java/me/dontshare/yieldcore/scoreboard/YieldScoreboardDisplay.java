@@ -34,6 +34,12 @@ public final class YieldScoreboardDisplay implements Listener {
     private final JavaPlugin plugin;
     private final ScoreboardManager scoreboardManager;
     private final List<Function<Player, List<String>>> extraLineProviders = new CopyOnWriteArrayList<>();
+    // Lets exactly one feature (the tutorial checklist, today) take over a
+    // player's WHOLE sidebar instead of just contributing a line - a
+    // scoreboard only has one sidebar slot, so "swap the whole thing" and
+    // "append a line" can't both be keyed-provider patterns at once here.
+    // Returning null means "no override, render normally".
+    private volatile Function<Player, ScoreboardContent> overrideProvider = player -> null;
 
     public YieldScoreboardDisplay(JavaPlugin plugin, ScoreboardManager scoreboardManager) {
         this.plugin = plugin;
@@ -43,6 +49,15 @@ public final class YieldScoreboardDisplay implements Listener {
     /** Appends this provider's lines (in registration order) below the base template on every refresh. */
     public void addLineProvider(Function<Player, List<String>> provider) {
         extraLineProviders.add(provider);
+    }
+
+    /** A whole title+lines sidebar to substitute in place of the normal template, e.g. the tutorial checklist. */
+    public record ScoreboardContent(String title, List<String> lines) {
+    }
+
+    /** Replaces the normal sidebar with whatever {@code provider} returns, for any player it returns non-null for. Only one such override can be registered at a time. */
+    public void setOverrideProvider(Function<Player, ScoreboardContent> provider) {
+        this.overrideProvider = provider;
     }
 
     /** Starts the periodic refresh loop. Call once at plugin startup. */
@@ -59,12 +74,24 @@ public final class YieldScoreboardDisplay implements Listener {
         render(event.getPlayer());
     }
 
+    /** Forces an immediate full re-render for one player, instead of waiting for the next periodic tick - call this right after changing a stat a line provider reads, so it updates the moment it happens rather than up to a second later. */
+    public void refresh(Player player) {
+        render(player);
+    }
+
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         scoreboardManager.unload(event.getPlayer().getUniqueId());
     }
 
     private void render(Player player) {
+        ScoreboardContent override = overrideProvider.apply(player);
+        if (override != null) {
+            scoreboardManager.setTitle(player, override.title());
+            scoreboardManager.setLines(player, override.lines());
+            return;
+        }
+
         scoreboardManager.setTitle(player, "<#74C7FF><bold>Yield</bold>");
 
         List<String> lines = new ArrayList<>();

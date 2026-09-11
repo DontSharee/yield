@@ -1,11 +1,17 @@
 package me.dontshare.yieldcore.gui;
 
+import org.bukkit.Bukkit;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.entity.HumanEntity;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
 
 /**
  * The single listener for every open {@link Gui} - recovers which one from
@@ -14,13 +20,34 @@ import org.bukkit.event.inventory.InventoryDragEvent;
  * against a Gui's top inventory by default (nothing is takeable/movable
  * except through a slot's own {@link GuiClickHandler}), and only dispatches
  * clicks that land on the Gui itself, not the player's own inventory below it.
+ * <p>
+ * The one exception is a GUI with {@link GuiBuilder#editableSlots} - e.g. a
+ * real drag-and-drop input grid (yield-mining's Mining Forge). For one of
+ * those, a click/drag entirely confined to editable top slots and/or the
+ * player's own inventory is left completely alone (normal vanilla item
+ * movement); a shift-click from the player's own inventory is routed
+ * ourselves into the first free (or stackable) editable slot rather than
+ * either trusting vanilla's own destination guess (which would consider
+ * every top slot fair game, not just the editable ones) or blocking the
+ * gesture outright. {@link Gui#notifyEditableSlotChanged} then fires next
+ * tick, once the movement has actually resolved. A GUI with
+ * {@link GuiBuilder#allowPlayerInventoryInteraction} but no editable slots
+ * (e.g. Bag's "click a pet while holding candy") leaves the bottom
+ * inventory alone the same way, but still blocks its shift-click (nothing
+ * to receive it) and never fires the editable-slot notification.
+ * <p>
+ * Every real (handler-bound) click also gets a quiet UI sound here - one
+ * place, so every GUI across every plugin gets it for free rather than each
+ * screen needing to remember to play its own.
  */
 public final class GuiListener implements Listener {
 
     private final GuiManager manager;
+    private final JavaPlugin plugin;
 
-    public GuiListener(GuiManager manager) {
+    public GuiListener(GuiManager manager, JavaPlugin plugin) {
         this.manager = manager;
+        this.plugin = plugin;
     }
 
     @EventHandler
@@ -28,28 +55,98 @@ public final class GuiListener implements Listener {
         if (!(event.getView().getTopInventory().getHolder() instanceof Gui gui)) {
             return;
         }
-        event.setCancelled(true);
+        boolean clickedTop = event.getClickedInventory() == event.getView().getTopInventory();
 
+        if (clickedTop && gui.hasEditableSlots() && gui.isEditableSlot(event.getSlot())) {
+            notifyNextTick(gui, event.getWhoClicked());
+            return;
+        }
+        if (!clickedTop && (gui.hasEditableSlots() || gui.allowsPlayerInventoryInteraction())) {
+            if (event.isShiftClick()) {
+                if (gui.hasEditableSlots() && event.getWhoClicked() instanceof Player player) {
+                    // Vanilla's own shift-click would consider EVERY top slot a valid destination,
+                    // not just the editable ones - route it ourselves into the first free editable
+                    // slot instead of either guessing wrong or blocking a gesture the player wants.
+                    event.setCancelled(true);
+                    moveShiftClickedItemIntoEditableSlots(gui, event);
+                    notifyNextTick(gui, player);
+                } else {
+                    // No editable slots to receive it - its destination among this GUI's own locked button slots would be ambiguous.
+                    event.setCancelled(true);
+                }
+            } else if (gui.hasEditableSlots()) {
+                notifyNextTick(gui, event.getWhoClicked());
+            }
+            return;
+        }
+
+        event.setCancelled(true);
         if (!(event.getWhoClicked() instanceof Player player)) {
             return;
         }
-        if (event.getClickedInventory() != event.getView().getTopInventory()) {
+        if (!clickedTop) {
             return;
         }
-        gui.handleClick(player, event);
+        if (gui.handleClick(player, event)) {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.4f);
+        }
     }
 
     @EventHandler
     public void onDrag(InventoryDragEvent event) {
-        if (event.getView().getTopInventory().getHolder() instanceof Gui) {
-            event.setCancelled(true);
+        if (!(event.getView().getTopInventory().getHolder() instanceof Gui gui)) {
+            return;
+        }
+        if (gui.hasEditableSlots()) {
+            Inventory top = event.getView().getTopInventory();
+            boolean onlyTouchesEditableOrBottom = event.getRawSlots().stream()
+                    .allMatch(rawSlot -> rawSlot >= top.getSize() || gui.isEditableSlot(rawSlot));
+            if (onlyTouchesEditableOrBottom) {
+                notifyNextTick(gui, event.getWhoClicked());
+                return;
+            }
+        }
+        event.setCancelled(true);
+    }
+
+    /** Moves as much of the shift-clicked stack as fits into the first free (or same-item, stackable) editable slot(s), in slot order - leaves whatever doesn't fit in the source slot rather than losing it. */
+    private void moveShiftClickedItemIntoEditableSlots(Gui gui, InventoryClickEvent event) {
+        ItemStack source = event.getCurrentItem();
+        if (source == null || source.getType().isAir()) {
+            return;
+        }
+        Inventory top = event.getView().getTopInventory();
+        for (int slot = 0; slot < top.getSize() && !source.getType().isAir(); slot++) {
+            if (!gui.isEditableSlot(slot)) {
+                continue;
+            }
+            ItemStack existing = top.getItem(slot);
+            if (existing == null || existing.getType().isAir()) {
+                top.setItem(slot, source.clone());
+                event.setCurrentItem(null);
+                return;
+            }
+            if (existing.isSimilar(source) && existing.getAmount() < existing.getMaxStackSize()) {
+                int room = existing.getMaxStackSize() - existing.getAmount();
+                int move = Math.min(room, source.getAmount());
+                existing.setAmount(existing.getAmount() + move);
+                source.setAmount(source.getAmount() - move);
+            }
+        }
+        event.setCurrentItem(source.getAmount() <= 0 ? null : source);
+    }
+
+    private void notifyNextTick(Gui gui, HumanEntity whoClicked) {
+        if (whoClicked instanceof Player player) {
+            Bukkit.getScheduler().runTask(plugin, () -> gui.notifyEditableSlotChanged(player));
         }
     }
 
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
-        if (event.getPlayer() instanceof Player player && event.getView().getTopInventory().getHolder() instanceof Gui) {
+        if (event.getPlayer() instanceof Player player && event.getView().getTopInventory().getHolder() instanceof Gui gui) {
             manager.forget(player.getUniqueId());
+            gui.handleClose(player);
         }
     }
 }

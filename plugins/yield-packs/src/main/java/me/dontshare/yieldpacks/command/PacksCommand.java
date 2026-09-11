@@ -14,7 +14,7 @@ public final class PacksCommand {
     }
 
     public static LiteralCommandNode<CommandSourceStack> build(PackShopGui packShopGui) {
-        return Commands.literal("packs")
+        return Commands.literal("merchant")
                 .executes(ctx -> {
                     if (!(ctx.getSource().getSender() instanceof Player player)) {
                         ctx.getSource().getSender().sendMessage(Text.parse("<gray>Players only.</gray>"));

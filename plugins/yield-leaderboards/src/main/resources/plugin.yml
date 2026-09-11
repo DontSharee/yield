@@ -1,0 +1,9 @@
+name: yield-leaderboards
+version: '${version}'
+main: me.dontshare.yieldleaderboards.YieldLeaderboards
+api-version: '26.2'
+depend: [yield-core]
+softdepend: [FancyHolograms]
+permissions:
+  yieldleaderboards.admin:
+    default: op

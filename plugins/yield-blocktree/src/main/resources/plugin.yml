@@ -1,0 +1,8 @@
+name: yield-blocktree
+version: '${version}'
+main: me.dontshare.yieldblocktree.YieldBlockTree
+api-version: '26.2'
+depend: [yield-core, yield-packs, yield-zones]
+permissions:
+  yieldblocktree.admin:
+    default: op

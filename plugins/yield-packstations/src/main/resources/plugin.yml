@@ -1,0 +1,8 @@
+name: yield-packstations
+version: '${version}'
+main: me.dontshare.yieldpackstations.YieldPackStations
+api-version: '26.2'
+depend: [yield-core, yield-packs, yield-zones]
+permissions:
+  yieldpackstations.admin:
+    default: op

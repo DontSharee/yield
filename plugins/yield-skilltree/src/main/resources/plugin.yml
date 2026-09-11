@@ -1,0 +1,8 @@
+name: yield-skilltree
+version: '${version}'
+main: me.dontshare.yieldskilltree.YieldSkillTree
+api-version: '26.2'
+depend: [yield-packs]
+permissions:
+  yieldskilltree.admin:
+    default: op

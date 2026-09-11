@@ -7,13 +7,13 @@
 #
 # Rows fill automatically as you equip more pets - there's no hard cap here,
 # "columns" just controls how wide each row is before wrapping to the next.
-# Run /packsadmin reload after editing to apply changes without restarting.
+# Run /admin packs reload after editing to apply changes without restarting.
 grid:
   columns: 3
   column-spacing: 0.9 # blocks between adjacent pets in a row
   row-spacing: 0.9    # blocks between rows, going back from the player
   start-distance: 1.5 # blocks directly behind the player to the first row
-  height-offset: 0.2  # blocks above the player's feet
+  height-offset: 0.7  # blocks above the player's feet
 
 # Pets bob gently in place while you stand still, and stop bobbing (just
 # follow smoothly) while you're moving.
@@ -31,3 +31,8 @@ item:
   scale: 0.85
   pitch-degrees: -5
   yaw-degrees: 180
+  # Huge pets (see packs.yml's "huge: true" pets) render at "scale" times
+  # this multiplier instead - their damage already works completely
+  # differently (a % of your best normal pet, not their own stat), so this
+  # is the in-world visual cue that a pet is one.
+  huge-scale-multiplier: 2.5

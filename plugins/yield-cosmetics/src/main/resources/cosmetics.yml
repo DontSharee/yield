@@ -1,0 +1,639 @@
+# Chat Colors: "style" wraps the whole chat message (a MiniMessage tag -
+# gradients are fine). Nameplates: "style" wraps the player's own name in
+# chat, above their head, and in the tab list. Tags: "badge" is prepended
+# before the player's name everywhere a nameplate style would apply -
+# color and literal text together (e.g. "[VIP] ").
+#
+# "permission" is what OWNS a cosmetic - omit it entirely for something
+# free to everyone. There is no in-game purchase flow: a future store
+# grants these permissions directly (e.g. via a redeemable voucher).
+chat-colors:
+  white:
+    display-name: "White"
+    permission: "chatcolor.White"
+    style: "<white>"
+    icon: WHITE_DYE
+  blue_raspberry:
+    display-name: "Blue Raspberry"
+    permission: "chatcolor.Blue Raspberry"
+    style: "<#3B9DFF>"
+    icon: LIGHT_BLUE_DYE
+  cherry:
+    display-name: "Cherry"
+    permission: "chatcolor.Cherry"
+    style: "<#FF3B5C>"
+    icon: RED_DYE
+  lime:
+    display-name: "Lime"
+    permission: "chatcolor.Lime"
+    style: "<#7CFF3B>"
+    icon: LIME_DYE
+  grape:
+    display-name: "Grape"
+    permission: "chatcolor.Grape"
+    style: "<#9B3BFF>"
+    icon: PURPLE_DYE
+  tangerine:
+    display-name: "Tangerine"
+    permission: "chatcolor.Tangerine"
+    style: "<#FF8C3B>"
+    icon: ORANGE_DYE
+  bubblegum:
+    display-name: "Bubblegum"
+    permission: "chatcolor.Bubblegum"
+    style: "<#FF7CD8>"
+    icon: PINK_DYE
+  mint:
+    display-name: "Mint"
+    permission: "chatcolor.Mint"
+    style: "<#3BFFC9>"
+    icon: CYAN_DYE
+  lemon:
+    display-name: "Lemon"
+    permission: "chatcolor.Lemon"
+    style: "<#FFF23B>"
+    icon: YELLOW_DYE
+  cotton_candy:
+    display-name: "Cotton Candy"
+    permission: "chatcolor.Cotton Candy"
+    style: "<gradient:#FF9CEE:#9CC9FF>"
+    icon: PINK_STAINED_GLASS
+  blackberry:
+    display-name: "Blackberry"
+    permission: "chatcolor.Blackberry"
+    style: "<#5C3BFF>"
+    icon: PURPLE_STAINED_GLASS
+  peach:
+    display-name: "Peach"
+    permission: "chatcolor.Peach"
+    style: "<#FFB08C>"
+    icon: PINK_TULIP
+  sunset:
+    display-name: "Sunset"
+    permission: "chatcolor.Sunset"
+    style: "<gradient:#FF5F6D:#FFC371>"
+    icon: ORANGE_STAINED_GLASS
+  ruby:
+    display-name: "Ruby"
+    permission: "chatcolor.Ruby"
+    style: "<#E0115F>"
+    icon: RED_STAINED_GLASS
+  sapphire:
+    display-name: "Sapphire"
+    permission: "chatcolor.Sapphire"
+    style: "<#0F52BA>"
+    icon: BLUE_DYE
+  topaz:
+    display-name: "Topaz"
+    permission: "chatcolor.Topaz"
+    style: "<#FFC87C>"
+    icon: HONEY_BLOCK
+  amethyst:
+    display-name: "Amethyst"
+    permission: "chatcolor.Amethyst"
+    style: "<#9966CC>"
+    icon: AMETHYST_SHARD
+  aquamarine:
+    display-name: "Aquamarine"
+    permission: "chatcolor.Aquamarine"
+    style: "<#7FFFD4>"
+    icon: PRISMARINE_SHARD
+  coral:
+    display-name: "Coral"
+    permission: "chatcolor.Coral"
+    style: "<#FF7F50>"
+    icon: BRAIN_CORAL_BLOCK
+  rose_gold:
+    display-name: "Rose Gold"
+    permission: "chatcolor.Rose Gold"
+    style: "<gradient:#FFC3A0:#FFAFBD>"
+    icon: PINK_PETALS
+  ice_blue:
+    display-name: "Ice Blue"
+    permission: "chatcolor.Ice Blue"
+    style: "<#A8E6FF>"
+    icon: BLUE_ICE
+  tangelo:
+    display-name: "Tangelo"
+    permission: "chatcolor.Tangelo"
+    style: "<#FF6F3C>"
+    icon: ORANGE_TULIP
+  kiwi:
+    display-name: "Kiwi"
+    permission: "chatcolor.Kiwi"
+    style: "<#8ECC3B>"
+    icon: GREEN_DYE
+  mango:
+    display-name: "Mango"
+    permission: "chatcolor.Mango"
+    style: "<#FFB627>"
+    icon: ORANGE_CONCRETE
+  papaya:
+    display-name: "Papaya"
+    permission: "chatcolor.Papaya"
+    style: "<gradient:#FF9A76:#FFD56B>"
+    icon: ORANGE_STAINED_GLASS_PANE
+  plum:
+    display-name: "Plum"
+    permission: "chatcolor.Plum"
+    style: "<#8E4585>"
+    icon: PURPLE_CONCRETE
+  magenta_dream:
+    display-name: "Magenta Dream"
+    permission: "chatcolor.Magenta Dream"
+    style: "<#FF00FF>"
+    icon: MAGENTA_DYE
+  indigo:
+    display-name: "Indigo"
+    permission: "chatcolor.Indigo"
+    style: "<#4B0082>"
+    icon: BLUE_CONCRETE
+  turquoise:
+    display-name: "Turquoise"
+    permission: "chatcolor.Turquoise"
+    style: "<#40E0D0>"
+    icon: CYAN_CONCRETE
+  jade:
+    display-name: "Jade"
+    permission: "chatcolor.Jade"
+    style: "<#00A86B>"
+    icon: GREEN_CONCRETE
+  slate:
+    display-name: "Slate"
+    permission: "chatcolor.Slate"
+    style: "<#708090>"
+    icon: GRAY_CONCRETE
+  ivory:
+    display-name: "Ivory"
+    permission: "chatcolor.Ivory"
+    style: "<#FFFFF0>"
+    icon: BONE_MEAL
+  gold_rush:
+    display-name: "Gold Rush"
+    permission: "chatcolor.Gold Rush"
+    style: "<gradient:#FFD700:#FFA500>"
+    icon: GOLD_NUGGET
+  silver_lining:
+    display-name: "Silver Lining"
+    permission: "chatcolor.Silver Lining"
+    style: "<gradient:#C0C0C0:#E8E8E8>"
+    icon: IRON_NUGGET
+  bronze:
+    display-name: "Bronze"
+    permission: "chatcolor.Bronze"
+    style: "<#CD7F32>"
+    icon: RAW_COPPER
+  cobalt:
+    display-name: "Cobalt"
+    permission: "chatcolor.Cobalt"
+    style: "<#0047AB>"
+    icon: LAPIS_LAZULI
+  maroon:
+    display-name: "Maroon"
+    permission: "chatcolor.Maroon"
+    style: "<#800000>"
+    icon: RED_CONCRETE
+  lavender_fields:
+    display-name: "Lavender Fields"
+    permission: "chatcolor.Lavender Fields"
+    style: "<#B57EDC>"
+    icon: LILAC
+  periwinkle:
+    display-name: "Periwinkle"
+    permission: "chatcolor.Periwinkle"
+    style: "<#CCCCFF>"
+    icon: BLUE_ORCHID
+  vermillion:
+    display-name: "Vermillion"
+    permission: "chatcolor.Vermillion"
+    style: "<#E34234>"
+    icon: FIRE_CHARGE
+  cerulean_sky:
+    display-name: "Cerulean Sky"
+    permission: "chatcolor.Cerulean Sky"
+    style: "<gradient:#007BA7:#87CEEB>"
+    icon: BLUE_STAINED_GLASS
+  midnight:
+    display-name: "Midnight"
+    permission: "chatcolor.Midnight"
+    style: "<gradient:#0F2027:#2C5364>"
+    icon: BLACK_DYE
+  candy_apple:
+    display-name: "Candy Apple"
+    permission: "chatcolor.Candy Apple"
+    style: "<gradient:#FF416C:#FF4B2B>"
+    icon: RED_TULIP
+  neon:
+    display-name: "Neon"
+    permission: "chatcolor.Neon"
+    style: "<gradient:#39FF14:#00FFFF>"
+    icon: LIME_CONCRETE
+
+nameplates:
+  royal:
+    display-name: "Royal"
+    permission: "nameplate.Royal"
+    style: "<#AA55FF><bold>"
+    icon: AMETHYST_SHARD
+  shadow:
+    display-name: "Shadow"
+    permission: "nameplate.Shadow"
+    style: "<#5C5C6E><bold>"
+    icon: WITHER_ROSE
+  blaze:
+    display-name: "Blaze"
+    permission: "nameplate.Blaze"
+    style: "<gradient:#FF4E00:#FFD500><bold>"
+    icon: BLAZE_ROD
+  frost:
+    display-name: "Frost"
+    permission: "nameplate.Frost"
+    style: "<#7FE7FF><bold>"
+    icon: PACKED_ICE
+  toxic:
+    display-name: "Toxic"
+    permission: "nameplate.Toxic"
+    style: "<#7CFF3B><bold>"
+    icon: SLIME_BALL
+  divine:
+    display-name: "Divine"
+    permission: "nameplate.Divine"
+    style: "<gradient:#FFF6B7:#FFD700><bold>"
+    icon: GOLDEN_APPLE
+  emerald:
+    display-name: "Emerald"
+    permission: "nameplate.Emerald"
+    style: "<#3BFF9C><bold>"
+    icon: EMERALD
+  crimson:
+    display-name: "Crimson"
+    permission: "nameplate.Crimson"
+    style: "<#DC143C><bold>"
+    icon: NETHER_WART
+  obsidian:
+    display-name: "Obsidian"
+    permission: "nameplate.Obsidian"
+    style: "<#2B1B4C><bold>"
+    icon: OBSIDIAN
+  aurora:
+    display-name: "Aurora"
+    permission: "nameplate.Aurora"
+    style: "<gradient:#00FFA3:#DC1FFF:#00FFA3><bold>"
+    icon: PRISMARINE_CRYSTALS
+  solar:
+    display-name: "Solar"
+    permission: "nameplate.Solar"
+    style: "<gradient:#FFD700:#FF8C00><bold>"
+    icon: SUNFLOWER
+  void:
+    display-name: "Void"
+    permission: "nameplate.Void"
+    style: "<gradient:#000000:#3D0066><bold>"
+    icon: ENDER_EYE
+  glacier:
+    display-name: "Glacier"
+    permission: "nameplate.Glacier"
+    style: "<gradient:#83A4D4:#B6FBFF><bold>"
+    icon: BLUE_ICE
+  inferno:
+    display-name: "Inferno"
+    permission: "nameplate.Inferno"
+    style: "<gradient:#F00000:#DC281E><bold>"
+    icon: MAGMA_CREAM
+  storm:
+    display-name: "Storm"
+    permission: "nameplate.Storm"
+    style: "<#4A5A6A><bold>"
+    icon: TRIDENT
+  venom:
+    display-name: "Venom"
+    permission: "nameplate.Venom"
+    style: "<gradient:#3D0066:#7CFF3B><bold>"
+    icon: SPIDER_EYE
+  celestial:
+    display-name: "Celestial"
+    permission: "nameplate.Celestial"
+    style: "<gradient:#4B79A1:#283E51><bold>"
+    icon: NETHER_STAR
+  bloodmoon:
+    display-name: "Bloodmoon"
+    permission: "nameplate.Bloodmoon"
+    style: "<gradient:#870000:#190A05><bold>"
+    icon: REDSTONE
+  seraph:
+    display-name: "Seraph"
+    permission: "nameplate.Seraph"
+    style: "<gradient:#FFFFFF:#FFD700><bold>"
+    icon: FEATHER
+  abyssal:
+    display-name: "Abyssal"
+    permission: "nameplate.Abyssal"
+    style: "<gradient:#000C40:#607D8B><bold>"
+    icon: HEART_OF_THE_SEA
+  ember:
+    display-name: "Ember"
+    permission: "nameplate.Ember"
+    style: "<gradient:#F09819:#FF512F><bold>"
+    icon: BLAZE_POWDER
+  glitch:
+    display-name: "Glitch"
+    permission: "nameplate.Glitch"
+    style: "<gradient:#00FF87:#60EFFF:#0061FF><bold>"
+    icon: ENDER_PEARL
+  arcane:
+    display-name: "Arcane"
+    permission: "nameplate.Arcane"
+    style: "<gradient:#654EA3:#EAAFC8><bold>"
+    icon: ENCHANTED_BOOK
+  granite:
+    display-name: "Granite"
+    permission: "nameplate.Granite"
+    style: "<#9E7B6C><bold>"
+    icon: POLISHED_GRANITE
+  cinder:
+    display-name: "Cinder"
+    permission: "nameplate.Cinder"
+    style: "<gradient:#232526:#FF512F><bold>"
+    icon: COAL
+  windswept:
+    display-name: "Windswept"
+    permission: "nameplate.Windswept"
+    style: "<gradient:#E0EAFC:#CFDEF3><bold>"
+    icon: PHANTOM_MEMBRANE
+  thunder:
+    display-name: "Thunder"
+    permission: "nameplate.Thunder"
+    style: "<gradient:#FFD200:#F7971E><bold>"
+    icon: LIGHTNING_ROD
+  spectral:
+    display-name: "Spectral"
+    permission: "nameplate.Spectral"
+    style: "<gradient:#E6DADA:#274046><bold>"
+    icon: GHAST_TEAR
+  royal_navy:
+    display-name: "Royal Navy"
+    permission: "nameplate.Royal Navy"
+    style: "<gradient:#000428:#004E92><bold>"
+    icon: TRIDENT
+  molten:
+    display-name: "Molten"
+    permission: "nameplate.Molten"
+    style: "<gradient:#FF8008:#FFC837><bold>"
+    icon: LAVA_BUCKET
+  overgrowth:
+    display-name: "Overgrowth"
+    permission: "nameplate.Overgrowth"
+    style: "<gradient:#134E5E:#71B280><bold>"
+    icon: MOSS_BLOCK
+  eclipse:
+    display-name: "Eclipse"
+    permission: "nameplate.Eclipse"
+    style: "<gradient:#0F0C29:#302B63:#24243E><bold>"
+    icon: ECHO_SHARD
+  frostbite:
+    display-name: "Frostbite"
+    permission: "nameplate.Frostbite"
+    style: "<gradient:#00C6FB:#005BEA><bold>"
+    icon: SNOWBALL
+  sunfire:
+    display-name: "Sunfire"
+    permission: "nameplate.Sunfire"
+    style: "<gradient:#FDC830:#F37335><bold>"
+    icon: TORCH
+  wraith:
+    display-name: "Wraith"
+    permission: "nameplate.Wraith"
+    style: "<gradient:#4B134F:#C94B4B><bold>"
+    icon: SOUL_LANTERN
+  paragon:
+    display-name: "Paragon"
+    permission: "nameplate.Paragon"
+    style: "<gradient:#FFFFFF:#4BD9FF><bold>"
+    icon: DIAMOND
+  radiant:
+    display-name: "Radiant"
+    permission: "nameplate.Radiant"
+    style: "<gradient:#FFECD2:#FCB69F><bold>"
+    icon: GLOWSTONE_DUST
+  tempest:
+    display-name: "Tempest"
+    permission: "nameplate.Tempest"
+    style: "<gradient:#3A6073:#16222A><bold>"
+    icon: PHANTOM_MEMBRANE
+  monarch:
+    display-name: "Monarch"
+    permission: "nameplate.Monarch"
+    style: "<gradient:#F7971E:#FFD200><bold>"
+    icon: GOLDEN_CARROT
+  quantum:
+    display-name: "Quantum"
+    permission: "nameplate.Quantum"
+    style: "<gradient:#89216B:#DA4453><bold>"
+    icon: END_CRYSTAL
+
+tags:
+  vip:
+    display-name: "VIP"
+    permission: "tag.VIP"
+    badge: "<#FFD700><bold>[VIP] </bold>"
+    icon: NAME_TAG
+  celestial:
+    display-name: "Celestial"
+    permission: "tag.Celestial"
+    badge: "<gradient:#a855f7:#ec4899><bold>[CELESTIAL] </bold></gradient>"
+    icon: NETHER_STAR
+  mvp:
+    display-name: "MVP"
+    permission: "tag.MVP"
+    badge: "<#3BC9FF><bold>[MVP] </bold>"
+    icon: DIAMOND
+  legend:
+    display-name: "Legend"
+    permission: "tag.Legend"
+    badge: "<gradient:#FF5F6D:#FFC371><bold>[LEGEND] </bold>"
+    icon: NETHER_STAR
+  elite:
+    display-name: "Elite"
+    permission: "tag.Elite"
+    badge: "<#9B3BFF><bold>[ELITE] </bold>"
+    icon: AMETHYST_CLUSTER
+  champion:
+    display-name: "Champion"
+    permission: "tag.Champion"
+    badge: "<#FF8C3B><bold>[CHAMPION] </bold>"
+    icon: GOLDEN_HELMET
+  pro:
+    display-name: "Pro"
+    permission: "tag.Pro"
+    badge: "<#3BFF9C><bold>[PRO] </bold>"
+    icon: IRON_SWORD
+  ace:
+    display-name: "Ace"
+    permission: "tag.Ace"
+    badge: "<#FF3B5C><bold>[ACE] </bold>"
+    icon: ARROW
+  titan:
+    display-name: "Titan"
+    permission: "tag.Titan"
+    badge: "<#5C5C6E><bold>[TITAN] </bold>"
+    icon: NETHERITE_INGOT
+  mythic:
+    display-name: "Mythic"
+    permission: "tag.Mythic"
+    badge: "<gradient:#DC1FFF:#00FFA3><bold>[MYTHIC] </bold>"
+    icon: DRAGON_EGG
+  immortal:
+    display-name: "Immortal"
+    permission: "tag.Immortal"
+    badge: "<gradient:#FFF6B7:#FFD700><bold>[IMMORTAL] </bold>"
+    icon: TOTEM_OF_UNDYING
+  sovereign:
+    display-name: "Sovereign"
+    permission: "tag.Sovereign"
+    badge: "<#AA55FF><bold>[SOVEREIGN] </bold>"
+    icon: BEACON
+  apex:
+    display-name: "Apex"
+    permission: "tag.Apex"
+    badge: "<gradient:#00C6FF:#0072FF><bold>[APEX] </bold>"
+    icon: DIAMOND_SWORD
+  rookie:
+    display-name: "Rookie"
+    permission: "tag.Rookie"
+    badge: "<#8BC34A><bold>[ROOKIE] </bold>"
+    icon: WOODEN_SWORD
+  veteran:
+    display-name: "Veteran"
+    permission: "tag.Veteran"
+    badge: "<#607D8B><bold>[VETERAN] </bold>"
+    icon: IRON_CHESTPLATE
+  hero:
+    display-name: "Hero"
+    permission: "tag.Hero"
+    badge: "<gradient:#FF9A00:#FFD700><bold>[HERO] </bold>"
+    icon: SHIELD
+  warlord:
+    display-name: "Warlord"
+    permission: "tag.Warlord"
+    badge: "<#B71C1C><bold>[WARLORD] </bold>"
+    icon: NETHERITE_AXE
+  overlord:
+    display-name: "Overlord"
+    permission: "tag.Overlord"
+    badge: "<gradient:#232526:#414345><bold>[OVERLORD] </bold>"
+    icon: WITHER_SKELETON_SKULL
+  phantom:
+    display-name: "Phantom"
+    permission: "tag.Phantom"
+    badge: "<#6A1B9A><bold>[PHANTOM] </bold>"
+    icon: PHANTOM_MEMBRANE
+  guardian:
+    display-name: "Guardian"
+    permission: "tag.Guardian"
+    badge: "<#00838F><bold>[GUARDIAN] </bold>"
+    icon: PRISMARINE_SHARD
+  sage:
+    display-name: "Sage"
+    permission: "tag.Sage"
+    badge: "<#4CAF50><bold>[SAGE] </bold>"
+    icon: ENCHANTED_BOOK
+  ranger:
+    display-name: "Ranger"
+    permission: "tag.Ranger"
+    badge: "<#2E7D32><bold>[RANGER] </bold>"
+    icon: BOW
+  breaker:
+    display-name: "Breaker"
+    permission: "tag.Breaker"
+    badge: "<#D84315><bold>[BREAKER] </bold>"
+    icon: NETHERITE_PICKAXE
+  collector:
+    display-name: "Collector"
+    permission: "tag.Collector"
+    badge: "<#8D6E63><bold>[COLLECTOR] </bold>"
+    icon: CHEST
+  tycoon:
+    display-name: "Tycoon"
+    permission: "tag.Tycoon"
+    badge: "<gradient:#FFD700:#FFF6B7><bold>[TYCOON] </bold>"
+    icon: GOLD_BLOCK
+  whale:
+    display-name: "Whale"
+    permission: "tag.Whale"
+    badge: "<gradient:#00C6FF:#0072FF><bold>[WHALE] </bold>"
+    icon: HEART_OF_THE_SEA
+  founder:
+    display-name: "Founder"
+    permission: "tag.Founder"
+    badge: "<gradient:#FFF6B7:#FFD700:#FFF6B7><bold>[FOUNDER] </bold>"
+    icon: BEACON
+  developer:
+    display-name: "Developer"
+    permission: "tag.Developer"
+    badge: "<#00E676><bold>[DEV] </bold>"
+    icon: COMMAND_BLOCK
+  moderator:
+    display-name: "Moderator"
+    permission: "tag.Moderator"
+    badge: "<#2196F3><bold>[MOD] </bold>"
+    icon: IRON_SWORD
+  admin:
+    display-name: "Admin"
+    permission: "tag.Admin"
+    badge: "<#F44336><bold>[ADMIN] </bold>"
+    icon: NETHERITE_SWORD
+  streamer:
+    display-name: "Streamer"
+    permission: "tag.Streamer"
+    badge: "<gradient:#833AB4:#FD1D1D:#FCB045><bold>[STREAMER] </bold>"
+    icon: REDSTONE_LAMP
+  youtuber:
+    display-name: "YouTuber"
+    permission: "tag.YouTuber"
+    badge: "<#FF0000><bold>[YOUTUBE] </bold>"
+    icon: REDSTONE_BLOCK
+  og:
+    display-name: "OG"
+    permission: "tag.OG"
+    badge: "<gradient:#4B79A1:#283E51><bold>[OG] </bold>"
+    icon: BEDROCK
+  grinder:
+    display-name: "Grinder"
+    permission: "tag.Grinder"
+    badge: "<#795548><bold>[GRINDER] </bold>"
+    icon: IRON_PICKAXE
+  luckster:
+    display-name: "Luckster"
+    permission: "tag.Luckster"
+    badge: "<gradient:#00FFA3:#DC1FFF><bold>[LUCKSTER] </bold>"
+    icon: RABBIT_FOOT
+  speedster:
+    display-name: "Speedster"
+    permission: "tag.Speedster"
+    badge: "<#FFEB3B><bold>[SPEEDSTER] </bold>"
+    icon: SUGAR
+  tank:
+    display-name: "Tank"
+    permission: "tag.Tank"
+    badge: "<#546E7A><bold>[TANK] </bold>"
+    icon: SHIELD
+  assassin:
+    display-name: "Assassin"
+    permission: "tag.Assassin"
+    badge: "<#212121><bold>[ASSASSIN] </bold>"
+    icon: IRON_SWORD
+  champion_prime:
+    display-name: "Champion Prime"
+    permission: "tag.Champion Prime"
+    badge: "<gradient:#FFD700:#FF8C00:#FFD700><bold>[PRIME] </bold>"
+    icon: NETHERITE_HELMET
+  ascended:
+    display-name: "Ascended"
+    permission: "tag.Ascended"
+    badge: "<gradient:#FFFFFF:#00FFA3:#DC1FFF><bold>[ASCENDED] </bold>"
+    icon: NETHER_STAR
+  eternal:
+    display-name: "Eternal"
+    permission: "tag.Eternal"
+    badge: "<gradient:#000000:#FFD700><bold>[ETERNAL] </bold>"
+    icon: END_CRYSTAL

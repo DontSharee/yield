@@ -1,0 +1,11 @@
+# Masteries - 4 passive per-activity XP tracks (PACKS/ENCHANTS/MINING/
+# COMBAT), leveling automatically just from doing that activity, no
+# purchase gate. Each level grants +bonus-per-level to a small related
+# stat (PACKS -> luck, MINING -> coins, COMBAT -> damage, ENCHANTS ->
+# gems) - meaningful by max-level, never disruptive below it. All 4
+# tracks share this one curve. Run /admin packs reload after editing.
+level-curve:
+  base: 50
+  exponent: 1.3
+max-level: 100
+bonus-per-level: 0.0005

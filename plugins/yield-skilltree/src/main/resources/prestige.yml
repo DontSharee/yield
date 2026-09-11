@@ -1,0 +1,6 @@
+# Rebirths required before Prestiging becomes available. Prestiging fully
+# resets Coins and Rebirth count back to 0 (Bag/equipped pets/fusions are
+# never touched) and grants "points-per-prestige" Prestige Points to spend
+# in the Prestige Upgrades tree (/prestigeupgrades).
+rebirths-required: 100
+points-per-prestige: 1

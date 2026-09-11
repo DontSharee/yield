@@ -1,0 +1,36 @@
+# One entry per rankable stat. "field" is the dotted path into the shared
+# "playerData" Mongo collection - every plugin's data lives under its own
+# top-level key on one document (yield-packs' is "packs", and every
+# satellite plugin - quests/skilltree/rebirth - reuses that same profile,
+# so nearly everything lives under "packs.*"). "type" tells the leaderboard
+# how to parse/compare/format the raw value:
+#   BIGINT_STRING - currency fields (stored as strings for unbounded precision)
+#   LONG / INT    - plain numeric counters
+#
+# Add a new stat here any time a new persisted field is worth ranking - no
+# code changes needed. Run /admin leaderboards reload after editing.
+stats:
+  coins:
+    field: "packs.coins"
+    type: BIGINT_STRING
+  gems:
+    field: "packs.gems"
+    type: BIGINT_STRING
+  rebirths:
+    field: "packs.rebirths"
+    type: INT
+  prestiges:
+    field: "packs.prestiges"
+    type: INT
+  prestige_points:
+    field: "packs.prestigePoints"
+    type: BIGINT_STRING
+  cube_kills:
+    field: "packs.lifetimeCubeKills"
+    type: LONG
+  coins_earned:
+    field: "packs.lifetimeCoinsEarned"
+    type: BIGINT_STRING
+  boss_damage:
+    field: "packs.lifetimeBossDamage"
+    type: LONG

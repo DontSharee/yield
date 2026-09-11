@@ -1,6 +1,8 @@
 package me.dontshare.yieldcore.text;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -29,6 +31,9 @@ public final class Formatting {
     private static final String NORMAL_LETTERS = "abcdefghijklmnopqrstuvwxyz";
     private static final String TINY_LETTERS = "ᴀʙᴄᴅᴇғɢʜɪᴊᴋʟᴍɴᴏᴘǫʀsᴛᴜᴠᴡxʏᴢ";
 
+    private static final int[] ROMAN_VALUES = {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
+    private static final String[] ROMAN_SYMBOLS = {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
+
     public enum Style {
         /** e.g. 1500 -> "1.5K" */
         ABBREVIATED,
@@ -56,6 +61,55 @@ public final class Formatting {
             case ABBREVIATED -> abbreviate(n, round);
             case SPACED -> spaced(n);
         };
+    }
+
+    // --- BigInteger overloads ---
+    //
+    // A double only has exact-integer precision up to 2^53 (~9.007e15) -
+    // far below what a currency balance meant to reach the "Sst" suffix
+    // (~10^115) needs. These overloads never round-trip the FULL value
+    // through double: spaced() works on the exact digit string, and
+    // abbreviate's scaled mantissa is always < 1000 by construction (via
+    // BigDecimal division, not a double cast of the original value) before
+    // it's ever turned into a double for display.
+
+    public static String format(BigInteger n) {
+        return format(n, Style.ABBREVIATED, false);
+    }
+
+    public static String format(BigInteger n, Style style) {
+        return format(n, style, false);
+    }
+
+    public static String format(BigInteger n, boolean round) {
+        return format(n, Style.ABBREVIATED, round);
+    }
+
+    public static String format(BigInteger n, Style style, boolean round) {
+        return switch (style) {
+            case ABBREVIATED -> abbreviateBig(n, round);
+            case SPACED -> spaced(n);
+        };
+    }
+
+    /** Comma-groups an exact BigInteger, e.g. 123456789012345678901234567890 -> "123,456,789,012,345,678,901,234,567,890". */
+    public static String spaced(BigInteger n) {
+        return groupThousands(n.toString());
+    }
+
+    private static String abbreviateBig(BigInteger n, boolean round) {
+        BigInteger abs = n.abs();
+        if (abs.compareTo(BigInteger.valueOf(1000)) < 0) {
+            return n.toString();
+        }
+        int digits = abs.toString().length();
+        int step = (digits - 1) / 3;
+        String suffix = (step >= 1 && step <= SUFFIXES.length) ? SUFFIXES[step - 1] : "";
+
+        BigDecimal divisor = BigDecimal.TEN.pow(step * 3);
+        BigDecimal scaled = new BigDecimal(n).divide(divisor, 2, RoundingMode.DOWN);
+        String value = round ? String.valueOf(Math.round(scaled.doubleValue())) : trimTrailingZeros(scaled.doubleValue());
+        return value + suffix;
     }
 
     private static String abbreviate(double n, boolean round) {
@@ -148,10 +202,74 @@ public final class Formatting {
         return index - 1 < UNFORMAT_SUFFIXES.length && UNFORMAT_SUFFIXES[index - 1].equals(upperSuffix);
     }
 
+    /**
+     * Same shorthand as {@link #unformat} (e.g. "1.5b" -&gt; 1500000000),
+     * but exact - computed via {@link BigDecimal} instead of {@code double},
+     * so it never loses precision the way a double-based parse would once
+     * values get large (see the BigInteger currency migration this mirrors).
+     * Throws {@link NumberFormatException} for a non-numeric base or an
+     * unrecognized suffix, same contract as {@code new BigInteger(String)}.
+     */
+    public static BigInteger unformatToBigInteger(String raw) {
+        String trimmed = raw.trim();
+        String[] parts = trimmed.split("(?<=[0-9])(?=[A-Za-z])", 2);
+        BigDecimal base = new BigDecimal(parts[0]);
+        if (parts.length < 2 || parts[1].isEmpty()) {
+            return base.toBigInteger();
+        }
+        String suffix = parts[1];
+        for (int i = 0; i < SUFFIXES.length; i++) {
+            if (SUFFIXES[i].equalsIgnoreCase(suffix)) {
+                return base.multiply(BigDecimal.TEN.pow(3 * (i + 1))).toBigInteger();
+            }
+        }
+        throw new NumberFormatException("Unknown suffix '" + suffix + "'");
+    }
+
+    /**
+     * Standard subtractive-notation Roman numerals, e.g. 5 -&gt; "V", 2024 ->
+     * "MMXXIV" - for {@code n <= 0} returns the plain digits (no such thing
+     * as a zero/negative Roman numeral). Never caps out: for an
+     * "infinite rank"-style value in the thousands, "M" just keeps
+     * repeating (e.g. 4000 -> "MMMM") - unconventional past the classical
+     * 3-repeat cap, but unambiguous and keeps working at any size, which a
+     * fixed vocabulary (only up to 3999) can't.
+     */
+    public static String toRoman(int n) {
+        if (n <= 0) {
+            return String.valueOf(n);
+        }
+        StringBuilder result = new StringBuilder();
+        int remaining = n;
+        for (int i = 0; i < ROMAN_VALUES.length; i++) {
+            while (remaining >= ROMAN_VALUES[i]) {
+                remaining -= ROMAN_VALUES[i];
+                result.append(ROMAN_SYMBOLS[i]);
+            }
+        }
+        return result.toString();
+    }
+
+    private static final BigDecimal ONE_MILLION = BigDecimal.valueOf(1_000_000);
+
+    /**
+     * Rounds to 3 decimal places (dropping decimals entirely at 1 million
+     * and above) before rendering - a value like {@code damage * levelMultiplier}
+     * routinely lands on a double that's one ULP off a "clean" number (e.g.
+     * {@code 12.600000000000001}), and {@code Double.toString}'s shortest
+     * round-tripping representation of THAT exact bit pattern is the long,
+     * ugly string a raw {@code BigDecimal.valueOf(value).stripTrailingZeros()}
+     * would show verbatim - actually rounding first (not just trimming
+     * zeros afterward) is what fixes that, for every caller of this method.
+     */
     private static String trimTrailingZeros(double value) {
         if (value == 0) {
             return "0";
         }
-        return BigDecimal.valueOf(value).stripTrailingZeros().toPlainString();
+        BigDecimal exact = BigDecimal.valueOf(value);
+        if (exact.abs().compareTo(ONE_MILLION) >= 0) {
+            return exact.setScale(0, RoundingMode.HALF_UP).toPlainString();
+        }
+        return exact.setScale(3, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString();
     }
 }

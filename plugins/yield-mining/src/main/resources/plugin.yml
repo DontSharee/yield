@@ -1,0 +1,8 @@
+name: yield-mining
+version: '${version}'
+main: me.dontshare.yieldmining.YieldMining
+api-version: '26.2'
+depend: [yield-core, yield-packs]
+permissions:
+  yieldmining.admin:
+    default: op

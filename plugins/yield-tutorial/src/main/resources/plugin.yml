@@ -1,0 +1,5 @@
+name: yield-tutorial
+version: '${version}'
+main: me.dontshare.yieldtutorial.YieldTutorial
+api-version: '26.2'
+depend: [yield-packs, yield-zones]

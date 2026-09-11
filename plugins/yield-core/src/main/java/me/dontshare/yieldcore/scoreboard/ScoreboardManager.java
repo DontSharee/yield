@@ -106,6 +106,20 @@ public final class ScoreboardManager {
         return "yl_line_" + index;
     }
 
+    /**
+     * The Scoreboard object this specific player is actually bound to right
+     * now (creating it on first call, same as every other line here) -
+     * every player gets their own private board for the sidebar (see class
+     * Javadoc), so a real, everyone-visible {@link Team} (e.g. a nameplate
+     * cosmetic) has to be registered on THIS object for each viewer, not on
+     * {@code Bukkit.getScoreboardManager().getMainScoreboard()} - a client
+     * only ever renders the one scoreboard it's currently assigned, and
+     * {@link Player#setScoreboard} above means that's never the main one.
+     */
+    public Scoreboard scoreboardFor(Player player) {
+        return boardFor(player);
+    }
+
     private Scoreboard boardFor(Player player) {
         return boards.computeIfAbsent(player.getUniqueId(), id -> {
             Scoreboard newBoard = Bukkit.getScoreboardManager().getNewScoreboard();

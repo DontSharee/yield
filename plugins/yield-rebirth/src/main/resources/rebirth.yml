@@ -2,5 +2,14 @@
 # Rebirthing only deducts the cost of the rebirth(s) actually taken from the
 # player's coin balance - it never resets the balance to zero, and never
 # touches the bag or equipped pets.
-base-cost: 10000
-growth: 1.5
+#
+# Tuned for a fast-paced, high-economy feel: a low base-cost and a shallow
+# growth rate mean early rebirths come cheap and often (rather than the old
+# 1.5x-per-rebirth curve, where each one cost half again as much as the
+# last), and coin-bonus-per-rebirth is 5x the old 1% - big, escalating
+# multipliers are the whole point of grinding this deep.
+base-cost: 2500
+growth: 1.12
+# The permanent coin-income bonus per rebirth, e.g. 0.05 = +5% per rebirth
+# (rebirth 20 = +100% coins, rebirth 100 = +500%). See RebirthService#coinMultiplier.
+coin-bonus-per-rebirth: 0.05

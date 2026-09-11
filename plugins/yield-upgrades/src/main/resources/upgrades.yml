@@ -1,0 +1,115 @@
+# Player upgrades - a handful of global per-player stat boosts, bought by
+# physically right-clicking a fake button in the world (no GUI at all - see
+# UpgradeStationDisplay). Run /admin upgrades reload after editing this file.
+#
+# "types:" defines the upgrades themselves - id, effect, per-level value(s),
+# max level, and a cost curve. A player's LEVEL in each type is global and
+# persists across every zone (PackPlayerProfile#getUpgradeLevels).
+#
+# "stations:" places physical stations in the world. The same type can
+# appear at several zones with different "cap" values - the global level
+# above only caps out at whichever station's cap you're currently pushing
+# against, so unlocking a later zone with a higher cap lets you keep going
+# on a stat you were already maxed on elsewhere.
+#
+# Cost = cost-base * cost-growth^level (an exponential per-level curve -
+# many small, frequent purchases, unlike the rarer big milestone jumps
+# player/pet leveling uses a power curve for).
+
+types:
+  coin_boost:
+    display-name: "&6Coin Boost"
+    icon: GOLD_INGOT
+    effect: COIN_MULTIPLIER
+    value-per-level: 0.01      # +1% coins per level
+    max-level: 100
+    cost-base: 500
+    cost-growth: 1.12
+  gem_boost:
+    display-name: "&bGem Boost"
+    icon: EMERALD
+    effect: GEM_BOOST
+    chance-per-level: 0.001    # +0.1% gem drop chance per level
+    flat-per-level: 0.02       # +0.02 flat gems per level (rounded at payout)
+    max-level: 100
+    cost-base: 800
+    cost-growth: 1.12
+  damage_boost:
+    display-name: "&cDamage Boost"
+    icon: IRON_SWORD
+    effect: DAMAGE_MULTIPLIER
+    value-per-level: 0.01      # +1% damage per level
+    max-level: 100
+    cost-base: 600
+    cost-growth: 1.12
+  rebirth_boost:
+    display-name: "&dRebirth Boost"
+    icon: NETHER_STAR
+    effect: REBIRTH_GRANT_MULTIPLIER
+    value-per-level: 0.01      # +1% bonus EFFECTIVE rebirths granted per rebirth, per level
+    max-level: 50
+    cost-base: 2000
+    cost-growth: 1.15
+  speed_boost:
+    display-name: "&aSpeed Boost"
+    icon: SUGAR
+    effect: PLAYER_SPEED
+    value-per-level: 0.002     # added directly to walk speed (vanilla base 0.2) per level
+    max-level: 20
+    cost-base: 1000
+    cost-growth: 1.1
+  cube_cap_boost:
+    display-name: "&eCube Capacity"
+    icon: CHEST
+    effect: CUBE_CAP_BONUS
+    value-per-level: 1        # +1 concurrent cube slot per level (zones ship with a base of 10)
+    max-level: 10
+    cost-base: 5000
+    cost-growth: 1.3
+  cube_luck_boost:
+    display-name: "&dLucky Cubes"
+    icon: NAUTILUS_SHELL
+    effect: CUBE_BONUS_CHANCE
+    value-per-level: 0.002    # +0.2% chance per level, added to every zone's golden/diamond cube-bonus roll
+    max-level: 25
+    cost-base: 3000
+    cost-growth: 1.15
+  auto_switch_speed:
+    display-name: "&bQuick Reflexes"
+    icon: FEATHER
+    effect: AUTO_SWITCH_SPEED
+    value-per-level: 0.05     # +5% faster Auto Mode target-switching per level
+    max-level: 10
+    cost-base: 4000
+    cost-growth: 1.2
+
+# Stations sit on meadow's own real floor (Y 98, Z 51.5-109.5, see
+# zones.yml) just inside the entrance, spread across the zone's width so
+# they don't crowd each other - adjust to match whatever's actually built
+# there.
+stations:
+  - zone: meadow
+    type: coin_boost
+    cap: 10
+    location: [world, -6, 98, 58, 180, 0]
+  - zone: meadow
+    type: damage_boost
+    cap: 10
+    location: [world, -2, 98, 58, 180, 0]
+  - zone: meadow
+    type: cube_cap_boost
+    cap: 10
+    location: [world, 2, 98, 58, 180, 0]
+  - zone: meadow
+    type: cube_luck_boost
+    cap: 25
+    location: [world, 6, 98, 58, 180, 0]
+  - zone: meadow
+    type: auto_switch_speed
+    cap: 10
+    location: [world, 10, 98, 58, 180, 0]
+  # Add a higher-cap station for the same type once a second zone exists:
+  # - zone: frostpeak
+  #   type: damage_boost
+  #   cap: 20
+  #   location: [world, ...]

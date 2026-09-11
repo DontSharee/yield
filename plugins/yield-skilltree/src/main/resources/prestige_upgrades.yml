@@ -1,0 +1,98 @@
+# The Prestige-Points-funded skill tree, opened with /prestigeupgrades -
+# only earnable by Prestiging (see prestige.yml and /prestige). Same
+# format/mechanics as upgrades.yml - see that file's header comment.
+# Points are scarce (points-per-prestige in prestige.yml), so costs here
+# stay small integers rather than the exponential curves in upgrades.yml.
+currency: PRESTIGE_POINTS
+nodes:
+  prestige_damage:
+    display-name: "&cPrestige Damage"
+    material: NETHERITE_SWORD
+    slot: 1
+    requires: []
+    # Same layout convention as upgrades.yml - see its header comment.
+    max-level: 5
+    cost-formula: "<level>"
+    value-formula: "0.2 * <level>"
+    type: DAMAGE_MULTIPLIER
+  prestige_luck:
+    display-name: "&aPrestige Luck"
+    material: EMERALD
+    slot: 4
+    requires: []
+    max-level: 5
+    cost-formula: "<level>"
+    value-formula: "0.15 * <level>"
+    type: LUCK_MULTIPLIER
+  prestige_coins:
+    display-name: "&6Prestige Gold"
+    material: GOLD_BLOCK
+    slot: 7
+    requires: []
+    max-level: 5
+    cost-formula: "<level>"
+    value-formula: "0.25 * <level>"
+    type: COIN_MULTIPLIER
+  prestige_roll_speed:
+    display-name: "&bPrestige Roll Speed"
+    material: PACKED_ICE
+    slot: 11
+    requires: [prestige_damage]
+    max-level: 5
+    cost-formula: "2 * <level>"
+    value-formula: "0.1 * <level>"
+    type: ROLL_SPEED_MULTIPLIER
+  greater_prestige_damage:
+    display-name: "&4Greater Prestige Damage"
+    material: NETHERITE_AXE
+    slot: 10
+    requires: [prestige_damage]
+    max-level: 5
+    cost-formula: "3 * <level>"
+    value-formula: "0.15 * <level>"
+    type: DAMAGE_MULTIPLIER
+  greater_prestige_luck:
+    display-name: "&2Greater Prestige Luck"
+    material: EMERALD_BLOCK
+    slot: 13
+    requires: [prestige_luck]
+    max-level: 5
+    cost-formula: "3 * <level>"
+    value-formula: "0.1 * <level>"
+    type: LUCK_MULTIPLIER
+  greater_prestige_coins:
+    display-name: "&6Greater Prestige Gold"
+    material: NETHERITE_INGOT
+    slot: 16
+    requires: [prestige_coins]
+    max-level: 5
+    cost-formula: "3 * <level>"
+    value-formula: "0.2 * <level>"
+    type: COIN_MULTIPLIER
+  greater_prestige_roll_speed:
+    display-name: "&bGreater Prestige Roll Speed"
+    material: BLUE_ICE
+    slot: 20
+    requires: [prestige_roll_speed]
+    max-level: 5
+    cost-formula: "4 * <level>"
+    value-formula: "0.08 * <level>"
+    type: ROLL_SPEED_MULTIPLIER
+  ascended_power:
+    display-name: "&4&lAscended Power"
+    material: NETHER_STAR
+    slot: 22
+    requires: [greater_prestige_damage, greater_prestige_coins]
+    max-level: 3
+    cost-formula: "8 * <level>"
+    value-formula: "0.3 * <level>"
+    type: DAMAGE_MULTIPLIER
+  eternal_fortune:
+    display-name: "&2&lEternal Fortune"
+    material: BEACON
+    slot: 30
+    requires: [greater_prestige_luck, greater_prestige_roll_speed]
+    max-level: 3
+    cost-formula: "8 * <level>"
+    value-formula: "0.25 * <level>"
+    type: LUCK_MULTIPLIER

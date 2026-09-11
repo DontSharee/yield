@@ -19,13 +19,13 @@ public final class GuiIcons {
     }
 
     public static ItemStack filler() {
-        return ItemBuilder.of(Material.GRAY_DYE).hideAttributes().hideTooltip().build();
+        return ItemBuilder.of(Material.GRAY_STAINED_GLASS_PANE).hideAttributes().hideTooltip().build();
     }
 
     /** The standard close button - wire its click handler to {@code (clicker, event) -> clicker.closeInventory()}. */
     public static ItemStack closeButton() {
         ItemBuilder builder = ItemBuilder.of(Material.BARRIER).name(MenuLore.buttonName(ACCENT, "CLOSE"));
-        MenuLore.button("navigation", List.of(" &7Close &fthis&7 menu"), ACCENT, "Close Menu", "Click", "Click to Close")
+        MenuLore.button("navigation", List.of(" &7Close &fthis&7 menu"), ACCENT, "Click to Close")
                 .forEach(builder::lore);
         return builder.hideAttributes().build();
     }
@@ -46,10 +46,11 @@ public final class GuiIcons {
         builder.name(enabled ? MenuLore.buttonName(ACCENT, label) : "&7" + label);
         if (enabled) {
             MenuLore.button("navigation", List.of(" &7Go to the " + (forward ? "&fnext" : "&fprevious") + "&7 page"),
-                    ACCENT, (forward ? "Next" : "Previous") + " Page", "Click", "Click to Turn Page"
+                    ACCENT, "Click to Turn Page"
             ).forEach(builder::lore);
         } else {
-            builder.lore("&8" + Formatting.fancyFont("navigation")).lore("").lore(" &7No " + (forward ? "more" : "previous") + " pages");
+            MenuLore.info("navigation", List.of(" &7No " + (forward ? "more" : "previous") + " pages"), ACCENT, List.of())
+                    .forEach(builder::lore);
         }
         return builder.hideAttributes().build();
     }

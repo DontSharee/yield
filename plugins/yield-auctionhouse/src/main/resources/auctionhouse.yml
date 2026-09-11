@@ -1,0 +1,38 @@
+# Player-to-player fixed-price marketplace - list a pet/lootbox/potion for
+# coins or gems, first buyer takes it. No bidding.
+#
+# Everything a sale or a cancelled/expired listing produces (currency, a
+# returned pet, a bought lootbox/potion) is delivered through the
+# Collection Box, never handed over directly - open /auction and check the
+# Collection Box tab (or it's auto-claimed on join). This is deliberate, not
+# a bug: it's what makes the whole system safe against dupes regardless of
+# whether the other party is online, and against client-side packet timing
+# tricks (nothing here is ever granted as a side effect of a single click -
+# every grant is its own separate, atomic claim). Run /admin auction reload
+# after editing.
+
+# Percentage taken out of the sale price when a listing sells - the seller
+# nets (100 - this)%. A real currency sink (the cut is destroyed, not paid
+# to anyone) that discourages spam-listing and wash-trading between two
+# accounts more than it costs a genuine sale.
+sale-tax-percent: 5.0
+
+# How long an unsold listing stays active before it's automatically returned
+# to the seller via the Collection Box.
+listing-duration-hours: 72
+
+# How often the expiry sweep checks for listings past their expiry.
+expiry-sweep-interval-minutes: 5
+
+# Most active listings one player can have at once - keeps the browse
+# screen from being spammable by one player.
+max-active-listings-per-player: 10
+
+# No free listings - closes the obvious "list for 0 to an alt" vector.
+minimum-price: 1
+
+# How often the browse screen's shared listing snapshot refreshes - every
+# player currently browsing shares this ONE query rather than each
+# triggering their own, so this can be kept short without adding real
+# database load.
+browse-refresh-interval-seconds: 3

@@ -1,0 +1,130 @@
+# Daily quests reset at local midnight (the server's system default
+# timezone). Run /admin quests reload after editing this file.
+#
+# Quests are organized into named CATEGORIES (add as many as you want -
+# purely config-driven, no code changes needed). Each category offers
+# exactly 3 tiers - easy/medium/hard - and a player commits to ONE of them
+# per category per day (see /quests): pick a tier, and it's locked in until
+# the next reset. Miss the goal by then and you get nothing for that
+# category that day; hit it and claim the reward.
+#
+# Rewards: "reward-coins"/"reward-gems" are the baseline. Two more are
+# optional, both default to none:
+#   reward-credits - a bonus of the auction house's own credits currency
+#   reward-pet     - grants ONE guaranteed level-1 instance of this item id,
+#                     straight into the Bag (doesn't count toward that pet's
+#                     pack collection progress - see QuestService#claim)
+#
+# Each tier's "action" is what counts toward its "goal" - the full list of
+# trackable actions:
+#   OPEN_PACK      - a pack opened (any pack)
+#   OBTAIN_PET     - a pet obtained from an opened pack
+#   EQUIP_PET      - a pet equipped
+#   UNEQUIP_PET    - a pet unequipped
+#   FUSE_PET       - a pet fused into the next tier
+#   FEED_CANDY     - a candy fed to a pet
+#   LEVEL_UP_PET   - a pet gaining a level (counts each level gained, not each kill)
+#   KILL_CUBE      - an ore cube killed in a zone
+#   EARN_COINS     - coins earned from ore cube kills
+#   ENTER_ZONE     - walking into a zone
+#   UNLOCK_ZONE    - purchasing a locked zone's unlock
+#   REBIRTH        - a rebirth taken
+#   PRESTIGE       - a prestige taken
+#   BUY_SKILL_NODE - a skill tree node leveled up (manual buy or auto-buy)
+categories:
+  combat:
+    display-name: "&cCombat"
+    icon: IRON_SWORD
+    easy:
+      display-name: "&aCube Crusher I"
+      action: KILL_CUBE
+      goal: 10
+      reward-coins: 500
+      reward-gems: 0
+    medium:
+      display-name: "&6Cube Crusher II"
+      action: KILL_CUBE
+      goal: 30
+      reward-coins: 1500
+      reward-gems: 1
+      reward-credits: 5
+    hard:
+      display-name: "&cCube Crusher III"
+      action: KILL_CUBE
+      goal: 75
+      reward-coins: 4000
+      reward-gems: 3
+      reward-credits: 15
+
+  economy:
+    display-name: "&6Economy"
+    icon: GOLD_INGOT
+    easy:
+      display-name: "&aPack Opener I"
+      action: OPEN_PACK
+      goal: 5
+      reward-coins: 400
+      reward-gems: 0
+    medium:
+      display-name: "&6Pack Opener II"
+      action: OPEN_PACK
+      goal: 15
+      reward-coins: 1200
+      reward-gems: 1
+      reward-credits: 5
+    hard:
+      display-name: "&cPack Opener III"
+      action: OPEN_PACK
+      goal: 40
+      reward-coins: 3500
+      reward-gems: 2
+      reward-credits: 15
+
+  collection:
+    display-name: "&dCollection"
+    icon: NAUTILUS_SHELL
+    easy:
+      display-name: "&aFusion Starter"
+      action: FUSE_PET
+      goal: 1
+      reward-coins: 600
+      reward-gems: 0
+    medium:
+      display-name: "&6Fusion Adept"
+      action: FUSE_PET
+      goal: 3
+      reward-coins: 1800
+      reward-gems: 1
+      reward-credits: 5
+    hard:
+      display-name: "&cFusion Master"
+      action: FUSE_PET
+      goal: 8
+      reward-coins: 5000
+      reward-gems: 3
+      reward-credits: 15
+      reward-pet: diamond_wolf
+
+  progression:
+    display-name: "&bProgression"
+    icon: EXPERIENCE_BOTTLE
+    easy:
+      display-name: "&aLevel Chaser I"
+      action: LEVEL_UP_PET
+      goal: 5
+      reward-coins: 500
+      reward-gems: 0
+    medium:
+      display-name: "&6Level Chaser II"
+      action: LEVEL_UP_PET
+      goal: 15
+      reward-coins: 1500
+      reward-gems: 1
+      reward-credits: 5
+    hard:
+      display-name: "&cLevel Chaser III"
+      action: LEVEL_UP_PET
+      goal: 40
+      reward-coins: 4000
+      reward-gems: 2
+      reward-credits: 15

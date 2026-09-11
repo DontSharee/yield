@@ -45,7 +45,7 @@ public final class IndexGui {
         int totalRows = contentRows + 1;
         double luckPercent = (luckService.totalLuckMultiplier(profile) - 1.0) * 100;
 
-        var builder = Gui.builder(totalRows, "<#4BD9FF><bold>Index</bold> <gray>(+" + Math.round(luckPercent) + "% luck)");
+        var builder = Gui.builder(totalRows, "Index (+" + Math.round(luckPercent) + "% luck)");
         int slot = 0;
         for (PackDefinition pack : packs) {
             if (slot >= contentRows * 9) {
@@ -71,8 +71,6 @@ public final class IndexGui {
                 "collection",
                 List.of(" &7Track which pets", " &7you've collected", " &7from &fthis pack&7!"),
                 ACCENT,
-                "View Pack",
-                "Click",
                 "Click to Open Pack"
         ).forEach(builder::lore);
         return builder

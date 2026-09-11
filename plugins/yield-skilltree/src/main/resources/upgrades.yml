@@ -1,0 +1,164 @@
+# The Coins-funded general skill tree, opened with /upgrades. Nodes render
+# at their configured "slot" (0-53, a standard 6-row chest layout) - a node
+# only becomes buyable once every id in its "requires" list is owned
+# (level >= 1). "cost-formula"/"value-formula" are arbitrary math
+# expressions evaluated with <level> (the level being bought, 1-based) and
+# <max_level> substituted - e.g. "400 * <level>^1.6". Run
+# /admin skilltree reload after editing this file.
+#
+# node "type" drives what the node's value feeds into (see NodeType):
+#   DAMAGE_MULTIPLIER / COIN_MULTIPLIER / LUCK_MULTIPLIER / ROLL_SPEED_MULTIPLIER
+#     - every owned node of that type (across BOTH trees) sums into one
+#       running total, consumed as (1.0 + total).
+#   EQUIP_SLOTS - summed the same way, consumed as (base cap + total).
+currency: COINS
+nodes:
+  roll_speed:
+    display-name: "&bRoll Speed"
+    material: CLOCK
+    slot: 4
+    requires: []
+    # This tree's layout: three root lanes at columns 1/4/7 (luck/roll/coin),
+    # each branching straight down its own column - a node always sits
+    # directly below its single prerequisite; a node with TWO prerequisites
+    # sits in the column between them. Keep this convention when adding
+    # nodes, or the tree turns back into an unreadable scatter.
+    max-level: 10
+    cost-formula: "300 * <level>^1.5"
+    value-formula: "0.05 * <level>"
+    type: ROLL_SPEED_MULTIPLIER
+  luck_boost:
+    display-name: "&aLuck"
+    material: EMERALD
+    slot: 1
+    requires: []
+    max-level: 5
+    cost-formula: "800 * <level>^1.8"
+    value-formula: "0.03 * <level>"
+    type: LUCK_MULTIPLIER
+  coin_boost:
+    display-name: "&6Coin Boost"
+    material: GOLD_INGOT
+    slot: 7
+    requires: []
+    max-level: 5
+    cost-formula: "1500 * <level>^1.7"
+    value-formula: "0.1 * <level>"
+    type: COIN_MULTIPLIER
+  greater_luck:
+    display-name: "&2Greater Luck"
+    material: RABBIT_FOOT
+    slot: 10
+    requires: [luck_boost]
+    max-level: 5
+    cost-formula: "4000 * <level>^1.9"
+    value-formula: "0.04 * <level>"
+    type: LUCK_MULTIPLIER
+  pet_slot:
+    display-name: "&dExtra Pet Slot"
+    material: BONE
+    slot: 13
+    requires: [roll_speed]
+    max-level: 4
+    cost-formula: "2500 * <level>^2.2"
+    value-formula: "1"
+    type: EQUIP_SLOTS
+  golden_touch:
+    display-name: "&6Golden Touch"
+    material: GOLD_BLOCK
+    slot: 16
+    requires: [coin_boost]
+    max-level: 5
+    cost-formula: "5000 * <level>^1.8"
+    value-formula: "0.08 * <level>"
+    type: COIN_MULTIPLIER
+  fortune_seeker:
+    display-name: "&2Fortune Seeker"
+    material: NAUTILUS_SHELL
+    slot: 19
+    requires: [greater_luck]
+    max-level: 5
+    cost-formula: "10000 * <level>^2.0"
+    value-formula: "0.05 * <level>"
+    type: LUCK_MULTIPLIER
+  swift_rolling:
+    display-name: "&bSwift Rolling"
+    material: SUGAR
+    slot: 22
+    requires: [pet_slot]
+    max-level: 8
+    cost-formula: "6000 * <level>^1.6"
+    value-formula: "0.04 * <level>"
+    type: ROLL_SPEED_MULTIPLIER
+  second_pet_slot:
+    display-name: "&dSecond Pet Slot"
+    material: BONE_BLOCK
+    slot: 23
+    requires: [pet_slot, coin_boost]
+    max-level: 3
+    cost-formula: "20000 * <level>^2.4"
+    value-formula: "1"
+    type: EQUIP_SLOTS
+  pet_damage:
+    display-name: "&cPet Training"
+    material: IRON_SWORD
+    slot: 17
+    requires: [coin_boost]
+    max-level: 6
+    cost-formula: "7000 * <level>^1.8"
+    value-formula: "0.03 * <level>"
+    type: DAMAGE_MULTIPLIER
+  midas_blessing:
+    display-name: "&6Midas Blessing"
+    material: GOLDEN_APPLE
+    slot: 25
+    requires: [golden_touch]
+    max-level: 5
+    cost-formula: "18000 * <level>^1.9"
+    value-formula: "0.06 * <level>"
+    type: COIN_MULTIPLIER
+  hyper_rolling:
+    display-name: "&bHyper Rolling"
+    material: CLOCK
+    slot: 31
+    requires: [swift_rolling]
+    max-level: 5
+    cost-formula: "25000 * <level>^1.7"
+    value-formula: "0.03 * <level>"
+    type: ROLL_SPEED_MULTIPLIER
+  third_pet_slot:
+    display-name: "&dThird Pet Slot"
+    material: BONE_BLOCK
+    slot: 32
+    requires: [second_pet_slot]
+    max-level: 2
+    cost-formula: "60000 * <level>^2.5"
+    value-formula: "1"
+    type: EQUIP_SLOTS
+  berserker:
+    display-name: "&cBerserker"
+    material: DIAMOND_SWORD
+    slot: 26
+    requires: [pet_damage]
+    max-level: 6
+    cost-formula: "22000 * <level>^1.9"
+    value-formula: "0.03 * <level>"
+    type: DAMAGE_MULTIPLIER
+  rampage:
+    display-name: "&4Rampage"
+    material: NETHERITE_SWORD
+    slot: 35
+    requires: [berserker]
+    max-level: 5
+    cost-formula: "40000 * <level>^2.0"
+    value-formula: "0.04 * <level>"
+    type: DAMAGE_MULTIPLIER
+  fourth_pet_slot:
+    display-name: "&5Fourth Pet Slot"
+    material: NETHER_STAR
+    slot: 42
+    requires: [third_pet_slot, midas_blessing]
+    max-level: 1
+    cost-formula: "150000"
+    value-formula: "1"
+    type: EQUIP_SLOTS

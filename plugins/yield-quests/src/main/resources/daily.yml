@@ -1,0 +1,27 @@
+# /daily is a per-SESSION reward chain, not a calendar streak - 10
+# presents, each unlocking once you've been online THIS session for at
+# least "unlock-after-minutes". Once unlocked, a present stays claimable
+# any time (no rush, no order requirement) for as long as you stay
+# connected - but logging out re-locks everything: nothing here is saved
+# across a relog, by design, to reward longer sessions rather than just
+# logging in and out.
+#
+# "head" is a HeadDatabase texture id (find one in-game via /hdb, or from
+# https://minecraft-heads.com - the URL's own numeric id works) - leave it
+# blank to use "fallback-material" instead (also used automatically if
+# HeadDatabase isn't installed).
+#
+# Run /admin quests reload after editing this file - already-online players
+# keep their current session progress either way, only the reward numbers/
+# thresholds themselves change.
+presents:
+  - { unlock-after-minutes: 5,   head: "", fallback-material: WHITE_SHULKER_BOX,  coins: 200,   gems: 0 }
+  - { unlock-after-minutes: 10,  head: "", fallback-material: ORANGE_SHULKER_BOX, coins: 400,   gems: 0 }
+  - { unlock-after-minutes: 25,  head: "", fallback-material: MAGENTA_SHULKER_BOX, coins: 800,  gems: 1 }
+  - { unlock-after-minutes: 45,  head: "", fallback-material: LIGHT_BLUE_SHULKER_BOX, coins: 1500, gems: 1 }
+  - { unlock-after-minutes: 70,  head: "", fallback-material: YELLOW_SHULKER_BOX, coins: 2500,  gems: 2 }
+  - { unlock-after-minutes: 100, head: "", fallback-material: LIME_SHULKER_BOX,   coins: 4000,  gems: 2 }
+  - { unlock-after-minutes: 135, head: "", fallback-material: PINK_SHULKER_BOX,   coins: 6000,  gems: 3 }
+  - { unlock-after-minutes: 175, head: "", fallback-material: CYAN_SHULKER_BOX,   coins: 9000,  gems: 4 }
+  - { unlock-after-minutes: 220, head: "", fallback-material: PURPLE_SHULKER_BOX, coins: 13000, gems: 5 }
+  - { unlock-after-minutes: 270, head: "", fallback-material: RED_SHULKER_BOX,    coins: 20000, gems: 8 }

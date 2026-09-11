@@ -1,0 +1,9 @@
+# Where /spawn sends a player. Edit directly, or stand where you want it
+# and run /setspawn (yield.admin.setspawn) - that overwrites this file and
+# takes effect immediately, no reload/restart needed.
+world: world
+x: 0.5
+y: 65.0
+z: 0.5
+yaw: 0.0
+pitch: 0.0

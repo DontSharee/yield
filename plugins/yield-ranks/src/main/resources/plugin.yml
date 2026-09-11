@@ -1,0 +1,6 @@
+name: yield-ranks
+version: '${version}'
+main: me.dontshare.yieldranks.YieldRanks
+api-version: '26.2'
+depend: [yield-packs, yield-leveling]
+softdepend: [yield-cosmetics]

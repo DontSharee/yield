@@ -1,0 +1,114 @@
+# One physical station per zone, 'smacked' (left-click/attack) to buy 1
+# unit of that zone's own pack into storage - unlimited supply, no shop-
+# stock cap, just the pack's own coin-cost/gem-cost from packs.yml. A
+# station's 'pack:' must already exist as a pack id in yield-packs' own
+# packs.yml. Run /admin packstations reload after editing this file.
+#
+# Coordinates come from the real, in-game entrance structure built at each
+# zone (verified in-game, not a formula guess): x=-19.5, y=99, yaw=90 held
+# constant, z=81.5 for meadow (zone index 0) then +95 per zone after that -
+# same z-spacing convention zones.yml's own teleport points already use.
+# (Adjusted once already from an earlier x=-20.5/y=100/z=82.5 pass per
+# in-game feedback: down 1, +1 x, -1 z.)
+
+stations:
+  - zone: meadow
+    pack: zone_meadow_pack
+    location: [world, -19.5, 99, 81.5, 90, 0]
+  - zone: frostpeak
+    pack: zone_frostpeak_pack
+    location: [world, -19.5, 99, 176.5, 90, 0]
+  - zone: iron_foothills
+    pack: zone_iron_foothills_pack
+    location: [world, -19.5, 99, 271.5, 90, 0]
+  - zone: sulfur_flats
+    pack: zone_sulfur_flats_pack
+    location: [world, -19.5, 99, 366.5, 90, 0]
+  - zone: scorched_wastes
+    pack: zone_scorched_wastes_pack
+    location: [world, -19.5, 99, 461.5, 90, 0]
+  - zone: crystal_caverns
+    pack: zone_crystal_caverns_pack
+    location: [world, -19.5, 99, 556.5, 90, 0]
+  - zone: diamond_hollow
+    pack: zone_diamond_hollow_pack
+    location: [world, -19.5, 99, 651.5, 90, 0]
+  - zone: emerald_depths
+    pack: zone_emerald_depths_pack
+    location: [world, -19.5, 99, 746.5, 90, 0]
+  - zone: obsidian_rift
+    pack: zone_obsidian_rift_pack
+    location: [world, -19.5, 99, 841.5, 90, 0]
+  - zone: void_expanse
+    pack: zone_void_expanse_pack
+    location: [world, -19.5, 99, 936.5, 90, 0]
+  - zone: netherite_wastes
+    pack: zone_netherite_wastes_pack
+    location: [world, -19.5, 99, 1031.5, 90, 0]
+  - zone: ancient_ruins
+    pack: zone_ancient_ruins_pack
+    location: [world, -19.5, 99, 1126.5, 90, 0]
+  - zone: end_barrens
+    pack: zone_end_barrens_pack
+    location: [world, -19.5, 99, 1221.5, 90, 0]
+  - zone: purpur_spires
+    pack: zone_purpur_spires_pack
+    location: [world, -19.5, 99, 1316.5, 90, 0]
+  - zone: celestial_sanctum
+    pack: zone_celestial_sanctum_pack
+    location: [world, -19.5, 99, 1411.5, 90, 0]
+  - zone: starlight_fields
+    pack: zone_starlight_fields_pack
+    location: [world, -19.5, 99, 1506.5, 90, 0]
+  - zone: cosmic_abyss
+    pack: zone_cosmic_abyss_pack
+    location: [world, -19.5, 99, 1601.5, 90, 0]
+  - zone: eternal_forge
+    pack: zone_eternal_forge_pack
+    location: [world, -19.5, 99, 1696.5, 90, 0]
+  - zone: astral_peak
+    pack: zone_astral_peak_pack
+    location: [world, -19.5, 99, 1791.5, 90, 0]
+  - zone: genesis_core
+    pack: zone_genesis_core_pack
+    location: [world, -19.5, 99, 1886.5, 90, 0]
+
+# The black market: one global rotation shared by every player (NOT
+# per-player like the flat shop's own ShopStockService) - every
+# reset-interval-minutes, a fresh pack is picked deterministically from
+# 'pool' using only the current wall-clock cycle id as the random seed (no
+# player identity mixed in), so every player sees the same live pack at
+# the same time, for free, with nothing persisted - a restart changes
+# nothing since the cycle id is recomputed from the clock every time.
+#
+# One kiosk is placed at every zone's own entrance (right next to that
+# zone's pack station, 4 blocks off in -Z) rather than one single far-off
+# location - all of them read the exact same live rotation, so a player
+# never has to travel back to one specific spot to check the black market.
+black-market:
+  reset-interval-minutes: 60
+  pool:
+    - elite_frostpeak_pack
+    - elite_crystal_caverns_pack
+    - elite_genesis_core_pack
+  stations:
+    - location: [world, -19.5, 99, 77.5, 90, 0]
+    - location: [world, -19.5, 99, 172.5, 90, 0]
+    - location: [world, -19.5, 99, 267.5, 90, 0]
+    - location: [world, -19.5, 99, 362.5, 90, 0]
+    - location: [world, -19.5, 99, 457.5, 90, 0]
+    - location: [world, -19.5, 99, 552.5, 90, 0]
+    - location: [world, -19.5, 99, 647.5, 90, 0]
+    - location: [world, -19.5, 99, 742.5, 90, 0]
+    - location: [world, -19.5, 99, 837.5, 90, 0]
+    - location: [world, -19.5, 99, 932.5, 90, 0]
+    - location: [world, -19.5, 99, 1027.5, 90, 0]
+    - location: [world, -19.5, 99, 1122.5, 90, 0]
+    - location: [world, -19.5, 99, 1217.5, 90, 0]
+    - location: [world, -19.5, 99, 1312.5, 90, 0]
+    - location: [world, -19.5, 99, 1407.5, 90, 0]
+    - location: [world, -19.5, 99, 1502.5, 90, 0]
+    - location: [world, -19.5, 99, 1597.5, 90, 0]
+    - location: [world, -19.5, 99, 1692.5, 90, 0]
+    - location: [world, -19.5, 99, 1787.5, 90, 0]
+    - location: [world, -19.5, 99, 1882.5, 90, 0]

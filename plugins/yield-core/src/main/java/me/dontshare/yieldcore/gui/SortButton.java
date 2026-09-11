@@ -65,8 +65,6 @@ public final class SortButton<T> {
                 "sorting",
                 List.of(" &fChange&7 how items", " &7are &fordered&7!"),
                 ACCENT,
-                "Change Sort",
-                "Click",
                 "Click to Change Sort");
         var builder = ItemBuilder.of(Material.OAK_SIGN).name(MenuLore.buttonName(ACCENT, "SORT"));
         lore.forEach(builder::lore);

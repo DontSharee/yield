@@ -1,0 +1,8 @@
+name: yield-broadcasts
+version: '${version}'
+main: me.dontshare.yieldbroadcasts.YieldBroadcasts
+api-version: '26.2'
+depend: [yield-packs, yield-zones, yield-rebirth, yield-skilltree, yield-teams]
+permissions:
+  yieldbroadcasts.admin:
+    default: op

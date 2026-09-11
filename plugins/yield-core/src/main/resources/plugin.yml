@@ -4,3 +4,7 @@ main: me.dontshare.yieldcore.YieldCore
 api-version: '26.2'
 depend: [packetevents]
 softdepend: [PlaceholderAPI, FastAsyncWorldEdit]
+permissions:
+  yield.admin:
+    default: op
+

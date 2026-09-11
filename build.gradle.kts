@@ -145,8 +145,21 @@ subprojects {
     // afterward - afterEvaluate defers until that override has landed.
     afterEvaluate {
         tasks.withType<ProcessResources> {
+            // expand()'s token map isn't tracked as a task input on its own,
+            // so a version bump alone doesn't invalidate Gradle's up-to-date
+            // cache for this task - plugin.yml can silently keep an old
+            // ${version} substitution baked in even after a fresh build.
+            // Declaring it as an explicit input property fixes that.
+            inputs.property("pluginVersion", project.version)
             filteringCharset = "UTF-8"
-            expand("version" to project.version)
+            // Scoped to plugin.yml only (the one file that actually uses
+            // ${version}) - expand() compiles each matched file through a
+            // Groovy template, which hard-caps string literals at 65535
+            // chars; applying it to every resource broke on yield-packs'
+            // own packs.yml once its content grew past that.
+            filesMatching("plugin.yml") {
+                expand("version" to project.version)
+            }
         }
     }
 }

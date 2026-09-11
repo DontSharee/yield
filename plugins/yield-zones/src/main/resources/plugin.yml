@@ -1,0 +1,11 @@
+name: yield-zones
+version: '${version}'
+main: me.dontshare.yieldzones.YieldZones
+api-version: '26.2'
+depend: [yield-packs]
+permissions:
+  yieldzones.admin:
+    default: op
+  yieldzones.bypasslock:
+    description: Walk through locked zones' walls/regions freely, ignoring their unlock requirement. NOT granted to ops by default - an op testing the lock/wall/purchase flow themselves needs to see the real player experience, not silently bypass it. Grant explicitly (e.g. via LuckPerms) only when you actually want free roam.
+    default: false

@@ -1,0 +1,73 @@
+# Ore type definitions. Each key is a vanilla ore Material name (its BASE
+# form - a deepslate variant break normalizes to this same entry, see
+# MiningService#normalize, so don't add a separate "deepslate_x_ore" entry).
+#
+# drop-material/drop-min/drop-max: the REAL, physical item given to the
+#   player - this is the actual point of mining, not just a number going up.
+#   Matches vanilla's own natural-drop item (raw ore for iron/copper/gold,
+#   the gem itself for redstone/lapis/diamond/emerald). Leave drop-material
+#   blank to pay only coins/xp with no item.
+# coin-reward: bonus coins paid ON TOP of the item above, only for a break
+#   at a registered mining spot (see /admin mining give) - never for a
+#   player-placed block.
+# xp: player XP granted via yield-leveling (bridged through OreMinedEvent -
+#   yield-mining has no direct dependency on yield-leveling).
+# regen-seconds: how long the spot stays broken (for the player who broke
+#   it - everyone else's copy is unaffected) before it regenerates for them.
+ores:
+  coal_ore:
+    drop-material: COAL
+    drop-min: 1
+    drop-max: 2
+    coin-reward: 15
+    xp: 3
+    regen-seconds: 20
+  copper_ore:
+    drop-material: RAW_COPPER
+    drop-min: 2
+    drop-max: 5
+    coin-reward: 20
+    xp: 4
+    regen-seconds: 25
+  iron_ore:
+    drop-material: RAW_IRON
+    drop-min: 1
+    drop-max: 1
+    coin-reward: 30
+    xp: 6
+    regen-seconds: 30
+  redstone_ore:
+    drop-material: REDSTONE
+    drop-min: 4
+    drop-max: 5
+    coin-reward: 40
+    xp: 8
+    regen-seconds: 35
+  lapis_ore:
+    drop-material: LAPIS_LAZULI
+    drop-min: 4
+    drop-max: 9
+    coin-reward: 45
+    xp: 8
+    regen-seconds: 35
+  gold_ore:
+    drop-material: RAW_GOLD
+    drop-min: 1
+    drop-max: 1
+    coin-reward: 60
+    xp: 10
+    regen-seconds: 45
+  diamond_ore:
+    drop-material: DIAMOND
+    drop-min: 1
+    drop-max: 1
+    coin-reward: 150
+    xp: 25
+    regen-seconds: 90
+  emerald_ore:
+    drop-material: EMERALD
+    drop-min: 1
+    drop-max: 1
+    coin-reward: 180
+    xp: 30
+    regen-seconds: 100

@@ -1,0 +1,127 @@
+# /buy - spend Credits (earned from achievements/milestones) on ranks and
+# gamepasses. "commands" run as CONSOLE on purchase, "%player%" replaced
+# with the buyer's name - works with whatever permissions plugin is
+# actually installed (LuckPerms here), and isn't limited to a single
+# permission grant per product. Run /admin achievements reload after editing.
+products:
+  vip_rank:
+    display-name: "<gold><bold>VIP</bold></gold> <gray>[RANK]</gray>"
+    icon: GOLD_BLOCK
+    description:
+      - "<gray>Product</gray>"
+      - ""
+      - "You'll gain all"
+      - "these benefits below."
+      - ""
+      - "<green>1.5x</green> Money (Multi)"
+      - "<green>1.5x</green> Exp (Multi)"
+      - "<green>1.5x</green> Star (Multi)"
+      - "<green>+20</green> Pet Slot(s)"
+      - "<green>+1</green> Ring Slot(s)"
+      - ""
+      - "White Chat Color"
+      - "Collect All Button"
+      - "3x Player Vaults"
+      - ""
+      - "/nick"
+      - "/donator-keyall (5x Elite)"
+      - ""
+      - "<strikethrough><gray>499</gray></strikethrough> <green>374</green> <yellow>Credit(s)</yellow>"
+      - "<red>25% STORE SALE!</red>"
+    cost-credits: 374
+    commands:
+      - "lp user %player% parent add vip"
+      - "lp user %player% permission set chatcolor.White true"
+      - "lp user %player% permission set tag.VIP true"
+      - "admin ranks apply %player% vip"
+  celestial_rank:
+    display-name: "<gradient:#a855f7:#ec4899><bold>CELESTIAL</bold></gradient> <gray>[RANK]</gray>"
+    icon: NETHER_STAR
+    description:
+      - "<gray>Product</gray>"
+      - ""
+      - "You'll gain all"
+      - "these benefits below."
+      - ""
+      - "<green>3.0x</green> Money (Multi)"
+      - "<green>3.0x</green> Exp (Multi)"
+      - "<green>3.0x</green> Star (Multi)"
+      - "<green>3.0x</green> Gem (Multi)"
+      - "<green>2.0x</green> Pet Luck (Multi)"
+      - "<green>+80</green> Pet Slot(s)"
+      - "<green>+3</green> Ring Slot"
+      - ""
+      - "Pet Auto Merge"
+      - "Collect All Button"
+      - "Multiple Prefix Options"
+      - "White Chat Color"
+      - "Automatic Money Collect"
+      - "30x Player Vaults"
+      - ""
+      - "/nick"
+      - "/fly"
+      - "/donator-keyall (2x Supreme)"
+      - "/rankcolor"
+      - ""
+      - "<gold>SPECIAL PERK</gold>"
+      - "Upon Purchase You'll Receive"
+      - "an exclusive Celestial Pet! (Seasonal)"
+      - ""
+      - "<strikethrough><gray>7999</gray></strikethrough> <green>5999</green> <yellow>Credit(s)</yellow>"
+      - "<red>25% STORE SALE!</red>"
+    cost-credits: 5999
+    commands:
+      - "lp user %player% parent add celestial"
+      - "lp user %player% permission set chatcolor.White true"
+      - "lp user %player% permission set tag.Celestial true"
+      - "admin ranks apply %player% celestial"
+  auto_fuse_pass:
+    display-name: "&dAuto Fuse Pass"
+    icon: ANVIL
+    description:
+      - "Unlocks the Auto Fuse toggle"
+      - "in the Fusion menu, permanently."
+    cost-credits: 1000
+    commands:
+      - "lp user %player% permission set yieldpacks.autofuse true"
+  auto_mode_pass:
+    display-name: "&dFree Auto Send"
+    icon: CLOCK
+    description:
+      - "Unlocks the Auto Mode toggle"
+      - "in the Bag menu, permanently."
+      - "Pets re-engage on a real"
+      - "cooldown after each kill."
+    cost-credits: 1000
+    commands:
+      - "lp user %player% permission set yieldpacks.automode true"
+  premium_auto_mode_pass:
+    display-name: "&6&lPremium Auto Send"
+    icon: NETHER_STAR
+    description:
+      - "Everything Free Auto Send"
+      - "has, but pets re-engage"
+      - "2x faster after each kill."
+      - "Includes Free Auto Send."
+    cost-credits: 5000
+    commands:
+      - "lp user %player% permission set yieldpacks.automode true"
+      - "lp user %player% permission set yieldpacks.automode.premium true"
+  luck_potion:
+    display-name: "&a2x Luck Potion"
+    icon: PLAYER_HEAD
+    description:
+      - "A 2x Luck potion, lasting 10 minutes."
+      - "Drink it from your inventory - see /potions"
+      - "for what's currently active."
+    cost-credits: 100
+    commands:
+      - "admin potions give %player% LUCK 2 600"
+  coins_potion:
+    display-name: "&62x Coins Potion"
+    icon: PLAYER_HEAD
+    description:
+      - "A 2x Coins potion, lasting 10 minutes."
+    cost-credits: 100
+    commands:
+      - "admin potions give %player% COINS 2 600"

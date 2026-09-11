@@ -1,0 +1,74 @@
+# Per-pet enchanting (the Enchanting Table) - a wholly separate mechanic
+# from the player-level Enchant Slots (/enchants). Smacking a configured
+# "tables:" location opens the Enchanting Table GUI: select any owned pet
+# (equipped or bagged), spend "economy.gem-cost" gems to roll it a fresh
+# set of enchants - always REPLACING whatever it had before, never
+# stacking. Run /admin packs reload after editing this file.
+#
+# Two tiers only:
+#   commons  - one of 5 stat types, leveled I-V (I-III for attack_speed -
+#              matches the source game's own Agility enchant, which never
+#              had more than 3 levels either). "values" are the I-V buff
+#              magnitudes (index 0 = level I); "weights" are this plan's
+#              own original decreasing-weight roll curve (NOT sourced -
+#              the source wiki only lists buff values, no roll odds -
+#              shaped like every other weighted table already in this
+#              codebase; tune freely).
+#   uniques  - no levels, picked uniformly among each other whenever a
+#              roll lands Unique at all. Each Unique's own roll weight is
+#              "economy.unique-weight-each" (flat, same for all 4) -
+#              tuned against the commons' own total weight (~865) so each
+#              unique lands roughly 1% of the time; retune either number
+#              and the % moves accordingly.
+# Landing Unique earns the pet ONE MORE roll immediately after (so a
+# pet can end up with 2 uniques, or 1 unique + 1 common) - see
+# PetEnchantService#rollFor. A normal Common landing is always just 1.
+
+economy:
+  gem-cost: 50
+  unique-weight-each: 9
+
+commons:
+  coins:
+    values: [0.15, 0.30, 0.50, 0.75, 1.00]
+    weights: [100, 45, 20, 8, 2]
+  gems:
+    values: [0.10, 0.20, 0.35, 0.50, 0.65]
+    weights: [100, 45, 20, 8, 2]
+  damage:
+    values: [0.15, 0.30, 0.50, 0.70, 1.00]
+    weights: [100, 45, 20, 8, 2]
+  attack_speed:
+    values: [0.20, 0.35, 0.50]
+    weights: [100, 45, 20]
+  luck:
+    values: [0.05, 0.10, 0.15, 0.20, 0.25]
+    weights: [100, 45, 20, 8, 2]
+
+uniques:
+  royalty:
+    display-name: "Royalty"
+    color: "#FFD700"
+    stat-bonuses:
+      damage: 1.00
+      gems: 1.00
+      attack_speed: 0.50
+  glittering:
+    display-name: "Glittering"
+    color: "#55FFFF"
+    special-effect: BONUS_GEM_DROP
+  twin_fang:
+    display-name: "Twin Fang"
+    color: "#FF5555"
+    stat-bonuses:
+      damage: 1.50
+  fortune_charm:
+    display-name: "Fortune Charm"
+    color: "#55FF55"
+    stat-bonuses:
+      luck: 0.40
+
+# One entry per clickable Enchanting Table button (same [world, x, y, z,
+# yaw, pitch] shape as yield-zonemachines' zone-machines.yml).
+tables:
+  - location: [world, -19.5, 98, 244.5, 90, 0]

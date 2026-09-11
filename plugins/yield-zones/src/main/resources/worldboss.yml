@@ -1,0 +1,30 @@
+# World bosses - rare, GENUINELY SHARED encounters (unlike ore cubes, which
+# are a private per-player illusion, every player sees and can damage the
+# SAME boss). Run /admin zones reload after editing.
+#
+# "zone" must match a zone id from zones.yml (only used for the spawn/kill
+# announcement's zone name - the boss itself spawns at the explicit
+# "location" below, not somewhere derived from the zone's region).
+# "location" is [x, y, z] in that zone's own world - pick a clear, empty
+# spot, since the boss's real barrier hitbox will overwrite whatever
+# blocks are there and only ever restores them to AIR afterward.
+# "size" is both the giant visual block's scale AND its real hitbox's
+# dimensions (a size x size x size cube), in blocks.
+# "check-interval-minutes"/"spawn-chance" - every check-interval, if no
+# instance of this boss is currently alive, there's a spawn-chance (0-1)
+# roll for one to appear.
+# "despawn-after-minutes" - gives up and clears the arena if nobody
+# finishes it off in time.
+bosses:
+  meadow_titan:
+    zone: meadow
+    display-name: "Meadow Titan"
+    material: NETHERITE_BLOCK
+    size: 5
+    location: [0, 90, 20]
+    max-hp: 500000
+    check-interval-minutes: 10
+    spawn-chance: 0.5
+    reward-coins: 1000000
+    reward-gems: 500
+    despawn-after-minutes: 30

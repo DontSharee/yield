@@ -1,0 +1,13 @@
+# Pet Candy raises a specific pet's level cap when fed to it - hold the
+# candy in your main hand and click the pet in your Bag. For this pass,
+# candy drops from ore cube kills at its own configured chance
+# (luck-modified, same formula gem drops already use) - a placeholder
+# source until player islands produce it properly later; swapping the
+# source is a wiring change in OreCubeService, not a change to this file's
+# shape or to the candy data model itself.
+candy:
+  common_candy:
+    display-name: "Common Pet Candy"
+    material: COOKIE
+    level-cap-bonus: 5
+    drop-chance: 0.02

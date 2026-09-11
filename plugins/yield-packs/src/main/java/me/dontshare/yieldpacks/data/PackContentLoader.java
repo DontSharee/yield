@@ -1,5 +1,8 @@
 package me.dontshare.yieldpacks.data;
 
+import me.dontshare.yieldpacks.fusion.FusionTier;
+import me.dontshare.yieldpacks.pity.PityTier;
+import me.dontshare.yieldpacks.shop.ShopConfig;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -7,6 +10,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +21,7 @@ import java.util.logging.Logger;
  * order) into fresh in-memory registries. Content is fully data-driven since
  * the pet catalog is expected to change often - adding/renaming pets or
  * packs never needs a code change, just an edit to packs.yml and a
- * /packsadmin reload.
+ * /admin packs reload.
  */
 public final class PackContentLoader {
 
@@ -29,8 +33,9 @@ public final class PackContentLoader {
         this.logger = logger;
     }
 
-    /** An immutable, atomically-swappable bundle of the three registries. */
-    public record ContentSnapshot(RarityRegistry rarities, ItemRegistry items, PackRegistry packs) {
+    /** An immutable, atomically-swappable bundle of the registries plus the shop's own settings. */
+    public record ContentSnapshot(RarityRegistry rarities, ItemRegistry items, PackRegistry packs, ShopConfig shop,
+                                   List<PityTier> pityTiers) {
     }
 
     public ContentSnapshot load() {
@@ -41,8 +46,32 @@ public final class PackContentLoader {
         Map<String, Rarity> rarities = loadRarities(config.getConfigurationSection("rarities"));
         Map<String, ItemDefinition> items = loadItems(config.getConfigurationSection("items"), rarities);
         Map<String, PackDefinition> packs = loadPacks(config.getConfigurationSection("packs"), items);
+        ShopConfig shop = loadShopConfig(config);
+        List<PityTier> pityTiers = loadPityTiers(config);
 
-        return new ContentSnapshot(new RarityRegistry(rarities), new ItemRegistry(items), new PackRegistry(packs));
+        return new ContentSnapshot(new RarityRegistry(rarities), new ItemRegistry(items), new PackRegistry(packs),
+                shop, pityTiers);
+    }
+
+    private List<PityTier> loadPityTiers(YamlConfiguration config) {
+        List<PityTier> tiers = new ArrayList<>();
+        for (Map<?, ?> entry : config.getMapList("pity")) {
+            Object rolls = entry.get("rolls");
+            Object multiplier = entry.get("multiplier");
+            if (!(rolls instanceof Number rollsNumber) || !(multiplier instanceof Number multiplierNumber)) {
+                logger.warning("Skipping invalid pity tier entry: " + entry);
+                continue;
+            }
+            tiers.add(new PityTier(rollsNumber.intValue(), multiplierNumber.doubleValue()));
+        }
+        tiers.sort(Comparator.comparingInt(PityTier::rolls));
+        return tiers;
+    }
+
+    private ShopConfig loadShopConfig(YamlConfiguration config) {
+        long resetIntervalMillis = config.getLong("shop.reset-interval-minutes", 5) * 60_000L;
+        long openCooldownMillis = Math.round(config.getDouble("open-cooldown-seconds", 1.0) * 1000);
+        return new ShopConfig(resetIntervalMillis, openCooldownMillis);
     }
 
     private Map<String, Rarity> loadRarities(ConfigurationSection section) {
@@ -94,11 +123,52 @@ public final class PackContentLoader {
                     modelData,
                     headDatabaseId,
                     rarityId,
-                    s.getDouble("value-per-second", 0.0),
+                    s.getDouble("damage", 1.0),
                     s.getBoolean("track-exists", false),
-                    s.getStringList("lore")));
+                    s.getStringList("lore"),
+                    FusionTier.NORMAL,
+                    id,
+                    s.getBoolean("huge", false),
+                    s.getDouble("huge-damage-percent", 0.0)));
         }
+        addFusionTiers(result);
         return result;
+    }
+
+    /**
+     * Every base pet automatically gets Golden/Rainbow/Dark Matter variants
+     * for free - no packs.yml entry needed per tier. These are crafted (see
+     * {@code FusionService}), never rolled, so they're never referenced by a
+     * pack's {@code pool:} and never touch the exists-counter/pity/luck
+     * machinery that only cares about what a pack can actually roll.
+     */
+    private void addFusionTiers(Map<String, ItemDefinition> items) {
+        List<ItemDefinition> baseItems = List.copyOf(items.values());
+        for (ItemDefinition base : baseItems) {
+            for (FusionTier tier : FusionTier.values()) {
+                if (tier == FusionTier.NORMAL) {
+                    continue;
+                }
+                items.put(tier.idFor(base.id()), new ItemDefinition(
+                        tier.idFor(base.id()),
+                        // Deliberately identical to the base's own plain name
+                        // across every tier - the tier's gradient lives only
+                        // in FusionTier#tag(), never baked into the name
+                        // itself (see that class's own Javadoc for why).
+                        base.displayName(),
+                        base.material(),
+                        base.customModelData(),
+                        base.headDatabaseId(),
+                        base.rarityId(),
+                        base.damage() * tier.damageMultiplier(),
+                        false,
+                        base.lore(),
+                        tier,
+                        base.id(),
+                        base.huge(),
+                        base.hugeDamagePercent()));
+            }
+        }
     }
 
     private Map<String, PackDefinition> loadPacks(ConfigurationSection section, Map<String, ItemDefinition> items) {
@@ -141,7 +211,11 @@ public final class PackContentLoader {
                     s.getLong("coin-cost", 0L),
                     s.getLong("gem-cost", 0L),
                     s.contains("sort") ? s.getInt("sort") : autoSort,
-                    pool));
+                    pool,
+                    s.getDouble("shop-weight", 1.0),
+                    s.getDouble("shop-luck-exponent", 0.0),
+                    Math.max(1, s.getInt("min-stock", 1)),
+                    Math.max(1, s.getInt("max-stock", 1))));
             autoSort++;
         }
         return result;

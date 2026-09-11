@@ -1,0 +1,8 @@
+name: yield-achievements
+version: '${version}'
+main: me.dontshare.yieldachievements.YieldAchievements
+api-version: '26.2'
+depend: [yield-packs, yield-zones, yield-rebirth, yield-skilltree, yield-teams]
+permissions:
+  yieldachievements.admin:
+    default: op

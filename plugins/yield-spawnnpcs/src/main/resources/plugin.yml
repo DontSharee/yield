@@ -1,0 +1,8 @@
+name: yield-spawnnpcs
+version: '${version}'
+main: me.dontshare.yieldspawnnpcs.YieldSpawnNpcs
+api-version: '26.2'
+depend: [yield-core, yield-packs]
+permissions:
+  yieldspawnnpcs.admin:
+    default: op

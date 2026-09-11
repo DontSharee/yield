@@ -1,0 +1,3 @@
+# How many named homes a player can set at once - /sethome fails once
+# they're at this limit until they delete one first.
+max-homes: 5

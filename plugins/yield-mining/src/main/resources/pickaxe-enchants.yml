@@ -1,0 +1,37 @@
+# Pickaxe enchants - each one rolls an independent chance (chance-formula,
+# 0-100) on every mined block to apply its boost (boost-formula) as a
+# DIRECT MULTIPLIER to whichever reward channel "type" names. Run
+# /admin mining reload after editing.
+#
+# id: a stable numeric id, unused internally right now but kept for parity
+#   with the reference config (future ordering/migration hook).
+# colors: [primary, secondary] - full MiniMessage color tags, e.g.
+#   "<#FFC354>". Primary tints the icon name/lore separators; secondary
+#   tints the activation-chance value.
+# display-name / display-item: the enchant icon's name and Material.
+# description: the icon's flavor text - use "|" to start a new line.
+# type: which mining reward this boosts - COINS, ORE_AMOUNT, or XP.
+# max-level: highest level purchasable.
+# rebirth-requirement: minimum rebirths (see yield-rebirth) needed to even
+#   open this enchant's menu.
+# cost-currency: GEMS or COINS - what buying levels spends.
+# cost-formula / boost-formula / chance-formula: math in terms of "level"
+#   (the level BEFORE the purchase/roll) - +, -, *, /, ^, parentheses. A
+#   bulk buy sums cost-formula once per level bought.
+# mastery: once max-level is reached, up to 5 extra gem-bought levels, each
+#   multiplying boost by 1.6x and adding +10% activation chance.
+enchants:
+  greed:
+    id: 1
+    colors: ["<#FFC354>", "<#FFFAB8>"]
+    display-name: "<#FFFAB8><bold>GREED</bold>"
+    display-item: ORANGE_DYE
+    description: "Increase the amount of|<green>coins</green> gained while mining."
+    type: COINS
+    max-level: 5000
+    rebirth-requirement: 0
+    cost-currency: GEMS
+    cost-formula: "0.5 * (level ^ 1.125) * (1.0003 ^ level)"
+    boost-formula: "1.0001 * level"
+    chance-formula: "100"
+    mastery: false

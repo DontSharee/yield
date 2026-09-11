@@ -1,0 +1,44 @@
+# Lootboxes - a reward container SEPARATE from Packs, meant to be sold for
+# real money via a webstore (Tebex/Buycraft), not bought with in-game coins/
+# gems. Nothing in this plugin ever touches payment/card data: configure a
+# Tebex package to run "lootbox give %player_name% <box-id> 1" (Tebex's own
+# placeholder syntax) as its command on a confirmed purchase - Tebex's own
+# plugin (BuycraftX) is what actually processes money and invokes that
+# command. Run /admin lootbox reload after editing.
+#
+# A box is a real, physical item that command drops straight into the
+# player's inventory - "icon" is the literal Material it renders as (an
+# ender chest, a shulker box, whatever fits), not just a GUI icon. Right-
+# clicking it in hand opens it - no menu involved.
+#
+# Each box has a weighted "pool" of typed reward entries - exactly one is
+# rolled per box opened:
+#   flat-coins / flat-gems / flat-credits - "amount" is granted directly.
+#   pet - "pet-item" is any item id from packs.yml's own catalog, including
+#     Huge (see "huge: true") and Exclusive-rarity pets - lootboxes are one
+#     of the only two ways to obtain an Exclusive pet at all (the other is
+#     yield-blocktree's exclusive-find-chance perk).
+#   commands - runs each of "commands" as CONSOLE, "%player%" substituted -
+#     the same escape hatch yield-achievements' Store already uses, e.g. for
+#     a LuckPerms-granted cosmetic, or (see yield-achievements' own
+#     "/admin potions give") a potion: "admin potions give %player% COINS 2 3600".
+boxes:
+  mythic_crate:
+    display-name: "&d&lMythic Crate"
+    icon: ENDER_CHEST
+    pool:
+      - { type: flat-coins, weight: 40, amount: 50000 }
+      - { type: flat-gems, weight: 25, amount: 25 }
+      - { type: flat-credits, weight: 15, amount: 50 }
+      - { type: pet, weight: 15, pet-item: void_serpent }
+      - { type: pet, weight: 4, pet-item: huge_star_dragon }
+      - { type: commands, weight: 1, commands: ["admin potions give %player% COINS 3 1800"] }
+
+  exclusive_crate:
+    display-name: "&b&lExclusive Crate"
+    icon: CYAN_SHULKER_BOX
+    pool:
+      - { type: flat-coins, weight: 30, amount: 250000 }
+      - { type: flat-gems, weight: 20, amount: 100 }
+      - { type: pet, weight: 30, pet-item: huge_void_serpent }
+      - { type: pet, weight: 20, pet-item: cosmic_leviathan }

@@ -1,0 +1,219 @@
+# Per-block-type progression trees (see /blocktree) - a bestiary for ore
+# cubes. Every configured block tracks a player's lifetime break count
+# (across every zone that spawns it) against 7 tiers of goals; each tier's
+# rewards are a list of typed, permanent effects - fully configurable, add
+# or change any of them freely. Run /admin blocktree reload after editing.
+#
+# Effect types - block-scoped ones (meant for tiers 1-6, small and stacking)
+# first, then every GLOBAL/unique one (meant for tier 7 - one big, permanent,
+# server-wide perk per block). There's a lot more unique types here than
+# blocks configured right now - that's deliberate, so every future block just
+# picks whichever one fits it best instead of needing a new hook built.
+#
+# BLOCK-SCOPED (only affect the specific block whose tree granted them):
+#   flat-coins / flat-gems / flat-credits - this raw amount is added EVERY
+#     time this specific block is broken, on top of its normal payout.
+#   block-coin-multiplier / block-gem-multiplier - "value" is an additive
+#     percentage (0.10 = +10%) applied only to this block's own payout,
+#     stacking with every other claimed tier of the same type.
+#
+# GLOBAL / UNIQUE (apply everywhere, regardless of which block or pack
+# triggered them - meant to be one per block's tier 7):
+#   global-coin-multiplier / global-damage-multiplier - additive percentage
+#     applied to every coin payout / every pet attack, same slot rebirth,
+#     skill tree, and potions already contribute to.
+#   global-attack-speed-multiplier - additive percentage that shortens the
+#     delay between every pet's attacks server-wide.
+#   roll-speed-multiplier - additive percentage that shortens the cooldown
+#     between opening packs.
+#   global-luck-boost - additive luck bonus applied everywhere packs are
+#     rolled, same slot skill tree/potions already contribute to.
+#   double-hit-chance / triple-hit-chance - "value" is a flat chance
+#     (0.10 = 10%) for any pet hit to land an extra time - rolled
+#     independently of each other, so both can trigger on the same hit.
+#   exclusive-find-chance - "value" is a flat chance (0.02 = 2%) for ANY pack
+#     opened (even one with no Exclusive in its own pool) to instead hand
+#     back a random Exclusive-rarity pet.
+#   gem-chance-boost - "value" is an additive flat chance (0.05 = +5%) added
+#     on top of a cube kill's own base gem-drop roll.
+#   progress-multiplier - "value" is an additive percentage (1.0 = +100%,
+#     i.e. 2x) applied to how much progress EVERY block break counts for
+#     toward its own blocktree, not just this one - makes the whole system
+#     faster to climb.
+#   unlock-shard-drop - block-scoped, NOT global despite living in this list:
+#     permanently unlocks a chance for THIS block's own cube kills to drop a
+#     Shard (a physical, right-click-consumed item granting a small
+#     PERMANENT stat bonus - see yield-packs' ShardService/ShardType) -
+#     "value" is that base drop chance (0.02 = 2%), and "data" names which
+#     shard type (DAMAGE/COINS/GEMS). ~5% of hits roll as a rare "Perfect"
+#     shard instead (10x the bonus, plus a server-wide broadcast). A shard
+#     type can NEVER drop for a player until they've actually claimed the
+#     tier that unlocks it.
+#
+# Tiers are sorted by "goal" automatically, so declaration order doesn't
+# matter. A block missing exactly 7 tiers just logs a warning - it still
+# works with however many it has.
+blocks:
+  stone:
+    material: STONE
+    display-name: "&7Stone"
+    icon: STONE
+    tiers:
+      - goal: 100
+        effects:
+          - { type: flat-coins, value: 5 }
+      - goal: 1000
+        effects:
+          - { type: flat-coins, value: 10 }
+          - { type: flat-gems, value: 5 }
+      - goal: 10000
+        effects:
+          - { type: flat-coins, value: 25 }
+      - goal: 50000
+        effects:
+          - { type: flat-coins, value: 50 }
+          - { type: flat-gems, value: 15 }
+          - { type: unlock-shard-drop, value: 0.01, data: CRIT_CHANCE }
+      - goal: 200000
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+          - { type: unlock-shard-drop, value: 0.015, data: LUCK }
+      - goal: 750000
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+          - { type: unlock-shard-drop, value: 0.02, data: COINS }
+      - goal: 2500000
+        effects:
+          # The foundational, most-broken block gets the "makes the whole
+          # grind easier" perk - +100% (2x) blocktree progress from every
+          # block, not just Stone.
+          - { type: progress-multiplier, value: 1.0 }
+
+  copper_block:
+    material: COPPER_BLOCK
+    display-name: "&6Copper Block"
+    icon: COPPER_BLOCK
+    tiers:
+      - goal: 25
+        effects:
+          - { type: flat-coins, value: 10 }
+      - goal: 250
+        effects:
+          - { type: flat-coins, value: 20 }
+          - { type: flat-gems, value: 5 }
+      - goal: 2500
+        effects:
+          - { type: flat-coins, value: 50 }
+      - goal: 12500
+        effects:
+          - { type: flat-coins, value: 100 }
+          - { type: flat-gems, value: 20 }
+      - goal: 50000
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 200000
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+          - { type: unlock-shard-drop, value: 0.02, data: DAMAGE }
+      - goal: 750000
+        effects:
+          - { type: double-hit-chance, value: 0.10 }
+
+  iron_block:
+    material: IRON_BLOCK
+    display-name: "&fIron Block"
+    icon: IRON_BLOCK
+    tiers:
+      - goal: 10
+        effects:
+          - { type: flat-coins, value: 25 }
+      - goal: 100
+        effects:
+          - { type: flat-coins, value: 50 }
+          - { type: flat-gems, value: 10 }
+      - goal: 1000
+        effects:
+          - { type: flat-coins, value: 100 }
+      - goal: 5000
+        effects:
+          - { type: flat-coins, value: 250 }
+          - { type: flat-gems, value: 50 }
+      - goal: 20000
+        effects:
+          - { type: block-coin-multiplier, value: 0.15 }
+          - { type: unlock-shard-drop, value: 0.02, data: ATTACK_SPEED }
+      - goal: 75000
+        effects:
+          - { type: block-coin-multiplier, value: 0.35 }
+          - { type: unlock-shard-drop, value: 0.015, data: GEMS }
+      - goal: 300000
+        effects:
+          - { type: exclusive-find-chance, value: 0.02 }
+
+  # Commented-out templates for zones.yml's currently-commented future
+  # tiers - add for real once those zones ship.
+  #  packed_ice:
+  #    material: PACKED_ICE
+  #    display-name: "&bPacked Ice"
+  #    icon: PACKED_ICE
+  #    tiers: [ ... ]
+  #  basalt:
+  #    material: BASALT
+  #    display-name: "&8Basalt"
+  #    icon: BASALT
+  #    tiers: [ ... ]
+  #  magma_block:
+  #    material: MAGMA_BLOCK
+  #    display-name: "&cMagma Block"
+  #    icon: MAGMA_BLOCK
+  #    tiers: [ ... ]
+  #  ancient_debris:
+  #    material: ANCIENT_DEBRIS
+  #    display-name: "&4Ancient Debris"
+  #    icon: ANCIENT_DEBRIS
+  #    tiers: [ ... ]
+  #  amethyst_block:
+  #    material: AMETHYST_BLOCK
+  #    display-name: "&dAmethyst Block"
+  #    icon: AMETHYST_BLOCK
+  #    tiers: [ ... ]
+  #  diamond_block:
+  #    material: DIAMOND_BLOCK
+  #    display-name: "&bDiamond Block"
+  #    icon: DIAMOND_BLOCK
+  #    tiers: [ ... ]
+  #  emerald_block:
+  #    material: EMERALD_BLOCK
+  #    display-name: "&aEmerald Block"
+  #    icon: EMERALD_BLOCK
+  #    tiers: [ ... ]
+  #  obsidian:
+  #    material: OBSIDIAN
+  #    display-name: "&5Obsidian"
+  #    icon: OBSIDIAN
+  #    tiers: [ ... ]
+  #  crying_obsidian:
+  #    material: CRYING_OBSIDIAN
+  #    display-name: "&dCrying Obsidian"
+  #    icon: CRYING_OBSIDIAN
+  #    tiers: [ ... ]
+  #  netherite_block:
+  #    material: NETHERITE_BLOCK
+  #    display-name: "&8Netherite Block"
+  #    icon: NETHERITE_BLOCK
+  #    tiers: [ ... ]
+  #  end_stone:
+  #    material: END_STONE
+  #    display-name: "&fEnd Stone"
+  #    icon: END_STONE
+  #    tiers: [ ... ]
+  #  purpur_block:
+  #    material: PURPUR_BLOCK
+  #    display-name: "&5Purpur Block"
+  #    icon: PURPUR_BLOCK
+  #    tiers: [ ... ]
+  #  beacon:
+  #    material: BEACON
+  #    display-name: "&bBeacon"
+  #    icon: BEACON
+  #    tiers: [ ... ]

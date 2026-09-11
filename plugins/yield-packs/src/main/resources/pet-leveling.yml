@@ -1,0 +1,31 @@
+# How equipped pets gain XP and level up. Run /admin packs reload after
+# editing to apply changes without restarting - every already-leveled pet's
+# effective damage/next-level-XP recomputes instantly from these numbers,
+# since a PetInstance only ever stores its own level/xp, never a computed
+# stat (see PetLevelingService).
+#
+# xpForLevel(level) = base * level^exponent - how much XP a pet needs to go
+# from its current level to the next one.
+level-curve:
+  base: 100
+  exponent: 1.4
+
+# Each level above 1 adds this fraction to a pet's base damage - a level 21
+# pet (20 levels above baseline) hits for base-damage * (1 + 20 * 0.05) =
+# 2x its base damage.
+damage-per-level: 0.05
+
+max-level: 99
+# Before any candy - see candy.yml. A pet can never level past
+# min(max-level, default-level-cap + bonus-level-cap-from-candy).
+default-level-cap: 20
+
+# Cumulative - a level-30 pet has every milestone at or below level 30
+# active at once, not just the highest one reached.
+milestones:
+  - { level: 10, effect: AUTO_ATTACK }
+  - { level: 25, effect: EARNINGS_BONUS, value: 0.5 }
+  - { level: 50, effect: GUARANTEED_GEM_DROP }
+  # Level 99's "unique buff" is intentionally left unconfigured for now -
+  # add it here once decided, no code change needed unless it's a wholly
+  # new effect type (in which case add one more MilestoneEffect value too).

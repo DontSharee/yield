@@ -1,0 +1,8 @@
+name: yield-lootboxes
+version: '${version}'
+main: me.dontshare.yieldlootboxes.YieldLootboxes
+api-version: '26.2'
+depend: [yield-core, yield-packs]
+permissions:
+  yieldlootboxes.admin:
+    default: op

@@ -1,0 +1,38 @@
+# Trophy drops - a rare, luck-modified chance per ore cube kill (the same
+# formula candy/gem drops already use). A dropped trophy is a real,
+# physical item - right-click it to deposit into your team's balance.
+trophy:
+  drop-chance: 0.01
+  material: NETHER_STAR
+  display-name: "&6Team Trophy"
+
+# Team name length rules - enforced by /team create.
+name:
+  min-length: 3
+  max-length: 16
+
+# The team-upgrade tree - spent from the team's shared trophy balance,
+# benefiting every current member. "costs" is a per-level trophy price list
+# (its length is the upgrade's max level); "value-per-level" is how much
+# each level adds, consumed as 1.0 + (level * value-per-level) alongside
+# every other multiplier source (rebirth, prestige, skill tree, ...).
+# Run /admin teams reload after editing this file.
+upgrades:
+  coin_boost:
+    display-name: "&6Team Coin Boost"
+    icon: GOLD_INGOT
+    type: COIN_MULTIPLIER
+    value-per-level: 0.02
+    costs: [100, 250, 500, 1000, 2000]
+  luck_boost:
+    display-name: "&dTeam Luck Boost"
+    icon: RABBIT_FOOT
+    type: LUCK_MULTIPLIER
+    value-per-level: 0.03
+    costs: [150, 350, 700, 1500]
+  damage_boost:
+    display-name: "&cTeam Damage Boost"
+    icon: IRON_SWORD
+    type: DAMAGE_MULTIPLIER
+    value-per-level: 0.02
+    costs: [100, 250, 500, 1000, 2000]

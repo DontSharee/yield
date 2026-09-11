@@ -95,15 +95,24 @@ public final class ItemDisplayManager {
     }
 
     /**
-     * A fixed pitch (X-axis tilt) + yaw (Y-axis spin) orientation, combined
-     * into one quaternion - unlike {@link #setYRotation}, this doesn't
-     * track anything about the viewer or any entity's live look direction,
-     * it's just a constant tilt/facing for the display itself. Set once at
-     * spawn time; no need to resend unless the desired fixed angle changes.
+     * A pitch (X-axis tilt) + yaw orientation, combined into one quaternion.
+     * {@code yawDegrees} follows the same convention as a real entity's
+     * yaw/{@link Location#getYaw()} - 0 faces south, increasing clockwise
+     * when viewed from above - so a caller can feed this a player's own
+     * yaw (or an angle computed the same way, e.g. via
+     * {@code Math.toDegrees(Math.atan2(-dx, dz))}) and get a matching
+     * facing. Unlike {@link #setYRotation}, callers own tracking whatever
+     * the display should currently face; call this again whenever that
+     * changes rather than once at spawn.
      */
     public static void setRotation(Player viewer, int entityId, float pitchDegrees, float yawDegrees) {
         double halfPitch = Math.toRadians(pitchDegrees) / 2.0;
-        double halfYaw = Math.toRadians(yawDegrees) / 2.0;
+        // Negated: a quaternion's positive rotation around +Y is
+        // counterclockwise viewed from above, but Minecraft yaw increases
+        // clockwise - without this, increasing yawDegrees spins the model
+        // the opposite way from how a player turning right increases their
+        // own yaw (this is what made pets appear to mirror the player).
+        double halfYaw = -Math.toRadians(yawDegrees) / 2.0;
         float sp = (float) Math.sin(halfPitch);
         float cp = (float) Math.cos(halfPitch);
         float sy = (float) Math.sin(halfYaw);

@@ -1,0 +1,27 @@
+# Each entry ranks the top 10 players by a stat (see stats.yml) and pushes
+# the result into a FancyHolograms hologram you create in-game yourself
+# (e.g. /hologram create rebirth_leaderboard) - "hologram" must match that
+# name exactly. Every leaderboard defaults to updating every 10 minutes;
+# leave "update-delay-minutes" unset on every entry to keep them all synced
+# to the same moment. Run /admin leaderboards reload after editing.
+leaderboards:
+  rebirth_leaderboard:
+    hologram: rebirth_leaderboard
+    title: "REBIRTH Leaderboard"
+    color: "#FF66FF"
+    stat: rebirths
+  coins_leaderboard:
+    hologram: coins_leaderboard
+    title: "COINS Leaderboard"
+    color: "#FFD700"
+    stat: coins
+  cube_kills_leaderboard:
+    hologram: cube_kills_leaderboard
+    title: "CUBE KILLS Leaderboard"
+    color: "#FF5555"
+    stat: cube_kills
+  boss_damage_leaderboard:
+    hologram: boss_damage_leaderboard
+    title: "BOSS DAMAGE Leaderboard"
+    color: "#FF5555"
+    stat: boss_damage

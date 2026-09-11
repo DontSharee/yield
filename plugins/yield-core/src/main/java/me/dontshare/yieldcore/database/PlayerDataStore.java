@@ -1,5 +1,6 @@
 package me.dontshare.yieldcore.database;
 
+import com.mongodb.client.ClientSession;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
@@ -61,6 +62,7 @@ public final class PlayerDataStore<T extends PlayerRecord> {
 
     private final Map<UUID, T> cache = new ConcurrentHashMap<>();
     private final Map<UUID, CompletableFuture<Void>> pendingSaves = new ConcurrentHashMap<>();
+    private Function<Document, Document> rawMigration = document -> document;
 
     /**
      * @param collectionName shared collection name, e.g. "playerData" - the same value across plugins
@@ -75,6 +77,20 @@ public final class PlayerDataStore<T extends PlayerRecord> {
         this.type = type;
         this.defaultFactory = defaultFactory;
         this.logger = logger;
+    }
+
+    /**
+     * Runs once, on the raw sub-document, before every decode - lets a
+     * plugin migrate an old field shape into a new one (e.g. renaming/
+     * restructuring a field after a breaking data-model change) without a
+     * permanent dual-field shim in the actual POJO. A no-op by default.
+     * Since {@link #save} always {@code $set}s the whole re-serialized
+     * object (never a partial merge), any stale key this migration doesn't
+     * touch simply disappears on that player's very next save - there's
+     * nothing to clean up here beyond adding whatever the new shape needs.
+     */
+    public void setRawMigration(Function<Document, Document> rawMigration) {
+        this.rawMigration = rawMigration != null ? rawMigration : (document -> document);
     }
 
     /** In-memory read of an already-loaded player. Null if not currently cached. */
@@ -142,6 +158,23 @@ public final class PlayerDataStore<T extends PlayerRecord> {
     }
 
     /**
+     * Same write {@link #save} performs, but participates in the caller's
+     * {@link ClientSession}/transaction instead of committing on its own -
+     * see {@link DatabaseManager#withTransaction}. BLOCKING, and must only
+     * ever be called from inside that transaction's own work function (never
+     * the main thread, never outside a transaction - use {@link #save} for
+     * a normal, single-document write). A no-op if nothing is cached for
+     * this player.
+     */
+    public void saveWithSession(UUID playerId, ClientSession session) {
+        T record = cache.get(playerId);
+        if (record == null) {
+            return;
+        }
+        collection.updateOne(session, Filters.eq("_id", playerId), Updates.set(fieldKey, record), new UpdateOptions().upsert(true));
+    }
+
+    /**
      * Blocking save, for use during {@code onDisable} only - async tasks
      * are not guaranteed to run to completion while the server is
      * shutting down, so the final save has to block instead.
@@ -196,7 +229,7 @@ public final class PlayerDataStore<T extends PlayerRecord> {
                 .first();
 
         Document sub = doc != null ? doc.get(fieldKey, Document.class) : null;
-        T decoded = sub != null ? decode(sub) : null;
+        T decoded = sub != null ? decode(rawMigration.apply(sub)) : null;
         return decoded != null ? decoded : defaultFactory.apply(playerId);
     }
 

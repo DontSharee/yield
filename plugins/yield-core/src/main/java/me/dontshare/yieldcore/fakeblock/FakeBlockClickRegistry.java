@@ -1,0 +1,191 @@
+package me.dontshare.yieldcore.fakeblock;
+
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.event.PacketListenerAbstract;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.util.Vector3i;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientAnimation;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerBlockPlacement;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.util.Vector;
+
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
+
+/**
+ * Lets other plugins find out when a player left-clicks a fake, per-player
+ * block - one that only exists client-side via {@link Player#sendBlockChange}
+ * (see {@link FakeFallingBlock}), never as a real block the server knows
+ * about. A real block would fire {@code BlockBreakEvent} normally; a fake
+ * one never will, since the server-side world at that position is
+ * untouched.
+ * <p>
+ * The click itself is detected by reading the client's raw arm-swing packet
+ * (sent on every left-click, hit or miss, regardless of range) and doing a
+ * server-side ray/AABB test against every fake block currently registered
+ * for that specific player, out to {@link #RAYCAST_RANGE} - deliberately
+ * NOT vanilla's own block-targeting/interaction range (a real left-click on
+ * a REAL block is capped around 4.5-6 blocks), since these blocks aren't
+ * real and there's no reason a fake target has to obey that same limit.
+ * {@link #RAYCAST_RANGE} is set effectively unbounded (far larger than any
+ * real zone) rather than to some other fixed distance - a caller like
+ * yield-zones only ever registers fake blocks within a bounded zone region
+ * in the first place, so that region is already the real limit on how far
+ * away a clickable cube can be, not this constant.
+ * The closest intersected registration (if any) wins, mirroring "you can
+ * only click what you're actually looking at."
+ * <p>
+ * Right-clicking one of these fake blocks is a separate problem: the
+ * client's own raycast sees the fake block as solid, but the server's real
+ * world at that position is still air - which is replaceable - so the
+ * vanilla server would happily place a real block (or otherwise interact,
+ * e.g. till soil, open a door) exactly where the fake block only appears
+ * to be. Left unhandled, right-clicking a fake block while holding a
+ * placeable item spawns a real block that outlives the fake one entirely.
+ * This is fixed by reading the client's raw {@code PLAYER_BLOCK_PLACEMENT}
+ * packet (the packet vanilla sends for nearly every right-click-on-a-block
+ * interaction, not just placing) and cancelling it, but ONLY when its
+ * reported position matches a fake block currently registered for that
+ * exact player - every other block placement/interaction in the world is
+ * left untouched.
+ */
+public final class FakeBlockClickRegistry {
+
+    // Effectively unbounded - see class Javadoc for why a zone's own size,
+    // not this constant, is meant to be the real limit on reach.
+    private static final double RAYCAST_RANGE = 512.0;
+
+    private record Key(UUID playerId, String world, int x, int y, int z) {
+    }
+
+    private static final Map<Key, Consumer<Player>> handlers = new ConcurrentHashMap<>();
+
+    private FakeBlockClickRegistry() {
+    }
+
+    /** Call once, from {@code YieldCore#onEnable}. */
+    public static void install(JavaPlugin plugin) {
+        PacketEvents.getAPI().getEventManager().registerListener(new PacketListenerAbstract() {
+            @Override
+            public void onPacketReceive(PacketReceiveEvent event) {
+                if (event.getPacketType() == PacketType.Play.Client.ANIMATION) {
+                    onSwing(event);
+                } else if (event.getPacketType() == PacketType.Play.Client.PLAYER_BLOCK_PLACEMENT) {
+                    onBlockPlacement(event);
+                }
+            }
+
+            private void onSwing(PacketReceiveEvent event) {
+                if (!(event.getPlayer() instanceof Player player)) {
+                    return;
+                }
+                // Field reads above are cheap wrapper deserialization, safe
+                // off-thread - but the raycast itself calls live Bukkit API
+                // (player location/world), so that (and the handler call)
+                // are deferred to the main thread like every other packet
+                // handler in this codebase.
+                Bukkit.getScheduler().runTask(plugin, () -> handleSwing(player));
+            }
+
+            private void onBlockPlacement(PacketReceiveEvent event) {
+                if (!(event.getPlayer() instanceof Player player)) {
+                    return;
+                }
+                Vector3i pos = new WrapperPlayClientPlayerBlockPlacement(event).getBlockPosition();
+                if (handlers.containsKey(new Key(player.getUniqueId(), player.getWorld().getName(), pos.x, pos.y, pos.z))) {
+                    event.setCancelled(true);
+                }
+            }
+        });
+    }
+
+    private static void handleSwing(Player player) {
+        Key hit = raycast(player);
+        if (hit == null) {
+            return;
+        }
+        Consumer<Player> handler = handlers.get(hit);
+        if (handler != null) {
+            handler.accept(player);
+        }
+    }
+
+    /** The closest fake block registered to {@code player} that their current look direction intersects within {@link #RAYCAST_RANGE}, or null. */
+    private static Key raycast(Player player) {
+        Location eye = player.getEyeLocation();
+        Vector direction = eye.getDirection();
+        String worldName = eye.getWorld().getName();
+
+        Key closest = null;
+        double closestDistance = Double.MAX_VALUE;
+        for (Key key : handlers.keySet()) {
+            if (!key.playerId().equals(player.getUniqueId()) || !key.world().equals(worldName)) {
+                continue;
+            }
+            Double distance = intersectDistance(eye, direction, key);
+            if (distance != null && distance < closestDistance) {
+                closestDistance = distance;
+                closest = key;
+            }
+        }
+        return closest;
+    }
+
+    /**
+     * Standard slab-method ray/axis-aligned-bounding-box test against the
+     * unit cube occupying {@code key}'s block position - returns the ray's
+     * entry distance if it hits within {@link #RAYCAST_RANGE}, or null if
+     * it misses or the box is further away than that.
+     */
+    private static Double intersectDistance(Location eye, Vector direction, Key key) {
+        double tMin = 0.0;
+        double tMax = RAYCAST_RANGE;
+
+        double[] origin = {eye.getX(), eye.getY(), eye.getZ()};
+        double[] dir = {direction.getX(), direction.getY(), direction.getZ()};
+        double[] boxMin = {key.x(), key.y(), key.z()};
+        double[] boxMax = {key.x() + 1.0, key.y() + 1.0, key.z() + 1.0};
+
+        for (int axis = 0; axis < 3; axis++) {
+            if (Math.abs(dir[axis]) < 1e-9) {
+                if (origin[axis] < boxMin[axis] || origin[axis] > boxMax[axis]) {
+                    return null;
+                }
+                continue;
+            }
+            double t1 = (boxMin[axis] - origin[axis]) / dir[axis];
+            double t2 = (boxMax[axis] - origin[axis]) / dir[axis];
+            if (t1 > t2) {
+                double swap = t1;
+                t1 = t2;
+                t2 = swap;
+            }
+            tMin = Math.max(tMin, t1);
+            tMax = Math.min(tMax, t2);
+            if (tMin > tMax) {
+                return null;
+            }
+        }
+        return tMin;
+    }
+
+    /** Registers a callback for {@code player} left-clicking the fake block at {@code location} - call {@link #unregister} once it's gone. */
+    public static void register(Player player, Location location, Consumer<Player> onClick) {
+        handlers.put(keyFor(player, location), onClick);
+    }
+
+    public static void unregister(Player player, Location location) {
+        handlers.remove(keyFor(player, location));
+    }
+
+    private static Key keyFor(Player player, Location location) {
+        return new Key(player.getUniqueId(), location.getWorld().getName(),
+                location.getBlockX(), location.getBlockY(), location.getBlockZ());
+    }
+}

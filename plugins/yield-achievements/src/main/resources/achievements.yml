@@ -1,0 +1,99 @@
+# Specific, hand-authored one-off tasks - unlike milestones.yml's ladders,
+# each of these is its own unique moment. Reward is Credits, spent in
+# /buy on ranks/gamepasses. Credits are granted the instant an achievement
+# completes - no claim step needed. Run /admin achievements reload after
+# editing.
+#
+# "trigger" is a GameAction (see that enum for the full list: OPEN_PACK,
+# OBTAIN_PET, EQUIP_PET, UNEQUIP_PET, FUSE_PET, FEED_CANDY, LEVEL_UP_PET,
+# KILL_CUBE, EARN_COINS, ENTER_ZONE, UNLOCK_ZONE, REBIRTH, PRESTIGE,
+# BUY_SKILL_NODE, CREATE_TEAM, KILL_WORLD_BOSS, DEAL_BOSS_DAMAGE).
+#
+# Two ways to write it:
+#   trigger: PRESTIGE            # fires on every occurrence - pair with "goal:" below
+#   trigger: PRESTIGE_100        # sugar for "trigger: PRESTIGE" with goal implied as 100 -
+#                                 # a specific numbered moment, self-documenting, no separate "goal:" needed
+# Both forms work for every action - "<ACTION>_<N>" is just a shorthand for
+# "trigger: <ACTION>, goal: N", not a separate mechanism.
+achievements:
+  first_pack:
+    display-name: "&fCrack It Open"
+    icon: CHEST
+    description:
+      - "Open your very first pack."
+    trigger: OPEN_PACK
+    goal: 1
+    reward-credits: 50
+  pack_addict:
+    display-name: "&ePack Addict"
+    icon: CHEST
+    description:
+      - "Open 1,000 packs."
+    trigger: OPEN_PACK
+    goal: 1000
+    reward-credits: 500
+  first_fusion:
+    display-name: "&dFuse Together"
+    icon: ANVIL
+    description:
+      - "Fuse your first pet."
+    trigger: FUSE_PET
+    goal: 1
+    reward-credits: 75
+  fusion_master:
+    display-name: "&5&lFusion Master"
+    icon: ANVIL
+    description:
+      - "Fuse 100 pets."
+    trigger: FUSE_PET
+    goal: 100
+    reward-credits: 750
+  cube_crusher:
+    display-name: "&cCube Crusher"
+    icon: IRON_PICKAXE
+    description:
+      - "Kill 10,000 ore cubes."
+    trigger: KILL_CUBE
+    goal: 10000
+    reward-credits: 400
+  zone_explorer:
+    display-name: "&aZone Explorer"
+    icon: ENDER_PEARL
+    # Unlock your 5th zone (any 5, in any order) - shorthand for
+    # "trigger: UNLOCK_ZONE, goal: 5".
+    trigger: UNLOCK_ZONE_5
+    description:
+      - "Unlock your 5th zone."
+    reward-credits: 1000
+  first_rebirth:
+    display-name: "&bReborn"
+    icon: NETHER_STAR
+    description:
+      - "Rebirth for the first time."
+    trigger: REBIRTH
+    goal: 1
+    reward-credits: 100
+  centurion:
+    display-name: "&6&lCenturion"
+    icon: BEACON
+    # Reach your 100th prestige - shorthand for "trigger: PRESTIGE, goal: 100".
+    trigger: PRESTIGE_100
+    description:
+      - "Reach your 100th prestige."
+    reward-credits: 5000
+  first_team:
+    display-name: "&9Team Player"
+    icon: WHITE_BANNER
+    description:
+      - "Create a team."
+    trigger: CREATE_TEAM
+    goal: 1
+    reward-credits: 150
+  boss_slayer:
+    display-name: "&4&lBoss Slayer"
+    icon: NETHERITE_SWORD
+    description:
+      - "Land the final blow's worth of damage on 10 world bosses."
+    trigger: KILL_WORLD_BOSS
+    goal: 10
+    reward-credits: 2000

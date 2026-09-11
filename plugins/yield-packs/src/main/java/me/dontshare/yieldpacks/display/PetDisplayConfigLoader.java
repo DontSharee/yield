@@ -31,6 +31,7 @@ public final class PetDisplayConfigLoader {
                 config.getDouble("view-distance", 48),
                 (float) config.getDouble("item.scale", 0.85),
                 (float) config.getDouble("item.pitch-degrees", -5),
-                (float) config.getDouble("item.yaw-degrees", 180));
+                (float) config.getDouble("item.yaw-degrees", 180),
+                (float) config.getDouble("item.huge-scale-multiplier", 2.5));
     }
 }
