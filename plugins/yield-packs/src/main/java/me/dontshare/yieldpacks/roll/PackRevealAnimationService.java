@@ -1,5 +1,6 @@
 package me.dontshare.yieldpacks.roll;
 
+import me.dontshare.yieldcore.math.WeightedRandom;
 import me.dontshare.yieldcore.packet.ItemDisplayManager;
 import me.dontshare.yieldcore.packet.PacketEntityManager;
 import me.dontshare.yieldcore.packet.TextDisplayManager;
@@ -30,7 +31,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
 /**
@@ -405,15 +405,7 @@ public final class PackRevealAnimationService {
     }
 
     private ItemDefinition sampleWeighted(List<PackRollService.WeightedOdds> odds) {
-        double roll = ThreadLocalRandom.current().nextDouble();
-        double cumulative = 0;
-        for (PackRollService.WeightedOdds w : odds) {
-            cumulative += w.probability();
-            if (roll < cumulative) {
-                return w.item();
-            }
-        }
-        return odds.get(odds.size() - 1).item();
+        return WeightedRandom.pick(odds, PackRollService.WeightedOdds::probability).item();
     }
 
     /** Three lines: rarity (its own gradient display name), the item's own colored name, and its real "(1 in N)" odds for this roll - directly on the in-world label, not just the action bar, so which pet is which is legible without staring at the action bar. */

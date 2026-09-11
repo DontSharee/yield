@@ -5,6 +5,7 @@ import me.dontshare.yieldcore.YieldCore;
 import me.dontshare.yieldcore.fakeblock.FakeBlockClickRegistry;
 import me.dontshare.yieldcore.packet.BlockDisplayManager;
 import me.dontshare.yieldcore.packet.PacketEntityManager;
+import me.dontshare.yieldcore.math.WeightedRandom;
 import me.dontshare.yieldcore.packet.TextDisplayManager;
 import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldcore.text.Text;
@@ -849,7 +850,14 @@ public final class OreCubeService implements Listener {
                 if (dead) {
                     killCube(player, zone, cube, entry.getValue().contributingInstanceIds());
                 } else {
-                    updateBossBar(player, cube);
+                    // The boss bar is a single, per-player HUD element - only
+                    // this player's actual target should drive it, or a
+                    // single-send player hitting several cubes at once would
+                    // have it flicker to show whichever cube's HP happened to
+                    // be processed last in this loop.
+                    if (cube.equals(currentTarget(player))) {
+                        updateBossBar(player, cube);
+                    }
                     TextDisplayManager.setText(player, cube.textEntityId(), healthBarText(cube));
                     playHitSquish(player, cube);
                 }
@@ -1014,8 +1022,13 @@ public final class OreCubeService implements Listener {
         player.spawnParticle(Particle.BLOCK, center, 40, 0.35, 0.35, 0.35, 0.15, cube.tier().material().createBlockData());
         player.playSound(at, Sound.BLOCK_STONE_BREAK, 1f, 1f);
         despawnCube(player, cube);
-        targetByPlayer.remove(player.getUniqueId(), cube);
-        hideBossBar(player);
+        // Single-send mode can have several cubes alive for this player at
+        // once, and this kill isn't necessarily their current target - only
+        // tear down the boss bar (a single, per-player HUD element) when the
+        // cube that just died is the one it was actually showing.
+        if (targetByPlayer.remove(player.getUniqueId(), cube)) {
+            hideBossBar(player);
+        }
 
         payOut(player, cube.tier(), cube.bonus(), at.clone().add(0.5, 0.5, 0.5), contributingInstanceIds);
         // Deliberately doesn't touch the pet-display attack override here -
@@ -1293,16 +1306,7 @@ public final class OreCubeService implements Listener {
     }
 
     private CubeTier rollTier(ZoneDefinition zone) {
-        double total = zone.cubeTiers().stream().mapToDouble(CubeTier::weight).sum();
-        double roll = ThreadLocalRandom.current().nextDouble() * total;
-        double cumulative = 0;
-        for (CubeTier tier : zone.cubeTiers()) {
-            cumulative += tier.weight();
-            if (roll < cumulative) {
-                return tier;
-            }
-        }
-        return zone.cubeTiers().get(zone.cubeTiers().size() - 1);
+        return WeightedRandom.pick(zone.cubeTiers(), CubeTier::weight);
     }
 
     private YieldCore core() {

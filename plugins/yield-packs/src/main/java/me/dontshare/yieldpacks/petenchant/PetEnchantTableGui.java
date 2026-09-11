@@ -216,10 +216,14 @@ public final class PetEnchantTableGui {
         runAutoLoop(player, pet, targets);
     }
 
+    /** Every how many rolls the loop below persists the profile and rebuilds the GUI's slots, rather than doing both on every single roll - a hunt for a rare Unique can run for dozens to hundreds of attempts at {@link #AUTO_ROLL_INTERVAL_TICKS} apart, and neither a DB write nor an icon/lore rebuild needs to happen 5x/sec for a hunt where only the final result actually matters visually. */
+    private static final int AUTO_PERSIST_EVERY_N_ROLLS = 5;
+
     /** Rolls {@link #AUTO_ROLL_INTERVAL_TICKS} apart, skipping the full spin animation (too slow for a hunt that can take dozens of attempts) - a quick tick sound per attempt instead, and the normal landing flourish only once a target actually lands. Stops itself on: the loaded pet changing (swapped or unloaded), running out of gems, or a target Unique landing - {@link #open}'s own close handler is the other stop path (leaving the table at all). */
     private void runAutoLoop(Player player, PetInstance pet, Set<String> targets) {
         UUID playerId = player.getUniqueId();
         cancelAutoTask(playerId);
+        int[] rollsSincePersist = {0};
         BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             if (!player.isOnline()) {
                 // Must go through cancelAutoTask (not a bare map remove) -
@@ -249,6 +253,7 @@ public final class PetEnchantTableGui {
             if (!enchantService.canAfford(profile)) {
                 cancelAutoTask(playerId);
                 player.sendMessage(Text.parse("<red>Auto Enchant stopped - out of gems.</red>"));
+                store.save(playerId);
                 refreshTableSlots(player);
                 return;
             }
@@ -256,16 +261,26 @@ public final class PetEnchantTableGui {
             enchantService.spend(profile);
             RollResult result = enchantService.rollFor(pet);
             enchantService.apply(pet, result);
-            store.save(playerId);
+            rollsSincePersist[0]++;
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.6f);
 
-            if (enchantService.rollMatchesAny(result, targets)) {
+            boolean matched = enchantService.rollMatchesAny(result, targets);
+            if (matched) {
                 cancelAutoTask(playerId);
                 player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 0.8f);
                 player.spawnParticle(Particle.TOTEM_OF_UNDYING, player.getLocation().add(0, 1, 0), 25, 0.4, 0.4, 0.4, 0.3);
                 player.sendMessage(Text.parse("<green>Auto Enchant found a target enchant!</green>"));
             }
-            refreshTableSlots(player);
+            // Persist and redraw only every AUTO_PERSIST_EVERY_N_ROLLS attempts
+            // (or on this final, terminal roll) - every intermediate roll's
+            // result already lives on the in-memory PetInstance the whole
+            // loop shares, so nothing is lost by batching the save, and the
+            // decoy-free auto rolls have no per-attempt visual anyway.
+            if (matched || rollsSincePersist[0] >= AUTO_PERSIST_EVERY_N_ROLLS) {
+                rollsSincePersist[0] = 0;
+                store.save(playerId);
+                refreshTableSlots(player);
+            }
         }, 0L, AUTO_ROLL_INTERVAL_TICKS);
         autoTaskByPlayer.put(playerId, task);
         refreshTableSlots(player);

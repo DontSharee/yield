@@ -1,6 +1,7 @@
 package me.dontshare.yieldpacks.petenchant;
 
 import me.dontshare.yieldcore.database.PlayerDataStore;
+import me.dontshare.yieldcore.math.WeightedRandom;
 import me.dontshare.yieldpacks.economy.EquipmentService;
 import me.dontshare.yieldpacks.pet.PetInstance;
 import me.dontshare.yieldpacks.petenchant.PetEnchantContentLoader.CommonLadder;
@@ -18,7 +19,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
 /**
@@ -172,19 +172,7 @@ public final class PetEnchantService {
             weights.add(c.uniqueWeight());
         }
 
-        double total = weights.stream().mapToDouble(Double::doubleValue).sum();
-        if (total <= 0 || candidates.isEmpty()) {
-            return null;
-        }
-        double roll = ThreadLocalRandom.current().nextDouble() * total;
-        double cumulative = 0;
-        for (int i = 0; i < candidates.size(); i++) {
-            cumulative += weights.get(i);
-            if (roll < cumulative) {
-                return candidates.get(i);
-            }
-        }
-        return candidates.get(candidates.size() - 1);
+        return WeightedRandom.pick(candidates, weights);
     }
 
     /** Wholesale-replaces {@code pet}'s enchant state with {@code result} - never merges with what was there before (Decision #5/#7). Contributions from a 2-result roll (e.g. a Unique's own stat bonuses + a bonus Common) DO sum together into the same fresh state, though - that's combining two simultaneously-rolled results, not accumulating across separate rolls. Caller saves. */

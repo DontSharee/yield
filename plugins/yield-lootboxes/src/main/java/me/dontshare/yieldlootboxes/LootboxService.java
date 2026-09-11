@@ -1,5 +1,6 @@
 package me.dontshare.yieldlootboxes;
 
+import me.dontshare.yieldcore.math.WeightedRandom;
 import me.dontshare.yieldlootboxes.data.LootboxDefinition;
 import me.dontshare.yieldlootboxes.data.LootboxRewardEntry;
 import me.dontshare.yieldpacks.YieldPacks;
@@ -12,7 +13,6 @@ import org.bukkit.inventory.ItemStack;
 
 import java.math.BigInteger;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
 /**
@@ -69,16 +69,7 @@ public final class LootboxService {
     }
 
     private LootboxRewardEntry rollOne(LootboxDefinition box) {
-        double totalWeight = box.pool().stream().mapToDouble(LootboxRewardEntry::weight).sum();
-        double roll = ThreadLocalRandom.current().nextDouble() * totalWeight;
-        double cumulative = 0;
-        for (LootboxRewardEntry entry : box.pool()) {
-            cumulative += entry.weight();
-            if (roll < cumulative) {
-                return entry;
-            }
-        }
-        return box.pool().get(box.pool().size() - 1);
+        return WeightedRandom.pick(box.pool(), LootboxRewardEntry::weight);
     }
 
     private void applyReward(Player player, PackPlayerProfile profile, LootboxRewardEntry reward) {

@@ -1,6 +1,7 @@
 package me.dontshare.yieldpacks.roll;
 
 import me.dontshare.yieldcore.database.PlayerDataStore;
+import me.dontshare.yieldcore.math.WeightedRandom;
 import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldpacks.data.ItemDefinition;
 import me.dontshare.yieldpacks.data.PackContentLoader;
@@ -269,15 +270,6 @@ public final class PackRollService {
 
     private ItemDefinition rollOne(PackDefinition pack, double luckMultiplier) {
         List<WeightedOdds> odds = oddsFor(pack, luckMultiplier);
-        double roll = ThreadLocalRandom.current().nextDouble();
-        double cumulative = 0;
-        for (WeightedOdds w : odds) {
-            cumulative += w.probability();
-            if (roll < cumulative) {
-                return w.item();
-            }
-        }
-        // Floating-point rounding fallback - land on the last entry rather than throwing.
-        return odds.get(odds.size() - 1).item();
+        return WeightedRandom.pick(odds, WeightedOdds::probability).item();
     }
 }

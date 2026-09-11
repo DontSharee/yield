@@ -1,5 +1,6 @@
 package me.dontshare.yieldspawnnpcs.crate;
 
+import me.dontshare.yieldcore.math.WeightedRandom;
 import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldpacks.event.PetEquippedEvent;
 import me.dontshare.yieldpacks.pet.PetInstance;
@@ -9,7 +10,6 @@ import org.bukkit.entity.Player;
 
 import java.math.BigInteger;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
 /**
@@ -61,16 +61,7 @@ public final class CrateService {
     }
 
     private CrateRewardEntry rollOne(CrateDefinition crate) {
-        double totalWeight = crate.pool().stream().mapToDouble(CrateRewardEntry::weight).sum();
-        double roll = ThreadLocalRandom.current().nextDouble() * totalWeight;
-        double cumulative = 0;
-        for (CrateRewardEntry entry : crate.pool()) {
-            cumulative += entry.weight();
-            if (roll < cumulative) {
-                return entry;
-            }
-        }
-        return crate.pool().get(crate.pool().size() - 1);
+        return WeightedRandom.pick(crate.pool(), CrateRewardEntry::weight);
     }
 
     private void applyReward(Player player, PackPlayerProfile profile, CrateRewardEntry reward) {

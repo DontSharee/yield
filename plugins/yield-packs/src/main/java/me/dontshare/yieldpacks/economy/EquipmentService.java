@@ -156,12 +156,15 @@ public final class EquipmentService {
         return def.damage() * levelMultiplierProvider.apply(pet) * forgeBonus * enchantBonus;
     }
 
+    /** The lowest damage any common pet in {@code packs.yml} lists - the floor a Huge pet falls back to when its owner has never owned a single non-Huge pet, so an all-Huge team is never stuck dealing literal zero damage. */
+    private static final double MIN_HUGE_BASIS_DAMAGE = 1.0;
+
     /** The best {@code effectiveDamage} among every pet this player has ever owned that ISN'T itself Huge - the basis every equipped Huge pet derives its own damage from. Recursion is bounded to depth 1: this only ever calls {@link #effectiveDamage} on pets already filtered to non-Huge. */
     private double bestNormalPetDamage(PackPlayerProfile profile) {
         return profile.getPets().stream()
                 .filter(pet -> !isHuge(pet))
                 .mapToDouble(pet -> effectiveDamage(profile, pet))
-                .max().orElse(0.0);
+                .max().orElse(MIN_HUGE_BASIS_DAMAGE);
     }
 
     private boolean isHuge(PetInstance pet) {
