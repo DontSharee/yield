@@ -35,11 +35,17 @@ import me.dontshare.yieldachievements.store.StoreProduct;
 import me.dontshare.yieldachievements.store.StoreService;
 import me.dontshare.yieldcore.YieldCore;
 import me.dontshare.yieldcore.command.CommandManager;
+import me.dontshare.yieldcore.item.ItemBuilder;
+import me.dontshare.yieldcore.text.MenuLore;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.YieldPacks;
+import me.dontshare.yieldpacks.store.StoreCategory;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.List;
 import java.util.Map;
 
 public final class YieldAchievements extends JavaPlugin {
@@ -94,12 +100,23 @@ public final class YieldAchievements extends JavaPlugin {
 
         CommandManager.register(this, AchievementsCommand.build(achievementsGui), "View your achievements");
         CommandManager.register(this, MilestonesCommand.build(milestonesGui), "View your milestone progress");
-        CommandManager.register(this, BuyCommand.build(storeGui), "Spend credits on ranks and gamepasses");
+        // "/buy" opens the SHARED Store hub (yield-packs), not this plugin's
+        // own StoreGui directly - the Credits Store is one category button
+        // among Rankup/Crates/the Pack Shop there, not its own top-level menu.
+        packs.registerStoreCategory(new StoreCategory("store", 10, YieldAchievements::storeCategoryIcon, storeGui::open));
+        CommandManager.register(this, BuyCommand.build(packs.getStoreHubGui()), "Open the Store - Rankup, the Credits Store, Crates and more");
         CommandManager.register(this, PotionsCommand.build(potionsGui), "View your active potions");
 
         core.getAdminCommandRegistry().register(buildAchievementsAdminCommand(achievementService));
         core.getAdminCommandRegistry().register(buildMilestonesAdminCommand(milestoneService));
         core.getAdminCommandRegistry().register(buildPotionsAdminCommand());
+    }
+
+    private static ItemStack storeCategoryIcon() {
+        ItemBuilder builder = ItemBuilder.of(Material.AMETHYST_SHARD).name(MenuLore.buttonName("<#FFD700>", "STORE"));
+        MenuLore.button("store", List.of(" &7Spend Credits on donor ranks,", " &7gamepasses, and potions."),
+                "<#FFD700>", "Click to Open").forEach(builder::lore);
+        return builder.hideAttributes().build();
     }
 
     private LiteralCommandNode<CommandSourceStack> buildAchievementsAdminCommand(AchievementService achievementService) {

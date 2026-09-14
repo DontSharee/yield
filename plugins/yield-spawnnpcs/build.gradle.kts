@@ -1,4 +1,4 @@
-version = "0.0.4"
+version = "0.0.5"
 
 dependencies {
     // yield-core's own classes (Gui, CommandManager, AdminCommandRegistry,

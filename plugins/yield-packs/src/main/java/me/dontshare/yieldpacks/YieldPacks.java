@@ -19,6 +19,7 @@ import me.dontshare.yieldpacks.command.RankupCommand;
 import me.dontshare.yieldpacks.command.RollAnimationCommand;
 import me.dontshare.yieldpacks.command.SendModeCommand;
 import me.dontshare.yieldpacks.command.SettingsCommand;
+import me.dontshare.yieldpacks.command.StoreCommand;
 import me.dontshare.yieldpacks.data.PackContentLoader;
 import me.dontshare.yieldpacks.dialog.OpenPackDialog;
 import me.dontshare.yieldpacks.display.PetDisplayConfig;
@@ -91,6 +92,9 @@ import me.dontshare.yieldpacks.selector.PackSelectorItem;
 import me.dontshare.yieldpacks.selector.PackSelectorListener;
 import me.dontshare.yieldpacks.selector.PackSelectorService;
 import me.dontshare.yieldpacks.shop.ShopStockService;
+import me.dontshare.yieldpacks.store.DefaultStoreCategories;
+import me.dontshare.yieldpacks.store.StoreCategory;
+import me.dontshare.yieldpacks.store.StoreHubGui;
 import me.dontshare.yieldpacks.starter.StarterPetGui;
 import me.dontshare.yieldpacks.starter.StarterPetJoinListener;
 import me.dontshare.yieldpacks.starter.StarterPetService;
@@ -168,6 +172,9 @@ public final class YieldPacks extends JavaPlugin {
     private final Map<String, Function<PackPlayerProfile, Double>> diamondMultiplierProviders = new ConcurrentHashMap<>();
     /** "Apply this held item to a pet" gestures - see {@link PetItemHandler}. Candy registers itself as one of these below; yield-mining's forged held items register their own externally. Tried in order; the first to return true wins. */
     private final List<PetItemHandler> petItemHandlers = new CopyOnWriteArrayList<>();
+    /** Every destination {@link StoreHubGui} shows as a clickable category - see {@link #registerStoreCategory}. Rankup/the Pack Shop self-register below; yield-achievements/yield-spawnnpcs register their own from their own onEnable. */
+    private final Map<String, StoreCategory> storeCategories = new ConcurrentHashMap<>();
+    private StoreHubGui storeHubGui;
 
     @Override
     public void onEnable() {
@@ -325,7 +332,12 @@ public final class YieldPacks extends JavaPlugin {
         rankService = new RankService(playerStore);
         registerDiamondMultiplierProvider("rank", rankService::diamondMultiplier);
         rankupGui = new RankupGui(playerStore, core.getGuiManager(), rankService);
-        CommandManager.register(this, RankupCommand.build(rankupGui), "Open the Rankup menu", List.of());
+        // "ranks" is an alias, not a separate command - it replaces the old
+        // bare /ranks (donor-rank info readout, removed from yield-ranks),
+        // per the decision that Rankup - the diamond-spend prestige ladder -
+        // is what "/ranks" should mean now, not premium donor ranks (those
+        // live in the Credits Store, reachable via the Store category below).
+        CommandManager.register(this, RankupCommand.build(rankupGui), "Open the Rankup menu", List.of("ranks"));
 
         shardService = new ShardService(playerStore);
         shardItem = new ShardItem(this);
@@ -377,6 +389,11 @@ public final class YieldPacks extends JavaPlugin {
         // literal each one registers actually changed).
         CommandManager.register(this, PacksCommand.build(packShopGui), "Open the merchant to buy packs", List.of());
         CommandManager.register(this, PackStorageCommand.build(packStorageGui), "Open your unopened pack storage", List.of());
+
+        registerStoreCategory(DefaultStoreCategories.rankup(rankupGui));
+        registerStoreCategory(DefaultStoreCategories.packShop(packShopGui));
+        storeHubGui = new StoreHubGui(core.getGuiManager(), () -> List.copyOf(storeCategories.values()));
+        CommandManager.register(this, StoreCommand.build(storeHubGui), "Open the Store - Rankup, Crates, the Pack Shop and more", List.of());
         CommandManager.register(this, BagCommand.build(bagGui), "Open your bag", List.of("pets"));
         CommandManager.register(this, IndexCommand.build(indexGui), "Open your collection index", List.of());
         core.getAdminCommandRegistry().register(PacksAdminCommand.build(this));
@@ -557,6 +574,20 @@ public final class YieldPacks extends JavaPlugin {
     /** Call on the registering plugin's onDisable. */
     public void unregisterDamageMultiplierProvider(String key) {
         damageMultiplierProviders.remove(key);
+    }
+
+    /** Registers (or replaces) a keyed {@link StoreCategory} - the button it becomes always reflects live state since {@link StoreCategory#icon()} is called fresh on every render. */
+    public void registerStoreCategory(StoreCategory category) {
+        storeCategories.put(category.id(), category);
+    }
+
+    /** Call on the registering plugin's onDisable. */
+    public void unregisterStoreCategory(String id) {
+        storeCategories.remove(id);
+    }
+
+    public StoreHubGui getStoreHubGui() {
+        return storeHubGui;
     }
 
     /** The current global attack-speed multiplier - the product of every currently-registered provider (1.0 if none are registered). Shortens the tick interval between a pet's hits (see yield-zones' {@code PetCombatController}); higher is faster. */

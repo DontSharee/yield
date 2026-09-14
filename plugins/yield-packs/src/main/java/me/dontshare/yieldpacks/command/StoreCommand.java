@@ -1,4 +1,4 @@
-package me.dontshare.yieldachievements.command;
+package me.dontshare.yieldpacks.command;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.tree.LiteralCommandNode;
@@ -8,20 +8,20 @@ import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.store.StoreHubGui;
 import org.bukkit.entity.Player;
 
-/** "/buy" - now opens {@link StoreHubGui}, same as "/store" (yield-packs), rather than jumping straight to the Credits Store - "the Store" is one shared landing screen with Rankup/Crates/the Pack Shop as siblings, not a name exclusive to this plugin's own products. */
-public final class BuyCommand {
+/** "/store" - opens {@link StoreHubGui}, the single landing screen for every purchase/progression destination (Rankup, the Credits Store, Crates, the Pack Shop). */
+public final class StoreCommand {
 
-    private BuyCommand() {
+    private StoreCommand() {
     }
 
-    public static LiteralCommandNode<CommandSourceStack> build(StoreHubGui gui) {
-        return Commands.literal("buy")
+    public static LiteralCommandNode<CommandSourceStack> build(StoreHubGui storeHubGui) {
+        return Commands.literal("store")
                 .executes(ctx -> {
                     if (!(ctx.getSource().getSender() instanceof Player player)) {
                         ctx.getSource().getSender().sendMessage(Text.parse("<gray>Players only.</gray>"));
                         return Command.SINGLE_SUCCESS;
                     }
-                    gui.open(player);
+                    storeHubGui.open(player);
                     return Command.SINGLE_SUCCESS;
                 })
                 .build();

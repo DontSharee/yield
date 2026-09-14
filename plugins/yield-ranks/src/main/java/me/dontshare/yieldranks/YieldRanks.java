@@ -1,7 +1,6 @@
 package me.dontshare.yieldranks;
 
 import me.dontshare.yieldcore.YieldCore;
-import me.dontshare.yieldcore.command.CommandManager;
 import me.dontshare.yieldleveling.YieldLeveling;
 import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldranks.command.DonorRankCommand;
@@ -9,7 +8,6 @@ import me.dontshare.yieldranks.data.DonorRank;
 import me.dontshare.yieldranks.data.RankContentLoader;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.List;
 import java.util.Map;
 
 public final class YieldRanks extends JavaPlugin {
@@ -38,8 +36,6 @@ public final class YieldRanks extends JavaPlugin {
         leveling.getLevelingService().registerXpMultiplierProvider(PROVIDER_KEY, rankService::xpMultiplier);
 
         core.getAdminCommandRegistry().register(DonorRankCommand.buildAdminDomain(this, rankService));
-        CommandManager.register(this, DonorRankCommand.buildInfo(rankService, packs.getPlayerStore()),
-                "View your current donor rank and its perks", List.of());
     }
 
     @Override
