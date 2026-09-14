@@ -260,12 +260,12 @@ public final class YieldPacks extends JavaPlugin {
                     .sum() * damageMultiplier(profile);
             return List.of(
                     " ",
-                    "<#8CD5EC>" + Formatting.fancyFont("player"),
+                    "<#8CD5EC> " + Formatting.fancyFont("player"),
                     " <#8CD5EC>&l| " + "&f" + Formatting.fancyFont("cubes broken: ") + "<#EC8C9F>" + Formatting.format(profile.getLifetimeCubeKills()),
                     " <#8CD5EC>&l| " + "&f" + Formatting.fancyFont("rebirths: ") + RebirthChatBadge.prefixFor(profile.getRebirths()),
                     " <#8CD5EC>&l| " + "&f" + Formatting.fancyFont("multi: ") + "<#95EC8C>" + Formatting.format(coinMultiplier(profile)) + "x",
                     " ",
-                    "<#8CD5EC>" + Formatting.fancyFont("wallet"),
+                    "<#8CD5EC> " + Formatting.fancyFont("wallet"),
                     " <#8CD5EC>&l| " + "&f" + Formatting.fancyFont("coins: ") + "<#F9FF91>" + Formatting.format(profile.getCoins()),
                     " <#8CD5EC>&l| " + "&f" + Formatting.fancyFont("diamonds: ") + "<#ADFFF5>" + Formatting.format(profile.getDiamonds()),
                     " <#8CD5EC>&l| " + "&f" + Formatting.fancyFont("credits: ") + "&f" + Formatting.format(profile.getCredits()),

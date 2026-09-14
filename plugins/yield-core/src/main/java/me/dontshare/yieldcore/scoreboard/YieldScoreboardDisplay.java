@@ -98,8 +98,6 @@ public final class YieldScoreboardDisplay implements Listener {
         for (Function<Player, List<String>> provider : extraLineProviders) {
             lines.addAll(provider.apply(player));
         }
-        lines.add(" ");
-
         scoreboardManager.setLines(player, lines);
     }
 }
