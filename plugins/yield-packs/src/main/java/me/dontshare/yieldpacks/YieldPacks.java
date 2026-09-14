@@ -390,7 +390,7 @@ public final class YieldPacks extends JavaPlugin {
         CommandManager.register(this, PacksCommand.build(packShopGui), "Open the merchant to buy packs", List.of());
         CommandManager.register(this, PackStorageCommand.build(packStorageGui), "Open your unopened pack storage", List.of());
 
-        registerStoreCategory(DefaultStoreCategories.rankup(rankupGui));
+        registerStoreCategory(DefaultStoreCategories.rankup(playerStore, rankService));
         registerStoreCategory(DefaultStoreCategories.packShop(packShopGui));
         storeHubGui = new StoreHubGui(core.getGuiManager(), () -> List.copyOf(storeCategories.values()));
         CommandManager.register(this, StoreCommand.build(storeHubGui), "Open the Store - Rankup, Crates, the Pack Shop and more", List.of());

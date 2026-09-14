@@ -52,7 +52,7 @@ public final class YieldSpawnNpcs extends JavaPlugin {
         crateGui = new CrateGui(packs, crateService, core.getGuiManager());
 
         CommandManager.register(this, CrateCommand.build(crateGui), "Open the Crate Shop", List.of());
-        packs.registerStoreCategory(new StoreCategory("crates", 20, YieldSpawnNpcs::crateCategoryIcon, crateGui::open));
+        packs.registerStoreCategory(new StoreCategory("crates", 20, YieldSpawnNpcs::crateCategoryIcon, crateGui::renderInto));
         core.getAdminCommandRegistry().register(SpawnNpcsAdminCommand.build(this));
     }
 
@@ -61,10 +61,10 @@ public final class YieldSpawnNpcs extends JavaPlugin {
         crateContent = crateContentLoader.load();
     }
 
-    private static ItemStack crateCategoryIcon() {
+    private static ItemStack crateCategoryIcon(boolean selected) {
         ItemBuilder builder = ItemBuilder.of(Material.ENDER_CHEST).name(MenuLore.buttonName("<#FF7F50>", "CRATES"));
         MenuLore.button("store", List.of(" &7Spend Credits on crates -", " &7coins, diamonds, and rare pets."),
-                "<#FF7F50>", "Click to Open").forEach(builder::lore);
+                "<#FF7F50>", selected ? "Selected" : "Click to Open").forEach(builder::lore);
         return builder.hideAttributes().build();
     }
 }

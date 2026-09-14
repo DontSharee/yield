@@ -9,6 +9,7 @@ import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldpacks.gui.GuiIcons;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
+import me.dontshare.yieldpacks.store.StoreHubGui;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -25,8 +26,15 @@ public final class CrateGui {
 
     private static final int TOTAL_ROWS = 3;
     private static final int[] CRATE_SLOTS = {11, 13, 15};
-    private static final int INFO_SLOT = 22;
+    private static final int INFO_SLOT = 4;
+    private static final int CLOSE_SLOT = 22;
     private static final String ACCENT = "<#55FF55>";
+
+    /** Same crates, offset to sit inside {@link StoreHubGui}'s shared content region (row 0 there belongs to its category tabs). */
+    private static final int HUB_ROW_OFFSET = 9;
+    private static final int[] HUB_CRATE_SLOTS = {HUB_ROW_OFFSET + 11, HUB_ROW_OFFSET + 13, HUB_ROW_OFFSET + 15};
+    private static final int HUB_INFO_SLOT = HUB_ROW_OFFSET + 4;
+    private static final int HUB_CLOSE_SLOT = HUB_ROW_OFFSET + 22;
 
     private final YieldPacks packs;
     private final CrateService crateService;
@@ -50,9 +58,58 @@ public final class CrateGui {
         }
 
         builder.item(INFO_SLOT, buildBalanceIcon(profile));
-        builder.item(TOTAL_ROWS * 9 - 5, GuiIcons.closeButton(), (clicker, e) -> clicker.closeInventory());
+        // Previously both this and INFO_SLOT resolved to slot 22 (TOTAL_ROWS
+        // * 9 - 5 == 22 for a 3-row GUI) - the close button silently
+        // overwrote the balance icon, so it never actually rendered. Now on
+        // opposite rows.
+        builder.item(CLOSE_SLOT, GuiIcons.closeButton(), (clicker, e) -> clicker.closeInventory());
 
         guiManager.open(player, builder.build());
+    }
+
+    /**
+     * Same content {@link #open} renders, painted into an ALREADY-OPEN
+     * {@link StoreHubGui} tab instead of its own dedicated screen - see
+     * {@code StoreCategory.CategoryRenderer}. A successful buy refreshes
+     * back into the SAME shared Gui (via {@code hub.refreshContent}) rather
+     * than calling {@link #open}, which would pop a second inventory.
+     */
+    public void renderInto(Player player, Gui gui, StoreHubGui hub) {
+        PackPlayerProfile profile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
+        for (int slot : StoreHubGui.CONTENT_SLOTS) {
+            gui.set(slot, GuiIcons.filler(), null);
+        }
+
+        List<CrateDefinition> crates = new ArrayList<>(crateService.content().values());
+        for (int i = 0; i < crates.size() && i < HUB_CRATE_SLOTS.length; i++) {
+            CrateDefinition crate = crates.get(i);
+            gui.set(HUB_CRATE_SLOTS[i], buildCrateIcon(profile, crate), (clicker, e) -> {
+                attemptBuyInHub(clicker, crate.id());
+                hub.refreshContent(clicker);
+            });
+        }
+
+        gui.set(HUB_INFO_SLOT, buildBalanceIcon(profile), null);
+        gui.set(HUB_CLOSE_SLOT, GuiIcons.closeButton(), (clicker, e) -> clicker.closeInventory());
+    }
+
+    private void attemptBuyInHub(Player player, String crateId) {
+        CrateService.PurchaseOutcome outcome = crateService.buy(player, crateId);
+        switch (outcome.result()) {
+            case CANT_AFFORD -> {
+                player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
+                player.sendMessage(Text.parse("<red>You don't have enough Credits for that.</red>"));
+            }
+            case UNKNOWN_CRATE -> {
+                // Shouldn't happen from a real click - the crate list this GUI itself built is always current.
+            }
+            case SUCCESS -> {
+                CrateRewardEntry reward = outcome.reward();
+                player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.2f);
+                player.sendMessage(Text.parse("<green>Crate opened! You got <reward>.</green>",
+                        Placeholder.unparsed("reward", describeReward(reward))));
+            }
+        }
     }
 
     private void attemptBuy(Player player, String crateId) {

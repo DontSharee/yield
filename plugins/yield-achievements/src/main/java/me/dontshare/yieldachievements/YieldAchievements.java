@@ -103,7 +103,7 @@ public final class YieldAchievements extends JavaPlugin {
         // "/buy" opens the SHARED Store hub (yield-packs), not this plugin's
         // own StoreGui directly - the Credits Store is one category button
         // among Rankup/Crates/the Pack Shop there, not its own top-level menu.
-        packs.registerStoreCategory(new StoreCategory("store", 10, YieldAchievements::storeCategoryIcon, storeGui::open));
+        packs.registerStoreCategory(new StoreCategory("store", 10, YieldAchievements::storeCategoryIcon, storeGui::renderInto));
         CommandManager.register(this, BuyCommand.build(packs.getStoreHubGui()), "Open the Store - Rankup, the Credits Store, Crates and more");
         CommandManager.register(this, PotionsCommand.build(potionsGui), "View your active potions");
 
@@ -112,10 +112,10 @@ public final class YieldAchievements extends JavaPlugin {
         core.getAdminCommandRegistry().register(buildPotionsAdminCommand());
     }
 
-    private static ItemStack storeCategoryIcon() {
+    private static ItemStack storeCategoryIcon(boolean selected) {
         ItemBuilder builder = ItemBuilder.of(Material.AMETHYST_SHARD).name(MenuLore.buttonName("<#FFD700>", "STORE"));
         MenuLore.button("store", List.of(" &7Spend Credits on donor ranks,", " &7gamepasses, and potions."),
-                "<#FFD700>", "Click to Open").forEach(builder::lore);
+                "<#FFD700>", selected ? "Selected" : "Click to Open").forEach(builder::lore);
         return builder.hideAttributes().build();
     }
 
