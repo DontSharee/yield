@@ -46,8 +46,8 @@ public final class DonorRankService {
         return currentRank(profile).map(DonorRank::coinMultiplier).orElse(1.0);
     }
 
-    public double gemMultiplier(PackPlayerProfile profile) {
-        return currentRank(profile).map(DonorRank::gemMultiplier).orElse(1.0);
+    public double diamondMultiplier(PackPlayerProfile profile) {
+        return currentRank(profile).map(DonorRank::diamondMultiplier).orElse(1.0);
     }
 
     public double xpMultiplier(PackPlayerProfile profile) {

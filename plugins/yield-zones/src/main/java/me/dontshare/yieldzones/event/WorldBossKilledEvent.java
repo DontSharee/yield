@@ -11,7 +11,7 @@ import java.util.UUID;
  * Fired from {@link me.dontshare.yieldzones.boss.WorldBossService} once a
  * world boss's HP hits 0 and payouts have been applied - {@code
  * damageByPlayer} is every contributor's total damage dealt (used to split
- * {@code rewardCoins}/{@code rewardGems} proportionally), not just the
+ * {@code rewardCoins}/{@code rewardDiamonds} proportionally), not just the
  * killing blow. Unlike {@link OreCubeKilledEvent}, this has no single
  * "player" - a world boss is a shared, multiplayer kill.
  */
@@ -22,13 +22,13 @@ public final class WorldBossKilledEvent extends Event {
     private final WorldBossDefinition definition;
     private final Map<UUID, Long> damageByPlayer;
     private final long rewardCoins;
-    private final long rewardGems;
+    private final long rewardDiamonds;
 
-    public WorldBossKilledEvent(WorldBossDefinition definition, Map<UUID, Long> damageByPlayer, long rewardCoins, long rewardGems) {
+    public WorldBossKilledEvent(WorldBossDefinition definition, Map<UUID, Long> damageByPlayer, long rewardCoins, long rewardDiamonds) {
         this.definition = definition;
         this.damageByPlayer = damageByPlayer;
         this.rewardCoins = rewardCoins;
-        this.rewardGems = rewardGems;
+        this.rewardDiamonds = rewardDiamonds;
     }
 
     public WorldBossDefinition getDefinition() {
@@ -43,8 +43,8 @@ public final class WorldBossKilledEvent extends Event {
         return rewardCoins;
     }
 
-    public long getRewardGems() {
-        return rewardGems;
+    public long getRewardDiamonds() {
+        return rewardDiamonds;
     }
 
     @Override

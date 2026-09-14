@@ -238,11 +238,11 @@ public final class PackStationDisplay {
             return Text.parse(label + "&7Nothing in stock right now");
         }
 
-        String costLine = "&7Cost: &a$<coins>" + (pack.gemCost() > 0 ? " &8+ &b<gems> gems" : "");
+        String costLine = "&7Cost: &a$<coins>" + (pack.diamondCost() > 0 ? " &8+ &b<diamonds> diamonds" : "");
         String template = label + pack.displayName() + "\n" + costLine + "\n&7Smack to buy!";
 
         return Text.parse(template,
                 Placeholder.unparsed("coins", Formatting.format((double) pack.coinCost())),
-                Placeholder.unparsed("gems", Formatting.format((double) pack.gemCost())));
+                Placeholder.unparsed("diamonds", Formatting.format((double) pack.diamondCost())));
     }
 }

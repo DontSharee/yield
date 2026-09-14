@@ -31,7 +31,7 @@ public final class YieldRanks extends JavaPlugin {
         rankService = new DonorRankService(() -> ranks, packs.getPlayerStore());
 
         packs.registerCoinMultiplierProvider(PROVIDER_KEY, rankService::coinMultiplier);
-        packs.registerGemMultiplierProvider(PROVIDER_KEY, rankService::gemMultiplier);
+        packs.registerDiamondMultiplierProvider(PROVIDER_KEY, rankService::diamondMultiplier);
         packs.getLuckService().registerExtraLuckProvider(PROVIDER_KEY, rankService::luckBonus);
         packs.getEquipmentService().registerBonusEquipSlotsProvider(PROVIDER_KEY, rankService::bonusPetSlots);
         packs.getEnchantService().registerBonusSlotProvider(PROVIDER_KEY, rankService::bonusEnchantSlots);
@@ -47,7 +47,7 @@ public final class YieldRanks extends JavaPlugin {
         YieldPacks packs = JavaPlugin.getPlugin(YieldPacks.class);
         if (packs != null) {
             packs.unregisterCoinMultiplierProvider(PROVIDER_KEY);
-            packs.unregisterGemMultiplierProvider(PROVIDER_KEY);
+            packs.unregisterDiamondMultiplierProvider(PROVIDER_KEY);
             packs.getLuckService().unregisterExtraLuckProvider(PROVIDER_KEY);
             packs.getEquipmentService().unregisterBonusEquipSlotsProvider(PROVIDER_KEY);
             packs.getEnchantService().unregisterBonusSlotProvider(PROVIDER_KEY);

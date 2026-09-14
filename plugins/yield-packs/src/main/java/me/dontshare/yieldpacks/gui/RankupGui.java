@@ -23,8 +23,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
 /**
- * Spend gems on permanent Rank - a full paginated grid of every rank (36 per
- * page, rows 0-3), each slot showing that rank's own Roman numeral and gem
+ * Spend diamonds on permanent Rank - a full paginated grid of every rank (36 per
+ * page, rows 0-3), each slot showing that rank's own Roman numeral and diamond
  * multiplier, red stained glass while still locked. Clicking any locked
  * slot buys straight up through it (see {@code RankService#rankUpTo}); the
  * bottom row holds paging plus a Max Rank bulk-buy.
@@ -114,14 +114,14 @@ public final class RankupGui {
         ItemBuilder builder = ItemBuilder.of(Material.NETHER_STAR)
                 .name(ACCENT + "&lRank " + Formatting.toRoman(profile.getRank()));
         MenuLore.info("rank", List.of(), ACCENT, List.of(
-                "&7Gem Multiplier: &b" + Formatting.format(rankService.gemMultiplier(profile)) + "x",
-                "&7Your Gems: &b" + Formatting.format(profile.getGems())
+                "&7Diamond Multiplier: &b" + Formatting.format(rankService.diamondMultiplier(profile)) + "x",
+                "&7Your Diamonds: &b" + Formatting.format(profile.getDiamonds())
         )).forEach(builder::lore);
         return builder.hideAttributes().build();
     }
 
     private ItemStack buildRankIcon(PackPlayerProfile profile, int rank) {
-        double multiplier = rankService.gemMultiplierForRank(rank);
+        double multiplier = rankService.diamondMultiplierForRank(rank);
         boolean owned = rank <= profile.getRank();
         if (owned) {
             boolean current = rank == profile.getRank();
@@ -134,22 +134,22 @@ public final class RankupGui {
             return builder.hideAttributes().build();
         }
         BigInteger cost = costUpTo(profile, rank);
-        boolean affordable = profile.getGems().compareTo(cost) >= 0;
+        boolean affordable = profile.getDiamonds().compareTo(cost) >= 0;
         ItemBuilder builder = ItemBuilder.of(Material.RED_STAINED_GLASS_PANE)
                 .name((affordable ? "&e&l" : "&c&l") + "Rank " + Formatting.toRoman(rank) + " &7[Locked]");
         MenuLore.button(
                 "rank",
                 List.of(
                         " &7Multiplier: &b" + Formatting.format(multiplier) + "x",
-                        " &7Cost from here: &b" + Formatting.format(cost) + " gems"
+                        " &7Cost from here: &b" + Formatting.format(cost) + " diamonds"
                 ),
                 affordable ? "<yellow>" : "<red>",
-                affordable ? "Click to Unlock" : "Not Enough Gems"
+                affordable ? "Click to Unlock" : "Not Enough Diamonds"
         ).forEach(builder::lore);
         return builder.hideAttributes().build();
     }
 
-    /** Combined gem cost to go from the player's CURRENT rank up through {@code targetRank} - what clicking that slot actually pays, not just that one rank's marginal cost. */
+    /** Combined diamond cost to go from the player's CURRENT rank up through {@code targetRank} - what clicking that slot actually pays, not just that one rank's marginal cost. */
     private BigInteger costUpTo(PackPlayerProfile profile, int targetRank) {
         BigInteger total = BigInteger.ZERO;
         for (int rank = profile.getRank(); rank < targetRank; rank++) {

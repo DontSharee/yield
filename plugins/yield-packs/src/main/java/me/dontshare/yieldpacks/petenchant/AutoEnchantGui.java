@@ -87,7 +87,7 @@ public final class AutoEnchantGui {
                 .name(enabled ? MenuLore.buttonName(ACCENT, "START") : "&7&lSTART");
         MenuLore.button(
                 "auto enchant",
-                List.of(" &7Rolls this pet repeatedly,", " &7spending gems each time, until", " &7it lands ANY targeted enchant."),
+                List.of(" &7Rolls this pet repeatedly,", " &7spending diamonds each time, until", " &7it lands ANY targeted enchant."),
                 ACCENT,
                 enabled ? "Click to Start" : "Target an Enchant First"
         ).forEach(builder::lore);

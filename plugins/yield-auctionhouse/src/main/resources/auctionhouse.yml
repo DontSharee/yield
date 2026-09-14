@@ -1,5 +1,5 @@
 # Player-to-player fixed-price marketplace - list a pet/lootbox/potion for
-# coins or gems, first buyer takes it. No bidding.
+# coins or diamonds, first buyer takes it. No bidding.
 #
 # Everything a sale or a cancelled/expired listing produces (currency, a
 # returned pet, a bought lootbox/potion) is delivered through the

@@ -156,7 +156,7 @@ public final class YieldPacks extends JavaPlugin {
      * OreCubeService}); damage multiplier applies to pet attack damage
      * (see yield-zones' {@code PetCombatController}). Attack-speed
      * multiplier likewise shortens the tick interval between a pet's hits -
-     * a home for a future potion system (damage/attack-speed/coin/gem
+     * a home for a future potion system (damage/attack-speed/coin/diamond
      * potions) to plug into without hardcoding anything pet-combat-side.
      */
     private final Map<String, Function<PackPlayerProfile, Double>> coinMultiplierProviders = new ConcurrentHashMap<>();
@@ -164,8 +164,8 @@ public final class YieldPacks extends JavaPlugin {
     private final Map<String, Function<PackPlayerProfile, Double>> attackSpeedMultiplierProviders = new ConcurrentHashMap<>();
     /** Speeds up Auto Mode's own target-switch cooldown - see yield-zones' {@code PetCombatController}, distinct from attack-speed (the interval between hits on the SAME target). */
     private final Map<String, Function<PackPlayerProfile, Double>> autoSwitchSpeedMultiplierProviders = new ConcurrentHashMap<>();
-    /** Applies to gem payouts (see yield-zones' {@code OreCubeService}) - "rank" self-registers into this one below, but it stays a composable registry (not a direct call) so a future potion/upgrade can stack another contribution on top. */
-    private final Map<String, Function<PackPlayerProfile, Double>> gemMultiplierProviders = new ConcurrentHashMap<>();
+    /** Applies to diamond payouts (see yield-zones' {@code OreCubeService}) - "rank" self-registers into this one below, but it stays a composable registry (not a direct call) so a future potion/upgrade can stack another contribution on top. */
+    private final Map<String, Function<PackPlayerProfile, Double>> diamondMultiplierProviders = new ConcurrentHashMap<>();
     /** "Apply this held item to a pet" gestures - see {@link PetItemHandler}. Candy registers itself as one of these below; yield-mining's forged held items register their own externally. Tried in order; the first to return true wins. */
     private final List<PetItemHandler> petItemHandlers = new CopyOnWriteArrayList<>();
 
@@ -238,9 +238,9 @@ public final class YieldPacks extends JavaPlugin {
             PackPlayerProfile profile = playerStore.getCached(player.getUniqueId());
             return profile != null ? Formatting.format(profile.getCoins()) : "0";
         });
-        core.getPlaceholderRegistry().register("gems", player -> {
+        core.getPlaceholderRegistry().register("diamonds", player -> {
             PackPlayerProfile profile = playerStore.getCached(player.getUniqueId());
-            return profile != null ? Formatting.format(profile.getGems()) : "0";
+            return profile != null ? Formatting.format(profile.getDiamonds()) : "0";
         });
         core.getChatFormatter().registerNameTagProvider(new RebirthChatBadge(playerStore));
 
@@ -268,7 +268,7 @@ public final class YieldPacks extends JavaPlugin {
                     " ",
                     "&e&lWALLET",
                     "&7Coins &8| &6" + Formatting.format(profile.getCoins()),
-                    "&7Gems &8| &b" + Formatting.format(profile.getGems()),
+                    "&7Diamonds &8| &b" + Formatting.format(profile.getDiamonds()),
                     "&7Credits &8| &d" + Formatting.format(profile.getCredits()),
                     " ",
                     "&e&lCOMBAT",
@@ -280,7 +280,7 @@ public final class YieldPacks extends JavaPlugin {
         EnchantItem enchantItem = new EnchantItem(this);
         enchantService = new EnchantService(playerStore, () -> content.rarities(), enchantItem);
         registerCoinMultiplierProvider("enchants", enchantService.multiplierFor(EnchantType.COINS));
-        registerGemMultiplierProvider("enchants", enchantService.multiplierFor(EnchantType.GEMS));
+        registerDiamondMultiplierProvider("enchants", enchantService.multiplierFor(EnchantType.DIAMONDS));
         registerDamageMultiplierProvider("enchants", enchantService.multiplierFor(EnchantType.DAMAGE));
         registerAttackSpeedMultiplierProvider("enchants", enchantService.multiplierFor(EnchantType.ATTACK_SPEED));
         luckService.registerExtraLuckProvider("enchants", enchantService.additiveFor(EnchantType.LUCK));
@@ -291,13 +291,13 @@ public final class YieldPacks extends JavaPlugin {
         luckService.registerExtraLuckProvider("mastery_packs", profile -> masteryService.bonusFor(profile, MasteryType.PACKS));
         registerCoinMultiplierProvider("mastery_mining", profile -> 1.0 + masteryService.bonusFor(profile, MasteryType.MINING));
         registerDamageMultiplierProvider("mastery_combat", profile -> 1.0 + masteryService.bonusFor(profile, MasteryType.COMBAT));
-        registerGemMultiplierProvider("mastery_enchants", profile -> 1.0 + masteryService.bonusFor(profile, MasteryType.ENCHANTS));
+        registerDiamondMultiplierProvider("mastery_enchants", profile -> 1.0 + masteryService.bonusFor(profile, MasteryType.ENCHANTS));
 
         petEnchantContentLoader = new PetEnchantContentLoader(this);
         petEnchantContent = petEnchantContentLoader.load();
         petEnchantService = new PetEnchantService(playerStore, equipmentService, () -> petEnchantContent);
         registerCoinMultiplierProvider("pet_enchants", petEnchantService::coinMultiplier);
-        registerGemMultiplierProvider("pet_enchants", petEnchantService::gemMultiplier);
+        registerDiamondMultiplierProvider("pet_enchants", petEnchantService::diamondMultiplier);
         registerAttackSpeedMultiplierProvider("pet_enchants", petEnchantService::attackSpeedMultiplier);
         luckService.registerExtraLuckProvider("pet_enchants", petEnchantService::luckBonus);
 
@@ -323,7 +323,7 @@ public final class YieldPacks extends JavaPlugin {
         new AutoFuseService(this, playerStore, fusionService).start();
 
         rankService = new RankService(playerStore);
-        registerGemMultiplierProvider("rank", rankService::gemMultiplier);
+        registerDiamondMultiplierProvider("rank", rankService::diamondMultiplier);
         rankupGui = new RankupGui(playerStore, core.getGuiManager(), rankService);
         CommandManager.register(this, RankupCommand.build(rankupGui), "Open the Rankup menu", List.of());
 
@@ -331,7 +331,7 @@ public final class YieldPacks extends JavaPlugin {
         shardItem = new ShardItem(this);
         registerDamageMultiplierProvider("shards", shardService::damageMultiplier);
         registerCoinMultiplierProvider("shards", shardService::coinMultiplier);
-        registerGemMultiplierProvider("shards", shardService::gemMultiplier);
+        registerDiamondMultiplierProvider("shards", shardService::diamondMultiplier);
         registerAttackSpeedMultiplierProvider("shards", shardService::attackSpeedMultiplier);
         luckService.registerExtraLuckProvider("shards", shardService::luckBonus);
         core.getListenerManager().register(new ShardConsumeListener(shardItem, shardService));
@@ -506,7 +506,7 @@ public final class YieldPacks extends JavaPlugin {
         return masteryService;
     }
 
-    /** Exposed so e.g. yield-zones' OreCubeService can check the Glittering Unique's bonus-gem-drop hook (see {@code PetEnchantService#hasBonusGemDropEnchant}) right alongside {@code MilestoneEffect.GUARANTEED_GEM_DROP}. */
+    /** Exposed so e.g. yield-zones' OreCubeService can check the Glittering Unique's bonus-diamond-drop hook (see {@code PetEnchantService#hasBonusDiamondDropEnchant}) right alongside {@code MilestoneEffect.GUARANTEED_DIAMOND_DROP}. */
     public PetEnchantService getPetEnchantService() {
         return petEnchantService;
     }
@@ -597,23 +597,23 @@ public final class YieldPacks extends JavaPlugin {
         autoSwitchSpeedMultiplierProviders.remove(key);
     }
 
-    /** The current global gem multiplier - the product of every currently-registered provider (1.0 if none are registered). Apply to gem payouts (see yield-zones' {@code OreCubeService}). */
-    public double gemMultiplier(PackPlayerProfile profile) {
+    /** The current global diamond multiplier - the product of every currently-registered provider (1.0 if none are registered). Apply to diamond payouts (see yield-zones' {@code OreCubeService}). */
+    public double diamondMultiplier(PackPlayerProfile profile) {
         double total = 1.0;
-        for (Function<PackPlayerProfile, Double> provider : gemMultiplierProviders.values()) {
+        for (Function<PackPlayerProfile, Double> provider : diamondMultiplierProviders.values()) {
             total *= provider.apply(profile);
         }
         return total;
     }
 
-    /** Registers (or replaces) this plugin's own keyed gem-multiplier contribution. */
-    public void registerGemMultiplierProvider(String key, Function<PackPlayerProfile, Double> provider) {
-        gemMultiplierProviders.put(key, provider);
+    /** Registers (or replaces) this plugin's own keyed diamond-multiplier contribution. */
+    public void registerDiamondMultiplierProvider(String key, Function<PackPlayerProfile, Double> provider) {
+        diamondMultiplierProviders.put(key, provider);
     }
 
     /** Call on the registering plugin's onDisable. */
-    public void unregisterGemMultiplierProvider(String key) {
-        gemMultiplierProviders.remove(key);
+    public void unregisterDiamondMultiplierProvider(String key) {
+        diamondMultiplierProviders.remove(key);
     }
 
     /** Registers an "apply this held item to a pet" gesture (see {@link PetItemHandler}) - tried in registration order by both {@code BagGui} and {@link PetItemFeedListener}. Candy registers its own here in {@link #onEnable}. */

@@ -87,10 +87,10 @@ public final class QuestContentLoader {
         }
         int goal = Math.max(1, section.getInt("goal", 1));
         long rewardCoins = Math.max(0, section.getLong("reward-coins", 0));
-        long rewardGems = Math.max(0, section.getLong("reward-gems", 0));
+        long rewardDiamonds = Math.max(0, section.getLong("reward-diamonds", 0));
         long rewardCredits = Math.max(0, section.getLong("reward-credits", 0));
         String rewardPetId = section.getString("reward-pet", null);
         String displayName = section.getString("display-name", categoryId + " " + difficulty);
-        return new QuestDefinition(displayName, action, goal, rewardCoins, rewardGems, rewardCredits, rewardPetId);
+        return new QuestDefinition(displayName, action, goal, rewardCoins, rewardDiamonds, rewardCredits, rewardPetId);
     }
 }

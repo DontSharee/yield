@@ -26,5 +26,5 @@ bosses:
     check-interval-minutes: 10
     spawn-chance: 0.5
     reward-coins: 1000000
-    reward-gems: 500
+    reward-diamonds: 500
     despawn-after-minutes: 30

@@ -55,8 +55,8 @@ public final class YieldUpgrades extends JavaPlugin implements Listener {
         packs.registerCoinMultiplierProvider("upgrades", upgradeService::coinMultiplierBonus);
         packs.registerDamageMultiplierProvider("upgrades", upgradeService::damageMultiplierBonus);
         packs.registerAutoSwitchSpeedMultiplierProvider("upgrades", upgradeService::autoSwitchSpeedMultiplier);
-        zones.getCubeService().registerGemChanceBoostProvider("upgrades", upgradeService::gemChanceBonus);
-        zones.getCubeService().registerFlatGemBonusProvider("upgrades", (profile, material) -> upgradeService.flatGemBonus(profile));
+        zones.getCubeService().registerDiamondChanceBoostProvider("upgrades", upgradeService::diamondChanceBonus);
+        zones.getCubeService().registerFlatDiamondBonusProvider("upgrades", (profile, material) -> upgradeService.flatDiamondBonus(profile));
         zones.getCubeService().registerExtraCubeCapProvider("upgrades", upgradeService::cubeCapBonus);
         zones.getCubeService().registerCubeBonusChanceBoostProvider("upgrades", upgradeService::cubeBonusChanceBonus);
         rebirth.registerGrantMultiplierProvider("upgrades", upgradeService::rebirthGrantMultiplier);
@@ -80,8 +80,8 @@ public final class YieldUpgrades extends JavaPlugin implements Listener {
             packs.unregisterAutoSwitchSpeedMultiplierProvider("upgrades");
         }
         if (zones != null) {
-            zones.getCubeService().unregisterGemChanceBoostProvider("upgrades");
-            zones.getCubeService().unregisterFlatGemBonusProvider("upgrades");
+            zones.getCubeService().unregisterDiamondChanceBoostProvider("upgrades");
+            zones.getCubeService().unregisterFlatDiamondBonusProvider("upgrades");
             zones.getCubeService().unregisterExtraCubeCapProvider("upgrades");
             zones.getCubeService().unregisterCubeBonusChanceBoostProvider("upgrades");
         }

@@ -13,7 +13,7 @@ import java.util.List;
  * and the percent chance (0-100) it actually procs on a given mine.
  * <p>
  * {@code mastery}, once every level is bought, unlocks up to 5 extra
- * levels bought with gems that each multiply the boost by 1.6x and add
+ * levels bought with diamonds that each multiply the boost by 1.6x and add
  * +10% proc chance - see {@link PickaxeEnchantService#masterUp}.
  */
 public record PickaxeEnchantDefinition(

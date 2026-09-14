@@ -62,7 +62,7 @@ public final class PacksAdminCommand {
             type = EnchantType.valueOf(typeArg.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
             ctx.getSource().getSender().sendMessage(Text.parse("<red>Unknown enchant type '" + typeArg
-                    + "'. Valid: coins, gems, damage, attack_speed, luck</red>"));
+                    + "'. Valid: coins, diamonds, damage, attack_speed, luck</red>"));
             return Command.SINGLE_SUCCESS;
         }
         Rarity rarity = plugin.getRarityRegistry().find(rarityArg.toLowerCase(Locale.ROOT)).orElse(null);
@@ -81,7 +81,7 @@ public final class PacksAdminCommand {
         Player target = resolver.resolve(ctx.getSource()).getFirst();
         PackPlayerProfile profile = plugin.getPlayerStore().getOrCreate(target.getUniqueId());
         profile.setCoins(BigInteger.ZERO);
-        profile.setGems(BigInteger.ZERO);
+        profile.setDiamonds(BigInteger.ZERO);
         profile.setRebirths(0);
         profile.setAutoOpenEnabled(false);
         profile.getPets().clear();

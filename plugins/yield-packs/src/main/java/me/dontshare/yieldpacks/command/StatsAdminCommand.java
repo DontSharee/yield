@@ -29,7 +29,7 @@ import java.util.Locale;
 public final class StatsAdminCommand {
 
     private enum Stat {
-        COINS, GEMS, CREDITS, REBIRTHS, PRESTIGES, PRESTIGE_POINTS, ROLL_COUNT, CUBE_KILLS, COINS_EARNED, BOSS_DAMAGE, LUCK
+        COINS, DIAMONDS, CREDITS, REBIRTHS, PRESTIGES, PRESTIGE_POINTS, ROLL_COUNT, CUBE_KILLS, COINS_EARNED, BOSS_DAMAGE, LUCK
     }
 
     private StatsAdminCommand() {
@@ -92,13 +92,13 @@ public final class StatsAdminCommand {
     }
 
     private static boolean isBigInteger(Stat stat) {
-        return stat == Stat.COINS || stat == Stat.GEMS || stat == Stat.CREDITS || stat == Stat.PRESTIGE_POINTS || stat == Stat.COINS_EARNED;
+        return stat == Stat.COINS || stat == Stat.DIAMONDS || stat == Stat.CREDITS || stat == Stat.PRESTIGE_POINTS || stat == Stat.COINS_EARNED;
     }
 
     private static BigInteger applyBigInteger(PackPlayerProfile profile, Stat stat, BigInteger amount, boolean set) {
         BigInteger current = switch (stat) {
             case COINS -> profile.getCoins();
-            case GEMS -> profile.getGems();
+            case DIAMONDS -> profile.getDiamonds();
             case CREDITS -> profile.getCredits();
             case PRESTIGE_POINTS -> profile.getPrestigePoints();
             case COINS_EARNED -> profile.getLifetimeCoinsEarned();
@@ -110,7 +110,7 @@ public final class StatsAdminCommand {
         }
         switch (stat) {
             case COINS -> profile.setCoins(updated);
-            case GEMS -> profile.setGems(updated);
+            case DIAMONDS -> profile.setDiamonds(updated);
             case CREDITS -> profile.setCredits(updated);
             case PRESTIGE_POINTS -> profile.setPrestigePoints(updated);
             case COINS_EARNED -> profile.setLifetimeCoinsEarned(updated);

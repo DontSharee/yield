@@ -106,7 +106,7 @@ public final class AuctionMyListingsGui {
     private String currencyLabel(AuctionCurrency currency) {
         return switch (currency) {
             case COINS -> "&6coins";
-            case GEMS -> "&bgems";
+            case DIAMONDS -> "&bdiamonds";
             case CREDITS -> "&dcredits";
         };
     }

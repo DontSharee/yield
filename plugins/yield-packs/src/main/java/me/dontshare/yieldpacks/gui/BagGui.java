@@ -468,7 +468,7 @@ public final class BagGui {
     }
 
     /** Display order for a pet's permanent forge bonuses (see {@code PetInstance#getForgeBonuses}) - fixed rather than map iteration order, so the lore doesn't reshuffle from one render to the next. Raw string keys, not yield-mining's own {@code ForgeStatType} enum - yield-packs can't depend on yield-mining (wrong dependency direction). */
-    private static final List<String> FORGE_STAT_ORDER = List.of("DAMAGE", "COINS", "GEMS", "ATTACK_SPEED", "LUCK");
+    private static final List<String> FORGE_STAT_ORDER = List.of("DAMAGE", "COINS", "DIAMONDS", "ATTACK_SPEED", "LUCK");
 
     private ItemStack buildIcon(BagEntry entry, boolean equipped) {
         ItemDefinition item = entry.item();

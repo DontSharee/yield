@@ -115,7 +115,7 @@ public final class MilestoneCategoryGui {
                 MilestoneService.ClaimResult result = service.claim(player, categoryId, tierIndex);
                 if (result == MilestoneService.ClaimResult.SUCCESS) {
                     player.sendMessage(Text.parse("<green><bold>Milestone claimed!</bold></green> <gold>+" + Formatting.format(tier.rewardCoins()) + " coins</gold>"
-                            + (tier.rewardGems().signum() > 0 ? " <aqua>+" + Formatting.format(tier.rewardGems()) + " gems</aqua>" : "")
+                            + (tier.rewardDiamonds().signum() > 0 ? " <aqua>+" + Formatting.format(tier.rewardDiamonds()) + " diamonds</aqua>" : "")
                             + (tier.rewardCredits().signum() > 0 ? " <yellow>+" + Formatting.format(tier.rewardCredits()) + " credits</yellow>" : "")
                             + (tier.rewardPotionId() != null ? " <#4BD9FF>+1 potion</#4BD9FF>" : "")));
                     player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
@@ -165,8 +165,8 @@ public final class MilestoneCategoryGui {
         if (tier.rewardCoins().signum() > 0) {
             data.add("Coins: &6" + Formatting.format(tier.rewardCoins()));
         }
-        if (tier.rewardGems().signum() > 0) {
-            data.add("Gems: &b" + Formatting.format(tier.rewardGems()));
+        if (tier.rewardDiamonds().signum() > 0) {
+            data.add("Diamonds: &b" + Formatting.format(tier.rewardDiamonds()));
         }
         if (tier.rewardCredits().signum() > 0) {
             data.add("Credits: &e" + Formatting.format(tier.rewardCredits()));

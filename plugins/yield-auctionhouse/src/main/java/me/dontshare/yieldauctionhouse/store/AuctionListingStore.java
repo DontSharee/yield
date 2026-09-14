@@ -145,7 +145,7 @@ public final class AuctionListingStore {
                 doc.get("sellerId", UUID.class),
                 doc.getString("sellerName"),
                 doc.getString("item"),
-                AuctionCurrency.valueOf(doc.getString("currency")),
+                AuctionCurrency.fromStored(doc.getString("currency")),
                 new BigInteger(doc.getString("price")),
                 ListingStatus.valueOf(doc.getString("status")),
                 doc.getLong("listedAtMillis"),

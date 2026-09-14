@@ -116,7 +116,7 @@ public final class MilestoneService {
         }
         profile.getClaimedMilestoneKeys().add(key);
         profile.setCoins(profile.getCoins().add(tier.rewardCoins()));
-        profile.setGems(profile.getGems().add(tier.rewardGems()));
+        profile.setDiamonds(profile.getDiamonds().add(tier.rewardDiamonds()));
         profile.setCredits(profile.getCredits().add(tier.rewardCredits()));
         store.save(player.getUniqueId());
 

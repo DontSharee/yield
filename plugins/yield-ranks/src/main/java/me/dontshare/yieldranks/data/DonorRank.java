@@ -9,7 +9,7 @@ import org.bukkit.Material;
  * {@code DonorRankService#applyRank} refuse a downgrade (a higher-sortOrder
  * rank is strictly better, never re-appliable by a lower one).
  * <p>
- * {@code coinMultiplier}/{@code gemMultiplier}/{@code xpMultiplier} feed
+ * {@code coinMultiplier}/{@code diamondMultiplier}/{@code xpMultiplier} feed
  * yield-packs'/yield-leveling's existing multiplier registries directly (a
  * bare 1.0 means "no effect" for a rank that doesn't grant that stat).
  * {@code luckBonus} is additive, matching yield-packs' LuckService's own
@@ -21,7 +21,7 @@ public record DonorRank(
         int sortOrder,
         Material icon,
         double coinMultiplier,
-        double gemMultiplier,
+        double diamondMultiplier,
         double xpMultiplier,
         double luckBonus,
         int bonusPetSlots,

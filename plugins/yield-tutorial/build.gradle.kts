@@ -1,4 +1,4 @@
-version = "0.0.4"
+version = "0.0.5"
 
 repositories {
     // TutorialNpcManager spawns its player-shaped NPC via raw PacketEvents

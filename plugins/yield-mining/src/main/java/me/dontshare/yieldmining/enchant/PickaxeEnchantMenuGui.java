@@ -104,7 +104,7 @@ public final class PickaxeEnchantMenuGui {
             }
             case NOT_MAXED -> player.sendMessage(Text.parse("<red>This enchant must be maxed level first!</red>"));
             case ALREADY_MASTERED -> player.sendMessage(Text.parse("<red>This enchant's mastery is already maxed!</red>"));
-            case CANT_AFFORD -> player.sendMessage(Text.parse("<red>Not enough gems to master this enchant!</red>"));
+            case CANT_AFFORD -> player.sendMessage(Text.parse("<red>Not enough diamonds to master this enchant!</red>"));
         }
         open(player, def, page);
     }
@@ -145,7 +145,7 @@ public final class PickaxeEnchantMenuGui {
                 "and a 10% activation chance increase."
         ), "<aqua>", List.of(
                 "Level: <white>" + masteryLevel + "</white> <gray>/</gray> <red>5",
-                "Cost: <white>" + Formatting.format(cost) + " gems"
+                "Cost: <white>" + Formatting.format(cost) + " diamonds"
         ), "Click to Master").forEach(builder::lore);
         return builder.hideAttributes().build();
     }

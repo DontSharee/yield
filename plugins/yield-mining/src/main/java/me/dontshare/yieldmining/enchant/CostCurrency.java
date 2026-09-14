@@ -6,15 +6,15 @@ import java.math.BigInteger;
 
 /** Which of the two existing currencies a pickaxe enchant's levels are bought with. */
 public enum CostCurrency {
-    GEMS {
+    DIAMONDS {
         @Override
         public BigInteger balanceOf(PackPlayerProfile profile) {
-            return profile.getGems();
+            return profile.getDiamonds();
         }
 
         @Override
         public void setBalance(PackPlayerProfile profile, BigInteger balance) {
-            profile.setGems(balance);
+            profile.setDiamonds(balance);
         }
     },
     COINS {

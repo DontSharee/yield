@@ -14,11 +14,11 @@
 # max-level: highest level purchasable.
 # rebirth-requirement: minimum rebirths (see yield-rebirth) needed to even
 #   open this enchant's menu.
-# cost-currency: GEMS or COINS - what buying levels spends.
+# cost-currency: DIAMONDS or COINS - what buying levels spends.
 # cost-formula / boost-formula / chance-formula: math in terms of "level"
 #   (the level BEFORE the purchase/roll) - +, -, *, /, ^, parentheses. A
 #   bulk buy sums cost-formula once per level bought.
-# mastery: once max-level is reached, up to 5 extra gem-bought levels, each
+# mastery: once max-level is reached, up to 5 extra diamond-bought levels, each
 #   multiplying boost by 1.6x and adding +10% activation chance.
 enchants:
   greed:
@@ -30,7 +30,7 @@ enchants:
     type: COINS
     max-level: 5000
     rebirth-requirement: 0
-    cost-currency: GEMS
+    cost-currency: DIAMONDS
     cost-formula: "0.5 * (level ^ 1.125) * (1.0003 ^ level)"
     boost-formula: "1.0001 * level"
     chance-formula: "100"

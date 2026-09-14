@@ -128,7 +128,7 @@ public final class PackShopGui {
         lore.addAll(buildOddsLines(pack));
         lore.add("");
         lore.add("&7Cost: &a$" + Formatting.format(pack.coinCost())
-                + (pack.gemCost() > 0 ? " &8+ &b" + pack.gemCost() + " gems" : ""));
+                + (pack.diamondCost() > 0 ? " &8+ &b" + pack.diamondCost() + " diamonds" : ""));
         lore.add("&7Stock: " + (soldOut ? "&c0" : "&a" + remaining + "x"));
         lore.add(SEPARATOR_LINE);
         if (soldOut) {

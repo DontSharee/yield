@@ -88,7 +88,7 @@ public final class ForgedItem {
         return switch (type) {
             case DAMAGE -> "Damage";
             case COINS -> "Money";
-            case GEMS -> "Gems";
+            case DIAMONDS -> "Diamonds";
             case LUCK -> "Luck";
             case ATTACK_SPEED -> "Attack Speed";
         };

@@ -20,9 +20,9 @@ public final class LoginStreakService {
 
     private static final int CYCLE_LENGTH = 7;
 
-    public record StreakResult(int streak, int dayInCycle, long coinsGranted, long gemsGranted, long creditsGranted) {
+    public record StreakResult(int streak, int dayInCycle, long coinsGranted, long diamondsGranted, long creditsGranted) {
         public boolean alreadyCreditedToday() {
-            return coinsGranted == 0 && gemsGranted == 0 && creditsGranted == 0;
+            return coinsGranted == 0 && diamondsGranted == 0 && creditsGranted == 0;
         }
     }
 
@@ -49,19 +49,19 @@ public final class LoginStreakService {
 
         int dayInCycle = dayInCycle(streak);
         long coins = coinsFor(dayInCycle);
-        long gems = gemsFor(dayInCycle);
+        long diamonds = diamondsFor(dayInCycle);
         long credits = dayInCycle == CYCLE_LENGTH ? 50L : 0L;
 
         profile.setCoins(profile.getCoins().add(BigInteger.valueOf(coins)));
-        if (gems > 0) {
-            profile.setGems(profile.getGems().add(BigInteger.valueOf(gems)));
+        if (diamonds > 0) {
+            profile.setDiamonds(profile.getDiamonds().add(BigInteger.valueOf(diamonds)));
         }
         if (credits > 0) {
             profile.setCredits(profile.getCredits().add(BigInteger.valueOf(credits)));
         }
         packs.getPlayerStore().save(player.getUniqueId());
 
-        return new StreakResult(streak, dayInCycle, coins, gems, credits);
+        return new StreakResult(streak, dayInCycle, coins, diamonds, credits);
     }
 
     private int dayInCycle(int streak) {
@@ -82,7 +82,7 @@ public final class LoginStreakService {
         };
     }
 
-    private long gemsFor(int dayInCycle) {
+    private long diamondsFor(int dayInCycle) {
         return switch (dayInCycle) {
             case 3 -> 5L;
             case 5 -> 10L;

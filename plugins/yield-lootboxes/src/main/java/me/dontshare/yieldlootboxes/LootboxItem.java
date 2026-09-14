@@ -77,7 +77,7 @@ public final class LootboxItem {
     private String rewardLabel(LootboxRewardEntry entry, ItemRegistry registry) {
         return switch (entry.type()) {
             case FLAT_COINS -> "&6+" + Formatting.format((double) entry.amount()) + " Coins";
-            case FLAT_GEMS -> "&b+" + Formatting.format((double) entry.amount()) + " Gems";
+            case FLAT_DIAMONDS -> "&b+" + Formatting.format((double) entry.amount()) + " Diamonds";
             case FLAT_CREDITS -> "&d+" + Formatting.format((double) entry.amount()) + " Credits";
             case PET -> registry.find(entry.petItemId()).map(item -> item.displayName()).orElse("&7Unknown Pet");
             case COMMANDS -> "&5&lBonus Reward";

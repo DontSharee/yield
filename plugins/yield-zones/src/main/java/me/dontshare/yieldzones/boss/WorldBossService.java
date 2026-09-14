@@ -359,11 +359,11 @@ public final class WorldBossService implements Listener {
             }
             double share = entry.getValue() / (double) totalDamage;
             long coins = Math.round(def.rewardCoins() * share);
-            long gems = Math.round(def.rewardGems() * share);
-            payOut(player, coins, gems);
+            long diamonds = Math.round(def.rewardDiamonds() * share);
+            payOut(player, coins, diamonds);
         }
 
-        Bukkit.getPluginManager().callEvent(new WorldBossKilledEvent(def, Map.copyOf(boss.damageByPlayer()), def.rewardCoins(), def.rewardGems()));
+        Bukkit.getPluginManager().callEvent(new WorldBossKilledEvent(def, Map.copyOf(boss.damageByPlayer()), def.rewardCoins(), def.rewardDiamonds()));
     }
 
     private void despawnUnclaimed(WorldBoss boss) {
@@ -392,13 +392,13 @@ public final class WorldBossService implements Listener {
         announce(world, "<gray>" + boss.definition().displayName() + " has retreated, unclaimed.</gray>");
     }
 
-    private void payOut(Player player, long coins, long gems) {
+    private void payOut(Player player, long coins, long diamonds) {
         PackPlayerProfile profile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
         profile.setCoins(profile.getCoins().add(BigInteger.valueOf(coins)));
-        profile.setGems(profile.getGems().add(BigInteger.valueOf(gems)));
+        profile.setDiamonds(profile.getDiamonds().add(BigInteger.valueOf(diamonds)));
         packs.getPlayerStore().save(player.getUniqueId());
         player.sendMessage(Text.parse("<green>You earned <gold>" + Formatting.format(coins) + " coins</gold>"
-                + (gems > 0 ? " <gray>and</gray> <aqua>" + Formatting.format(gems) + " gems</aqua>" : "") + "!</green>"));
+                + (diamonds > 0 ? " <gray>and</gray> <aqua>" + Formatting.format(diamonds) + " diamonds</aqua>" : "") + "!</green>"));
     }
 
     private void updateBossBar(WorldBoss boss) {

@@ -149,12 +149,12 @@ public final class PickaxeEnchantService {
             return MasteryResult.ALREADY_MASTERED;
         }
         BigInteger cost = masteryCost(def, currentMastery);
-        // Mastery is always paid in gems (matching the reference), regardless of this enchant's own leveling currency.
-        BigInteger gems = profile.getGems();
-        if (gems.compareTo(cost) < 0) {
+        // Mastery is always paid in diamonds (matching the reference), regardless of this enchant's own leveling currency.
+        BigInteger diamonds = profile.getDiamonds();
+        if (diamonds.compareTo(cost) < 0) {
             return MasteryResult.CANT_AFFORD;
         }
-        profile.setGems(gems.subtract(cost));
+        profile.setDiamonds(diamonds.subtract(cost));
         profile.getPickaxeEnchantMastery().put(def.id(), currentMastery + 1);
         recompute(profile);
         return MasteryResult.SUCCESS;

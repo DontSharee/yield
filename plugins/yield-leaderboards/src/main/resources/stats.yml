@@ -13,7 +13,9 @@ stats:
   coins:
     field: "packs.coins"
     type: BIGINT_STRING
-  gems:
+  diamonds:
+    # Real BSON key stays "packs.gems" - PackPlayerProfile keeps @BsonProperty("gems")
+    # on its renamed `diamonds` field so existing player balances aren't lost.
     field: "packs.gems"
     type: BIGINT_STRING
   rebirths:

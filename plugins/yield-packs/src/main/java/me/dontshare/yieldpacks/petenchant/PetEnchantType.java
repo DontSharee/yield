@@ -10,7 +10,7 @@ package me.dontshare.yieldpacks.petenchant;
  */
 public enum PetEnchantType {
     COINS,
-    GEMS,
+    DIAMONDS,
     DAMAGE,
     ATTACK_SPEED,
     LUCK;
@@ -18,7 +18,7 @@ public enum PetEnchantType {
     public String displayName() {
         return switch (this) {
             case COINS -> "Coins";
-            case GEMS -> "Gems";
+            case DIAMONDS -> "Diamonds";
             case DAMAGE -> "Damage";
             case ATTACK_SPEED -> "Attack Speed";
             case LUCK -> "Luck";

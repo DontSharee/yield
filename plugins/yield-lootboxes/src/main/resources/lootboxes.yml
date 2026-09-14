@@ -1,6 +1,6 @@
 # Lootboxes - a reward container SEPARATE from Packs, meant to be sold for
 # real money via a webstore (Tebex/Buycraft), not bought with in-game coins/
-# gems. Nothing in this plugin ever touches payment/card data: configure a
+# diamonds. Nothing in this plugin ever touches payment/card data: configure a
 # Tebex package to run "lootbox give %player_name% <box-id> 1" (Tebex's own
 # placeholder syntax) as its command on a confirmed purchase - Tebex's own
 # plugin (BuycraftX) is what actually processes money and invokes that
@@ -13,7 +13,7 @@
 #
 # Each box has a weighted "pool" of typed reward entries - exactly one is
 # rolled per box opened:
-#   flat-coins / flat-gems / flat-credits - "amount" is granted directly.
+#   flat-coins / flat-diamonds / flat-credits - "amount" is granted directly.
 #   pet - "pet-item" is any item id from packs.yml's own catalog, including
 #     Huge (see "huge: true") and Exclusive-rarity pets - lootboxes are one
 #     of the only two ways to obtain an Exclusive pet at all (the other is
@@ -28,7 +28,7 @@ boxes:
     icon: ENDER_CHEST
     pool:
       - { type: flat-coins, weight: 40, amount: 50000 }
-      - { type: flat-gems, weight: 25, amount: 25 }
+      - { type: flat-diamonds, weight: 25, amount: 25 }
       - { type: flat-credits, weight: 15, amount: 50 }
       - { type: pet, weight: 15, pet-item: void_serpent }
       - { type: pet, weight: 4, pet-item: huge_star_dragon }
@@ -39,6 +39,6 @@ boxes:
     icon: CYAN_SHULKER_BOX
     pool:
       - { type: flat-coins, weight: 30, amount: 250000 }
-      - { type: flat-gems, weight: 20, amount: 100 }
+      - { type: flat-diamonds, weight: 20, amount: 100 }
       - { type: pet, weight: 30, pet-item: huge_void_serpent }
       - { type: pet, weight: 20, pet-item: cosmic_leviathan }

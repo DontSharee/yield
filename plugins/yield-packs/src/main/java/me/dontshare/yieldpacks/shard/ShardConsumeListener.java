@@ -53,7 +53,7 @@ public final class ShardConsumeListener implements Listener {
      * surprisingly well as "you just visibly gained power," and pitching
      * it a little differently per stat (each type gets its own fixed step
      * on the scale) means consuming a Damage shard doesn't sound
-     * identical to a Gem one. Perfect shards go up a full octave and layer
+     * identical to a Diamond one. Perfect shards go up a full octave and layer
      * a bright chime on top - the same "same base sound family, bigger and
      * higher for the rare version" trick the reveal reel's own tiers use.
      */
@@ -61,7 +61,7 @@ public final class ShardConsumeListener implements Listener {
         float basePitch = switch (type) {
             case DAMAGE -> 0.8f;
             case COINS -> 1.0f;
-            case GEMS -> 1.2f;
+            case DIAMONDS -> 1.2f;
             case LUCK -> 1.4f;
             case ATTACK_SPEED -> 1.6f;
             case CRIT_CHANCE -> 1.8f;

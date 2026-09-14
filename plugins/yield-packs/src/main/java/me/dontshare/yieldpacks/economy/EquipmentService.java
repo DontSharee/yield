@@ -31,7 +31,7 @@ public final class EquipmentService {
     private final Supplier<ItemRegistry> itemRegistry;
     private final int baseEquipCap;
 
-    /** Extra equip slots from outside sources (e.g. yield-skilltree's EQUIP_SLOTS nodes, yield-ranks' donor ranks) - summed on top of the base cap. Keyed so more than one plugin can contribute at once, matching YieldPacks' own coin/gem/luck provider pattern. */
+    /** Extra equip slots from outside sources (e.g. yield-skilltree's EQUIP_SLOTS nodes, yield-ranks' donor ranks) - summed on top of the base cap. Keyed so more than one plugin can contribute at once, matching YieldPacks' own coin/diamond/luck provider pattern. */
     private final Map<String, Function<PackPlayerProfile, Integer>> bonusEquipSlotProviders = new ConcurrentHashMap<>();
     /** How much a pet's own level scales its base damage - wired to PetLevelingService once it exists; defaults to no scaling. */
     private volatile Function<PetInstance, Double> levelMultiplierProvider = pet -> 1.0;

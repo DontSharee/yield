@@ -25,12 +25,15 @@ types:
     max-level: 100
     cost-base: 500
     cost-growth: 1.12
+  # id stays "gem_boost" - it's the literal key persisted per-player in
+  # PackPlayerProfile#getUpgradeLevels, so renaming it here would orphan
+  # every existing player's already-purchased levels in this upgrade.
   gem_boost:
-    display-name: "&bGem Boost"
-    icon: EMERALD
-    effect: GEM_BOOST
-    chance-per-level: 0.001    # +0.1% gem drop chance per level
-    flat-per-level: 0.02       # +0.02 flat gems per level (rounded at payout)
+    display-name: "&bDiamond Boost"
+    icon: DIAMOND
+    effect: DIAMOND_BOOST
+    chance-per-level: 0.001    # +0.1% diamond drop chance per level
+    flat-per-level: 0.02       # +0.02 flat diamonds per level (rounded at payout)
     max-level: 100
     cost-base: 800
     cost-growth: 1.12

@@ -10,7 +10,7 @@
 #
 # "unlock:" - omit this section entirely for a zone that's free and already
 # unlocked for everyone (meadow, below). Configure it (any combination of
-# coins/gems/items) to gate a zone behind a purchase. A zone with a real
+# coins/diamonds/items) to gate a zone behind a purchase. A zone with a real
 # unlock cost also needs a "walls:" list (one or more cuboids - same
 # corner-one/corner-two shape as the zone region itself) to actually
 # barricade it; walking into a locked zone's own region is blocked

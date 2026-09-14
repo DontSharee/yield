@@ -8,7 +8,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Fired from {@link me.dontshare.yieldzones.cube.OreCubeService#payOut} once a
  * cube's kill payout has actually been applied - {@code coinsEarned}/
- * {@code gemsEarned} are the real, multiplier-adjusted amounts credited. Lets
+ * {@code diamondsEarned} are the real, multiplier-adjusted amounts credited. Lets
  * other plugins (e.g. yield-quests) react without yield-zones needing any
  * awareness of them.
  */
@@ -19,13 +19,13 @@ public final class OreCubeKilledEvent extends Event {
     private final Player player;
     private final CubeTier tier;
     private final long coinsEarned;
-    private final long gemsEarned;
+    private final long diamondsEarned;
 
-    public OreCubeKilledEvent(Player player, CubeTier tier, long coinsEarned, long gemsEarned) {
+    public OreCubeKilledEvent(Player player, CubeTier tier, long coinsEarned, long diamondsEarned) {
         this.player = player;
         this.tier = tier;
         this.coinsEarned = coinsEarned;
-        this.gemsEarned = gemsEarned;
+        this.diamondsEarned = diamondsEarned;
     }
 
     public Player getPlayer() {
@@ -40,8 +40,8 @@ public final class OreCubeKilledEvent extends Event {
         return coinsEarned;
     }
 
-    public long getGemsEarned() {
-        return gemsEarned;
+    public long getDiamondsEarned() {
+        return diamondsEarned;
     }
 
     @Override

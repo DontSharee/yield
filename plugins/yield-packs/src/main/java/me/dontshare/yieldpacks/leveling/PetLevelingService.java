@@ -164,7 +164,7 @@ public final class PetLevelingService {
 
     /**
      * Rolls every configured candy's own drop chance independently
-     * (luck-modified, same formula gem drops already use) - usually
+     * (luck-modified, same formula diamond drops already use) - usually
      * returns nothing; can return more than one candy type on a single
      * lucky kill, since each is an independent roll.
      */

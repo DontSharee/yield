@@ -70,8 +70,8 @@ public final class TutorialContentLoader {
             String label = raw.get("label") != null ? String.valueOf(raw.get("label")) : id;
             int goal = raw.get("goal") instanceof Number n ? Math.max(1, n.intValue()) : 1;
             long rewardCoins = raw.get("reward-coins") instanceof Number n ? n.longValue() : 0;
-            int rewardGems = raw.get("reward-gems") instanceof Number n ? n.intValue() : 0;
-            steps.add(new TutorialStep(id, label, dialogue, trigger, goal, Math.max(0, rewardCoins), Math.max(0, rewardGems)));
+            int rewardDiamonds = raw.get("reward-diamonds") instanceof Number n ? n.intValue() : 0;
+            steps.add(new TutorialStep(id, label, dialogue, trigger, goal, Math.max(0, rewardCoins), Math.max(0, rewardDiamonds)));
         }
         return steps;
     }

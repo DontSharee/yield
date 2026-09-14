@@ -6,7 +6,7 @@ package me.dontshare.yieldzonemachines.data;
  * themselves on entry - they just open the real GUI (Fusion, filtered to
  * one target tier; Enchants) where the actual action happens, physically
  * relocating an entry point that already existed rather than duplicating
- * its logic. RANKUP was removed from here - Ranks are bought with gems at
+ * its logic. RANKUP was removed from here - Ranks are bought with diamonds at
  * any time, so gating that behind one physical zone was an odd friction
  * point; it's a plain "/rankup" command now (see {@code RankupCommand}),
  * meant to be wired to an NPC at spawn instead.

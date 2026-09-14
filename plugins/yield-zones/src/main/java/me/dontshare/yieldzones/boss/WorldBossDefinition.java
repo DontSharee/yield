@@ -12,5 +12,5 @@ import org.bukkit.Material;
  */
 public record WorldBossDefinition(String id, String zoneId, String displayName, Material material, int size,
                                    Location location, long maxHp, long checkIntervalMillis, double spawnChance,
-                                   long rewardCoins, long rewardGems, long despawnAfterMillis) {
+                                   long rewardCoins, long rewardDiamonds, long despawnAfterMillis) {
 }

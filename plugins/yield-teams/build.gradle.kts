@@ -1,10 +1,10 @@
-version = "0.1.4"
+version = "0.1.5"
 
 dependencies {
     // yield-core's DatabaseManager/PlayerDataStore-adjacent Mongo access,
     // GuiManager, CommandManager, Text.
     compileOnly(project(":yield-core"))
-    // PackPlayerProfile (coins/gems/teamId), YieldPacks' multiplier-provider
+    // PackPlayerProfile (coins/diamonds/teamId), YieldPacks' multiplier-provider
     // hooks, LuckService's extraLuckProvider.
     compileOnly(project(":yield-packs"))
     // OreCubeKilledEvent - trophy drops react to it.

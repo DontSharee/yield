@@ -74,7 +74,7 @@ public final class ShardItem {
         return switch (type) {
             case DAMAGE -> Material.BLAZE_POWDER;
             case COINS -> Material.GOLD_NUGGET;
-            case GEMS -> Material.EMERALD;
+            case DIAMONDS -> Material.DIAMOND;
             case LUCK -> Material.RABBIT_FOOT;
             case ATTACK_SPEED -> Material.FEATHER;
             case CRIT_CHANCE -> Material.ARROW;

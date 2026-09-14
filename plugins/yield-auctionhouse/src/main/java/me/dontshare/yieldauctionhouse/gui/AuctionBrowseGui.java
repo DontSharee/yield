@@ -63,7 +63,7 @@ public final class AuctionBrowseGui {
     private static final int NEXT_SLOT = 53;
     private static final String ACCENT = "<#4BD9FF>";
 
-    private enum CurrencyFilter {ALL, COINS, GEMS, CREDITS}
+    private enum CurrencyFilter {ALL, COINS, DIAMONDS, CREDITS}
 
     private final JavaPlugin plugin;
     private final DatabaseManager databaseManager;
@@ -227,7 +227,7 @@ public final class AuctionBrowseGui {
     private String currencyLabel(AuctionCurrency currency) {
         return switch (currency) {
             case COINS -> "&6coins";
-            case GEMS -> "&bgems";
+            case DIAMONDS -> "&bdiamonds";
             case CREDITS -> "&dcredits";
         };
     }

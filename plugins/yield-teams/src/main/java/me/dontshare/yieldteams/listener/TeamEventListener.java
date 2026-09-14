@@ -14,7 +14,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
-/** Rolls a trophy drop on every ore cube kill - a rare, luck-modified chance, same formula candy/gem drops already use. Reacts to the existing event rather than yield-zones needing any awareness that teams exist. */
+/** Rolls a trophy drop on every ore cube kill - a rare, luck-modified chance, same formula candy/diamond drops already use. Reacts to the existing event rather than yield-zones needing any awareness that teams exist. */
 public final class TeamEventListener implements Listener {
 
     private final Supplier<TeamsContent> content;

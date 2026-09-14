@@ -103,21 +103,21 @@ public final class UpgradeService {
         return multiplierFor(profile, UpgradeEffect.REBIRTH_GRANT_MULTIPLIER);
     }
 
-    /** Additive chance boost - matches OreCubeService's own gemChanceBoostSum composition (sum, not product). Sums across every GEM_BOOST type configured, in case more than one exists. */
-    public double gemChanceBonus(PackPlayerProfile profile) {
+    /** Additive chance boost - matches OreCubeService's own diamondChanceBoostSum composition (sum, not product). Sums across every DIAMOND_BOOST type configured, in case more than one exists. */
+    public double diamondChanceBonus(PackPlayerProfile profile) {
         double total = 0;
         for (UpgradeType type : content.get().types().values()) {
-            if (type.effect() == UpgradeEffect.GEM_BOOST) {
+            if (type.effect() == UpgradeEffect.DIAMOND_BOOST) {
                 total += levelOf(profile, type.id()) * type.chancePerLevel();
             }
         }
         return total;
     }
 
-    public long flatGemBonus(PackPlayerProfile profile) {
+    public long flatDiamondBonus(PackPlayerProfile profile) {
         double total = 0;
         for (UpgradeType type : content.get().types().values()) {
-            if (type.effect() == UpgradeEffect.GEM_BOOST) {
+            if (type.effect() == UpgradeEffect.DIAMOND_BOOST) {
                 total += levelOf(profile, type.id()) * type.flatPerLevel();
             }
         }

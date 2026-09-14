@@ -176,8 +176,8 @@ public final class BlockTreeService {
         return Math.round(sumBlockScoped(profile, material, BlockTreeEffectType.FLAT_COINS));
     }
 
-    public long flatGemBonus(PackPlayerProfile profile, Material material) {
-        return Math.round(sumBlockScoped(profile, material, BlockTreeEffectType.FLAT_GEMS));
+    public long flatDiamondBonus(PackPlayerProfile profile, Material material) {
+        return Math.round(sumBlockScoped(profile, material, BlockTreeEffectType.FLAT_DIAMONDS));
     }
 
     public long flatCreditBonus(PackPlayerProfile profile, Material material) {
@@ -189,8 +189,8 @@ public final class BlockTreeService {
         return 1.0 + sumBlockScoped(profile, material, BlockTreeEffectType.BLOCK_COIN_MULTIPLIER);
     }
 
-    public double blockGemMultiplier(PackPlayerProfile profile, Material material) {
-        return 1.0 + sumBlockScoped(profile, material, BlockTreeEffectType.BLOCK_GEM_MULTIPLIER);
+    public double blockDiamondMultiplier(PackPlayerProfile profile, Material material) {
+        return 1.0 + sumBlockScoped(profile, material, BlockTreeEffectType.BLOCK_DIAMOND_MULTIPLIER);
     }
 
     /** 1.0 + every claimed GLOBAL_COIN_MULTIPLIER across every block - same shape yield-skilltree/yield-rebirth register into {@code YieldPacks#coinMultiplier}. */
@@ -230,9 +230,9 @@ public final class BlockTreeService {
         return sumGlobal(profile, BlockTreeEffectType.EXCLUSIVE_FIND_CHANCE);
     }
 
-    /** Additive on top of a cube kill's own base gem-drop chance - see {@code OreCubeService#payOut}. */
-    public double gemChanceBoost(PackPlayerProfile profile) {
-        return sumGlobal(profile, BlockTreeEffectType.GEM_CHANCE_BOOST);
+    /** Additive on top of a cube kill's own base diamond-drop chance - see {@code OreCubeService#payOut}. */
+    public double diamondChanceBoost(PackPlayerProfile profile) {
+        return sumGlobal(profile, BlockTreeEffectType.DIAMOND_CHANCE_BOOST);
     }
 
     /** 1.0 + every claimed PROGRESS_MULTIPLIER - see {@link #recordBreak}. */

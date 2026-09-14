@@ -2,7 +2,7 @@ package me.dontshare.yieldspawnnpcs.crate;
 
 public enum CrateRewardType {
     FLAT_COINS,
-    FLAT_GEMS,
+    FLAT_DIAMONDS,
     PET,
     COMMANDS
 }

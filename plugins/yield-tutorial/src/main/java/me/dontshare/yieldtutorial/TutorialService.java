@@ -123,15 +123,15 @@ public final class TutorialService {
     }
 
     private void grantReward(Player player, TutorialStep step) {
-        if (step.rewardCoins() <= 0 && step.rewardGems() <= 0) {
+        if (step.rewardCoins() <= 0 && step.rewardDiamonds() <= 0) {
             return;
         }
         PackPlayerProfile packProfile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
         if (step.rewardCoins() > 0) {
             packProfile.setCoins(packProfile.getCoins().add(BigInteger.valueOf(step.rewardCoins())));
         }
-        if (step.rewardGems() > 0) {
-            packProfile.setGems(packProfile.getGems().add(BigInteger.valueOf(step.rewardGems())));
+        if (step.rewardDiamonds() > 0) {
+            packProfile.setDiamonds(packProfile.getDiamonds().add(BigInteger.valueOf(step.rewardDiamonds())));
         }
         packs.getPlayerStore().save(player.getUniqueId());
 
@@ -139,11 +139,11 @@ public final class TutorialService {
         if (step.rewardCoins() > 0) {
             reward.append("<gold>+").append(step.rewardCoins()).append(" coins</gold>");
         }
-        if (step.rewardGems() > 0) {
+        if (step.rewardDiamonds() > 0) {
             if (!reward.isEmpty()) {
                 reward.append(" <gray>and</gray> ");
             }
-            reward.append("<aqua>+").append(step.rewardGems()).append(" gems</aqua>");
+            reward.append("<aqua>+").append(step.rewardDiamonds()).append(" diamonds</aqua>");
         }
         player.sendMessage(Text.parse("<green>Step complete!</green> " + reward));
     }

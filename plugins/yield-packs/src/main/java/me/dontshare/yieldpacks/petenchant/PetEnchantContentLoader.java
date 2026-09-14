@@ -19,9 +19,9 @@ import java.util.logging.Logger;
 /** Loads pet-enchants.yml - same warn-and-skip, {@code getConfigurationSection(...).getKeys(false)} shape {@code PackContentLoader} already established. */
 public final class PetEnchantContentLoader {
 
-    /** {@code commons}: one weighted I-V (or fewer) level ladder per {@link PetEnchantType}. {@code uniques}: every {@link PetUniqueDefinition}, in file order. {@code uniqueWeight}: each Unique's own flat roll weight (see the yml's own comment on the ~1%-each math). {@code gemCost}: per attempt. {@code tables}: every clickable Enchanting Table location. */
+    /** {@code commons}: one weighted I-V (or fewer) level ladder per {@link PetEnchantType}. {@code uniques}: every {@link PetUniqueDefinition}, in file order. {@code uniqueWeight}: each Unique's own flat roll weight (see the yml's own comment on the ~1%-each math). {@code diamondCost}: per attempt. {@code tables}: every clickable Enchanting Table location. */
     public record PetEnchantContent(Map<PetEnchantType, CommonLadder> commons, List<PetUniqueDefinition> uniques,
-                                     double uniqueWeight, long gemCost, List<PetEnchantTable> tables) {
+                                     double uniqueWeight, long diamondCost, List<PetEnchantTable> tables) {
     }
 
     /** Parallel level lists, index 0 = level I. */
@@ -29,7 +29,7 @@ public final class PetEnchantContentLoader {
     }
 
     private static final double DEFAULT_UNIQUE_WEIGHT = 9.0;
-    private static final long DEFAULT_GEM_COST = 50L;
+    private static final long DEFAULT_DIAMOND_COST = 50L;
 
     private final JavaPlugin plugin;
     private final Logger logger;
@@ -47,9 +47,9 @@ public final class PetEnchantContentLoader {
         Map<PetEnchantType, CommonLadder> commons = loadCommons(config);
         List<PetUniqueDefinition> uniques = loadUniques(config);
         double uniqueWeight = config.getDouble("economy.unique-weight-each", DEFAULT_UNIQUE_WEIGHT);
-        long gemCost = Math.max(0, config.getLong("economy.gem-cost", DEFAULT_GEM_COST));
+        long diamondCost = Math.max(0, config.getLong("economy.diamond-cost", DEFAULT_DIAMOND_COST));
         List<PetEnchantTable> tables = loadTables(config);
-        return new PetEnchantContent(commons, uniques, uniqueWeight, gemCost, tables);
+        return new PetEnchantContent(commons, uniques, uniqueWeight, diamondCost, tables);
     }
 
     private Map<PetEnchantType, CommonLadder> loadCommons(YamlConfiguration config) {

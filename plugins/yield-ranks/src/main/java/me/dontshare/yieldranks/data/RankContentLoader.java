@@ -54,7 +54,7 @@ public final class RankContentLoader {
                 section.getInt("sort-order", 0),
                 icon,
                 section.getDouble("coin-multiplier", 1.0),
-                section.getDouble("gem-multiplier", 1.0),
+                section.getDouble("diamond-multiplier", 1.0),
                 section.getDouble("xp-multiplier", 1.0),
                 section.getDouble("luck-bonus", 0.0),
                 section.getInt("bonus-pet-slots", 0),

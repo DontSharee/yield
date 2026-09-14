@@ -25,7 +25,7 @@ default-level-cap: 20
 milestones:
   - { level: 10, effect: AUTO_ATTACK }
   - { level: 25, effect: EARNINGS_BONUS, value: 0.5 }
-  - { level: 50, effect: GUARANTEED_GEM_DROP }
+  - { level: 50, effect: GUARANTEED_DIAMOND_DROP }
   # Level 99's "unique buff" is intentionally left unconfigured for now -
   # add it here once decided, no code change needed unless it's a wholly
   # new effect type (in which case add one more MilestoneEffect value too).

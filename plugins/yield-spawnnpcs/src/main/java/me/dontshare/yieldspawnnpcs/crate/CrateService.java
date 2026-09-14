@@ -67,7 +67,7 @@ public final class CrateService {
     private void applyReward(Player player, PackPlayerProfile profile, CrateRewardEntry reward) {
         switch (reward.type()) {
             case FLAT_COINS -> profile.setCoins(profile.getCoins().add(BigInteger.valueOf(reward.amount())));
-            case FLAT_GEMS -> profile.setGems(profile.getGems().add(BigInteger.valueOf(reward.amount())));
+            case FLAT_DIAMONDS -> profile.setDiamonds(profile.getDiamonds().add(BigInteger.valueOf(reward.amount())));
             case PET -> grantPet(player, profile, reward.petItemId());
             case COMMANDS -> reward.commands().forEach(command ->
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player%", player.getName())));

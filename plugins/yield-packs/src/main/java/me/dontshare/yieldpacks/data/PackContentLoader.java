@@ -209,7 +209,7 @@ public final class PackContentLoader {
                     material,
                     modelData,
                     s.getLong("coin-cost", 0L),
-                    s.getLong("gem-cost", 0L),
+                    s.getLong("diamond-cost", 0L),
                     s.contains("sort") ? s.getInt("sort") : autoSort,
                     pool,
                     s.getDouble("shop-weight", 1.0),

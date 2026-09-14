@@ -7,7 +7,7 @@
 #                  equipped pet. The existing "hold a candy, click a pet in
 #                  /bag" gesture (PetLevelingService#feedCandy) still works
 #                  too - this is a second, discoverable, in-world path to it.
-# A straight candy-for-coins purchase and a coins-to-gems exchange machine
+# A straight candy-for-coins purchase and a coins-to-diamonds exchange machine
 # both used to live here too - removed by design (see git history / the
 # session plan if it matters later); REBIRTH is deliberately still every
 # zone (not gated to a subset like the walk-in upgrades below).
@@ -158,7 +158,7 @@ machines:
 # locked to producing ONLY that one tier - there is no "fuse into anything"
 # screen anymore, so a Rainbow-eligible pet can only actually become Rainbow
 # by walking into the Rainbow ring specifically. RANKUP was removed from
-# here - Ranks are bought with gems at any time, so gating that behind one
+# here - Ranks are bought with diamonds at any time, so gating that behind one
 # physical zone was odd friction; it's a plain "/rankup" command now (see
 # RankupCommand), meant for an NPC at spawn to run instead.
 # Run /admin zonemachines reload after editing this file.

@@ -7,7 +7,7 @@ import org.bukkit.Material;
  * {@code PackPlayerProfile#getUpgradeLevels}) is keyed by {@code id} and
  * shared across every physical station of this type, regardless of zone.
  * {@code chancePerLevel}/{@code flatPerLevel} are only meaningful for
- * {@link UpgradeEffect#GEM_BOOST} (0 otherwise); every other effect uses
+ * {@link UpgradeEffect#DIAMOND_BOOST} (0 otherwise); every other effect uses
  * {@code valuePerLevel} alone.
  * <p>
  * Cost uses an exponential per-level curve - {@code costBase * costGrowth^level} -

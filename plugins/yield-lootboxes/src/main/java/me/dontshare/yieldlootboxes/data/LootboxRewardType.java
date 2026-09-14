@@ -12,7 +12,7 @@ import java.util.Locale;
  */
 public enum LootboxRewardType {
     FLAT_COINS,
-    FLAT_GEMS,
+    FLAT_DIAMONDS,
     FLAT_CREDITS,
     PET,
     COMMANDS;

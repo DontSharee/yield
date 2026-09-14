@@ -117,7 +117,13 @@ public final class EnchantService {
             }
             EnchantType type;
             try {
-                type = EnchantType.valueOf(parts[0]);
+                // "GEMS" is the pre-rename name for DIAMONDS - a book already
+                // slotted under the old name must keep resolving, or an
+                // existing player's slotted Enchant Book silently stops
+                // counting the instant this loads. Self-healing: the next
+                // time this slot is written, it's re-encoded under the
+                // current enum name.
+                type = parts[0].equals("GEMS") ? EnchantType.DIAMONDS : EnchantType.valueOf(parts[0]);
             } catch (IllegalArgumentException e) {
                 continue;
             }
@@ -133,7 +139,7 @@ public final class EnchantService {
         return totals;
     }
 
-    /** A multiplier-registry-shaped function (1.0 + total) for COINS/GEMS/DAMAGE/ATTACK_SPEED. */
+    /** A multiplier-registry-shaped function (1.0 + total) for COINS/DIAMONDS/DAMAGE/ATTACK_SPEED. */
     public Function<PackPlayerProfile, Double> multiplierFor(EnchantType type) {
         return profile -> 1.0 + totalsByType(profile).getOrDefault(type, 0.0);
     }

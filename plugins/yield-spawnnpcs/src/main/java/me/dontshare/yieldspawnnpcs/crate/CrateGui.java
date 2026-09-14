@@ -78,7 +78,7 @@ public final class CrateGui {
     private String describeReward(CrateRewardEntry reward) {
         return switch (reward.type()) {
             case FLAT_COINS -> "&6" + Formatting.format((double) reward.amount()) + " coins&r";
-            case FLAT_GEMS -> "&b" + Formatting.format((double) reward.amount()) + " gems&r";
+            case FLAT_DIAMONDS -> "&b" + Formatting.format((double) reward.amount()) + " diamonds&r";
             case PET -> "&da new pet&r";
             case COMMANDS -> "&da bonus&r";
         };

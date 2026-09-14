@@ -10,5 +10,5 @@ import java.util.List;
  * progress toward it; almost every step just uses the default of 1.
  */
 public record TutorialStep(String id, String label, List<String> dialogue, CompletionTrigger completesOn,
-                            int goal, long rewardCoins, int rewardGems) {
+                            int goal, long rewardCoins, int rewardDiamonds) {
 }

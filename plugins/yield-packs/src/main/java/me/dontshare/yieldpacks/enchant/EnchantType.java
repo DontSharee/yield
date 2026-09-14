@@ -5,7 +5,7 @@ import org.bukkit.Material;
 /** The 5 enchant types - one per existing player-wide multiplier stat, matching YieldPacks'/LuckService's own registries exactly. */
 public enum EnchantType {
     COINS("Coins", Material.SUNFLOWER),
-    GEMS("Gems", Material.EMERALD),
+    DIAMONDS("Diamonds", Material.DIAMOND),
     DAMAGE("Damage", Material.IRON_SWORD),
     ATTACK_SPEED("Attack Speed", Material.FEATHER),
     LUCK("Luck", Material.RABBIT_FOOT);

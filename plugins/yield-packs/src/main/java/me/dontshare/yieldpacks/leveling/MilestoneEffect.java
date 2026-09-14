@@ -6,6 +6,6 @@ public enum MilestoneEffect {
     AUTO_ATTACK,
     /** Boosts the coin payout of any kill this pet contributes to - see PetLevelingService#earningsBonusFor. */
     EARNINGS_BONUS,
-    /** Forces a gem drop (instead of the normal luck-rolled chance) on any kill this pet contributes to. */
-    GUARANTEED_GEM_DROP
+    /** Forces a diamond drop (instead of the normal luck-rolled chance) on any kill this pet contributes to. */
+    GUARANTEED_DIAMOND_DROP
 }

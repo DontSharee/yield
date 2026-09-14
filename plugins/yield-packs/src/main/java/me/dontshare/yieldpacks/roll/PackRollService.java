@@ -118,9 +118,9 @@ public final class PackRollService {
         PackDefinition pack = content.get().packs().getOrThrow(packId);
         PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
         int byCoins = pack.coinCost() <= 0 ? hardCap : affordableUnits(profile.getCoins(), pack.coinCost(), hardCap);
-        int byGems = pack.gemCost() <= 0 ? hardCap : affordableUnits(profile.getGems(), pack.gemCost(), hardCap);
+        int byDiamonds = pack.diamondCost() <= 0 ? hardCap : affordableUnits(profile.getDiamonds(), pack.diamondCost(), hardCap);
         int byStock = shopStockService.remainingStock(player, packId);
-        return Math.max(0, Math.min(Math.min(byCoins, byGems), byStock));
+        return Math.max(0, Math.min(Math.min(byCoins, byDiamonds), byStock));
     }
 
     /** {@code balance / unitCost}, clamped to {@code hardCap} BEFORE narrowing to int - never lets the division's own result overflow int on its way down. */
@@ -134,7 +134,7 @@ public final class PackRollService {
         return buyIntoStorage(player, packId, quantity, true);
     }
 
-    /** Same as {@link #buyIntoStorage(Player, String, int)} but never consults {@link ShopStockService} - for a physical pack station's own unlimited-supply, cost-only purchase (see yield-packstations), where the pack's own coin/gem cost is the sole gate. */
+    /** Same as {@link #buyIntoStorage(Player, String, int)} but never consults {@link ShopStockService} - for a physical pack station's own unlimited-supply, cost-only purchase (see yield-packstations), where the pack's own coin/diamond cost is the sole gate. */
     public PurchaseResult buyStationPack(Player player, String packId, int quantity) {
         return buyIntoStorage(player, packId, quantity, false);
     }
@@ -152,8 +152,8 @@ public final class PackRollService {
 
         PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
         BigInteger totalCoinCost = BigInteger.valueOf(pack.coinCost()).multiply(BigInteger.valueOf(quantity));
-        BigInteger totalGemCost = BigInteger.valueOf(pack.gemCost()).multiply(BigInteger.valueOf(quantity));
-        if (profile.getCoins().compareTo(totalCoinCost) < 0 || profile.getGems().compareTo(totalGemCost) < 0) {
+        BigInteger totalDiamondCost = BigInteger.valueOf(pack.diamondCost()).multiply(BigInteger.valueOf(quantity));
+        if (profile.getCoins().compareTo(totalCoinCost) < 0 || profile.getDiamonds().compareTo(totalDiamondCost) < 0) {
             return PurchaseResult.failure("You can't afford " + quantity + "x " + Formatting.stripLeadingColorCodes(pack.displayName()) + ".");
         }
         if (checkStock && shopStockService.remainingStock(player, packId) < quantity) {
@@ -161,7 +161,7 @@ public final class PackRollService {
         }
 
         profile.setCoins(profile.getCoins().subtract(totalCoinCost));
-        profile.setGems(profile.getGems().subtract(totalGemCost));
+        profile.setDiamonds(profile.getDiamonds().subtract(totalDiamondCost));
         profile.getStoredPacks().merge(packId, quantity, Integer::sum);
         store.save(player.getUniqueId());
         if (checkStock) {

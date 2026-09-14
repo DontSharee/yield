@@ -1,7 +1,7 @@
 # Per-pet enchanting (the Enchanting Table) - a wholly separate mechanic
 # from the player-level Enchant Slots (/enchants). Smacking a configured
 # "tables:" location opens the Enchanting Table GUI: select any owned pet
-# (equipped or bagged), spend "economy.gem-cost" gems to roll it a fresh
+# (equipped or bagged), spend "economy.diamond-cost" diamonds to roll it a fresh
 # set of enchants - always REPLACING whatever it had before, never
 # stacking. Run /admin packs reload after editing this file.
 #
@@ -25,14 +25,14 @@
 # PetEnchantService#rollFor. A normal Common landing is always just 1.
 
 economy:
-  gem-cost: 50
+  diamond-cost: 50
   unique-weight-each: 9
 
 commons:
   coins:
     values: [0.15, 0.30, 0.50, 0.75, 1.00]
     weights: [100, 45, 20, 8, 2]
-  gems:
+  diamonds:
     values: [0.10, 0.20, 0.35, 0.50, 0.65]
     weights: [100, 45, 20, 8, 2]
   damage:
@@ -51,12 +51,12 @@ uniques:
     color: "#FFD700"
     stat-bonuses:
       damage: 1.00
-      gems: 1.00
+      diamonds: 1.00
       attack_speed: 0.50
   glittering:
     display-name: "Glittering"
     color: "#55FFFF"
-    special-effect: BONUS_GEM_DROP
+    special-effect: BONUS_DIAMOND_DROP
   twin_fang:
     display-name: "Twin Fang"
     color: "#FF5555"

@@ -61,8 +61,8 @@ public final class ZonePurchaseGui {
         if (cost.coins().signum() > 0) {
             data.add("Coins: &6" + Formatting.format(cost.coins()));
         }
-        if (cost.gems().signum() > 0) {
-            data.add("Gems: &b" + Formatting.format(cost.gems()));
+        if (cost.diamonds().signum() > 0) {
+            data.add("Diamonds: &b" + Formatting.format(cost.diamonds()));
         }
         for (ZoneUnlockCost.ItemCost item : cost.items()) {
             data.add(prettify(item.material()) + ": &f" + item.amount());

@@ -1,5 +1,5 @@
 # Trophy drops - a rare, luck-modified chance per ore cube kill (the same
-# formula candy/gem drops already use). A dropped trophy is a real,
+# formula candy/diamond drops already use). A dropped trophy is a real,
 # physical item - right-click it to deposit into your team's balance.
 trophy:
   drop-chance: 0.01

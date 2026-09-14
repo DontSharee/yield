@@ -10,7 +10,7 @@ import org.bukkit.entity.Player;
  * toggle or scales with a re-buyable level. This is deliberately tiny per
  * shard (so a single find never swings balance) but genuinely permanent,
  * the same "every single one you ever find still counts" idle-game shape
- * Rank's own gem-multiplier already has - just funded by drops instead of
+ * Rank's own diamond-multiplier already has - just funded by drops instead of
  * currency.
  */
 public final class ShardService {
@@ -32,8 +32,8 @@ public final class ShardService {
         return 1.0 + profile.getShardCoinBonus();
     }
 
-    public double gemMultiplier(PackPlayerProfile profile) {
-        return 1.0 + profile.getShardGemBonus();
+    public double diamondMultiplier(PackPlayerProfile profile) {
+        return 1.0 + profile.getShardDiamondBonus();
     }
 
     /** Additive, not a factor - matches LuckService#extraLuckProviders' own convention (fed straight into it, not the "1.0 +" multiplier shape the other three stats use). */
@@ -63,9 +63,9 @@ public final class ShardService {
                 profile.setShardCoinBonus(profile.getShardCoinBonus() + amount);
                 yield coinMultiplier(profile);
             }
-            case GEMS -> {
-                profile.setShardGemBonus(profile.getShardGemBonus() + amount);
-                yield gemMultiplier(profile);
+            case DIAMONDS -> {
+                profile.setShardDiamondBonus(profile.getShardDiamondBonus() + amount);
+                yield diamondMultiplier(profile);
             }
             case LUCK -> {
                 profile.setShardLuckBonus(profile.getShardLuckBonus() + amount);

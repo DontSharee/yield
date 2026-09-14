@@ -134,7 +134,7 @@ public final class QuestService {
         QuestDefinition quest = content.get().categories().get(categoryId).tiers().get(selected);
         long coins = Math.round(quest.rewardCoins() * packs.coinMultiplier(profile));
         profile.setCoins(profile.getCoins().add(BigInteger.valueOf(coins)));
-        profile.setGems(profile.getGems().add(BigInteger.valueOf(quest.rewardGems())));
+        profile.setDiamonds(profile.getDiamonds().add(BigInteger.valueOf(quest.rewardDiamonds())));
         if (quest.rewardCredits() > 0) {
             profile.setCredits(profile.getCredits().add(BigInteger.valueOf(quest.rewardCredits())));
         }

@@ -1,4 +1,4 @@
-version = "0.1.4"
+version = "0.1.5"
 
 dependencies {
     // Not transitive from yield-packs'/yield-zones' own compileOnly

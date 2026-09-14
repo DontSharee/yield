@@ -4,7 +4,7 @@ package me.dontshare.yieldzonemachines.data;
  * What a physical zone machine actually does - see {@code ZoneMachineService
  * #attemptUse}. REBIRTH fills a real gap: before this plugin, a rebirth was
  * only reachable via {@code /rebirth}. CANDY (a straight coins purchase) and
- * GEM_EXCHANGE (coins -> gems) were both removed by design - see the plan
+ * DIAMOND_EXCHANGE (coins -> diamonds) were both removed by design - see the plan
  * this enum's git history came from for why, if it matters later.
  */
 public enum ZoneMachineType {

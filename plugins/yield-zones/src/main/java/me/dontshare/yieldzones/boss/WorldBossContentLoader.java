@@ -84,10 +84,10 @@ public final class WorldBossContentLoader {
         long checkIntervalMillis = Math.round(section.getDouble("check-interval-minutes", 10.0) * 60_000);
         double spawnChance = Math.max(0.0, Math.min(1.0, section.getDouble("spawn-chance", 0.5)));
         long rewardCoins = Math.max(0, section.getLong("reward-coins", 0));
-        long rewardGems = Math.max(0, section.getLong("reward-gems", 0));
+        long rewardDiamonds = Math.max(0, section.getLong("reward-diamonds", 0));
         long despawnAfterMillis = Math.round(section.getDouble("despawn-after-minutes", 30.0) * 60_000);
 
         return new WorldBossDefinition(id, zoneId, section.getString("display-name", id), material, size,
-                location, maxHp, checkIntervalMillis, spawnChance, rewardCoins, rewardGems, despawnAfterMillis);
+                location, maxHp, checkIntervalMillis, spawnChance, rewardCoins, rewardDiamonds, despawnAfterMillis);
     }
 }

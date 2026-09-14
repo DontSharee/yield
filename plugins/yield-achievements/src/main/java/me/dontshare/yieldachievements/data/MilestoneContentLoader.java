@@ -71,12 +71,12 @@ public final class MilestoneContentLoader {
                 continue;
             }
             long rewardCoins = raw.get("reward-coins") instanceof Number n ? n.longValue() : 0;
-            long rewardGems = raw.get("reward-gems") instanceof Number n ? n.longValue() : 0;
+            long rewardDiamonds = raw.get("reward-diamonds") instanceof Number n ? n.longValue() : 0;
             long rewardCredits = raw.get("reward-credits") instanceof Number n ? n.longValue() : 0;
             Object potionValue = raw.get("reward-potion");
             String rewardPotionId = potionValue != null ? String.valueOf(potionValue) : null;
             tiers.add(new MilestoneTier(Math.max(1, goalNumber.longValue()), BigInteger.valueOf(Math.max(0, rewardCoins)),
-                    BigInteger.valueOf(Math.max(0, rewardGems)), BigInteger.valueOf(Math.max(0, rewardCredits)), rewardPotionId));
+                    BigInteger.valueOf(Math.max(0, rewardDiamonds)), BigInteger.valueOf(Math.max(0, rewardCredits)), rewardPotionId));
         }
         tiers.sort((a, b) -> Long.compare(a.goal(), b.goal()));
         return new MilestoneCategory(id, section.getString("display-name", id), icon, trigger, tiers);

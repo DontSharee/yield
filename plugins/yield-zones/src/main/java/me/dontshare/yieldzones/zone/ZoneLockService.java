@@ -102,7 +102,7 @@ public final class ZoneLockService implements Listener {
         }
 
         ZoneUnlockCost cost = zone.unlockCost();
-        if (profile.getCoins().compareTo(cost.coins()) < 0 || profile.getGems().compareTo(cost.gems()) < 0) {
+        if (profile.getCoins().compareTo(cost.coins()) < 0 || profile.getDiamonds().compareTo(cost.diamonds()) < 0) {
             return PurchaseResult.INSUFFICIENT_FUNDS;
         }
         for (ZoneUnlockCost.ItemCost itemCost : cost.items()) {
@@ -112,7 +112,7 @@ public final class ZoneLockService implements Listener {
         }
 
         profile.setCoins(profile.getCoins().subtract(cost.coins()));
-        profile.setGems(profile.getGems().subtract(cost.gems()));
+        profile.setDiamonds(profile.getDiamonds().subtract(cost.diamonds()));
         for (ZoneUnlockCost.ItemCost itemCost : cost.items()) {
             removeFromInventory(player, itemCost);
         }

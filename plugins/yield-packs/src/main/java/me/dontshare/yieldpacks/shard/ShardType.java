@@ -11,7 +11,7 @@ package me.dontshare.yieldpacks.shard;
 public enum ShardType {
     DAMAGE,
     COINS,
-    GEMS,
+    DIAMONDS,
     LUCK,
     ATTACK_SPEED,
     CRIT_CHANCE

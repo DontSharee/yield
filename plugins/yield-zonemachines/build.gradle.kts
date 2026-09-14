@@ -1,4 +1,4 @@
-version = "0.1.1"
+version = "0.1.2"
 
 repositories {
     maven("https://repo.codemc.io/repository/maven-releases/")
@@ -10,7 +10,7 @@ dependencies {
     // Bukkit's plugin classloader chain via "depend: [yield-core]" in
     // plugin.yml.
     compileOnly(project(":yield-core"))
-    // PackPlayerProfile (coins/gems), CandyItem/candy config, the pet
+    // PackPlayerProfile (coins/diamonds), CandyItem/candy config, the pet
     // registry.
     compileOnly(project(":yield-packs"))
     // ZoneDefinition/ZoneLockService (a machine's zone-unlock check).

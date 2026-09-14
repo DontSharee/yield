@@ -9,7 +9,7 @@ ranks:
     sort-order: 0
     icon: GOLD_BLOCK
     coin-multiplier: 1.5
-    gem-multiplier: 1.0
+    diamond-multiplier: 1.0
     xp-multiplier: 1.5
     luck-bonus: 0.0
     bonus-pet-slots: 20
@@ -21,7 +21,7 @@ ranks:
     sort-order: 1
     icon: NETHER_STAR
     coin-multiplier: 3.0
-    gem-multiplier: 3.0
+    diamond-multiplier: 3.0
     xp-multiplier: 3.0
     luck-bonus: 1.0
     bonus-pet-slots: 80

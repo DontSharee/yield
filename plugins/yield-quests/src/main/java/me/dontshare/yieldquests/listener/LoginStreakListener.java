@@ -64,8 +64,8 @@ public final class LoginStreakListener implements Listener {
 
     private Component buildRewardLine(LoginStreakService.StreakResult result) {
         StringBuilder line = new StringBuilder("<gray>+" + Formatting.format(result.coinsGranted()) + " coins");
-        if (result.gemsGranted() > 0) {
-            line.append(", +").append(Formatting.format(result.gemsGranted())).append(" gems");
+        if (result.diamondsGranted() > 0) {
+            line.append(", +").append(Formatting.format(result.diamondsGranted())).append(" diamonds");
         }
         if (result.creditsGranted() > 0) {
             line.append(", +").append(Formatting.format(result.creditsGranted())).append(" credits");

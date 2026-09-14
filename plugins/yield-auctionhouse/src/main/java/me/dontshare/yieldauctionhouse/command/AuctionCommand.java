@@ -53,7 +53,7 @@ public final class AuctionCommand {
         try {
             currency = AuctionCurrency.valueOf(currencyRaw.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
-            player.sendMessage(Text.parse("<red>Unknown currency '" + currencyRaw + "' - expected coins, gems, or credits.</red>"));
+            player.sendMessage(Text.parse("<red>Unknown currency '" + currencyRaw + "' - expected coins, diamonds, or credits.</red>"));
             return Command.SINGLE_SUCCESS;
         }
         if (service.isBusy(player)) {

@@ -79,7 +79,7 @@ public final class AuctionClaimStore {
                 doc.get("_id", UUID.class),
                 doc.get("ownerId", UUID.class),
                 ClaimReason.valueOf(doc.getString("reason")),
-                currencyRaw != null ? AuctionCurrency.valueOf(currencyRaw) : null,
+                currencyRaw != null ? AuctionCurrency.fromStored(currencyRaw) : null,
                 doc.getString("amount") != null ? new BigInteger(doc.getString("amount")) : null,
                 doc.getString("item"),
                 doc.getLong("createdAtMillis"));

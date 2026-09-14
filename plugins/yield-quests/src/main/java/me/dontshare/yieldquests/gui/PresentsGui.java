@@ -65,9 +65,9 @@ public final class PresentsGui {
             case SUCCESS -> {
                 player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.6f, 1.6f);
                 PresentDefinition present = presentsService.presents().get(index);
-                player.sendMessage(Text.parse("<green>Claimed! +<coins> coins<gem></green>",
+                player.sendMessage(Text.parse("<green>Claimed! +<coins> coins<diamond></green>",
                         Placeholder.unparsed("coins", Formatting.format(present.coins())),
-                        Placeholder.unparsed("gem", present.gems() > 0 ? " and " + present.gems() + " gem(s)" : "")));
+                        Placeholder.unparsed("diamond", present.diamonds() > 0 ? " and " + present.diamonds() + " diamond(s)" : "")));
             }
             case LOCKED -> {
                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
@@ -98,7 +98,7 @@ public final class PresentsGui {
         List<String> data = List.of(
                 "&7Unlocks at: &f" + present.unlockAfterMinutes() + "m online",
                 "&7Reward: &a$" + Formatting.format(present.coins())
-                        + (present.gems() > 0 ? " &7+ &b" + present.gems() + " gem(s)" : "")
+                        + (present.diamonds() > 0 ? " &7+ &b" + present.diamonds() + " diamond(s)" : "")
         );
 
         if (claimed) {

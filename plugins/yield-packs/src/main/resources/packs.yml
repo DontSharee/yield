@@ -1502,7 +1502,7 @@ packs:
     display-name: "&fStarter Pack"
     material: CHEST
     coin-cost: 25
-    gem-cost: 0
+    diamond-cost: 0
     sort: 0
     shop-weight: 100
     shop-luck-exponent: 0.0
@@ -1525,7 +1525,7 @@ packs:
     display-name: "&7Common Pack"
     material: CHEST
     coin-cost: 100
-    gem-cost: 0
+    diamond-cost: 0
     sort: 1
     shop-weight: 90
     shop-luck-exponent: 0.1
@@ -1548,7 +1548,7 @@ packs:
     display-name: "&aUncommon Pack"
     material: TRAPPED_CHEST
     coin-cost: 1000
-    gem-cost: 0
+    diamond-cost: 0
     sort: 2
     shop-weight: 40
     shop-luck-exponent: 0.3
@@ -1571,7 +1571,7 @@ packs:
     display-name: "&eValue Pack"
     material: BARREL
     coin-cost: 2000
-    gem-cost: 0
+    diamond-cost: 0
     sort: 3
     shop-weight: 20
     shop-luck-exponent: 0.4
@@ -1594,7 +1594,7 @@ packs:
     display-name: "&9Rare Pack"
     material: ENDER_CHEST
     coin-cost: 500
-    gem-cost: 5
+    diamond-cost: 5
     sort: 4
     shop-weight: 15
     shop-luck-exponent: 0.6
@@ -1617,7 +1617,7 @@ packs:
     display-name: "&d&lJackpot Pack"
     material: SHULKER_BOX
     coin-cost: 10000
-    gem-cost: 0
+    diamond-cost: 0
     sort: 5
     shop-weight: 3
     shop-luck-exponent: 1.0
@@ -1640,7 +1640,7 @@ packs:
     display-name: "&5Epic Pack"
     material: SHULKER_BOX
     coin-cost: 5000
-    gem-cost: 15
+    diamond-cost: 15
     sort: 6
     shop-weight: 6
     shop-luck-exponent: 0.8
@@ -1663,7 +1663,7 @@ packs:
     display-name: "&6&lLegendary Pack"
     material: YELLOW_SHULKER_BOX
     coin-cost: 25000
-    gem-cost: 50
+    diamond-cost: 50
     sort: 7
     shop-weight: 2
     shop-luck-exponent: 1.0
@@ -1686,7 +1686,7 @@ packs:
     display-name: "&d&lMythic Pack"
     material: PURPLE_SHULKER_BOX
     coin-cost: 150000
-    gem-cost: 250
+    diamond-cost: 250
     sort: 8
     shop-weight: 0.5
     shop-luck-exponent: 1.3
@@ -1714,7 +1714,7 @@ packs:
     display-name: "&b&lTitan Pack"
     material: CYAN_SHULKER_BOX
     coin-cost: 1000000
-    gem-cost: 1000
+    diamond-cost: 1000
     sort: 9
     shop-weight: 0.05
     shop-luck-exponent: 1.6
@@ -1744,7 +1744,7 @@ packs:
     display-name: "&aMeadow Pack"
     material: CHEST
     coin-cost: 50
-    gem-cost: 0
+    diamond-cost: 0
     sort: 100
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -1765,7 +1765,7 @@ packs:
     display-name: "&bFrostpeak Pack"
     material: CHEST
     coin-cost: 88
-    gem-cost: 0
+    diamond-cost: 0
     sort: 101
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -1786,7 +1786,7 @@ packs:
     display-name: "&7Iron Foothills Pack"
     material: CHEST
     coin-cost: 153
-    gem-cost: 0
+    diamond-cost: 0
     sort: 102
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -1807,7 +1807,7 @@ packs:
     display-name: "&eSulfur Flats Pack"
     material: CHEST
     coin-cost: 268
-    gem-cost: 0
+    diamond-cost: 0
     sort: 103
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -1828,7 +1828,7 @@ packs:
     display-name: "&cScorched Wastes Pack"
     material: CHEST
     coin-cost: 469
-    gem-cost: 0
+    diamond-cost: 0
     sort: 104
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -1849,7 +1849,7 @@ packs:
     display-name: "&dCrystal Caverns Pack"
     material: CHEST
     coin-cost: 821
-    gem-cost: 0
+    diamond-cost: 0
     sort: 105
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -1870,7 +1870,7 @@ packs:
     display-name: "&bDiamond Hollow Pack"
     material: CHEST
     coin-cost: 1436
-    gem-cost: 0
+    diamond-cost: 0
     sort: 106
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -1891,7 +1891,7 @@ packs:
     display-name: "&2Emerald Depths Pack"
     material: CHEST
     coin-cost: 2513
-    gem-cost: 0
+    diamond-cost: 0
     sort: 107
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -1912,7 +1912,7 @@ packs:
     display-name: "&8Obsidian Rift Pack"
     material: CHEST
     coin-cost: 4398
-    gem-cost: 0
+    diamond-cost: 0
     sort: 108
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -1933,7 +1933,7 @@ packs:
     display-name: "&5Void Expanse Pack"
     material: CHEST
     coin-cost: 7697
-    gem-cost: 0
+    diamond-cost: 0
     sort: 109
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -1954,7 +1954,7 @@ packs:
     display-name: "&4Netherite Wastes Pack"
     material: CHEST
     coin-cost: 13469
-    gem-cost: 0
+    diamond-cost: 0
     sort: 110
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -1975,7 +1975,7 @@ packs:
     display-name: "&8Ancient Ruins Pack"
     material: CHEST
     coin-cost: 23572
-    gem-cost: 0
+    diamond-cost: 0
     sort: 111
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -1996,7 +1996,7 @@ packs:
     display-name: "&eEnd Barrens Pack"
     material: CHEST
     coin-cost: 41250
-    gem-cost: 0
+    diamond-cost: 0
     sort: 112
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -2017,7 +2017,7 @@ packs:
     display-name: "&dPurpur Spires Pack"
     material: CHEST
     coin-cost: 72188
-    gem-cost: 0
+    diamond-cost: 0
     sort: 113
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -2038,7 +2038,7 @@ packs:
     display-name: "&eCelestial Sanctum Pack"
     material: CHEST
     coin-cost: 126329
-    gem-cost: 0
+    diamond-cost: 0
     sort: 114
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -2059,7 +2059,7 @@ packs:
     display-name: "&bStarlight Fields Pack"
     material: CHEST
     coin-cost: 221076
-    gem-cost: 0
+    diamond-cost: 0
     sort: 115
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -2080,7 +2080,7 @@ packs:
     display-name: "&5Cosmic Abyss Pack"
     material: CHEST
     coin-cost: 386882
-    gem-cost: 0
+    diamond-cost: 0
     sort: 116
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -2101,7 +2101,7 @@ packs:
     display-name: "&6Eternal Forge Pack"
     material: CHEST
     coin-cost: 677044
-    gem-cost: 0
+    diamond-cost: 0
     sort: 117
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -2122,7 +2122,7 @@ packs:
     display-name: "&dAstral Peak Pack"
     material: CHEST
     coin-cost: 1184827
-    gem-cost: 0
+    diamond-cost: 0
     sort: 118
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -2143,7 +2143,7 @@ packs:
     display-name: "&eGenesis Core Pack"
     material: CHEST
     coin-cost: 2073447
-    gem-cost: 0
+    diamond-cost: 0
     sort: 119
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -2168,7 +2168,7 @@ packs:
     display-name: "&bFrostbound Cache"
     material: ENDER_CHEST
     coin-cost: 5000
-    gem-cost: 20
+    diamond-cost: 20
     sort: 200
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -2189,7 +2189,7 @@ packs:
     display-name: "&dCrystalline Cache"
     material: ENDER_CHEST
     coin-cost: 250000
-    gem-cost: 200
+    diamond-cost: 200
     sort: 201
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -2210,7 +2210,7 @@ packs:
     display-name: "&eGenesis Cache"
     material: ENDER_CHEST
     coin-cost: 50000000
-    gem-cost: 5000
+    diamond-cost: 5000
     sort: 202
     shop-weight: 0
     shop-luck-exponent: 0.0

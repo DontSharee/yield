@@ -1,6 +1,6 @@
 # One physical station per zone, 'smacked' (left-click/attack) to buy 1
 # unit of that zone's own pack into storage - unlimited supply, no shop-
-# stock cap, just the pack's own coin-cost/gem-cost from packs.yml. A
+# stock cap, just the pack's own coin-cost/diamond-cost from packs.yml. A
 # station's 'pack:' must already exist as a pack id in yield-packs' own
 # packs.yml. Run /admin packstations reload after editing this file.
 #

@@ -125,7 +125,7 @@ public final class PickaxeUpgradeGui {
     private ItemStack buildInfoIcon() {
         ItemBuilder builder = ItemBuilder.of(Material.KNOWLEDGE_BOOK).name(MenuLore.infoName("<gold>", "PICKAXE ENCHANTS"));
         MenuLore.info("info", List.of(
-                "&fMine blocks&7 to earn &agems&7, then",
+                "&fMine blocks&7 to earn &adiamonds&7, then",
                 "&fenchant&7 your pickaxe to mine faster."
         ), "<gold>", List.of()).forEach(builder::lore);
         return builder.hideAttributes().build();

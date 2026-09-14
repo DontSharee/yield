@@ -161,9 +161,9 @@ public final class OreCubeService implements Listener {
     private final Map<UUID, WindowStats> pendingSummary = new ConcurrentHashMap<>();
     private final Map<UUID, Long> lastSummaryAtMillis = new ConcurrentHashMap<>();
 
-    private record WindowStats(long coins, long gems, int kills) {
-        WindowStats add(long moreCoins, long moreGems) {
-            return new WindowStats(coins + moreCoins, gems + moreGems, kills + 1);
+    private record WindowStats(long coins, long diamonds, int kills) {
+        WindowStats add(long moreCoins, long moreDiamonds) {
+            return new WindowStats(coins + moreCoins, diamonds + moreDiamonds, kills + 1);
         }
     }
 
@@ -189,10 +189,10 @@ public final class OreCubeService implements Listener {
      * multiplied together, same as every other multiplier in this codebase.
      */
     private final Map<String, BiFunction<PackPlayerProfile, Material, Long>> flatCoinBonusProviders = new ConcurrentHashMap<>();
-    private final Map<String, BiFunction<PackPlayerProfile, Material, Long>> flatGemBonusProviders = new ConcurrentHashMap<>();
+    private final Map<String, BiFunction<PackPlayerProfile, Material, Long>> flatDiamondBonusProviders = new ConcurrentHashMap<>();
     private final Map<String, BiFunction<PackPlayerProfile, Material, Double>> blockCoinMultiplierProviders = new ConcurrentHashMap<>();
-    /** Global (not block-scoped) - additive on top of the base 5%-times-luck gem-drop roll below. */
-    private final Map<String, Function<PackPlayerProfile, Double>> gemChanceBoostProviders = new ConcurrentHashMap<>();
+    /** Global (not block-scoped) - additive on top of the base 5%-times-luck diamond-drop roll below. */
+    private final Map<String, Function<PackPlayerProfile, Double>> diamondChanceBoostProviders = new ConcurrentHashMap<>();
     /** Additive extra concurrent-cube slots on top of a zone's own configured {@code maxConcurrentCubes} - see topUpCubes. */
     private final Map<String, Function<PackPlayerProfile, Integer>> extraCubeCapProviders = new ConcurrentHashMap<>();
     /** Additive boost to every configured {@link CubeBonus}'s own chance (golden/diamond) - see rollBonus. */
@@ -206,12 +206,12 @@ public final class OreCubeService implements Listener {
         flatCoinBonusProviders.remove(key);
     }
 
-    public void registerFlatGemBonusProvider(String key, BiFunction<PackPlayerProfile, Material, Long> provider) {
-        flatGemBonusProviders.put(key, provider);
+    public void registerFlatDiamondBonusProvider(String key, BiFunction<PackPlayerProfile, Material, Long> provider) {
+        flatDiamondBonusProviders.put(key, provider);
     }
 
-    public void unregisterFlatGemBonusProvider(String key) {
-        flatGemBonusProviders.remove(key);
+    public void unregisterFlatDiamondBonusProvider(String key) {
+        flatDiamondBonusProviders.remove(key);
     }
 
     public void registerBlockCoinMultiplierProvider(String key, BiFunction<PackPlayerProfile, Material, Double> provider) {
@@ -222,12 +222,12 @@ public final class OreCubeService implements Listener {
         blockCoinMultiplierProviders.remove(key);
     }
 
-    public void registerGemChanceBoostProvider(String key, Function<PackPlayerProfile, Double> provider) {
-        gemChanceBoostProviders.put(key, provider);
+    public void registerDiamondChanceBoostProvider(String key, Function<PackPlayerProfile, Double> provider) {
+        diamondChanceBoostProviders.put(key, provider);
     }
 
-    public void unregisterGemChanceBoostProvider(String key) {
-        gemChanceBoostProviders.remove(key);
+    public void unregisterDiamondChanceBoostProvider(String key) {
+        diamondChanceBoostProviders.remove(key);
     }
 
     public void registerExtraCubeCapProvider(String key, Function<PackPlayerProfile, Integer> provider) {
@@ -262,9 +262,9 @@ public final class OreCubeService implements Listener {
         return total;
     }
 
-    private double gemChanceBoostSum(PackPlayerProfile profile) {
+    private double diamondChanceBoostSum(PackPlayerProfile profile) {
         double total = 0.0;
-        for (Function<PackPlayerProfile, Double> provider : gemChanceBoostProviders.values()) {
+        for (Function<PackPlayerProfile, Double> provider : diamondChanceBoostProviders.values()) {
             total += provider.apply(profile);
         }
         return total;
@@ -935,12 +935,12 @@ public final class OreCubeService implements Listener {
         spawnFloatingText(viewer, center, text, DAMAGE_INDICATOR_RISE_TICKS, DAMAGE_INDICATOR_LIFETIME_TICKS);
     }
 
-    /** "+<coins> coins" (and "+<gems> gems" only if any were earned), floating up from the cube on a kill - a combo of 2+ gets its own line, right where the player is already looking. */
-    private void showEarningsIndicator(Player viewer, Location center, long coins, int gemsEarned, int combo) {
+    /** "+<coins> coins" (and "+<diamonds> diamonds" only if any were earned), floating up from the cube on a kill - a combo of 2+ gets its own line, right where the player is already looking. */
+    private void showEarningsIndicator(Player viewer, Location center, long coins, int diamondsEarned, int combo) {
         Component text = Text.parse("<#55FF7F>+<coins> coins</#55FF7F>", Placeholder.unparsed("coins", Formatting.format(coins)));
-        if (gemsEarned > 0) {
+        if (diamondsEarned > 0) {
             text = text.append(Component.newline())
-                    .append(Text.parse("<#55FFFF>+<gems> gems</#55FFFF>", Placeholder.unparsed("gems", Formatting.format(gemsEarned))));
+                    .append(Text.parse("<#55FFFF>+<diamonds> diamonds</#55FFFF>", Placeholder.unparsed("diamonds", Formatting.format(diamondsEarned))));
         }
         if (combo > 1) {
             text = text.append(Component.newline())
@@ -1061,18 +1061,18 @@ public final class OreCubeService implements Listener {
                 * (1 + earningsBonus) * bonusMultiplier * comboMultiplier) + flatBonusSum(flatCoinBonusProviders, profile, tier.material());
         profile.setCoins(profile.getCoins().add(BigInteger.valueOf(coins)));
 
-        boolean guaranteedGem = contributors.stream().anyMatch(pet -> leveling.hasMilestone(pet, MilestoneEffect.GUARANTEED_GEM_DROP));
-        // The Glittering Unique pet-enchant (see PetEnchantService#hasBonusGemDropEnchant) isn't
+        boolean guaranteedDiamond = contributors.stream().anyMatch(pet -> leveling.hasMilestone(pet, MilestoneEffect.GUARANTEED_DIAMOND_DROP));
+        // The Glittering Unique pet-enchant (see PetEnchantService#hasBonusDiamondDropEnchant) isn't
         // an outright guarantee like the milestone above - a hefty flat chance bump instead,
         // matching its own "bonus chance" framing rather than "always."
-        boolean hasGlittering = packs.getPetEnchantService().hasBonusGemDropEnchant(contributors);
+        boolean hasGlittering = packs.getPetEnchantService().hasBonusDiamondDropEnchant(contributors);
         double luck = luckService.totalLuckMultiplier(profile);
-        double gemChance = 0.05 * luck + gemChanceBoostSum(profile) + (hasGlittering ? 0.5 : 0.0);
-        int gemsEarned = guaranteedGem || ThreadLocalRandom.current().nextDouble() < gemChance ? 1 : 0;
-        gemsEarned += (int) flatBonusSum(flatGemBonusProviders, profile, tier.material());
-        if (gemsEarned > 0) {
-            gemsEarned = (int) Math.round(gemsEarned * packs.gemMultiplier(profile));
-            profile.setGems(profile.getGems().add(BigInteger.valueOf(gemsEarned)));
+        double diamondChance = 0.05 * luck + diamondChanceBoostSum(profile) + (hasGlittering ? 0.5 : 0.0);
+        int diamondsEarned = guaranteedDiamond || ThreadLocalRandom.current().nextDouble() < diamondChance ? 1 : 0;
+        diamondsEarned += (int) flatBonusSum(flatDiamondBonusProviders, profile, tier.material());
+        if (diamondsEarned > 0) {
+            diamondsEarned = (int) Math.round(diamondsEarned * packs.diamondMultiplier(profile));
+            profile.setDiamonds(profile.getDiamonds().add(BigInteger.valueOf(diamondsEarned)));
         }
         profile.setLifetimeCubeKills(profile.getLifetimeCubeKills() + 1);
         profile.setLifetimeCoinsEarned(profile.getLifetimeCoinsEarned().add(BigInteger.valueOf(coins)));
@@ -1084,11 +1084,11 @@ public final class OreCubeService implements Listener {
             packs.getPetDisplayService().showXpGain(player, contributorId, petXpAmount);
         }
         giveCandyDrops(player, luck);
-        showEarningsIndicator(player, cubeCenter, coins, gemsEarned, combo.count());
+        showEarningsIndicator(player, cubeCenter, coins, diamondsEarned, combo.count());
         announceCombo(player, cubeCenter, combo);
-        queueSummary(player, coins, gemsEarned);
-        Bukkit.getPluginManager().callEvent(new OreCubeKilledEvent(player, tier, coins, gemsEarned));
-        // Refresh the sidebar immediately - coins/gems/level/damage all just
+        queueSummary(player, coins, diamondsEarned);
+        Bukkit.getPluginManager().callEvent(new OreCubeKilledEvent(player, tier, coins, diamondsEarned));
+        // Refresh the sidebar immediately - coins/diamonds/level/damage all just
         // changed, and waiting up to a second for the periodic tick makes
         // the payout feel laggy rather than instant.
         core().getScoreboardDisplay().refresh(player);
@@ -1106,9 +1106,9 @@ public final class OreCubeService implements Listener {
     }
 
     /** Accumulates into the rolling 1-minute "Slaying Summary" chat block instead of messaging per-kill - see {@link #flushSummaries}. */
-    private void queueSummary(Player player, long coins, int gems) {
-        pendingSummary.merge(player.getUniqueId(), new WindowStats(coins, gems, 1),
-                (existing, fresh) -> existing.add(fresh.coins(), fresh.gems()));
+    private void queueSummary(Player player, long coins, int diamonds) {
+        pendingSummary.merge(player.getUniqueId(), new WindowStats(coins, diamonds, 1),
+                (existing, fresh) -> existing.add(fresh.coins(), fresh.diamonds()));
     }
 
     /** Runs once per minute - sends a combined summary only to players who earned something, then resets their window. */
@@ -1129,11 +1129,11 @@ public final class OreCubeService implements Listener {
                     "<red><bold>SLAYING SUMMARY</bold></red>  <gray>last <minutes>m</gray>\n" +
                             "<dark_gray>EARNINGS</dark_gray>\n" +
                             "<gray>│</gray> <gold>Gold: <yellow><coins></yellow></gold>\n" +
-                            "<gray>│</gray> <aqua>Gems: <white><gems></white></aqua>\n" +
+                            "<gray>│</gray> <aqua>Diamonds: <white><diamonds></white></aqua>\n" +
                             "<gray>│</gray> <red>Kills: <white>x<kills></white></red>",
                     Placeholder.unparsed("minutes", String.valueOf(elapsedMinutes)),
                     Placeholder.unparsed("coins", Formatting.format(stats.coins())),
-                    Placeholder.unparsed("gems", Formatting.format(stats.gems())),
+                    Placeholder.unparsed("diamonds", Formatting.format(stats.diamonds())),
                     Placeholder.unparsed("kills", Formatting.format(stats.kills()))));
         }
     }

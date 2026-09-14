@@ -8,7 +8,7 @@
 # the next reset. Miss the goal by then and you get nothing for that
 # category that day; hit it and claim the reward.
 #
-# Rewards: "reward-coins"/"reward-gems" are the baseline. Two more are
+# Rewards: "reward-coins"/"reward-diamonds" are the baseline. Two more are
 # optional, both default to none:
 #   reward-credits - a bonus of the auction house's own credits currency
 #   reward-pet     - grants ONE guaranteed level-1 instance of this item id,
@@ -40,20 +40,20 @@ categories:
       action: KILL_CUBE
       goal: 10
       reward-coins: 500
-      reward-gems: 0
+      reward-diamonds: 0
     medium:
       display-name: "&6Cube Crusher II"
       action: KILL_CUBE
       goal: 30
       reward-coins: 1500
-      reward-gems: 1
+      reward-diamonds: 1
       reward-credits: 5
     hard:
       display-name: "&cCube Crusher III"
       action: KILL_CUBE
       goal: 75
       reward-coins: 4000
-      reward-gems: 3
+      reward-diamonds: 3
       reward-credits: 15
 
   economy:
@@ -64,20 +64,20 @@ categories:
       action: OPEN_PACK
       goal: 5
       reward-coins: 400
-      reward-gems: 0
+      reward-diamonds: 0
     medium:
       display-name: "&6Pack Opener II"
       action: OPEN_PACK
       goal: 15
       reward-coins: 1200
-      reward-gems: 1
+      reward-diamonds: 1
       reward-credits: 5
     hard:
       display-name: "&cPack Opener III"
       action: OPEN_PACK
       goal: 40
       reward-coins: 3500
-      reward-gems: 2
+      reward-diamonds: 2
       reward-credits: 15
 
   collection:
@@ -88,20 +88,20 @@ categories:
       action: FUSE_PET
       goal: 1
       reward-coins: 600
-      reward-gems: 0
+      reward-diamonds: 0
     medium:
       display-name: "&6Fusion Adept"
       action: FUSE_PET
       goal: 3
       reward-coins: 1800
-      reward-gems: 1
+      reward-diamonds: 1
       reward-credits: 5
     hard:
       display-name: "&cFusion Master"
       action: FUSE_PET
       goal: 8
       reward-coins: 5000
-      reward-gems: 3
+      reward-diamonds: 3
       reward-credits: 15
       reward-pet: diamond_wolf
 
@@ -113,18 +113,18 @@ categories:
       action: LEVEL_UP_PET
       goal: 5
       reward-coins: 500
-      reward-gems: 0
+      reward-diamonds: 0
     medium:
       display-name: "&6Level Chaser II"
       action: LEVEL_UP_PET
       goal: 15
       reward-coins: 1500
-      reward-gems: 1
+      reward-diamonds: 1
       reward-credits: 5
     hard:
       display-name: "&cLevel Chaser III"
       action: LEVEL_UP_PET
       goal: 40
       reward-coins: 4000
-      reward-gems: 2
+      reward-diamonds: 2
       reward-credits: 15

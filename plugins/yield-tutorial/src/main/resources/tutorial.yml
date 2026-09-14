@@ -20,7 +20,7 @@ npc:
 # EQUIP_PET, ENTER_ZONE, KILL_CUBE) advances it. "goal" (default 1) lets a
 # step require more than one occurrence before it's checked off - the
 # checklist shows live "X/goal" progress toward whichever one is current.
-# reward-coins/reward-gems are optional (default 0) and paid the moment that
+# reward-coins/reward-diamonds are optional (default 0) and paid the moment that
 # step completes, on top of whatever the action itself already earned.
 steps:
   - id: welcome
@@ -50,4 +50,4 @@ steps:
     completes-on: KILL_CUBE
     goal: 3
     reward-coins: 1000
-    reward-gems: 1
+    reward-diamonds: 1

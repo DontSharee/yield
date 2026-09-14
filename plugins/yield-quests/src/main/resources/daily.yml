@@ -15,13 +15,13 @@
 # keep their current session progress either way, only the reward numbers/
 # thresholds themselves change.
 presents:
-  - { unlock-after-minutes: 5,   head: "", fallback-material: WHITE_SHULKER_BOX,  coins: 200,   gems: 0 }
-  - { unlock-after-minutes: 10,  head: "", fallback-material: ORANGE_SHULKER_BOX, coins: 400,   gems: 0 }
-  - { unlock-after-minutes: 25,  head: "", fallback-material: MAGENTA_SHULKER_BOX, coins: 800,  gems: 1 }
-  - { unlock-after-minutes: 45,  head: "", fallback-material: LIGHT_BLUE_SHULKER_BOX, coins: 1500, gems: 1 }
-  - { unlock-after-minutes: 70,  head: "", fallback-material: YELLOW_SHULKER_BOX, coins: 2500,  gems: 2 }
-  - { unlock-after-minutes: 100, head: "", fallback-material: LIME_SHULKER_BOX,   coins: 4000,  gems: 2 }
-  - { unlock-after-minutes: 135, head: "", fallback-material: PINK_SHULKER_BOX,   coins: 6000,  gems: 3 }
-  - { unlock-after-minutes: 175, head: "", fallback-material: CYAN_SHULKER_BOX,   coins: 9000,  gems: 4 }
-  - { unlock-after-minutes: 220, head: "", fallback-material: PURPLE_SHULKER_BOX, coins: 13000, gems: 5 }
-  - { unlock-after-minutes: 270, head: "", fallback-material: RED_SHULKER_BOX,    coins: 20000, gems: 8 }
+  - { unlock-after-minutes: 5,   head: "", fallback-material: WHITE_SHULKER_BOX,  coins: 200,   diamonds: 0 }
+  - { unlock-after-minutes: 10,  head: "", fallback-material: ORANGE_SHULKER_BOX, coins: 400,   diamonds: 0 }
+  - { unlock-after-minutes: 25,  head: "", fallback-material: MAGENTA_SHULKER_BOX, coins: 800,  diamonds: 1 }
+  - { unlock-after-minutes: 45,  head: "", fallback-material: LIGHT_BLUE_SHULKER_BOX, coins: 1500, diamonds: 1 }
+  - { unlock-after-minutes: 70,  head: "", fallback-material: YELLOW_SHULKER_BOX, coins: 2500,  diamonds: 2 }
+  - { unlock-after-minutes: 100, head: "", fallback-material: LIME_SHULKER_BOX,   coins: 4000,  diamonds: 2 }
+  - { unlock-after-minutes: 135, head: "", fallback-material: PINK_SHULKER_BOX,   coins: 6000,  diamonds: 3 }
+  - { unlock-after-minutes: 175, head: "", fallback-material: CYAN_SHULKER_BOX,   coins: 9000,  diamonds: 4 }
+  - { unlock-after-minutes: 220, head: "", fallback-material: PURPLE_SHULKER_BOX, coins: 13000, diamonds: 5 }
+  - { unlock-after-minutes: 270, head: "", fallback-material: RED_SHULKER_BOX,    coins: 20000, diamonds: 8 }

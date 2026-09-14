@@ -57,13 +57,13 @@ public final class PickaxeEnchantContentLoader {
             return null;
         }
 
-        String currencyRaw = section.getString("cost-currency", "GEMS");
+        String currencyRaw = section.getString("cost-currency", "DIAMONDS");
         CostCurrency currency;
         try {
             currency = CostCurrency.valueOf(currencyRaw.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
-            logger.warning("Pickaxe enchant '" + id + "' has an invalid 'cost-currency' '" + currencyRaw + "' - defaulting to GEMS.");
-            currency = CostCurrency.GEMS;
+            logger.warning("Pickaxe enchant '" + id + "' has an invalid 'cost-currency' '" + currencyRaw + "' - defaulting to DIAMONDS.");
+            currency = CostCurrency.DIAMONDS;
         }
 
         String itemName = section.getString("display-item", "STONE_PICKAXE");

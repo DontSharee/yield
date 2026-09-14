@@ -160,10 +160,10 @@ public final class BlockTreeCategoryGui {
         String percent = Formatting.format(effect.value() * 100) + "%";
         return switch (effect.type()) {
             case FLAT_COINS -> "&6+" + Formatting.format(effect.value()) + " Coins &7per " + blockName;
-            case FLAT_GEMS -> "&b+" + Formatting.format(effect.value()) + " Gems &7per " + blockName;
+            case FLAT_DIAMONDS -> "&b+" + Formatting.format(effect.value()) + " Diamonds &7per " + blockName;
             case FLAT_CREDITS -> "&d+" + Formatting.format(effect.value()) + " Credits &7per " + blockName;
             case BLOCK_COIN_MULTIPLIER -> "&6+" + percent + " Coins &7from " + blockName;
-            case BLOCK_GEM_MULTIPLIER -> "&b+" + percent + " Gems &7from " + blockName;
+            case BLOCK_DIAMOND_MULTIPLIER -> "&b+" + percent + " Diamonds &7from " + blockName;
             case GLOBAL_COIN_MULTIPLIER -> "&6+" + percent + " Coins &7from everything";
             case GLOBAL_DAMAGE_MULTIPLIER -> "&c+" + percent + " Damage &7from everything";
             case GLOBAL_LUCK_BOOST -> "&d+" + percent + " Luck &7everywhere";
@@ -172,7 +172,7 @@ public final class BlockTreeCategoryGui {
             case DOUBLE_HIT_CHANCE -> "&e" + percent + " &7chance to double-hit with pets";
             case TRIPLE_HIT_CHANCE -> "&6" + percent + " &7chance to triple-hit with pets";
             case EXCLUSIVE_FIND_CHANCE -> "&b" + percent + " &7chance to find an Exclusive in any pack";
-            case GEM_CHANCE_BOOST -> "&b+" + percent + " Gem Find Chance &7from cubes";
+            case DIAMOND_CHANCE_BOOST -> "&b+" + percent + " Diamond Find Chance &7from cubes";
             case PROGRESS_MULTIPLIER -> "&d+" + percent + " Blocktree Progress &7from every block";
             case UNLOCK_SHARD_DROP -> "&5Unlocks " + percent + " chance for " + blockName + " &7to drop a Shard";
         };

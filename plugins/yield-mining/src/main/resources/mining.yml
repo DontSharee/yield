@@ -5,7 +5,7 @@
 # drop-material/drop-min/drop-max: the REAL, physical item given to the
 #   player - this is the actual point of mining, not just a number going up.
 #   Matches vanilla's own natural-drop item (raw ore for iron/copper/gold,
-#   the gem itself for redstone/lapis/diamond/emerald). Leave drop-material
+#   the gemstone itself for redstone/lapis/diamond/emerald). Leave drop-material
 #   blank to pay only coins/xp with no item.
 # coin-reward: bonus coins paid ON TOP of the item above, only for a break
 #   at a registered mining spot (see /admin mining give) - never for a

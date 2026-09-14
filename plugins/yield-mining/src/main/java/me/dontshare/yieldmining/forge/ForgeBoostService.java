@@ -9,7 +9,7 @@ import java.util.UUID;
 
 /**
  * Applying a forged held item's Multi to one specific pet, and feeding the
- * COINS/GEMS/LUCK/ATTACK_SPEED flavors of that back into the player's
+ * COINS/DIAMONDS/LUCK/ATTACK_SPEED flavors of that back into the player's
  * global multipliers - only while the pet holding them is actually
  * equipped (see {@link PetInstance#getForgeBonuses}). DAMAGE needs no
  * service-level read here: {@code EquipmentService#effectiveDamage}
@@ -35,8 +35,8 @@ public final class ForgeBoostService {
         return 1.0 + equippedSum(profile, ForgeStatType.COINS);
     }
 
-    public double gemMultiplier(PackPlayerProfile profile) {
-        return 1.0 + equippedSum(profile, ForgeStatType.GEMS);
+    public double diamondMultiplier(PackPlayerProfile profile) {
+        return 1.0 + equippedSum(profile, ForgeStatType.DIAMONDS);
     }
 
     /** Additive, not a factor - matches LuckService#extraLuckProviders' own convention. */
@@ -54,6 +54,13 @@ public final class ForgeBoostService {
             PetInstance pet = profile.findPet(petId).orElse(null);
             if (pet != null) {
                 sum += pet.getForgeBonuses().getOrDefault(type.name(), 0.0);
+                // "GEMS" is the pre-rename map key a pet forged before the
+                // Diamonds rename would still be carrying - only DIAMONDS
+                // ever needs this fallback, and a pet only ever has one of
+                // the two keys, so this can't double-count.
+                if (type == ForgeStatType.DIAMONDS) {
+                    sum += pet.getForgeBonuses().getOrDefault("GEMS", 0.0);
+                }
             }
         }
         return sum;

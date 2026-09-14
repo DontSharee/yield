@@ -1,4 +1,4 @@
-version = "0.1.1"
+version = "0.1.2"
 
 repositories {
     maven("https://repo.codemc.io/repository/maven-releases/")
@@ -14,7 +14,7 @@ dependencies {
     // provider registries.
     compileOnly(project(":yield-packs"))
     // ZoneDefinition/ZoneLockService (a station's zone-unlock check) and
-    // OreCubeService's gem-chance/flat-gem-bonus provider registries.
+    // OreCubeService's diamond-chance/flat-diamond-bonus provider registries.
     compileOnly(project(":yield-zones"))
     // RebirthService's rebirth-grant-multiplier registry.
     compileOnly(project(":yield-rebirth"))

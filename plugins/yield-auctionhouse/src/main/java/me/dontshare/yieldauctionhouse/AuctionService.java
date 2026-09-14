@@ -28,7 +28,7 @@ import java.util.function.Supplier;
 
 /**
  * Fixed-price player marketplace - list whatever's in your main hand for
- * coins, gems, or credits, first buyer takes it. The auction house never
+ * coins, diamonds, or credits, first buyer takes it. The auction house never
  * inspects what the item actually IS (a pet, a lootbox, a potion, anything
  * else) - it round-trips the exact {@link ItemStack} byte-for-byte (see
  * {@link ItemSerialization}), tags and all.
@@ -238,7 +238,7 @@ public final class AuctionService {
     private BigInteger balanceOf(PackPlayerProfile profile, AuctionCurrency currency) {
         return switch (currency) {
             case COINS -> profile.getCoins();
-            case GEMS -> profile.getGems();
+            case DIAMONDS -> profile.getDiamonds();
             case CREDITS -> profile.getCredits();
         };
     }
@@ -246,7 +246,7 @@ public final class AuctionService {
     private void setBalance(PackPlayerProfile profile, AuctionCurrency currency, BigInteger value) {
         switch (currency) {
             case COINS -> profile.setCoins(value);
-            case GEMS -> profile.setGems(value);
+            case DIAMONDS -> profile.setDiamonds(value);
             case CREDITS -> profile.setCredits(value);
         }
     }

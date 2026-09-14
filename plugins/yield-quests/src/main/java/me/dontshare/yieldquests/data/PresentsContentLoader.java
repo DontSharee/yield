@@ -43,8 +43,8 @@ public final class PresentsContentLoader {
                 fallback = Material.CHEST;
             }
             long coins = entry.get("coins") instanceof Number n ? n.longValue() : 0;
-            long gems = entry.get("gems") instanceof Number n ? n.longValue() : 0;
-            presents.add(new PresentDefinition(unlockAfter, headId, fallback, Math.max(0, coins), Math.max(0, gems)));
+            long diamonds = entry.get("diamonds") instanceof Number n ? n.longValue() : 0;
+            presents.add(new PresentDefinition(unlockAfter, headId, fallback, Math.max(0, coins), Math.max(0, diamonds)));
         }
         presents.sort((a, b) -> Long.compare(a.unlockAfterMinutes(), b.unlockAfterMinutes()));
         return new PresentsContent(presents);

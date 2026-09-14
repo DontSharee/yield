@@ -100,7 +100,7 @@ public final class MasteryGui {
     private String bonusLabel(MasteryType type) {
         return switch (type) {
             case PACKS -> "Luck";
-            case ENCHANTS -> "Gems";
+            case ENCHANTS -> "Diamonds";
             case MINING -> "Coins";
             case COMBAT -> "Damage";
         };

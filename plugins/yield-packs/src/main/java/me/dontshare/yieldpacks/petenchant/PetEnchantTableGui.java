@@ -42,7 +42,7 @@ import java.util.stream.IntStream;
 /**
  * "The Enchanting Table" - a red-glass placeholder in the center slot until
  * a pet is loaded (see {@code PetEnchantSelectGui}), then an Enchant button
- * that spends gems, rolls (server-side, already decided - see {@link
+ * that spends diamonds, rolls (server-side, already decided - see {@link
  * PetEnchantService#rollFor}), plays a GUI-native "spin then land"
  * animation in that same center slot, and applies the result. Closing this
  * screen for any reason always drops whatever's loaded back to how it was
@@ -116,7 +116,7 @@ public final class PetEnchantTableGui {
             // Auto Enchant only ever runs while this exact screen is open -
             // leaving it any way (close button, Escape, opening a totally
             // different menu, which force-closes this one first) always
-            // stops the loop rather than letting it keep spending gems
+            // stops the loop rather than letting it keep spending diamonds
             // unattended in the background.
             cancelAutoTask(closer.getUniqueId());
             PackPlayerProfile closerProfile = store.getOrCreate(closer.getUniqueId());
@@ -138,8 +138,8 @@ public final class PetEnchantTableGui {
             return;
         }
         if (!enchantService.canAfford(profile)) {
-            player.sendMessage(Text.parse("<red>You need <cost> gems to enchant.</red>",
-                    Placeholder.unparsed("cost", String.valueOf(enchantService.gemCost()))));
+            player.sendMessage(Text.parse("<red>You need <cost> diamonds to enchant.</red>",
+                    Placeholder.unparsed("cost", String.valueOf(enchantService.diamondCost()))));
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
             return;
         }
@@ -206,8 +206,8 @@ public final class PetEnchantTableGui {
             return;
         }
         if (!enchantService.canAfford(profile)) {
-            player.sendMessage(Text.parse("<red>You need <cost> gems to start.</red>",
-                    Placeholder.unparsed("cost", String.valueOf(enchantService.gemCost()))));
+            player.sendMessage(Text.parse("<red>You need <cost> diamonds to start.</red>",
+                    Placeholder.unparsed("cost", String.valueOf(enchantService.diamondCost()))));
             return;
         }
 
@@ -219,7 +219,7 @@ public final class PetEnchantTableGui {
     /** Every how many rolls the loop below persists the profile and rebuilds the GUI's slots, rather than doing both on every single roll - a hunt for a rare Unique can run for dozens to hundreds of attempts at {@link #AUTO_ROLL_INTERVAL_TICKS} apart, and neither a DB write nor an icon/lore rebuild needs to happen 5x/sec for a hunt where only the final result actually matters visually. */
     private static final int AUTO_PERSIST_EVERY_N_ROLLS = 5;
 
-    /** Rolls {@link #AUTO_ROLL_INTERVAL_TICKS} apart, skipping the full spin animation (too slow for a hunt that can take dozens of attempts) - a quick tick sound per attempt instead, and the normal landing flourish only once a target actually lands. Stops itself on: the loaded pet changing (swapped or unloaded), running out of gems, or a target Unique landing - {@link #open}'s own close handler is the other stop path (leaving the table at all). */
+    /** Rolls {@link #AUTO_ROLL_INTERVAL_TICKS} apart, skipping the full spin animation (too slow for a hunt that can take dozens of attempts) - a quick tick sound per attempt instead, and the normal landing flourish only once a target actually lands. Stops itself on: the loaded pet changing (swapped or unloaded), running out of diamonds, or a target Unique landing - {@link #open}'s own close handler is the other stop path (leaving the table at all). */
     private void runAutoLoop(Player player, PetInstance pet, Set<String> targets) {
         UUID playerId = player.getUniqueId();
         cancelAutoTask(playerId);
@@ -242,7 +242,7 @@ public final class PetEnchantTableGui {
             // not whether this exact PetInstance still exists in the
             // profile - an admin /admin packs reset (or any other bulk pet
             // wipe) clears profile.getPets() without touching that pointer,
-            // which would otherwise leave this loop spending gems against an
+            // which would otherwise leave this loop spending diamonds against an
             // orphaned pet object forever with zero effect and zero feedback.
             if (loadedId == null || !loadedId.equals(pet.getInstanceId()) || profile.findPet(pet.getInstanceId()).isEmpty()) {
                 cancelAutoTask(playerId);
@@ -252,7 +252,7 @@ public final class PetEnchantTableGui {
             }
             if (!enchantService.canAfford(profile)) {
                 cancelAutoTask(playerId);
-                player.sendMessage(Text.parse("<red>Auto Enchant stopped - out of gems.</red>"));
+                player.sendMessage(Text.parse("<red>Auto Enchant stopped - out of diamonds.</red>"));
                 store.save(playerId);
                 refreshTableSlots(player);
                 return;
@@ -367,12 +367,12 @@ public final class PetEnchantTableGui {
         boolean enabled = hasPet && canAfford;
         ItemBuilder builder = ItemBuilder.of(Material.ENCHANTED_BOOK)
                 .name(enabled ? MenuLore.buttonName(ACCENT, "ENCHANT") : "&7&lENCHANT");
-        String callToAction = !hasPet ? "Select a Pet First" : !canAfford ? "Not Enough Gems" : "Click to Enchant";
+        String callToAction = !hasPet ? "Select a Pet First" : !canAfford ? "Not Enough Diamonds" : "Click to Enchant";
         MenuLore.button(
                 "enchanting table",
                 List.of(" &7Rolls a fresh set of enchants", " &7for the selected pet.", " &cExisting enchants will be replaced."),
                 ACCENT,
-                List.of("Cost: &b" + Formatting.format((double) enchantService.gemCost()) + " Gems"),
+                List.of("Cost: &b" + Formatting.format((double) enchantService.diamondCost()) + " Diamonds"),
                 callToAction
         ).forEach(builder::lore);
         return builder.hideAttributes().build();
@@ -387,7 +387,7 @@ public final class PetEnchantTableGui {
                     "<red>", "Click to Stop").forEach(builder::lore);
         } else {
             MenuLore.button("enchanting table",
-                    List.of(" &7Pick target enchants and roll", " &7automatically until you land", " &7one (or run out of gems)."),
+                    List.of(" &7Pick target enchants and roll", " &7automatically until you land", " &7one (or run out of diamonds)."),
                     ACCENT, "Click to Configure").forEach(builder::lore);
         }
         return builder.hideAttributes().build();

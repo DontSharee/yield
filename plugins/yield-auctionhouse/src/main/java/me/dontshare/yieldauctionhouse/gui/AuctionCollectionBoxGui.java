@@ -100,12 +100,12 @@ public final class AuctionCollectionBoxGui {
         if (claim.isCurrency()) {
             Material material = switch (claim.currency()) {
                 case COINS -> Material.SUNFLOWER;
-                case GEMS -> Material.EMERALD;
+                case DIAMONDS -> Material.DIAMOND;
                 case CREDITS -> Material.AMETHYST_SHARD;
             };
             String currencySymbol = switch (claim.currency()) {
                 case COINS -> "&6coins";
-                case GEMS -> "&bgems";
+                case DIAMONDS -> "&bdiamonds";
                 case CREDITS -> "&dcredits";
             };
             ItemBuilder builder = ItemBuilder.of(material)

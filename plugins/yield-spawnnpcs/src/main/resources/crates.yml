@@ -10,7 +10,7 @@
 #
 # Reward pool entry types (same weighted-pick math as yield-lootboxes'
 # own pool, entirely separate config/content):
-#   flat-coins / flat-gems - "amount" granted directly.
+#   flat-coins / flat-diamonds - "amount" granted directly.
 #   pet - "pet-item" is any item id from yield-packs' own packs.yml catalog.
 #   commands - runs each of "commands" as CONSOLE, "%player%" substituted.
 crates:
@@ -20,7 +20,7 @@ crates:
     cost: 25
     pool:
       - { type: flat-coins, weight: 60, amount: 5000 }
-      - { type: flat-gems, weight: 25, amount: 3 }
+      - { type: flat-diamonds, weight: 25, amount: 3 }
       - { type: pet, weight: 12, pet-item: golden_retriever }
       - { type: pet, weight: 3, pet-item: diamond_wolf }
 
@@ -30,7 +30,7 @@ crates:
     cost: 75
     pool:
       - { type: flat-coins, weight: 55, amount: 20000 }
-      - { type: flat-gems, weight: 30, amount: 8 }
+      - { type: flat-diamonds, weight: 30, amount: 8 }
       - { type: pet, weight: 12, pet-item: star_dragon }
       - { type: pet, weight: 3, pet-item: phoenix_hatchling }
 
@@ -40,6 +40,6 @@ crates:
     cost: 200
     pool:
       - { type: flat-coins, weight: 45, amount: 75000 }
-      - { type: flat-gems, weight: 35, amount: 20 }
+      - { type: flat-diamonds, weight: 35, amount: 20 }
       - { type: pet, weight: 15, pet-item: void_serpent }
       - { type: pet, weight: 5, pet-item: celestial_griffin }

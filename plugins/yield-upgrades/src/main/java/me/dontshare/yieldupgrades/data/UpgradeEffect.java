@@ -4,12 +4,12 @@ package me.dontshare.yieldupgrades.data;
  * What an upgrade type actually plugs into - see {@code UpgradeService}'s
  * per-effect query methods and {@code YieldUpgrades#onEnable} for where each
  * one registers into another plugin's own composable provider registry.
- * GEM_BOOST is the one effect that drives two separate registries at once
+ * DIAMOND_BOOST is the one effect that drives two separate registries at once
  * (chance AND flat amount) rather than one.
  */
 public enum UpgradeEffect {
     COIN_MULTIPLIER,
-    GEM_BOOST,
+    DIAMOND_BOOST,
     DAMAGE_MULTIPLIER,
     REBIRTH_GRANT_MULTIPLIER,
     PLAYER_SPEED,

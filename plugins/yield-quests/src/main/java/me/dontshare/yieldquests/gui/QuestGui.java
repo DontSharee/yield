@@ -124,8 +124,8 @@ public final class QuestGui {
         } else {
             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.6f, 1.4f);
             StringBuilder extras = new StringBuilder();
-            if (quest.rewardGems() > 0) {
-                extras.append(", ").append(quest.rewardGems()).append(" gem(s)");
+            if (quest.rewardDiamonds() > 0) {
+                extras.append(", ").append(quest.rewardDiamonds()).append(" diamond(s)");
             }
             if (quest.rewardCredits() > 0) {
                 extras.append(", ").append(quest.rewardCredits()).append(" credit(s)");
@@ -178,11 +178,11 @@ public final class QuestGui {
         return builder.hideAttributes().build();
     }
 
-    /** "&7Reward: &a$1,500 &7+ &b1 gem(s) &7+ &d5 credit(s) &7+ &6Diamond Wolf" - each optional clause only appears if that tier actually configures one, so most quests still just show coins (+ gems). */
+    /** "&7Reward: &a$1,500 &7+ &b1 diamond(s) &7+ &d5 credit(s) &7+ &6Diamond Wolf" - each optional clause only appears if that tier actually configures one, so most quests still just show coins (+ diamonds). */
     private String buildRewardLine(QuestDefinition quest) {
         StringBuilder reward = new StringBuilder("&7Reward: &a$" + Formatting.format(quest.rewardCoins()));
-        if (quest.rewardGems() > 0) {
-            reward.append(" &7+ &b").append(quest.rewardGems()).append(" gem(s)");
+        if (quest.rewardDiamonds() > 0) {
+            reward.append(" &7+ &b").append(quest.rewardDiamonds()).append(" diamond(s)");
         }
         if (quest.rewardCredits() > 0) {
             reward.append(" &7+ &d").append(quest.rewardCredits()).append(" credit(s)");

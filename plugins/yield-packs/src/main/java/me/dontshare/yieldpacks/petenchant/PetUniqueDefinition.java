@@ -8,9 +8,9 @@ import java.util.Map;
  * (see {@link PetEnchantService#rollFor}), and can bundle bonuses across
  * multiple {@link PetEnchantType}s at once (e.g. Royalty). {@code
  * specialEffect} is null for a pure-stat Unique; a non-null id (e.g.
- * {@code "BONUS_GEM_DROP"}) is checked by name at the one call site that
+ * {@code "BONUS_DIAMOND_DROP"}) is checked by name at the one call site that
  * needs real behavior beyond a flat stat (see {@link
- * PetEnchantService#hasBonusGemDropEnchant}).
+ * PetEnchantService#hasBonusDiamondDropEnchant}).
  */
 public record PetUniqueDefinition(String id, String displayName, String colorHex,
                                    Map<PetEnchantType, Double> statBonuses, String specialEffect) {

@@ -130,7 +130,7 @@ public final class ZoneContentLoader {
             return ZoneUnlockCost.FREE;
         }
         BigInteger coins = parseBigInteger(unlock.get("coins"));
-        BigInteger gems = parseBigInteger(unlock.get("gems"));
+        BigInteger diamonds = parseBigInteger(unlock.get("diamonds"));
 
         List<ZoneUnlockCost.ItemCost> items = new ArrayList<>();
         for (Map<?, ?> entry : unlock.getMapList("items")) {
@@ -143,7 +143,7 @@ public final class ZoneContentLoader {
             int amount = entry.get("amount") instanceof Number n ? n.intValue() : 1;
             items.add(new ZoneUnlockCost.ItemCost(material, Math.max(1, amount)));
         }
-        return new ZoneUnlockCost(coins, gems, items);
+        return new ZoneUnlockCost(coins, diamonds, items);
     }
 
     /** Accepts either a plain number (small costs) or a numeric string (arbitrary precision, matching how currency balances themselves are stored) - never throws, falls back to 0. */

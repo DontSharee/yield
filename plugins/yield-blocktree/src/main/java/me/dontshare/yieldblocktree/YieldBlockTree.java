@@ -63,9 +63,9 @@ public final class YieldBlockTree extends JavaPlugin {
         YieldZones zones = JavaPlugin.getPlugin(YieldZones.class);
         if (zones != null) {
             zones.getCubeService().unregisterFlatCoinBonusProvider(PROVIDER_KEY);
-            zones.getCubeService().unregisterFlatGemBonusProvider(PROVIDER_KEY);
+            zones.getCubeService().unregisterFlatDiamondBonusProvider(PROVIDER_KEY);
             zones.getCubeService().unregisterBlockCoinMultiplierProvider(PROVIDER_KEY);
-            zones.getCubeService().unregisterGemChanceBoostProvider(PROVIDER_KEY);
+            zones.getCubeService().unregisterDiamondChanceBoostProvider(PROVIDER_KEY);
             zones.getPetCombatController().unregisterDoubleHitChanceProvider(PROVIDER_KEY);
             zones.getPetCombatController().unregisterTripleHitChanceProvider(PROVIDER_KEY);
         }
@@ -89,9 +89,9 @@ public final class YieldBlockTree extends JavaPlugin {
         packs.getPackRollService().registerExclusiveFindChanceProvider(PROVIDER_KEY, blockTreeService::exclusiveFindChance);
 
         zones.getCubeService().registerFlatCoinBonusProvider(PROVIDER_KEY, blockTreeService::flatCoinBonus);
-        zones.getCubeService().registerFlatGemBonusProvider(PROVIDER_KEY, blockTreeService::flatGemBonus);
+        zones.getCubeService().registerFlatDiamondBonusProvider(PROVIDER_KEY, blockTreeService::flatDiamondBonus);
         zones.getCubeService().registerBlockCoinMultiplierProvider(PROVIDER_KEY, blockTreeService::blockCoinMultiplier);
-        zones.getCubeService().registerGemChanceBoostProvider(PROVIDER_KEY, blockTreeService::gemChanceBoost);
+        zones.getCubeService().registerDiamondChanceBoostProvider(PROVIDER_KEY, blockTreeService::diamondChanceBoost);
         zones.getPetCombatController().registerDoubleHitChanceProvider(PROVIDER_KEY, blockTreeService::doubleHitChance);
         zones.getPetCombatController().registerTripleHitChanceProvider(PROVIDER_KEY, blockTreeService::tripleHitChance);
     }

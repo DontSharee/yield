@@ -79,7 +79,7 @@ public final class PresentsService {
         PackPlayerProfile profile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
         long coins = Math.round(present.coins() * packs.coinMultiplier(profile));
         profile.setCoins(profile.getCoins().add(BigInteger.valueOf(coins)));
-        profile.setGems(profile.getGems().add(BigInteger.valueOf(present.gems())));
+        profile.setDiamonds(profile.getDiamonds().add(BigInteger.valueOf(present.diamonds())));
         packs.getPlayerStore().save(player.getUniqueId());
         claimedThisSession.computeIfAbsent(player.getUniqueId(), k -> ConcurrentHashMap.newKeySet()).add(index);
         return ClaimResult.SUCCESS;

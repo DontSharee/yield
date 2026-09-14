@@ -70,7 +70,7 @@ public final class DonorRankCommand {
                     }
                     DonorRank r = rank.get();
                     player.sendMessage(Text.parse("<gold><bold>" + r.displayName().toUpperCase(Locale.ROOT) + "</bold></gold>"));
-                    player.sendMessage(Text.parse("<gray>" + r.coinMultiplier() + "x Money, " + r.gemMultiplier() + "x Gem, "
+                    player.sendMessage(Text.parse("<gray>" + r.coinMultiplier() + "x Money, " + r.diamondMultiplier() + "x Diamond, "
                             + r.xpMultiplier() + "x Exp, +" + r.bonusPetSlots() + " Pet Slot(s)</gray>"));
                     return Command.SINGLE_SUCCESS;
                 })

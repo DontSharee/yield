@@ -11,10 +11,10 @@ import java.util.Locale;
  */
 public enum BlockTreeEffectType {
     FLAT_COINS,
-    FLAT_GEMS,
+    FLAT_DIAMONDS,
     FLAT_CREDITS,
     BLOCK_COIN_MULTIPLIER,
-    BLOCK_GEM_MULTIPLIER,
+    BLOCK_DIAMOND_MULTIPLIER,
     GLOBAL_COIN_MULTIPLIER,
     GLOBAL_DAMAGE_MULTIPLIER,
     GLOBAL_LUCK_BOOST,
@@ -23,9 +23,9 @@ public enum BlockTreeEffectType {
     DOUBLE_HIT_CHANCE,
     TRIPLE_HIT_CHANCE,
     EXCLUSIVE_FIND_CHANCE,
-    GEM_CHANCE_BOOST,
+    DIAMOND_CHANCE_BOOST,
     PROGRESS_MULTIPLIER,
-    /** Block-scoped - permanently unlocks a chance for THIS block's own cube kills to drop a Shard of the type named in {@link BlockTreeEffect#data} ("DAMAGE"/"COINS"/"GEMS" - see yield-packs' ShardType), "value" being that base drop chance. See BlockTreeService#shardDropChance. */
+    /** Block-scoped - permanently unlocks a chance for THIS block's own cube kills to drop a Shard of the type named in {@link BlockTreeEffect#data} ("DAMAGE"/"COINS"/"DIAMONDS" - see yield-packs' ShardType), "value" being that base drop chance. See BlockTreeService#shardDropChance. */
     UNLOCK_SHARD_DROP;
 
     /** Parses blocktree.yml's kebab-case "type" strings (e.g. "flat-coins") into this enum. */

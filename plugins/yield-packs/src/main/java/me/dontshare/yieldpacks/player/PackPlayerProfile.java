@@ -4,6 +4,7 @@ import me.dontshare.yieldcore.database.PlayerRecord;
 import me.dontshare.yieldpacks.display.PetVisibility;
 import me.dontshare.yieldpacks.pet.PetInstance;
 import org.bson.codecs.pojo.annotations.BsonId;
+import org.bson.codecs.pojo.annotations.BsonProperty;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -27,9 +28,15 @@ public final class PackPlayerProfile implements PlayerRecord {
     @BsonId
     private UUID playerId;
     private BigInteger coins = BigInteger.ZERO;
-    private BigInteger gems = BigInteger.ZERO;
+    // BSON key stays "gems" (the currency's Gems -> Diamonds rename is
+    // display/code-only) so every already-saved player document's balance
+    // keeps mapping to this field under the POJO codec's automatic,
+    // field-name-based mapping - without this, renaming the Java field name
+    // alone would silently reset every player's balance to zero on next load.
+    @BsonProperty("gems")
+    private BigInteger diamonds = BigInteger.ZERO;
     private int rebirths;
-    /** Purchased with gems (see RankService) - a permanent, ever-climbing prestige track separate from rebirths, boosting gem income. Rendered as a Roman numeral (Formatting#toRoman) everywhere it's shown. */
+    /** Purchased with diamonds (see RankService) - a permanent, ever-climbing prestige track separate from rebirths, boosting diamond income. Rendered as a Roman numeral (Formatting#toRoman) everywhere it's shown. */
     private int rank;
     private boolean autoOpenEnabled;
     private boolean rollAnimationEnabled = true;
@@ -120,7 +127,11 @@ public final class PackPlayerProfile implements PlayerRecord {
     // every other multiplier in this codebase already uses.
     private double shardDamageBonus;
     private double shardCoinBonus;
-    private double shardGemBonus;
+    // Same "keep the BSON key, rename the Java side" reasoning as diamonds
+    // above - this is a smaller, secondary bonus rather than the whole
+    // balance, but the same silent-reset-to-zero risk applies.
+    @BsonProperty("shardGemBonus")
+    private double shardDiamondBonus;
     private double shardLuckBonus;
     private double shardAttackSpeedBonus;
     private double shardCritChanceBonus;
@@ -192,12 +203,12 @@ public final class PackPlayerProfile implements PlayerRecord {
         this.coins = coins;
     }
 
-    public BigInteger getGems() {
-        return gems;
+    public BigInteger getDiamonds() {
+        return diamonds;
     }
 
-    public void setGems(BigInteger gems) {
-        this.gems = gems;
+    public void setDiamonds(BigInteger diamonds) {
+        this.diamonds = diamonds;
     }
 
     public int getRebirths() {
@@ -646,12 +657,12 @@ public final class PackPlayerProfile implements PlayerRecord {
         this.shardCoinBonus = shardCoinBonus;
     }
 
-    public double getShardGemBonus() {
-        return shardGemBonus;
+    public double getShardDiamondBonus() {
+        return shardDiamondBonus;
     }
 
-    public void setShardGemBonus(double shardGemBonus) {
-        this.shardGemBonus = shardGemBonus;
+    public void setShardDiamondBonus(double shardDiamondBonus) {
+        this.shardDiamondBonus = shardDiamondBonus;
     }
 
     public double getShardLuckBonus() {

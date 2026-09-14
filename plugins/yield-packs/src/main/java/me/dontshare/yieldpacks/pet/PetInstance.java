@@ -28,7 +28,7 @@ public final class PetInstance {
     // ForgeStatType/ForgeBoostService) - keyed by ForgeStatType#name().
     // Deliberately lives on the pet, not the player: a DAMAGE bonus only
     // ever applies to THIS pet's own effectiveDamage (see EquipmentService),
-    // and a COINS/GEMS/LUCK/ATTACK_SPEED bonus - stats this codebase has no
+    // and a COINS/DIAMONDS/LUCK/ATTACK_SPEED bonus - stats this codebase has no
     // other per-pet concept of - only counts toward the player's global
     // multiplier while this specific pet is equipped, so which pets you
     // choose to feed items to (and keep equipped) actually matters.

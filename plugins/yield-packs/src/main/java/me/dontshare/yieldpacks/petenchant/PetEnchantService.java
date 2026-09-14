@@ -24,10 +24,10 @@ import java.util.function.Supplier;
 /**
  * The Enchanting Table's own logic - rolling, applying (always REPLACING a
  * pet's previous enchant state, never accumulating across separate rolls -
- * see {@link #apply}), the gem cost, the "which pet is currently loaded
+ * see {@link #apply}), the diamond cost, the "which pet is currently loaded
  * into this player's table" selection tracking (with its anti-dupe
  * unequip/re-equip), and the same provider-registry pattern {@code
- * ForgeBoostService} already established for feeding COINS/GEMS/LUCK/
+ * ForgeBoostService} already established for feeding COINS/DIAMONDS/LUCK/
  * ATTACK_SPEED into the player's global multipliers only while the pet
  * holding them is equipped - DAMAGE needs no provider here, {@code
  * EquipmentService#effectiveDamage} already reads a pet's own enchant
@@ -64,17 +64,17 @@ public final class PetEnchantService {
         this.content = content;
     }
 
-    public long gemCost() {
-        return content.get().gemCost();
+    public long diamondCost() {
+        return content.get().diamondCost();
     }
 
     public boolean canAfford(PackPlayerProfile profile) {
-        return profile.getGems().compareTo(BigInteger.valueOf(gemCost())) >= 0;
+        return profile.getDiamonds().compareTo(BigInteger.valueOf(diamondCost())) >= 0;
     }
 
-    /** Deducts the gem cost - caller must have already checked {@link #canAfford}. */
+    /** Deducts the diamond cost - caller must have already checked {@link #canAfford}. */
     public void spend(PackPlayerProfile profile) {
-        profile.setGems(profile.getGems().subtract(BigInteger.valueOf(gemCost())));
+        profile.setDiamonds(profile.getDiamonds().subtract(BigInteger.valueOf(diamondCost())));
     }
 
     // --- Selection (Decision #6 - anti-dupe unequip/re-equip) ---
@@ -199,8 +199,8 @@ public final class PetEnchantService {
         return 1.0 + equippedSum(profile, PetEnchantType.COINS);
     }
 
-    public double gemMultiplier(PackPlayerProfile profile) {
-        return 1.0 + equippedSum(profile, PetEnchantType.GEMS);
+    public double diamondMultiplier(PackPlayerProfile profile) {
+        return 1.0 + equippedSum(profile, PetEnchantType.DIAMONDS);
     }
 
     public double attackSpeedMultiplier(PackPlayerProfile profile) {
@@ -218,6 +218,13 @@ public final class PetEnchantService {
             PetInstance pet = profile.findPet(petId).orElse(null);
             if (pet != null) {
                 sum += pet.getEnchantBonuses().getOrDefault(type.name(), 0.0);
+                // "GEMS" is the pre-rename map key a pet enchanted before the
+                // Diamonds rename would still be carrying - only DIAMONDS
+                // ever needs this fallback, and a pet only ever has one of
+                // the two keys, so this can't double-count.
+                if (type == PetEnchantType.DIAMONDS) {
+                    sum += pet.getEnchantBonuses().getOrDefault("GEMS", 0.0);
+                }
             }
         }
         return sum;
@@ -225,13 +232,13 @@ public final class PetEnchantService {
 
     // --- Glittering hook (Decision #4) ---
 
-    /** Whether any of these pets currently carries the "BONUS_GEM_DROP" Unique (Glittering) - checked by {@code OreCubeService#payOut} right alongside {@code MilestoneEffect.GUARANTEED_GEM_DROP}. */
-    public boolean hasBonusGemDropEnchant(List<PetInstance> contributors) {
+    /** Whether any of these pets currently carries the "BONUS_DIAMOND_DROP" Unique (Glittering) - checked by {@code OreCubeService#payOut} right alongside {@code MilestoneEffect.GUARANTEED_DIAMOND_DROP}. */
+    public boolean hasBonusDiamondDropEnchant(List<PetInstance> contributors) {
         List<PetUniqueDefinition> uniques = content.get().uniques();
         for (PetInstance pet : contributors) {
             for (String activeId : pet.getActiveUniqueEnchants()) {
                 for (PetUniqueDefinition def : uniques) {
-                    if (def.id().equals(activeId) && "BONUS_GEM_DROP".equals(def.specialEffect())) {
+                    if (def.id().equals(activeId) && "BONUS_DIAMOND_DROP".equals(def.specialEffect())) {
                         return true;
                     }
                 }

@@ -52,7 +52,7 @@ public final class PackStationService {
         }
         PackPlayerProfile profile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
         return profile.getCoins().compareTo(BigInteger.valueOf(pack.coinCost())) >= 0
-                && profile.getGems().compareTo(BigInteger.valueOf(pack.gemCost())) >= 0;
+                && profile.getDiamonds().compareTo(BigInteger.valueOf(pack.diamondCost())) >= 0;
     }
 
     public Result attemptPurchase(Player player, PackStation station) {

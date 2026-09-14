@@ -116,7 +116,7 @@ public final class YieldMining extends JavaPlugin {
         YieldPacks packs = JavaPlugin.getPlugin(YieldPacks.class);
         if (packs != null) {
             packs.unregisterCoinMultiplierProvider(PROVIDER_KEY);
-            packs.unregisterGemMultiplierProvider(PROVIDER_KEY);
+            packs.unregisterDiamondMultiplierProvider(PROVIDER_KEY);
             packs.unregisterAttackSpeedMultiplierProvider(PROVIDER_KEY);
             packs.getLuckService().unregisterExtraLuckProvider(PROVIDER_KEY);
             if (forgedItemHandler != null) {
@@ -127,7 +127,7 @@ public final class YieldMining extends JavaPlugin {
 
     private void registerForgeProviders(YieldPacks packs) {
         packs.registerCoinMultiplierProvider(PROVIDER_KEY, forgeBoostService::coinMultiplier);
-        packs.registerGemMultiplierProvider(PROVIDER_KEY, forgeBoostService::gemMultiplier);
+        packs.registerDiamondMultiplierProvider(PROVIDER_KEY, forgeBoostService::diamondMultiplier);
         packs.registerAttackSpeedMultiplierProvider(PROVIDER_KEY, forgeBoostService::attackSpeedMultiplier);
         packs.getLuckService().registerExtraLuckProvider(PROVIDER_KEY, forgeBoostService::luckBonus);
     }

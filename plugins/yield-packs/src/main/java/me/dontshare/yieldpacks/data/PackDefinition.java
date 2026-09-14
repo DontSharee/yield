@@ -16,6 +16,6 @@ import java.util.List;
  * roll makes available.
  */
 public record PackDefinition(String id, String displayName, Material material, Integer customModelData,
-                              long coinCost, long gemCost, int sortOrder, List<PackPoolEntry> pool,
+                              long coinCost, long diamondCost, int sortOrder, List<PackPoolEntry> pool,
                               double shopWeight, double shopLuckExponent, int minStock, int maxStock) {
 }
