@@ -92,11 +92,9 @@ public final class YieldScoreboardDisplay implements Listener {
             return;
         }
 
-        scoreboardManager.setTitle(player, "<#74C7FF><bold>Yield</bold>");
-
+        scoreboardManager.setTitle(player, "<#8CD5EC>&lY<#97DAF2>&lI<#A2E0F9>&lE<#ADE5FF>&lL<#8CD5EC>&lD");
         List<String> lines = new ArrayList<>();
-        lines.add(" ");
-        lines.add("&f%yield_username%");
+        lines.add("&8Season I");
         for (Function<Player, List<String>> provider : extraLineProviders) {
             lines.addAll(provider.apply(player));
         }

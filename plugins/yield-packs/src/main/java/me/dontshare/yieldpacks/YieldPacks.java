@@ -13,7 +13,6 @@ import me.dontshare.yieldpacks.command.PackStorageCommand;
 import me.dontshare.yieldpacks.command.PacksAdminCommand;
 import me.dontshare.yieldpacks.command.PetsAdminCommand;
 import me.dontshare.yieldpacks.command.StatsAdminCommand;
-import me.dontshare.yieldpacks.command.PacksCommand;
 import me.dontshare.yieldpacks.command.PetVisibilityCommand;
 import me.dontshare.yieldpacks.command.RankupCommand;
 import me.dontshare.yieldpacks.command.RollAnimationCommand;
@@ -261,25 +260,17 @@ public final class YieldPacks extends JavaPlugin {
                     .sum() * damageMultiplier(profile);
             return List.of(
                     " ",
-                    "&e&lPLAYER",
-                    "&7Rank &8| &d[" + Formatting.toRoman(profile.getRank()) + "]",
-                    // player.getExp()/getLevel() are the real vanilla XP bar
-                    // values (see yield-leveling's PlayerLevelingService#syncBar,
-                    // which keeps them in sync with this same profile) - read
-                    // directly off the Player rather than duplicating that
-                    // plugin's own xpForLevel formula here.
-                    "&7Level &8| &b" + player.getLevel() + " " + levelBar(player.getExp()),
-                    "&7Rebirths &8| &6" + Formatting.format((double) profile.getRebirths()) + "&6★",
-                    "&7Multiplier &8| &a" + Formatting.format(coinMultiplier(profile)) + "x",
+                    "<#8CD5EC>" + Formatting.fancyFont("player"),
+                    " <#8CD5EC>&l| " + "&f" + Formatting.fancyFont("cubes broken: ") + "<#EC8C9F>" + Formatting.format(profile.getLifetimeCubeKills()),
+                    " <#8CD5EC>&l| " + "&f" + Formatting.fancyFont("rebirths: ") + RebirthChatBadge.prefixFor(profile.getRebirths()),
+                    " <#8CD5EC>&l| " + "&f" + Formatting.fancyFont("multi: ") + "<#95EC8C>" + Formatting.format(coinMultiplier(profile)) + "x",
                     " ",
-                    "&e&lWALLET",
-                    "&7Coins &8| &6" + Formatting.format(profile.getCoins()),
-                    "&7Diamonds &8| &b" + Formatting.format(profile.getDiamonds()),
-                    "&7Credits &8| &d" + Formatting.format(profile.getCredits()),
+                    "<#8CD5EC>" + Formatting.fancyFont("wallet"),
+                    " <#8CD5EC>&l| " + "&f" + Formatting.fancyFont("coins: ") + "<#F9FF91>" + Formatting.format(profile.getCoins()),
+                    " <#8CD5EC>&l| " + "&f" + Formatting.fancyFont("diamonds: ") + "<#ADFFF5>" + Formatting.format(profile.getDiamonds()),
+                    " <#8CD5EC>&l| " + "&f" + Formatting.fancyFont("credits: ") + "&f" + Formatting.format(profile.getCredits()),
                     " ",
-                    "&e&lCOMBAT",
-                    "&7Damage &8| &c" + Formatting.format(totalDamage),
-                    "&7Cubes Broken &8| &7" + Formatting.format(profile.getLifetimeCubeKills())
+                    "&f" + Formatting.fancyFont("yield.minehut.gg")
             );
         });
 
@@ -382,11 +373,10 @@ public final class YieldPacks extends JavaPlugin {
 
         core.getListenerManager().register(new BagSelectorListener(new BagSelectorItem(this), bagGui));
 
-        // /packs now opens your unopened pack STORAGE, /merchant opens the
-        // shop where you actually buy packs - swapped from their original
-        // (Command class names still reflect the old mapping - only the
-        // literal each one registers actually changed).
-        CommandManager.register(this, PacksCommand.build(packShopGui), "Open the merchant to buy packs", List.of());
+        // /merchant (PacksCommand, opens packShopGui) is deliberately NOT
+        // registered - it's the old pre-Store-hub Pack Shop system. Kept
+        // (packShopGui itself, PacksCommand.java) rather than deleted, in
+        // case it's wanted back later - just not reachable by command for now.
         CommandManager.register(this, PackStorageCommand.build(packStorageGui), "Open your unopened pack storage", List.of());
 
         // The Store hub is the Buycraft/Tebex-style real-money storefront -
