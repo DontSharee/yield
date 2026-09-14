@@ -1,8 +1,9 @@
 # /buy - spend Credits (earned from achievements/milestones) on ranks and
-# gamepasses. "commands" run as CONSOLE on purchase, "%player%" replaced
-# with the buyer's name - works with whatever permissions plugin is
-# actually installed (LuckPerms here), and isn't limited to a single
-# permission grant per product. Run /admin achievements reload after editing.
+# gamepasses. "category" (rank/gamepass) is which Store tab a product shows
+# under. "commands" run as CONSOLE on purchase, "%player%" replaced with the
+# buyer's name - works with whatever permissions plugin is actually
+# installed (LuckPerms here), and isn't limited to a single permission
+# grant per product. Run /admin achievements reload after editing.
 products:
   vip_rank:
     display-name: "<gold><bold>VIP</bold></gold> <gray>[RANK]</gray>"
@@ -29,6 +30,7 @@ products:
       - "<strikethrough><gray>499</gray></strikethrough> <green>374</green> <yellow>Credit(s)</yellow>"
       - "<red>25% STORE SALE!</red>"
     cost-credits: 374
+    category: rank
     commands:
       - "lp user %player% parent add vip"
       - "lp user %player% permission set chatcolor.White true"
@@ -70,6 +72,7 @@ products:
       - "<strikethrough><gray>7999</gray></strikethrough> <green>5999</green> <yellow>Credit(s)</yellow>"
       - "<red>25% STORE SALE!</red>"
     cost-credits: 5999
+    category: rank
     commands:
       - "lp user %player% parent add celestial"
       - "lp user %player% permission set chatcolor.White true"
@@ -82,6 +85,7 @@ products:
       - "Unlocks the Auto Fuse toggle"
       - "in the Fusion menu, permanently."
     cost-credits: 1000
+    category: gamepass
     commands:
       - "lp user %player% permission set yieldpacks.autofuse true"
   auto_mode_pass:
@@ -93,6 +97,7 @@ products:
       - "Pets re-engage on a real"
       - "cooldown after each kill."
     cost-credits: 1000
+    category: gamepass
     commands:
       - "lp user %player% permission set yieldpacks.automode true"
   premium_auto_mode_pass:
@@ -104,6 +109,7 @@ products:
       - "2x faster after each kill."
       - "Includes Free Auto Send."
     cost-credits: 5000
+    category: gamepass
     commands:
       - "lp user %player% permission set yieldpacks.automode true"
       - "lp user %player% permission set yieldpacks.automode.premium true"
@@ -115,6 +121,7 @@ products:
       - "Drink it from your inventory - see /potions"
       - "for what's currently active."
     cost-credits: 100
+    category: gamepass
     commands:
       - "admin potions give %player% LUCK 2 600"
   coins_potion:
@@ -123,5 +130,6 @@ products:
     description:
       - "A 2x Coins potion, lasting 10 minutes."
     cost-credits: 100
+    category: gamepass
     commands:
       - "admin potions give %player% COINS 2 600"

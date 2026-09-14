@@ -8,7 +8,7 @@ import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.store.StoreHubGui;
 import org.bukkit.entity.Player;
 
-/** "/store" - opens {@link StoreHubGui}, the single landing screen for every purchase/progression destination (Rankup, the Credits Store, Crates, the Pack Shop). */
+/** "/store" - opens {@link StoreHubGui}, the Buycraft/Tebex-style real-money storefront (Ranks/Gamepasses/Bundles/Exclusive Crates - see yield-achievements, which owns the Credits Store and registers all of its tabs). Deliberately NOT where Rankup/Crates/the Pack Shop live - those are unrelated in-game-currency grind systems, reachable via their own commands instead. */
 public final class StoreCommand {
 
     private StoreCommand() {

@@ -1,10 +1,10 @@
 package me.dontshare.yieldachievements.gui;
 
 import me.dontshare.yieldachievements.store.StoreProduct;
+import me.dontshare.yieldachievements.store.StoreProductCategory;
 import me.dontshare.yieldachievements.store.StoreService;
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.gui.Gui;
-import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.gui.Page;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.Formatting;
@@ -26,109 +26,59 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
-/** /buy - the Credits store, ranks/gamepasses purchasable with achievement/milestone earnings. */
+/**
+ * The Credits store's actual product grid - one instance shared by both the
+ * Ranks and Gamepasses {@link StoreHubGui} tabs (see {@code
+ * YieldAchievements#onEnable}, which registers one {@link
+ * me.dontshare.yieldpacks.store.StoreCategory} per {@link
+ * StoreProductCategory}), each showing only that category's own products.
+ * Renders directly into the hub's already-open Gui - see {@link #renderInto}
+ * - never its own separate screen, so paging/purchasing never opens a
+ * second inventory.
+ */
 public final class StoreGui {
 
     private static final String ACCENT = "<#FFD700>";
-    private static final int TOTAL_ROWS = 6;
-    private static final int CONTENT_ROWS = TOTAL_ROWS - 1;
-    private static final int PAGE_SIZE = CONTENT_ROWS * 9;
     private static final int PREV_SLOT = 45;
     private static final int BALANCE_SLOT = 47;
     private static final int CLOSE_SLOT = 49;
     private static final int NEXT_SLOT = 53;
-
-    /**
-     * Same shape as the standalone screen, one row shorter (row 0 belongs
-     * to {@link StoreHubGui}'s own category tabs) - rows 1-4 hold products,
-     * row 5 keeps the exact same prev/balance/close/next layout as {@link
-     * #open}'s own bottom bar, just used as this category's content instead
-     * of the whole GUI's.
-     */
-    private static final int HUB_PAGE_SIZE = (CONTENT_ROWS - 1) * 9;
-    private static final int HUB_ROW_OFFSET = 9;
+    /** Rows 1-4 of the hub's shared 6-row Gui (slots 9-44, 36 slots) - row 0 belongs to {@link StoreHubGui}'s own category tabs, row 5 (45-53) is this tab's own prev/balance/close/next bar. */
+    private static final int PAGE_SIZE = 36;
+    private static final int ROW_OFFSET = 9;
 
     private final Supplier<Map<String, StoreProduct>> content;
     private final PlayerDataStore<PackPlayerProfile> store;
     private final StoreService service;
-    private final GuiManager guiManager;
-    private final Map<UUID, Integer> pageIndex = new ConcurrentHashMap<>();
+    /** Keyed by "{playerId}:{category}" - Ranks and Gamepasses page independently of each other. */
+    private final Map<String, Integer> pageIndex = new ConcurrentHashMap<>();
 
-    public StoreGui(Supplier<Map<String, StoreProduct>> content, PlayerDataStore<PackPlayerProfile> store,
-                     StoreService service, GuiManager guiManager) {
+    public StoreGui(Supplier<Map<String, StoreProduct>> content, PlayerDataStore<PackPlayerProfile> store, StoreService service) {
         this.content = content;
         this.store = store;
         this.service = service;
-        this.guiManager = guiManager;
-    }
-
-    public void open(Player player) {
-        UUID id = player.getUniqueId();
-        PackPlayerProfile profile = store.getOrCreate(id);
-        List<StoreProduct> all = new ArrayList<>(content.get().values());
-        Page<StoreProduct> page = Page.of(all, pageIndex.getOrDefault(id, 0), PAGE_SIZE);
-        pageIndex.put(id, page.index());
-
-        var builder = Gui.builder(TOTAL_ROWS, "Store");
-        List<StoreProduct> items = page.items();
-        for (int i = 0; i < items.size(); i++) {
-            StoreProduct product = items.get(i);
-            builder.item(i, buildIcon(profile, product), (clicker, e) -> purchase(clicker, product.id()));
-        }
-        builder.fill(IntStream.range(45, 54).filter(s -> s != PREV_SLOT && s != BALANCE_SLOT && s != CLOSE_SLOT && s != NEXT_SLOT), GuiIcons.filler());
-        builder.item(PREV_SLOT, GuiIcons.pageArrow(false, page.hasPrevious()), (clicker, e) -> turnPage(clicker, -1));
-        builder.item(BALANCE_SLOT, buildBalanceIcon(profile));
-        builder.item(CLOSE_SLOT, GuiIcons.closeButton(), (clicker, e) -> clicker.closeInventory());
-        builder.item(NEXT_SLOT, GuiIcons.pageArrow(true, page.hasNext()), (clicker, e) -> turnPage(clicker, 1));
-
-        guiManager.open(player, builder.build());
-    }
-
-    private void turnPage(Player player, int delta) {
-        pageIndex.put(player.getUniqueId(), pageIndex.getOrDefault(player.getUniqueId(), 0) + delta);
-        open(player);
-    }
-
-    private void purchase(Player player, String productId) {
-        StoreService.PurchaseResult result = service.purchase(player, productId);
-        switch (result) {
-            case SUCCESS -> {
-                player.sendMessage(Text.parse("<green><bold>Purchased!</bold></green> <gray>Thank you for your support.</gray>"));
-                player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.8f, 1.4f);
-            }
-            case NOT_ENOUGH_CREDITS -> player.sendMessage(Text.parse("<red>You don't have enough credits for that.</red>"));
-            case UNKNOWN_PRODUCT -> player.sendMessage(Text.parse("<red>That product no longer exists.</red>"));
-        }
-        open(player);
     }
 
     /**
-     * Same content {@link #open} renders, painted into an ALREADY-OPEN
-     * {@link StoreHubGui} tab instead of its own dedicated screen - see
-     * {@code StoreCategory.CategoryRenderer}. Every click here refreshes
-     * back into the SAME shared Gui (via {@code hub.refreshContent}) rather
-     * than calling {@link #open}, which would pop a second inventory.
+     * Paints every product in {@code category} into the shared hub Gui.
+     * Every click refreshes back into the SAME Gui (via {@code
+     * hub.refreshContent}) rather than opening a new one.
      */
-    public void renderInto(Player player, Gui gui, StoreHubGui hub) {
+    public void renderInto(Player player, Gui gui, StoreHubGui hub, StoreProductCategory category) {
         UUID id = player.getUniqueId();
+        String pageKey = id + ":" + category;
         PackPlayerProfile profile = store.getOrCreate(id);
-        List<StoreProduct> all = new ArrayList<>(content.get().values());
-        Page<StoreProduct> page = Page.of(all, pageIndex.getOrDefault(id, 0), HUB_PAGE_SIZE);
-        pageIndex.put(id, page.index());
+        List<StoreProduct> matching = content.get().values().stream().filter(p -> p.category() == category).toList();
+        Page<StoreProduct> page = Page.of(matching, pageIndex.getOrDefault(pageKey, 0), PAGE_SIZE);
+        pageIndex.put(pageKey, page.index());
 
-        // Rows 1-4 (slots 9-44, 36 slots = HUB_PAGE_SIZE) hold products -
-        // the category row above takes what used to be this screen's own
-        // row 0. Row 5 (slots 45-53) is untouched: PREV/BALANCE/CLOSE/NEXT
-        // already sit at the same absolute slots either way, since both the
-        // standalone screen and this hub tab are 6-row GUIs and row 5 is
-        // the last row of both.
         List<StoreProduct> items = page.items();
-        for (int i = 0; i < HUB_PAGE_SIZE; i++) {
-            int slot = HUB_ROW_OFFSET + i;
+        for (int i = 0; i < PAGE_SIZE; i++) {
+            int slot = ROW_OFFSET + i;
             if (i < items.size()) {
                 StoreProduct product = items.get(i);
                 gui.set(slot, buildIcon(profile, product), (clicker, e) -> {
-                    purchaseInHub(clicker, product.id());
+                    purchase(clicker, product.id());
                     hub.refreshContent(clicker);
                 });
             } else {
@@ -136,13 +86,13 @@ public final class StoreGui {
             }
         }
         gui.set(PREV_SLOT, GuiIcons.pageArrow(false, page.hasPrevious()), (clicker, e) -> {
-            turnPageInHub(clicker, -1);
+            turnPage(clicker, pageKey, -1);
             hub.refreshContent(clicker);
         });
         gui.set(BALANCE_SLOT, buildBalanceIcon(profile), null);
         gui.set(CLOSE_SLOT, GuiIcons.closeButton(), (clicker, e) -> clicker.closeInventory());
         gui.set(NEXT_SLOT, GuiIcons.pageArrow(true, page.hasNext()), (clicker, e) -> {
-            turnPageInHub(clicker, 1);
+            turnPage(clicker, pageKey, 1);
             hub.refreshContent(clicker);
         });
         IntStream.range(45, 54)
@@ -150,11 +100,11 @@ public final class StoreGui {
                 .forEach(s -> gui.set(s, GuiIcons.filler(), null));
     }
 
-    private void turnPageInHub(Player player, int delta) {
-        pageIndex.put(player.getUniqueId(), pageIndex.getOrDefault(player.getUniqueId(), 0) + delta);
+    private void turnPage(Player player, String pageKey, int delta) {
+        pageIndex.put(pageKey, pageIndex.getOrDefault(pageKey, 0) + delta);
     }
 
-    private void purchaseInHub(Player player, String productId) {
+    private void purchase(Player player, String productId) {
         StoreService.PurchaseResult result = service.purchase(player, productId);
         switch (result) {
             case SUCCESS -> {

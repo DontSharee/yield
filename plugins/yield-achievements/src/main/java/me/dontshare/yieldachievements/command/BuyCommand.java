@@ -8,7 +8,7 @@ import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.store.StoreHubGui;
 import org.bukkit.entity.Player;
 
-/** "/buy" - now opens {@link StoreHubGui}, same as "/store" (yield-packs), rather than jumping straight to the Credits Store - "the Store" is one shared landing screen with Rankup/Crates/the Pack Shop as siblings, not a name exclusive to this plugin's own products. */
+/** "/buy" - opens {@link StoreHubGui}, same as "/store" (yield-packs) - the Buycraft/Tebex-style storefront, tabbed by Ranks/Gamepasses/Bundles/Exclusive Crates (all registered from this plugin's own onEnable, since it owns the Credits Store). */
 public final class BuyCommand {
 
     private BuyCommand() {

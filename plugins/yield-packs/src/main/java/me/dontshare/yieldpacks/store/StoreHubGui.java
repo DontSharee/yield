@@ -14,13 +14,18 @@ import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 /**
- * "The Store" - ONE persistent screen for every purchase/progression
- * destination on the server (Rankup, the Credits Store, Crates, the Pack
- * Shop, and anything else a plugin registers later - see {@code
- * YieldPacks#registerStoreCategory}). Row 0 is a category selector; clicking
- * a tab repaints {@link #CONTENT_SLOTS} of THIS SAME open inventory to that
- * category's real, live content (see {@link StoreCategory.CategoryRenderer})
- * - selecting a tab, paging, and purchasing never opens a second Gui.
+ * "The Store" - the Buycraft/Tebex-style real-money storefront, ONE
+ * persistent screen tabbed by category (Ranks, Gamepasses, Bundles,
+ * Exclusive Crates, and anything else a plugin registers later - see
+ * {@code YieldPacks#registerStoreCategory}; yield-achievements owns the
+ * Credits Store and registers all of the current tabs). Deliberately NOT
+ * where Rankup, the Credits-based Crate Shop, or the Pack Shop live - those
+ * are unrelated in-game-currency grind systems with their own commands, not
+ * things a real webstore would sell. Row 0 is the category selector;
+ * clicking a tab repaints {@link #CONTENT_SLOTS} of THIS SAME open
+ * inventory to that category's real, live content (see {@link
+ * StoreCategory.CategoryRenderer}) - selecting a tab, paging, and
+ * purchasing never opens a second Gui.
  */
 public final class StoreHubGui {
 

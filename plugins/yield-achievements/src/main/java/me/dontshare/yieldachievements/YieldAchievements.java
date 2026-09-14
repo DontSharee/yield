@@ -32,20 +32,25 @@ import me.dontshare.yieldachievements.potion.PotionService;
 import me.dontshare.yieldachievements.potion.PotionStat;
 import me.dontshare.yieldachievements.store.StoreContentLoader;
 import me.dontshare.yieldachievements.store.StoreProduct;
+import me.dontshare.yieldachievements.store.StoreProductCategory;
 import me.dontshare.yieldachievements.store.StoreService;
 import me.dontshare.yieldcore.YieldCore;
 import me.dontshare.yieldcore.command.CommandManager;
+import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.MenuLore;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.YieldPacks;
+import me.dontshare.yieldpacks.gui.GuiIcons;
 import me.dontshare.yieldpacks.store.StoreCategory;
+import me.dontshare.yieldpacks.store.StoreHubGui;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public final class YieldAchievements extends JavaPlugin {
@@ -93,18 +98,32 @@ public final class YieldAchievements extends JavaPlugin {
         MilestoneCategoryGui categoryGui = new MilestoneCategoryGui(() -> milestoneCategories, packs.getPlayerStore(), milestoneService, core.getGuiManager());
         MilestonesGui milestonesGui = new MilestonesGui(() -> milestoneCategories, packs.getPlayerStore(), milestoneService, core.getGuiManager(), categoryGui);
         categoryGui.setHubGui(milestonesGui);
-        StoreGui storeGui = new StoreGui(() -> storeProducts, packs.getPlayerStore(), storeService, core.getGuiManager());
+        StoreGui storeGui = new StoreGui(() -> storeProducts, packs.getPlayerStore(), storeService);
         PotionsGui potionsGui = new PotionsGui(packs.getPlayerStore(), potionService, core.getGuiManager());
 
         core.getListenerManager().register(new ProgressEventListener(achievementService, milestoneService));
 
         CommandManager.register(this, AchievementsCommand.build(achievementsGui), "View your achievements");
         CommandManager.register(this, MilestonesCommand.build(milestonesGui), "View your milestone progress");
-        // "/buy" opens the SHARED Store hub (yield-packs), not this plugin's
-        // own StoreGui directly - the Credits Store is one category button
-        // among Rankup/Crates/the Pack Shop there, not its own top-level menu.
-        packs.registerStoreCategory(new StoreCategory("store", 10, YieldAchievements::storeCategoryIcon, storeGui::renderInto));
-        CommandManager.register(this, BuyCommand.build(packs.getStoreHubGui()), "Open the Store - Rankup, the Credits Store, Crates and more");
+        // "/buy" opens the SHARED Store hub (yield-packs) - this is the
+        // Buycraft/Tebex-style storefront, so its tabs mirror what an actual
+        // webstore sells (Ranks, Gamepasses), NOT unrelated in-game-currency
+        // grind systems like Rankup or the Pack Shop. Bundles and Exclusive
+        // Crates are placeholders until the Keys economy (crates opened with
+        // farmed Keys, Key bundles sold here for Credits) is designed.
+        packs.registerStoreCategory(new StoreCategory("ranks", 10,
+                selected -> categoryIcon(Material.GOLD_BLOCK, "RANKS", selected, " &7Permanent donor ranks -", " &7VIP, Celestial, and their perks."),
+                (player, gui, hub) -> storeGui.renderInto(player, gui, hub, StoreProductCategory.RANK)));
+        packs.registerStoreCategory(new StoreCategory("gamepasses", 20,
+                selected -> categoryIcon(Material.NETHER_STAR, "GAMEPASSES", selected, " &7Permanent unlocks and", " &7consumable potions."),
+                (player, gui, hub) -> storeGui.renderInto(player, gui, hub, StoreProductCategory.GAMEPASS)));
+        packs.registerStoreCategory(new StoreCategory("bundles", 30,
+                selected -> categoryIcon(Material.CHEST, "BUNDLES", selected, " &7Coming soon."),
+                (player, gui, hub) -> renderComingSoon(gui, "Bundles", "Coming soon.")));
+        packs.registerStoreCategory(new StoreCategory("exclusive_crates", 40,
+                selected -> categoryIcon(Material.ENDER_CHEST, "EXCLUSIVE CRATES", selected, " &7Coming soon."),
+                (player, gui, hub) -> renderComingSoon(gui, "Exclusive Crates", "Coming soon.")));
+        CommandManager.register(this, BuyCommand.build(packs.getStoreHubGui()), "Open the Store - Ranks, Gamepasses, Bundles and more");
         CommandManager.register(this, PotionsCommand.build(potionsGui), "View your active potions");
 
         core.getAdminCommandRegistry().register(buildAchievementsAdminCommand(achievementService));
@@ -112,11 +131,21 @@ public final class YieldAchievements extends JavaPlugin {
         core.getAdminCommandRegistry().register(buildPotionsAdminCommand());
     }
 
-    private static ItemStack storeCategoryIcon(boolean selected) {
-        ItemBuilder builder = ItemBuilder.of(Material.AMETHYST_SHARD).name(MenuLore.buttonName("<#FFD700>", "STORE"));
-        MenuLore.button("store", List.of(" &7Spend Credits on donor ranks,", " &7gamepasses, and potions."),
-                "<#FFD700>", selected ? "Selected" : "Click to Open").forEach(builder::lore);
+    private static ItemStack categoryIcon(Material material, String label, boolean selected, String... descriptionLines) {
+        ItemBuilder builder = ItemBuilder.of(material).name(MenuLore.buttonName("<#FFD700>", label));
+        MenuLore.button("store", List.of(descriptionLines), "<#FFD700>", selected ? "Selected" : "Click to Open").forEach(builder::lore);
         return builder.hideAttributes().build();
+    }
+
+    /** A placeholder tab for a category that isn't built yet - a single info panel and a close button, no purchase flow. */
+    private static void renderComingSoon(Gui gui, String label, String description) {
+        for (int slot : StoreHubGui.CONTENT_SLOTS) {
+            gui.set(slot, GuiIcons.filler(), null);
+        }
+        ItemBuilder builder = ItemBuilder.of(Material.BARRIER).name("<gray><bold>" + label.toUpperCase(Locale.ROOT) + "</bold></gray>");
+        MenuLore.info("store", List.of(), "<gray>", List.of(description)).forEach(builder::lore);
+        gui.set(31, builder.hideAttributes().build(), null);
+        gui.set(49, GuiIcons.closeButton(), (clicker, e) -> clicker.closeInventory());
     }
 
     private LiteralCommandNode<CommandSourceStack> buildAchievementsAdminCommand(AchievementService achievementService) {

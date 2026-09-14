@@ -15,5 +15,5 @@ import java.util.List;
  * single permission grant.
  */
 public record StoreProduct(String id, String displayName, List<String> description, Material icon,
-                            BigInteger cost, List<String> commands) {
+                            BigInteger cost, List<String> commands, StoreProductCategory category) {
 }

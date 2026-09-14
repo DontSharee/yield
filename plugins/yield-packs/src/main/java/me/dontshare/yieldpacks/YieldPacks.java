@@ -92,7 +92,6 @@ import me.dontshare.yieldpacks.selector.PackSelectorItem;
 import me.dontshare.yieldpacks.selector.PackSelectorListener;
 import me.dontshare.yieldpacks.selector.PackSelectorService;
 import me.dontshare.yieldpacks.shop.ShopStockService;
-import me.dontshare.yieldpacks.store.DefaultStoreCategories;
 import me.dontshare.yieldpacks.store.StoreCategory;
 import me.dontshare.yieldpacks.store.StoreHubGui;
 import me.dontshare.yieldpacks.starter.StarterPetGui;
@@ -172,7 +171,7 @@ public final class YieldPacks extends JavaPlugin {
     private final Map<String, Function<PackPlayerProfile, Double>> diamondMultiplierProviders = new ConcurrentHashMap<>();
     /** "Apply this held item to a pet" gestures - see {@link PetItemHandler}. Candy registers itself as one of these below; yield-mining's forged held items register their own externally. Tried in order; the first to return true wins. */
     private final List<PetItemHandler> petItemHandlers = new CopyOnWriteArrayList<>();
-    /** Every destination {@link StoreHubGui} shows as a clickable category - see {@link #registerStoreCategory}. Rankup/the Pack Shop self-register below; yield-achievements/yield-spawnnpcs register their own from their own onEnable. */
+    /** Every tab {@link StoreHubGui} shows in the Buycraft-style Store - see {@link #registerStoreCategory}. yield-achievements (which owns the Credits Store) registers all of them from its own onEnable; yield-packs contributes none of its own. */
     private final Map<String, StoreCategory> storeCategories = new ConcurrentHashMap<>();
     private StoreHubGui storeHubGui;
 
@@ -390,10 +389,14 @@ public final class YieldPacks extends JavaPlugin {
         CommandManager.register(this, PacksCommand.build(packShopGui), "Open the merchant to buy packs", List.of());
         CommandManager.register(this, PackStorageCommand.build(packStorageGui), "Open your unopened pack storage", List.of());
 
-        registerStoreCategory(DefaultStoreCategories.rankup(playerStore, rankService));
-        registerStoreCategory(DefaultStoreCategories.packShop(packShopGui));
+        // The Store hub is the Buycraft/Tebex-style real-money storefront -
+        // its own tabs (Ranks/Gamepasses/Bundles/Exclusive Crates) are
+        // registered by yield-achievements, which owns the Credits Store.
+        // Rankup and the Pack Shop are unrelated in-game-currency grind
+        // systems and were deliberately pulled back out of it - they stay
+        // reachable via their own commands (/rankup, /ranks, /merchant).
         storeHubGui = new StoreHubGui(core.getGuiManager(), () -> List.copyOf(storeCategories.values()));
-        CommandManager.register(this, StoreCommand.build(storeHubGui), "Open the Store - Rankup, Crates, the Pack Shop and more", List.of());
+        CommandManager.register(this, StoreCommand.build(storeHubGui), "Open the Store - Ranks, Gamepasses, Bundles and more", List.of());
         CommandManager.register(this, BagCommand.build(bagGui), "Open your bag", List.of("pets"));
         CommandManager.register(this, IndexCommand.build(indexGui), "Open your collection index", List.of());
         core.getAdminCommandRegistry().register(PacksAdminCommand.build(this));

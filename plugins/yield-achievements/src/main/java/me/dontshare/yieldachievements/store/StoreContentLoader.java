@@ -57,6 +57,14 @@ public final class StoreContentLoader {
         long cost = Math.max(0, section.getLong("cost-credits", 0));
         List<String> description = new ArrayList<>(section.getStringList("description"));
         List<String> commands = new ArrayList<>(section.getStringList("commands"));
-        return new StoreProduct(id, section.getString("display-name", id), description, icon, BigInteger.valueOf(cost), commands);
+        String categoryRaw = section.getString("category", "GAMEPASS").toUpperCase(java.util.Locale.ROOT);
+        StoreProductCategory category;
+        try {
+            category = StoreProductCategory.valueOf(categoryRaw);
+        } catch (IllegalArgumentException e) {
+            logger.warning("Store product '" + id + "' has an unknown category '" + categoryRaw + "' - falling back to GAMEPASS.");
+            category = StoreProductCategory.GAMEPASS;
+        }
+        return new StoreProduct(id, section.getString("display-name", id), description, icon, BigInteger.valueOf(cost), commands, category);
     }
 }
