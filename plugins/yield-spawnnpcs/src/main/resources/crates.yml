@@ -1,23 +1,32 @@
-# Crates - the IN-GAME-CURRENCY counterpart to yield-lootboxes' own real-
-# money boxes. Bought with Credits (the achievement/milestone/quest reward
-# currency - see PackPlayerProfile#getCredits) at the Crate NPC, opened
-# INSTANTLY on purchase (no physical item, no separate right-click step -
-# unlike a real-money Lootbox, there's no anticipation-building reason to
-# make you carry it around first). Deliberately smaller rewards than
-# yield-lootboxes' mythic_crate/exclusive_crate at every tier - these exist
-# for steady F2P progression, not to outshine the real-money path. Run
-# /admin spawnnpcs reload after editing.
+# Crates - the farmed-Key counterpart to yield-lootboxes' own real-money
+# boxes. NOT bought with any currency - each crate has its own Key type,
+# found via CrateKeyDropListener (a small chance per ore cube kill, see
+# "key-drop-chance" below), tracked as a virtual per-player count
+# (PackPlayerProfile#getCrateKeys, keyed by this crate's own id). A crate
+# must still be physically opened: each one gets one global, always-visible
+# packet-entity station (see CrateDisplay) at "location" - smack it to spend
+# 1 Key and roll a reward, same "smack a physical station" gesture as the
+# Enchanting Table/Forge/every other clickable button in this codebase.
+# Deliberately smaller rewards than yield-lootboxes' mythic_crate/
+# exclusive_crate at every tier - these exist for steady F2P progression,
+# not to outshine the real-money path. Run /admin spawnnpcs reload after
+# editing.
 #
-# Reward pool entry types (same weighted-pick math as yield-lootboxes'
-# own pool, entirely separate config/content):
+# Reward pool entry types (same weighted-pick math as yield-lootboxes' own
+# pool, entirely separate config/content):
 #   flat-coins / flat-diamonds - "amount" granted directly.
 #   pet - "pet-item" is any item id from yield-packs' own packs.yml catalog.
 #   commands - runs each of "commands" as CONSOLE, "%player%" substituted.
+#
+# "location": [world, x, y, z, yaw, pitch] - PLACEHOLDER coordinates below,
+# near yield-packstations' own row of pack stations. Adjust to wherever you
+# actually want each crate to stand, then /admin spawnnpcs reload.
 crates:
   common_crate:
     display-name: "&7&lCommon Crate"
     icon: CHEST
-    cost: 25
+    key-drop-chance: 0.05
+    location: [world, -22, 99, 100, 90, 0]
     pool:
       - { type: flat-coins, weight: 60, amount: 5000 }
       - { type: flat-diamonds, weight: 25, amount: 3 }
@@ -27,7 +36,8 @@ crates:
   rare_crate:
     display-name: "&9&lRare Crate"
     icon: TRAPPED_CHEST
-    cost: 75
+    key-drop-chance: 0.015
+    location: [world, -19.5, 99, 100, 90, 0]
     pool:
       - { type: flat-coins, weight: 55, amount: 20000 }
       - { type: flat-diamonds, weight: 30, amount: 8 }
@@ -37,7 +47,8 @@ crates:
   epic_crate:
     display-name: "&5&lEpic Crate"
     icon: ENDER_CHEST
-    cost: 200
+    key-drop-chance: 0.004
+    location: [world, -17, 99, 100, 90, 0]
     pool:
       - { type: flat-coins, weight: 45, amount: 75000 }
       - { type: flat-diamonds, weight: 35, amount: 20 }

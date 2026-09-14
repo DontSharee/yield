@@ -2,7 +2,7 @@ name: yield-spawnnpcs
 version: '${version}'
 main: me.dontshare.yieldspawnnpcs.YieldSpawnNpcs
 api-version: '26.2'
-depend: [yield-core, yield-packs]
+depend: [yield-core, yield-packs, yield-zones]
 permissions:
   yieldspawnnpcs.admin:
     default: op

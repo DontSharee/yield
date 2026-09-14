@@ -50,6 +50,8 @@ public final class PackPlayerProfile implements PlayerRecord {
     private Map<String, Set<String>> packCollectionProgress = new HashMap<>();
     private Map<String, Long> lastObtainedAt = new HashMap<>();
     private Map<String, Integer> storedPacks = new HashMap<>();
+    /** Virtual crate-key counts, keyed by crate id (see yield-spawnnpcs' CrateDefinition/CrateService) - found via ore cube kills, spent one at a time by physically smacking that crate's own station. Never a real inventory item. */
+    private Map<String, Integer> crateKeys = new HashMap<>();
     private String activePackId;
     private long lastStockCycleId = -1;
     private Map<String, Integer> stockPurchasedThisCycle = new HashMap<>();
@@ -326,6 +328,11 @@ public final class PackPlayerProfile implements PlayerRecord {
     /** Unopened pack inventory - packId -> how many of that pack this player owns but hasn't opened yet. */
     public Map<String, Integer> getStoredPacks() {
         return storedPacks;
+    }
+
+    /** Virtual crate-key counts - crateId -> how many of that crate's own Key this player currently has (see CrateService). */
+    public Map<String, Integer> getCrateKeys() {
+        return crateKeys;
     }
 
     public void setStoredPacks(Map<String, Integer> storedPacks) {

@@ -1,27 +1,33 @@
 package me.dontshare.yieldspawnnpcs.crate;
 
 import me.dontshare.yieldcore.math.WeightedRandom;
+import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldpacks.event.PetEquippedEvent;
 import me.dontshare.yieldpacks.pet.PetInstance;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 
 import java.math.BigInteger;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
 /**
- * Buy-and-open-instantly logic for Crates - the in-game-Credits counterpart
- * to {@code yield-lootboxes}' own real-money boxes, same afford-check-then-
- * subtract idiom every currency spend in this codebase already uses
- * ({@code ZoneLockService}/{@code RankService}/{@code PickaxeEnchantService}).
+ * Key-based open logic for Crates - the farmed-Key counterpart to {@code
+ * yield-lootboxes}' own real-money boxes. Opening spends exactly 1 of that
+ * crate's own Key (a virtual count, see {@code PackPlayerProfile
+ * #getCrateKeys}); {@link #rollKeyDrops} is the other half, called once per
+ * ore cube kill (see {@code CrateKeyDropListener}) to give every crate an
+ * independent chance at granting one.
  */
 public final class CrateService {
 
     public enum PurchaseResult {
-        SUCCESS, CANT_AFFORD, UNKNOWN_CRATE
+        SUCCESS, NOT_ENOUGH_KEYS, UNKNOWN_CRATE
     }
 
     public record PurchaseOutcome(PurchaseResult result, CrateRewardEntry reward) {
@@ -42,22 +48,42 @@ public final class CrateService {
         return content.get();
     }
 
-    public PurchaseOutcome buy(Player player, String crateId) {
+    /** Spends 1 Key of {@code crateId}'s own type and rolls a reward - called from smacking that crate's physical station (see {@code CrateDisplay}). */
+    public PurchaseOutcome open(Player player, String crateId) {
         CrateDefinition crate = content.get().get(crateId);
         if (crate == null) {
             return PurchaseOutcome.of(PurchaseResult.UNKNOWN_CRATE);
         }
         PackPlayerProfile profile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
-        BigInteger cost = BigInteger.valueOf(crate.cost());
-        if (profile.getCredits().compareTo(cost) < 0) {
-            return PurchaseOutcome.of(PurchaseResult.CANT_AFFORD);
+        int keys = profile.getCrateKeys().getOrDefault(crateId, 0);
+        if (keys <= 0) {
+            return PurchaseOutcome.of(PurchaseResult.NOT_ENOUGH_KEYS);
         }
-        profile.setCredits(profile.getCredits().subtract(cost));
+        profile.getCrateKeys().put(crateId, keys - 1);
 
         CrateRewardEntry reward = rollOne(crate);
         applyReward(player, profile, reward);
         packs.getPlayerStore().save(player.getUniqueId());
         return new PurchaseOutcome(PurchaseResult.SUCCESS, reward);
+    }
+
+    /** One independent roll per crate tier against its own {@link CrateDefinition#keyDropChance} - called once per ore cube kill (see {@code CrateKeyDropListener}), so a single kill can drop keys for more than one crate at once. */
+    public void rollKeyDrops(Player player) {
+        PackPlayerProfile profile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
+        boolean any = false;
+        for (CrateDefinition crate : content.get().values()) {
+            if (crate.keyDropChance() <= 0 || ThreadLocalRandom.current().nextDouble() >= crate.keyDropChance()) {
+                continue;
+            }
+            profile.getCrateKeys().merge(crate.id(), 1, Integer::sum);
+            any = true;
+            player.sendMessage(Text.parse("<yellow>You found a <crate> Key!</yellow>",
+                    Placeholder.unparsed("crate", crate.displayName())));
+            player.playSound(player.getLocation(), Sound.ENTITY_ITEM_PICKUP, 0.6f, 1.4f);
+        }
+        if (any) {
+            packs.getPlayerStore().save(player.getUniqueId());
+        }
     }
 
     private CrateRewardEntry rollOne(CrateDefinition crate) {
