@@ -1,4 +1,4 @@
-package me.dontshare.yieldpacks.gui;
+package me.dontshare.yieldcore.gui;
 
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.Formatting;
@@ -10,7 +10,7 @@ import org.bukkit.potion.PotionType;
 
 import java.util.List;
 
-/** Shared filler/control icons for yield-packs' Gui screens. */
+/** Shared filler/control icons every plugin's {@link Gui} screens draw from. */
 public final class GuiIcons {
 
     private static final String ACCENT = "<#4BD9FF>";

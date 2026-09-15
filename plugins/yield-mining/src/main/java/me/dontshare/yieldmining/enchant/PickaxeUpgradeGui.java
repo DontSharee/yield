@@ -2,13 +2,13 @@ package me.dontshare.yieldmining.enchant;
 
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiBuilder;
+import me.dontshare.yieldcore.gui.GuiIcons;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldcore.text.MenuLore;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.YieldPacks;
-import me.dontshare.yieldpacks.gui.GuiIcons;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Material;

@@ -2,6 +2,7 @@ package me.dontshare.yieldcosmetics.gui;
 
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.gui.Gui;
+import me.dontshare.yieldcore.gui.GuiIcons;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.gui.Page;
 import me.dontshare.yieldcore.item.ItemBuilder;
@@ -11,7 +12,6 @@ import me.dontshare.yieldcosmetics.CosmeticPopularityService;
 import me.dontshare.yieldcosmetics.CosmeticService;
 import me.dontshare.yieldcosmetics.data.Cosmetic;
 import me.dontshare.yieldcosmetics.data.CosmeticCategory;
-import me.dontshare.yieldpacks.gui.GuiIcons;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Material;

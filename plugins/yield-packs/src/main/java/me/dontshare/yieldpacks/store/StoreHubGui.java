@@ -1,8 +1,8 @@
 package me.dontshare.yieldpacks.store;
 
 import me.dontshare.yieldcore.gui.Gui;
+import me.dontshare.yieldcore.gui.GuiIcons;
 import me.dontshare.yieldcore.gui.GuiManager;
-import me.dontshare.yieldpacks.gui.GuiIcons;
 import org.bukkit.entity.Player;
 
 import java.util.Comparator;

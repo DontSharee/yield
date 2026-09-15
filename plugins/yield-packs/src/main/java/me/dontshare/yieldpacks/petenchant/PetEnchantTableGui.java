@@ -2,6 +2,7 @@ package me.dontshare.yieldpacks.petenchant;
 
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.gui.Gui;
+import me.dontshare.yieldcore.gui.GuiIcons;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.Formatting;
@@ -12,7 +13,6 @@ import me.dontshare.yieldpacks.data.ItemRegistry;
 import me.dontshare.yieldpacks.data.Rarity;
 import me.dontshare.yieldpacks.data.RarityRegistry;
 import me.dontshare.yieldpacks.economy.EquipmentService;
-import me.dontshare.yieldpacks.gui.GuiIcons;
 import me.dontshare.yieldpacks.item.ItemIconFactory;
 import me.dontshare.yieldpacks.pet.PetInstance;
 import me.dontshare.yieldpacks.petenchant.PetEnchantContentLoader.PetEnchantContent;

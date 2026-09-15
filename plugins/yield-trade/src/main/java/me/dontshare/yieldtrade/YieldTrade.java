@@ -3,6 +3,7 @@ package me.dontshare.yieldtrade;
 import me.dontshare.yieldcore.YieldCore;
 import me.dontshare.yieldcore.command.CommandManager;
 import me.dontshare.yieldcore.database.DatabaseManager;
+import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldtrade.command.TradeCommand;
 import me.dontshare.yieldtrade.command.WithdrawCommand;
 import me.dontshare.yieldtrade.currency.CurrencyNoteItem;
@@ -14,7 +15,6 @@ import me.dontshare.yieldtrade.session.TradeService;
 import me.dontshare.yieldtrade.store.TradeClaimDeliveryListener;
 import me.dontshare.yieldtrade.store.TradeClaimStore;
 import me.dontshare.yieldtrade.store.TradeEscrowStore;
-import me.dontshare.yieldpacks.YieldPacks;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;

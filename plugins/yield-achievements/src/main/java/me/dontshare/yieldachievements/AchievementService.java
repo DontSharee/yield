@@ -1,10 +1,10 @@
 package me.dontshare.yieldachievements;
 
+import me.dontshare.yieldachievements.data.AchievementDefinition;
+import me.dontshare.yieldachievements.data.GameAction;
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldcore.text.Text;
-import me.dontshare.yieldachievements.data.AchievementDefinition;
-import me.dontshare.yieldachievements.data.GameAction;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Particle;

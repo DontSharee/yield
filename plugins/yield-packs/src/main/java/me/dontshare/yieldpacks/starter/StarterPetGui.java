@@ -1,12 +1,12 @@
 package me.dontshare.yieldpacks.starter;
 
 import me.dontshare.yieldcore.gui.Gui;
+import me.dontshare.yieldcore.gui.GuiIcons;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.MenuLore;
 import me.dontshare.yieldpacks.data.ItemDefinition;
 import me.dontshare.yieldpacks.data.ItemRegistry;
-import me.dontshare.yieldpacks.gui.GuiIcons;
 import me.dontshare.yieldpacks.item.ItemIconFactory;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;

@@ -1,10 +1,10 @@
 package me.dontshare.yieldpacks.petenchant;
 
 import me.dontshare.yieldcore.gui.Gui;
+import me.dontshare.yieldcore.gui.GuiIcons;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.MenuLore;
-import me.dontshare.yieldpacks.gui.GuiIcons;
 import me.dontshare.yieldpacks.petenchant.PetEnchantContentLoader.PetEnchantContent;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;

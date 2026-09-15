@@ -2,6 +2,7 @@ package me.dontshare.yieldmining;
 
 import me.dontshare.yieldcore.YieldCore;
 import me.dontshare.yieldcore.command.CommandManager;
+import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldmining.command.MiningAdminCommand;
 import me.dontshare.yieldmining.data.MiningContent;
 import me.dontshare.yieldmining.data.MiningContentLoader;
@@ -26,7 +27,6 @@ import me.dontshare.yieldmining.orebag.OreBagGui;
 import me.dontshare.yieldmining.orebag.OreBagService;
 import me.dontshare.yieldmining.orebag.OreIndexCommand;
 import me.dontshare.yieldmining.orebag.OreIndexGui;
-import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldpacks.pet.PetInstance;
 import me.dontshare.yieldpacks.pet.PetItemHandler;

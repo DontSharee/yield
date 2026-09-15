@@ -2,6 +2,7 @@ package me.dontshare.yieldpacks.gui;
 
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.gui.Gui;
+import me.dontshare.yieldcore.gui.GuiIcons;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.MenuLore;

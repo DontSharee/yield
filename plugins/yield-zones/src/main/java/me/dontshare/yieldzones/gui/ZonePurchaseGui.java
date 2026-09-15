@@ -2,12 +2,12 @@ package me.dontshare.yieldzones.gui;
 
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiBuilder;
+import me.dontshare.yieldcore.gui.GuiIcons;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldcore.text.MenuLore;
 import me.dontshare.yieldcore.text.Text;
-import me.dontshare.yieldpacks.gui.GuiIcons;
 import me.dontshare.yieldzones.data.ZoneDefinition;
 import me.dontshare.yieldzones.data.ZoneUnlockCost;
 import me.dontshare.yieldzones.zone.ZoneLockService;
