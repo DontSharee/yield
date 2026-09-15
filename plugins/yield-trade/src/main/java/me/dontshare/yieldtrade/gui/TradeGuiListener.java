@@ -1,5 +1,7 @@
 package me.dontshare.yieldtrade.gui;
 
+import me.dontshare.yieldcore.item.BoundItemRegistry;
+import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldtrade.session.TradeService;
 import me.dontshare.yieldtrade.session.TradeSession;
 import org.bukkit.Bukkit;
@@ -41,10 +43,12 @@ import java.util.UUID;
 public final class TradeGuiListener implements Listener {
 
     private final TradeService tradeService;
+    private final BoundItemRegistry boundItems;
     private final JavaPlugin plugin;
 
-    public TradeGuiListener(TradeService tradeService, JavaPlugin plugin) {
+    public TradeGuiListener(TradeService tradeService, BoundItemRegistry boundItems, JavaPlugin plugin) {
         this.tradeService = tradeService;
+        this.boundItems = boundItems;
         this.plugin = plugin;
     }
 
@@ -125,8 +129,17 @@ public final class TradeGuiListener implements Listener {
         if (clicked == null || clicked.getType().isAir()) {
             return;
         }
+        // The Pack Selector compass, the Bag, and anything else pinned to a
+        // fixed slot. Their own plugins cancel every vanilla move, but this
+        // class cancels the click and then moves the item itself, so it
+        // never sees those cancels - it has to ask.
+        if (boundItems.isBound(clicked)) {
+            player.sendMessage(Text.parse("<red>You can't trade that.</red>"));
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
+            return;
+        }
         if (session.offerOf(player.getUniqueId()).size() >= TradeSession.MAX_OFFER_SLOTS) {
-            player.sendMessage(me.dontshare.yieldcore.text.Text.parse("<red>You can't put up any more than that.</red>"));
+            player.sendMessage(Text.parse("<red>You can't put up any more than that.</red>"));
             return;
         }
 

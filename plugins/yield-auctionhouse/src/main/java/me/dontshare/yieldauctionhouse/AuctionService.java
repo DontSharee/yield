@@ -9,6 +9,7 @@ import me.dontshare.yieldauctionhouse.data.ListingStatus;
 import me.dontshare.yieldauctionhouse.store.AuctionClaimStore;
 import me.dontshare.yieldauctionhouse.store.AuctionListingStore;
 import me.dontshare.yieldcore.database.DatabaseManager;
+import me.dontshare.yieldcore.item.BoundItemRegistry;
 import me.dontshare.yieldcore.item.ItemSerialization;
 import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
@@ -77,7 +78,7 @@ import java.util.function.Supplier;
  */
 public final class AuctionService {
 
-    public enum ListResult {SUCCESS, BUSY, NOTHING_HELD, PRICE_TOO_LOW, LISTING_CAP_REACHED, FAILED}
+    public enum ListResult {SUCCESS, BUSY, NOTHING_HELD, ITEM_BOUND, PRICE_TOO_LOW, LISTING_CAP_REACHED, FAILED}
 
     public enum PurchaseResult {SUCCESS, BUSY, NO_LONGER_AVAILABLE, INSUFFICIENT_FUNDS, OWN_LISTING, FAILED}
 
@@ -88,18 +89,21 @@ public final class AuctionService {
     private final AuctionListingStore listingStore;
     private final AuctionClaimStore claimStore;
     private final YieldPacks packs;
+    private final BoundItemRegistry boundItems;
     private final Supplier<AuctionConfig> config;
 
     /** Players with a list/buy/cancel/claim currently in flight - see class Javadoc point 5. */
     private final Set<UUID> busyPlayers = ConcurrentHashMap.newKeySet();
 
     public AuctionService(JavaPlugin plugin, DatabaseManager databaseManager, AuctionListingStore listingStore,
-                           AuctionClaimStore claimStore, YieldPacks packs, Supplier<AuctionConfig> config) {
+                           AuctionClaimStore claimStore, YieldPacks packs, BoundItemRegistry boundItems,
+                           Supplier<AuctionConfig> config) {
         this.plugin = plugin;
         this.databaseManager = databaseManager;
         this.listingStore = listingStore;
         this.claimStore = claimStore;
         this.packs = packs;
+        this.boundItems = boundItems;
         this.config = config;
     }
 
@@ -135,6 +139,13 @@ public final class AuctionService {
         if (held.getType() == Material.AIR) {
             clearBusy(seller);
             return CompletableFuture.completedFuture(ListResult.NOTHING_HELD);
+        }
+        // The Pack Selector compass lives in hotbar slot 4, so it is in the
+        // seller's hand any time that slot is the selected one - without
+        // this, "/ah sell" is all it takes to hand it away for good.
+        if (boundItems.isBound(held)) {
+            clearBusy(seller);
+            return CompletableFuture.completedFuture(ListResult.ITEM_BOUND);
         }
         ItemStack toList = held.clone();
         seller.getInventory().setItemInMainHand(null);

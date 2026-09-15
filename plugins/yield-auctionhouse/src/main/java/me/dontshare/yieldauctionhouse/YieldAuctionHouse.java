@@ -34,7 +34,8 @@ public final class YieldAuctionHouse extends JavaPlugin {
 
         AuctionListingStore listingStore = new AuctionListingStore(core.getDatabaseManager());
         AuctionClaimStore claimStore = new AuctionClaimStore(core.getDatabaseManager());
-        auctionService = new AuctionService(this, core.getDatabaseManager(), listingStore, claimStore, packs, () -> config);
+        auctionService = new AuctionService(this, core.getDatabaseManager(), listingStore, claimStore, packs,
+                core.getBoundItemRegistry(), () -> config);
 
         AuctionMyListingsGui myListingsGui = new AuctionMyListingsGui(this, core.getDatabaseManager(), listingStore, auctionService, core.getGuiManager());
         AuctionCollectionBoxGui collectionBoxGui = new AuctionCollectionBoxGui(this, auctionService, core.getGuiManager());

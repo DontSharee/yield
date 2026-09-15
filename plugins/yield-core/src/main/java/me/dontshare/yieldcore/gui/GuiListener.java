@@ -62,10 +62,16 @@ public final class GuiListener implements Listener {
         // ignores which slots a screen considers its own: it sweeps every
         // matching stack out of BOTH inventories, including the locked
         // button/filler slots this listener otherwise guarantees are
-        // untouchable. Refused outright for any Gui, editable slots included -
-        // there is no version of it a screen here wants.
-        if (event.getAction() == InventoryAction.COLLECT_TO_CURSOR) {
+        // untouchable. It is only refused when it would actually reach one
+        // of those - a double-click that can only pull from editable slots
+        // and the player's own inventory is left to resolve normally, and
+        // falls through to the usual handling below. Blanket-cancelling it
+        // broke real drag-and-drop on the Forge grid: players double-click
+        // to gather a stack as part of the same gesture, and a cancel here
+        // desyncs the cursor for every click after it.
+        if (event.getAction() == InventoryAction.COLLECT_TO_CURSOR && wouldCollectFromLockedSlot(gui, event)) {
             event.setCancelled(true);
+            resyncNextTick(event.getWhoClicked());
             return;
         }
 
@@ -93,6 +99,9 @@ public final class GuiListener implements Listener {
         }
 
         event.setCancelled(true);
+        if (event.getAction() == InventoryAction.COLLECT_TO_CURSOR) {
+            resyncNextTick(event.getWhoClicked());
+        }
         if (!(event.getWhoClicked() instanceof Player player)) {
             return;
         }
@@ -119,6 +128,44 @@ public final class GuiListener implements Listener {
             }
         }
         event.setCancelled(true);
+    }
+
+    /**
+     * Whether a "collect to cursor" from here could pull an item out of a
+     * slot this screen locks - the only case in which the gesture is worth
+     * refusing. Filler panes and button icons are built with their own meta
+     * (hidden tooltips, custom names), so a player holding a plain stack of
+     * the same material does not match one.
+     */
+    private boolean wouldCollectFromLockedSlot(Gui gui, InventoryClickEvent event) {
+        ItemStack cursor = event.getCursor();
+        if (cursor == null || cursor.getType().isAir()) {
+            return false;
+        }
+        Inventory top = event.getView().getTopInventory();
+        for (int slot = 0, size = top.getSize(); slot < size; slot++) {
+            if (gui.isEditableSlot(slot)) {
+                continue;
+            }
+            ItemStack existing = top.getItem(slot);
+            if (existing != null && !existing.getType().isAir() && existing.isSimilar(cursor)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * A cancelled double-click is the one gesture the client does not roll
+     * back on its own - it keeps drawing the stack it thinks it collected,
+     * and every click after that lands on a slot the server disagrees
+     * about. Pushed a tick later so it isn't overwritten by the container
+     * update vanilla sends while still handling this same packet.
+     */
+    private void resyncNextTick(HumanEntity whoClicked) {
+        if (whoClicked instanceof Player player) {
+            Bukkit.getScheduler().runTask(plugin, player::updateInventory);
+        }
     }
 
     /** Moves as much of the shift-clicked stack as fits into the first free (or same-item, stackable) editable slot(s), in slot order - leaves whatever doesn't fit in the source slot rather than losing it. */

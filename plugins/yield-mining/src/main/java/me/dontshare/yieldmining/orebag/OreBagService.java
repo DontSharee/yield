@@ -21,27 +21,28 @@ import java.util.function.Supplier;
 /**
  * Special Ore's real home - a mined Special Ore never touches the normal
  * inventory (see {@code MiningService#giveDrop}), it goes straight into
- * {@link PackPlayerProfile#getOreBagEntries()} instead, and only becomes a
- * real item again on explicit withdrawal (see {@link OreBagGui}). Entries
- * are encoded as plain strings ("MATERIAL:multiplier:tierId") rather than a
- * yield-mining type, since yield-packs (which owns {@link PackPlayerProfile})
- * can't depend on yield-mining - same reasoning as {@code PetInstance}'s own
- * {@code forgeBonuses} map.
+ * {@link MiningProfile#getOreBagEntries()} instead, and only becomes a real
+ * item again on explicit withdrawal (see {@link OreBagGui}). Entries are
+ * encoded as plain strings ("MATERIAL:multiplier:tierId") rather than a
+ * record, so the bag is one flat map in the player's document and reads
+ * back without a codec of its own.
+ * <p>
+ * The {@link PackPlayerProfile} the methods here take is only ever used for
+ * its player id - callers already hold one, so passing it saves them
+ * looking the same player up twice.
  */
 public final class OreBagService {
 
     public record BagEntryView(String entryId, Material material, double multiplier, String tierId) {
     }
 
-    private final PlayerDataStore<PackPlayerProfile> store;
-    /** This plugin's own bag contents. The pack store above stays for the currency a withdrawal pays out. */
+    /** Bag contents and ore discoveries both live here now - the pack profile no longer carries either. */
     private final PlayerDataStore<MiningProfile> miningStore;
     private final SpecialOreItem specialOreItem;
     private final Supplier<List<SpecialOreTier>> tiers;
 
-    public OreBagService(PlayerDataStore<PackPlayerProfile> store, PlayerDataStore<MiningProfile> miningStore, SpecialOreItem specialOreItem,
+    public OreBagService(PlayerDataStore<MiningProfile> miningStore, SpecialOreItem specialOreItem,
                           Supplier<List<SpecialOreTier>> tiers) {
-        this.store = store;
         this.miningStore = miningStore;
         this.specialOreItem = specialOreItem;
         this.tiers = tiers;
@@ -50,10 +51,11 @@ public final class OreBagService {
     /** Called from MiningService.giveDrop instead of handing the item straight to the player. */
     public void add(PackPlayerProfile profile, Player player, Material material, double multiplier, SpecialOreTier tier) {
         String entryId = UUID.randomUUID().toString();
-        miningStore.getOrCreate(profile.getPlayerId()).getOreBagEntries().put(entryId, material.name() + ":" + multiplier + ":" + tier.id());
-        miningStore.getOrCreate(profile.getPlayerId()).getDiscoveredOreMaterials().add(material.name());
-        store.save(player.getUniqueId());
-        if (miningStore.getOrCreate(profile.getPlayerId()).isOreBagNotificationsEnabled()) {
+        MiningProfile mining = miningStore.getOrCreate(profile.getPlayerId());
+        mining.getOreBagEntries().put(entryId, material.name() + ":" + multiplier + ":" + tier.id());
+        mining.getDiscoveredOreMaterials().add(material.name());
+        miningStore.save(player.getUniqueId());
+        if (mining.isOreBagNotificationsEnabled()) {
             player.sendMessage(Text.parse("<green>Special Ore!</green> <gray>" + prettyName(material) + " ("
                     + String.format(Locale.ROOT, "%.2f", multiplier) + "x) added to your Ore Bag.</gray>"));
         }
@@ -78,7 +80,7 @@ public final class OreBagService {
             return false;
         }
         BagEntryView view = decode(entryId, encoded);
-        store.save(player.getUniqueId());
+        miningStore.save(player.getUniqueId());
         if (view == null) {
             return true;
         }

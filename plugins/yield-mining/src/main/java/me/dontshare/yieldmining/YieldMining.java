@@ -88,7 +88,7 @@ public final class YieldMining extends JavaPlugin {
         forgeBoostService = new ForgeBoostService(packs.getPlayerStore());
         registerForgeProviders(packs);
 
-        OreBagService oreBagService = new OreBagService(packs.getPlayerStore(), miningStore, specialOreItem, () -> forgeTiers);
+        OreBagService oreBagService = new OreBagService(miningStore, specialOreItem, () -> forgeTiers);
 
         miningItem = new MiningItem(this);
         miningService = new MiningService(this, () -> content, packs, miningItem, this::onSpotCreated, enchantService,

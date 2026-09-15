@@ -49,7 +49,7 @@ public final class YieldTrade extends JavaPlugin {
         CurrencyNoteItem noteItem = new CurrencyNoteItem(this);
         CurrencyNoteService noteService = new CurrencyNoteService(this, databaseManager, noteStore, noteItem, packs.getPlayerStore());
 
-        core.getListenerManager().register(new TradeGuiListener(tradeService, this));
+        core.getListenerManager().register(new TradeGuiListener(tradeService, core.getBoundItemRegistry(), this));
         core.getListenerManager().register(new CurrencyNoteRedeemListener(noteService));
         core.getListenerManager().register(new TradeClaimDeliveryListener(this, databaseManager, claimStore));
 

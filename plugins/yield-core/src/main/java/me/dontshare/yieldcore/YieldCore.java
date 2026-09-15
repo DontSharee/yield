@@ -19,6 +19,7 @@ import me.dontshare.yieldcore.gui.GuiListener;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.home.HomeCommand;
 import me.dontshare.yieldcore.home.HomeService;
+import me.dontshare.yieldcore.item.BoundItemRegistry;
 import me.dontshare.yieldcore.listener.ListenerManager;
 import me.dontshare.yieldcore.packet.EntityClickRegistry;
 import me.dontshare.yieldcore.placeholder.PlaceholderRegistry;
@@ -53,6 +54,7 @@ public final class YieldCore extends JavaPlugin {
     private PlaceholderRegistry placeholderRegistry;
     private PlayerProfileManager playerProfileManager;
     private GuiManager guiManager;
+    private BoundItemRegistry boundItemRegistry;
     private SchematicService schematicService;
     private YieldScoreboardDisplay scoreboardDisplay;
     private FakeFallingBlock fakeFallingBlock;
@@ -121,6 +123,11 @@ public final class YieldCore extends JavaPlugin {
 
         guiManager = new GuiManager();
         listenerManager.register(new GuiListener(guiManager, this));
+
+        // Empty here on purpose - every entry is added by the plugin that
+        // hands the item out, from its own onEnable, which all run after
+        // this one.
+        boundItemRegistry = new BoundItemRegistry();
 
         spawnService = new SpawnService(this, getLogger());
         CommandManager.register(this, SpawnCommand.spawn(spawnService), "Teleport to spawn");
@@ -212,6 +219,11 @@ public final class YieldCore extends JavaPlugin {
 
     public GuiManager getGuiManager() {
         return guiManager;
+    }
+
+    /** Register the items your plugin pins to a fixed slot here, and ask here before moving an item somewhere its owner can't get it back from. */
+    public BoundItemRegistry getBoundItemRegistry() {
+        return boundItemRegistry;
     }
 
     public YieldScoreboardDisplay getScoreboardDisplay() {

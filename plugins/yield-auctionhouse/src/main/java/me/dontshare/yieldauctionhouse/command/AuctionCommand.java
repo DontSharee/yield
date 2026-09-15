@@ -66,6 +66,7 @@ public final class AuctionCommand {
                 case SUCCESS -> player.sendMessage(Text.parse("<green><bold>Listed!</bold></green> <gray>Check /auction -> My Listings.</gray>"));
                 case PRICE_TOO_LOW -> player.sendMessage(Text.parse("<red>Price is below the minimum.</red>"));
                 case NOTHING_HELD -> player.sendMessage(Text.parse("<red>You're not holding anything to sell.</red>"));
+                case ITEM_BOUND -> player.sendMessage(Text.parse("<red>You can't sell that.</red>"));
                 case LISTING_CAP_REACHED -> player.sendMessage(Text.parse("<red>You've hit your active-listing limit.</red>"));
                 case BUSY -> player.sendMessage(Text.parse("<red>Hold on, your last action is still processing.</red>"));
                 case FAILED -> player.sendMessage(Text.parse("<red>Something went wrong - try again.</red>"));

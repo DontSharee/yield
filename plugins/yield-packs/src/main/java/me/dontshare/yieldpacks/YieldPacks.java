@@ -371,7 +371,17 @@ public final class YieldPacks extends JavaPlugin {
         PackActionBarService actionBarService = new PackActionBarService(this, playerStore, () -> content, pityService, selectorService);
         actionBarService.start();
 
-        core.getListenerManager().register(new BagSelectorListener(new BagSelectorItem(this), bagGui));
+        BagSelectorItem bagSelectorItem = new BagSelectorItem(this);
+        core.getListenerManager().register(new BagSelectorListener(bagSelectorItem, bagGui));
+
+        // Both of these live in a fixed hotbar slot and are handed back for
+        // free if lost, so they're worth nothing - but the listeners above
+        // only stop vanilla item movement. Anything that moves items itself
+        // (trading, listing on the Auction House) has to be told separately,
+        // or it happily swallows a compass the player can never get back
+        // out of it.
+        core.getBoundItemRegistry().register(selectorItem::isPackSelector);
+        core.getBoundItemRegistry().register(bagSelectorItem::isBagSelector);
 
         // /merchant (PacksCommand, opens packShopGui) is deliberately NOT
         // registered - it's the old pre-Store-hub Pack Shop system. Kept
