@@ -71,20 +71,47 @@ public final class EnchantGui {
             }
         });
         builder.editableSlots(IntStream.range(0, unlocked).map(i -> SLOT_POSITIONS[i]));
-        builder.onEditableSlotChange(this::onSlotsChanged);
+
+        // The slots hold books regenerated from the profile, so the profile
+        // has to be reconciled against them before this screen can go away -
+        // by EITHER route out, whichever happens first. Reconciling only from
+        // the deferred slot-change callback was a duplication bug: taking a
+        // book out and closing in the same tick meant the callback found the
+        // screen gone and returned, leaving the book still recorded in the
+        // profile while the real one sat in the player's inventory, ready to
+        // be regenerated on the next open.
+        Gui[] self = new Gui[1];
+        boolean[] reconciled = {false};
+
+        builder.onEditableSlotChange(clicker -> {
+            // Identity, not "some Gui": a deferred callback landing after the
+            // player moved to another screen would otherwise read THAT
+            // screen's slots by raw index and act on them.
+            if (reconciled[0] || clicker.getOpenInventory().getTopInventory().getHolder() != self[0]) {
+                return;
+            }
+            reconciled[0] = true;
+            reconcile(clicker, self[0]);
+            open(clicker);
+        });
 
         builder.item(INFO_SLOT, buildSummaryIcon(profile));
         builder.item(CLOSE_SLOT, GuiIcons.closeButton(), (clicker, e) -> clicker.closeInventory());
 
         Gui gui = builder.build();
+        self[0] = gui;
+        gui.setCloseHandler(clicker -> {
+            if (reconciled[0]) {
+                return;
+            }
+            reconciled[0] = true;
+            reconcile(clicker, gui);
+        });
         guiManager.open(player, gui);
     }
 
     /** Reads back whatever's actually sitting in each unlocked slot, re-encodes it onto the profile, and bounces anything that isn't a real enchant book. */
-    private void onSlotsChanged(Player player) {
-        if (!(player.getOpenInventory().getTopInventory().getHolder() instanceof Gui gui)) {
-            return;
-        }
+    private void reconcile(Player player, Gui gui) {
         PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
         int unlocked = service.totalSlots(profile);
         Inventory top = gui.getInventory();
@@ -105,7 +132,6 @@ public final class EnchantGui {
             }
         }
         store.save(player.getUniqueId());
-        open(player);
     }
 
     private void giveOrDrop(Player player, ItemStack item) {

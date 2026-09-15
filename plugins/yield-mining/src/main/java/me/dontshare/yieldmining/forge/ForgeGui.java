@@ -124,6 +124,10 @@ public final class ForgeGui {
         for (int slot : INPUT_SLOTS) {
             ItemStack item = top.getItem(slot);
             if (item != null && !item.getType().isAir()) {
+                // Cleared as well as handed back - this Gui instance outlives
+                // the close, so leaving the ore in place would hand out a
+                // second copy of the whole grid if it were ever reopened.
+                top.setItem(slot, null);
                 giveOrDrop(player, item);
             }
         }

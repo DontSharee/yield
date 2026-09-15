@@ -168,6 +168,14 @@ public final class YieldCore extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        // Hands back anything still sitting in a screen's editable slots
+        // (the Forge grid, a candy part-way through being applied). Plugins
+        // are disabled before players are kicked and saved, so the close
+        // events a shutdown eventually fires arrive with no listener left -
+        // without this, a restart or /reload destroys those items outright.
+        if (guiManager != null) {
+            guiManager.closeAll();
+        }
         // Async tasks aren't guaranteed to finish during shutdown, so the
         // final save has to block rather than rely on the normal async path.
         if (playerProfileManager != null) {

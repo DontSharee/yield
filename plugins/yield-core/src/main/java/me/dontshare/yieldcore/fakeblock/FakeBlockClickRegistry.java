@@ -10,6 +10,9 @@ import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPl
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 
@@ -61,10 +64,21 @@ public final class FakeBlockClickRegistry {
     // not this constant, is meant to be the real limit on reach.
     private static final double RAYCAST_RANGE = 512.0;
 
-    private record Key(UUID playerId, String world, int x, int y, int z) {
+    private record Key(String world, int x, int y, int z) {
     }
 
-    private static final Map<Key, Consumer<Player>> handlers = new ConcurrentHashMap<>();
+    /**
+     * Keyed by player first, so a swing only ever examines that player's own
+     * handful of fake blocks.
+     * <p>
+     * This used to be one flat map of every fake block on the server, with
+     * the per-player check made inside the scan loop - so every arm-swing
+     * from every player walked every other player's registrations. In a game
+     * where players hold left-click continuously that is the hottest path in
+     * the codebase, and it grew with the square of the player count: a zone
+     * wall alone registers one entry per block of its volume, per player.
+     */
+    private static final Map<UUID, Map<Key, Consumer<Player>>> handlers = new ConcurrentHashMap<>();
 
     private FakeBlockClickRegistry() {
     }
@@ -85,10 +99,15 @@ public final class FakeBlockClickRegistry {
                 if (!(event.getPlayer() instanceof Player player)) {
                     return;
                 }
-                // Field reads above are cheap wrapper deserialization, safe
-                // off-thread - but the raycast itself calls live Bukkit API
-                // (player location/world), so that (and the handler call)
-                // are deferred to the main thread like every other packet
+                // Nearly every swing on the server comes from someone with no
+                // fake blocks registered at all. Checking that here, off the
+                // main thread, keeps those from each costing a scheduled task.
+                if (!handlers.containsKey(player.getUniqueId())) {
+                    return;
+                }
+                // The raycast itself calls live Bukkit API (player
+                // location/world), so that (and the handler call) are
+                // deferred to the main thread like every other packet
                 // handler in this codebase.
                 Bukkit.getScheduler().runTask(plugin, () -> handleSwing(player));
             }
@@ -97,35 +116,53 @@ public final class FakeBlockClickRegistry {
                 if (!(event.getPlayer() instanceof Player player)) {
                     return;
                 }
+                Map<Key, Consumer<Player>> own = handlers.get(player.getUniqueId());
+                if (own == null) {
+                    return;
+                }
                 Vector3i pos = new WrapperPlayClientPlayerBlockPlacement(event).getBlockPosition();
-                if (handlers.containsKey(new Key(player.getUniqueId(), player.getWorld().getName(), pos.x, pos.y, pos.z))) {
+                if (own.containsKey(new Key(player.getWorld().getName(), pos.x, pos.y, pos.z))) {
                     event.setCancelled(true);
                 }
             }
         });
+
+        // Nothing guarantees a caller unregisters everything before a player
+        // leaves, and a stale entry would otherwise be kept alive forever by
+        // this static map, along with the Consumer's captured state.
+        Bukkit.getPluginManager().registerEvents(new Listener() {
+            @EventHandler
+            public void onQuit(PlayerQuitEvent event) {
+                handlers.remove(event.getPlayer().getUniqueId());
+            }
+        }, plugin);
     }
 
     private static void handleSwing(Player player) {
-        Key hit = raycast(player);
+        Map<Key, Consumer<Player>> own = handlers.get(player.getUniqueId());
+        if (own == null || own.isEmpty()) {
+            return;
+        }
+        Key hit = raycast(player, own);
         if (hit == null) {
             return;
         }
-        Consumer<Player> handler = handlers.get(hit);
+        Consumer<Player> handler = own.get(hit);
         if (handler != null) {
             handler.accept(player);
         }
     }
 
     /** The closest fake block registered to {@code player} that their current look direction intersects within {@link #RAYCAST_RANGE}, or null. */
-    private static Key raycast(Player player) {
+    private static Key raycast(Player player, Map<Key, Consumer<Player>> own) {
         Location eye = player.getEyeLocation();
         Vector direction = eye.getDirection();
         String worldName = eye.getWorld().getName();
 
         Key closest = null;
         double closestDistance = Double.MAX_VALUE;
-        for (Key key : handlers.keySet()) {
-            if (!key.playerId().equals(player.getUniqueId()) || !key.world().equals(worldName)) {
+        for (Key key : own.keySet()) {
+            if (!key.world().equals(worldName)) {
                 continue;
             }
             Double distance = intersectDistance(eye, direction, key);
@@ -177,15 +214,21 @@ public final class FakeBlockClickRegistry {
 
     /** Registers a callback for {@code player} left-clicking the fake block at {@code location} - call {@link #unregister} once it's gone. */
     public static void register(Player player, Location location, Consumer<Player> onClick) {
-        handlers.put(keyFor(player, location), onClick);
+        handlers.computeIfAbsent(player.getUniqueId(), ignored -> new ConcurrentHashMap<>())
+                .put(keyFor(location), onClick);
     }
 
     public static void unregister(Player player, Location location) {
-        handlers.remove(keyFor(player, location));
+        handlers.computeIfPresent(player.getUniqueId(), (ignored, own) -> {
+            own.remove(keyFor(location));
+            // Dropping the empty map keeps the fast "has this player got
+            // anything at all" check in onSwing meaningful.
+            return own.isEmpty() ? null : own;
+        });
     }
 
-    private static Key keyFor(Player player, Location location) {
-        return new Key(player.getUniqueId(), location.getWorld().getName(),
+    private static Key keyFor(Location location) {
+        return new Key(location.getWorld().getName(),
                 location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 }

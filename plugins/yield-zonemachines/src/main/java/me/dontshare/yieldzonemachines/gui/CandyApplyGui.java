@@ -48,22 +48,47 @@ public final class CandyApplyGui {
 
     public void open(Player player) {
         var builder = Gui.builder(3, "Candy Apply");
-        builder.fill(IntStream.range(0, 27), GuiIcons.filler());
+        // CANDY_SLOT is left genuinely empty - same as every other real
+        // drag-and-drop input slot in the game (Forge, Enchants) - so it has
+        // to be excluded from the filler pass rather than just declared
+        // editable afterwards, which would leave a pane sitting in it.
+        builder.fill(IntStream.range(0, 27).filter(slot -> slot != CANDY_SLOT), GuiIcons.filler());
         builder.item(4, hintIcon());
-        // CANDY_SLOT itself is left genuinely empty (no item set) - same as
-        // every other real drag-and-drop input slot in the game (Forge,
-        // Enchants) - a pre-placed icon there would just be one more thing
-        // the player has to displace before they can actually drop a candy in.
         builder.editableSlots(IntStream.of(CANDY_SLOT));
-        builder.onEditableSlotChange(this::onSlotChanged);
+
+        Gui[] self = new Gui[1];
+        // Identity, not "some Gui": a deferred callback landing after the
+        // player moved to another screen would otherwise read that screen's
+        // slot 13 and act on whatever it found there.
+        builder.onEditableSlotChange(clicker -> {
+            if (clicker.getOpenInventory().getTopInventory().getHolder() == self[0]) {
+                onSlotChanged(clicker, self[0]);
+            }
+        });
         builder.item(CLOSE_SLOT, GuiIcons.closeButton(), (clicker, e) -> clicker.closeInventory());
-        guiManager.open(player, builder.build());
+
+        Gui gui = builder.build();
+        self[0] = gui;
+        // Slot 13 holds the player's own real candy. Without this, closing
+        // the screen with any of the stack left simply destroyed it - the
+        // normal outcome of feeding one candy from a stack, not an edge case.
+        gui.setCloseHandler(clicker -> returnCandy(clicker, gui));
+        guiManager.open(player, gui);
     }
 
-    private void onSlotChanged(Player player) {
-        if (!(player.getOpenInventory().getTopInventory().getHolder() instanceof Gui gui)) {
+    private void returnCandy(Player player, Gui gui) {
+        ItemStack remaining = gui.getInventory().getItem(CANDY_SLOT);
+        if (remaining == null || remaining.getType().isAir()) {
             return;
         }
+        // Cleared as well as handed back: the Gui instance outlives this
+        // close, and returning from a slot that still holds the stack would
+        // hand it over twice if it were ever reopened.
+        gui.getInventory().setItem(CANDY_SLOT, null);
+        giveOrDrop(player, remaining);
+    }
+
+    private void onSlotChanged(Player player, Gui gui) {
         Inventory top = gui.getInventory();
         ItemStack current = top.getItem(CANDY_SLOT);
         if (current == null || current.getType().isAir()) {

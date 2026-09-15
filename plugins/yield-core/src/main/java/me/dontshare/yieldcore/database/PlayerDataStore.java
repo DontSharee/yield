@@ -1,6 +1,5 @@
 package me.dontshare.yieldcore.database;
 
-import com.mongodb.client.ClientSession;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
@@ -8,13 +7,16 @@ import com.mongodb.client.model.Updates;
 import com.mongodb.client.model.UpdateOptions;
 import org.bson.BsonDocument;
 import org.bson.BsonDocumentReader;
+import org.bson.BsonDocumentWriter;
 import org.bson.Document;
 import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
+import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -62,6 +64,11 @@ public final class PlayerDataStore<T extends PlayerRecord> {
 
     private final Map<UUID, T> cache = new ConcurrentHashMap<>();
     private final Map<UUID, CompletableFuture<Void>> pendingSaves = new ConcurrentHashMap<>();
+    /** Hash of each player's last successfully written document - lets an unchanged autosave skip the write entirely. */
+    private final Map<UUID, Integer> lastWrittenHash = new ConcurrentHashMap<>();
+    /** Players still to be visited in the current autosave sweep - see {@link #startAutoSave}. */
+    private final ArrayDeque<UUID> autoSaveQueue = new ArrayDeque<>();
+    private int autoSaveBudget = 1;
     private Function<Document, Document> rawMigration = document -> document;
 
     /**
@@ -135,15 +142,49 @@ public final class PlayerDataStore<T extends PlayerRecord> {
         return record;
     }
 
-    /** Async save of the currently cached value. No-op if nothing is cached for this player. */
+    /**
+     * Async save of the currently cached value. No-op if nothing is cached
+     * for this player.
+     * <p>
+     * MAIN THREAD ONLY. The record is serialized here, on the caller's
+     * thread, and only the finished document is handed to the database - see
+     * {@link #encode}.
+     */
     public CompletableFuture<Void> save(UUID playerId) {
+        return write(playerId, true);
+    }
+
+    /**
+     * Serializes the cached record and writes it, skipping the round-trip
+     * entirely when nothing has changed since the last write unless
+     * {@code force} is set.
+     */
+    private CompletableFuture<Void> write(UUID playerId, boolean force) {
         T record = cache.get(playerId);
         if (record == null) {
             return CompletableFuture.completedFuture(null);
         }
 
+        BsonDocument encoded;
+        try {
+            encoded = encode(record);
+        } catch (RuntimeException e) {
+            logger.log(Level.SEVERE, "Failed to serialize player data for " + playerId, e);
+            return CompletableFuture.failedFuture(e);
+        }
+
+        // An idle player's document is byte-identical cycle after cycle, and
+        // a MAJORITY-acknowledged write is far more expensive than the
+        // comparison that avoids it. A forced save (quit, shutdown) always
+        // writes, so nothing durable can rest on this check being right.
+        Integer previous = lastWrittenHash.get(playerId);
+        int current = encoded.hashCode();
+        if (!force && previous != null && previous == current) {
+            return CompletableFuture.completedFuture(null);
+        }
+
         CompletableFuture<Void> future = databaseManager.supplyAsync(() -> {
-            collection.updateOne(Filters.eq("_id", playerId), Updates.set(fieldKey, record), new UpdateOptions().upsert(true));
+            collection.updateOne(Filters.eq("_id", playerId), Updates.set(fieldKey, encoded), new UpdateOptions().upsert(true));
             return null;
         });
 
@@ -151,27 +192,33 @@ public final class PlayerDataStore<T extends PlayerRecord> {
         future.whenComplete((ignored, error) -> {
             pendingSaves.remove(playerId, future);
             if (error != null) {
+                lastWrittenHash.remove(playerId);
                 logger.log(Level.SEVERE, "Failed to save player data for " + playerId, error);
+            } else {
+                lastWrittenHash.put(playerId, current);
             }
         });
         return future;
     }
 
     /**
-     * Same write {@link #save} performs, but participates in the caller's
-     * {@link ClientSession}/transaction instead of committing on its own -
-     * see {@link DatabaseManager#withTransaction}. BLOCKING, and must only
-     * ever be called from inside that transaction's own work function (never
-     * the main thread, never outside a transaction - use {@link #save} for
-     * a normal, single-document write). A no-op if nothing is cached for
-     * this player.
+     * Turns the live record into a standalone document.
+     * <p>
+     * This is the whole reason saving is structured the way it is. Handing
+     * the record itself to a database thread means the POJO codec walks its
+     * {@code List}/{@code Map} fields there, while the main thread is free to
+     * be adding a rolled pet or removing fused ones at that exact moment -
+     * a {@link java.util.ConcurrentModificationException} that surfaces only
+     * as a logged failure, i.e. a silently dropped save. Encoding on the
+     * calling thread means the document handed over is already a finished,
+     * immutable snapshot that no later mutation can disturb.
      */
-    public void saveWithSession(UUID playerId, ClientSession session) {
-        T record = cache.get(playerId);
-        if (record == null) {
-            return;
+    private BsonDocument encode(T record) {
+        BsonDocument document = new BsonDocument();
+        try (BsonDocumentWriter writer = new BsonDocumentWriter(document)) {
+            codecRegistry.get(type).encode(writer, record, EncoderContext.builder().build());
         }
-        collection.updateOne(session, Filters.eq("_id", playerId), Updates.set(fieldKey, record), new UpdateOptions().upsert(true));
+        return document;
     }
 
     /**
@@ -185,7 +232,7 @@ public final class PlayerDataStore<T extends PlayerRecord> {
             return;
         }
         try {
-            collection.updateOne(Filters.eq("_id", playerId), Updates.set(fieldKey, record), new UpdateOptions().upsert(true));
+            collection.updateOne(Filters.eq("_id", playerId), Updates.set(fieldKey, encode(record)), new UpdateOptions().upsert(true));
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Failed to save player data for " + playerId + " during shutdown", e);
         }
@@ -201,6 +248,7 @@ public final class PlayerDataStore<T extends PlayerRecord> {
     /** Drops a player from the in-memory cache. Call after {@link #save} on quit. */
     public void unload(UUID playerId) {
         cache.remove(playerId);
+        lastWrittenHash.remove(playerId);
     }
 
     /**
@@ -209,18 +257,36 @@ public final class PlayerDataStore<T extends PlayerRecord> {
      * worth of changes - a hard crash fires no events at all, so this is
      * the only thing that protects against it.
      * <p>
-     * The initial delay is jittered up to {@code intervalTicks} so that
-     * multiple stores (one per plugin, all typically started around server
-     * boot) don't all land on the same tick every cycle - that would turn a
-     * routine autosave into a periodic burst of every plugin's saves at once.
+     * Runs on the main thread, and deliberately so: serializing a record is
+     * only safe on the thread that mutates it (see {@link #encode}). To keep
+     * that off the tick budget it sweeps rather than bursts - each second it
+     * visits only the slice of cached players needed to get through all of
+     * them once per {@code intervalTicks}, instead of serializing everyone
+     * on one tick. Combined with the unchanged-document check in
+     * {@link #write}, a server full of idle players costs almost nothing.
+     * <p>
+     * The initial delay is jittered so that multiple stores (one per plugin,
+     * all typically started around server boot) don't land on the same tick.
      */
     public void startAutoSave(JavaPlugin plugin, long intervalTicks) {
-        long initialDelay = ThreadLocalRandom.current().nextLong(intervalTicks);
-        Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> {
-            for (UUID playerId : cache.keySet()) {
-                save(playerId);
+        long step = 20L;
+        int slices = (int) Math.max(1, intervalTicks / step);
+        long initialDelay = ThreadLocalRandom.current().nextLong(step);
+        Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            if (autoSaveQueue.isEmpty()) {
+                autoSaveQueue.addAll(cache.keySet());
+                autoSaveBudget = Math.max(1, (autoSaveQueue.size() + slices - 1) / slices);
             }
-        }, initialDelay, intervalTicks);
+            for (int i = 0; i < autoSaveBudget; i++) {
+                UUID playerId = autoSaveQueue.poll();
+                if (playerId == null) {
+                    break;
+                }
+                if (cache.containsKey(playerId)) {
+                    write(playerId, false);
+                }
+            }
+        }, initialDelay, step);
     }
 
     private T fetchOrDefault(UUID playerId) {

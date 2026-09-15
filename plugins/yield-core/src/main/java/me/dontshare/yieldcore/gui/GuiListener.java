@@ -5,6 +5,7 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
@@ -56,6 +57,17 @@ public final class GuiListener implements Listener {
             return;
         }
         boolean clickedTop = event.getClickedInventory() == event.getView().getTopInventory();
+
+        // "Collect to cursor" (double-click) is the one vanilla action that
+        // ignores which slots a screen considers its own: it sweeps every
+        // matching stack out of BOTH inventories, including the locked
+        // button/filler slots this listener otherwise guarantees are
+        // untouchable. Refused outright for any Gui, editable slots included -
+        // there is no version of it a screen here wants.
+        if (event.getAction() == InventoryAction.COLLECT_TO_CURSOR) {
+            event.setCancelled(true);
+            return;
+        }
 
         if (clickedTop && gui.hasEditableSlots() && gui.isEditableSlot(event.getSlot())) {
             notifyNextTick(gui, event.getWhoClicked());

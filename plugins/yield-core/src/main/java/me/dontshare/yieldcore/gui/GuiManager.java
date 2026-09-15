@@ -1,8 +1,10 @@
 package me.dontshare.yieldcore.gui;
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -36,5 +38,26 @@ public final class GuiManager {
 
     void forget(UUID playerId) {
         current.remove(playerId);
+    }
+
+    /**
+     * Closes every open screen, running each one's close handler.
+     * <p>
+     * Call this from {@code onDisable}. Plugins are disabled before players
+     * are kicked and saved, so the {@code InventoryCloseEvent} a shutdown
+     * eventually produces arrives with no listener left to hear it - which
+     * means a screen holding real player items in editable slots (the Forge
+     * grid, a candy being applied) would simply destroy them on every
+     * restart and every {@code /reload}.
+     */
+    public void closeAll() {
+        for (UUID playerId : Set.copyOf(current.keySet())) {
+            Player player = Bukkit.getPlayer(playerId);
+            if (player != null) {
+                player.closeInventory();
+            }
+        }
+        current.clear();
+        previous.clear();
     }
 }

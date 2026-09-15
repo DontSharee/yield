@@ -406,6 +406,14 @@ public final class YieldPacks extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        // Before the store is flushed, not after: a screen like the Enchants
+        // menu reconciles the profile from its slots as it closes, and
+        // plugins are disabled well before players are kicked, so that close
+        // would otherwise never happen on a restart or /reload.
+        YieldCore core = JavaPlugin.getPlugin(YieldCore.class);
+        if (core.getGuiManager() != null) {
+            core.getGuiManager().closeAll();
+        }
         if (petDisplayService != null) {
             petDisplayService.shutdown();
         }
