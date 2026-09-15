@@ -70,6 +70,8 @@ public final class PackStationDisplay {
 
     private volatile List<PackStation> stations = List.of();
     private final Map<PackStation, Set<UUID>> viewersByStation = new ConcurrentHashMap<>();
+    /** What each viewer was last actually shown per station, so an unchanged sign costs nothing - see {@link #refreshFor}. */
+    private final Map<UUID, Map<PackStation, String>> lastRenderState = new ConcurrentHashMap<>();
 
     public PackStationDisplay(JavaPlugin plugin, YieldPacks packs, PackStationService stationService) {
         this.plugin = plugin;
@@ -161,9 +163,23 @@ public final class PackStationDisplay {
         if (viewers == null || !viewers.contains(viewer.getUniqueId())) {
             return;
         }
+        // Everything shown here is derived from which pack the station is
+        // currently selling and whether this viewer can afford it, and this
+        // runs for every in-range viewer of every station once a second.
+        // Rebuilding regardless meant a MiniMessage parse and two packets per
+        // viewer per station to redraw exactly what was already on screen.
+        boolean canAfford = stationService.canAfford(viewer, station);
+        String state = stationService.currentPackId(station) + "|" + canAfford;
+        Map<PackStation, String> perStation =
+                lastRenderState.computeIfAbsent(viewer.getUniqueId(), id -> new ConcurrentHashMap<>());
+        if (state.equals(perStation.get(station))) {
+            return;
+        }
+        perStation.put(station, state);
+
         TextDisplayManager.setText(viewer, station.textEntityId(), buildText(viewer, station));
-        Material color = stationService.canAfford(viewer, station) ? Material.LIME_CONCRETE : Material.RED_CONCRETE;
-        BlockDisplayManager.setBlockState(viewer, station.buttonEntityId(), color);
+        BlockDisplayManager.setBlockState(viewer, station.buttonEntityId(),
+                canAfford ? Material.LIME_CONCRETE : Material.RED_CONCRETE);
     }
 
     private void playPushAnimation(Player viewer, PackStation station) {
@@ -216,6 +232,12 @@ public final class PackStationDisplay {
     }
 
     private void despawnFor(Player viewer, PackStation station) {
+        // Forgotten so a later respawn redraws rather than matching a state
+        // this viewer can no longer see.
+        Map<PackStation, String> perStation = lastRenderState.get(viewer.getUniqueId());
+        if (perStation != null) {
+            perStation.remove(station);
+        }
         PacketEntityManager.destroyEntity(viewer, station.hitboxEntityId());
         PacketEntityManager.destroyEntity(viewer, station.buttonEntityId());
         PacketEntityManager.destroyEntity(viewer, station.wallEntityId());

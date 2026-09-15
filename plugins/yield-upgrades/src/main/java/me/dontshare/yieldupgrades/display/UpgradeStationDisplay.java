@@ -68,6 +68,8 @@ public final class UpgradeStationDisplay {
 
     private volatile List<UpgradeStation> stations = List.of();
     private final Map<UpgradeStation, Set<UUID>> viewersByStation = new ConcurrentHashMap<>();
+    /** Button colour each viewer was last actually sent per station - see {@link #updateColor}. */
+    private final Map<UUID, Map<UpgradeStation, Material>> lastButtonColor = new ConcurrentHashMap<>();
 
     public UpgradeStationDisplay(JavaPlugin plugin, YieldPacks packs, UpgradeService upgradeService, Consumer<Player> onUpgradeSuccess) {
         this.plugin = plugin;
@@ -177,6 +179,13 @@ public final class UpgradeStationDisplay {
     /** Lime if this viewer could press it right now (affordable, not capped, zone unlocked), red otherwise. */
     private void updateColor(Player viewer, UpgradeStation station) {
         Material color = upgradeService.canAfford(viewer, station) ? Material.LIME_CONCRETE : Material.RED_CONCRETE;
+        // Re-checked every tick because coins earned elsewhere can flip it,
+        // but a button that is already the right colour doesn't need telling.
+        Map<UpgradeStation, Material> perStation =
+                lastButtonColor.computeIfAbsent(viewer.getUniqueId(), id -> new ConcurrentHashMap<>());
+        if (color == perStation.put(station, color)) {
+            return;
+        }
         BlockDisplayManager.setBlockState(viewer, station.buttonEntityId(), color);
     }
 
@@ -250,6 +259,10 @@ public final class UpgradeStationDisplay {
     }
 
     private void despawnFor(Player viewer, UpgradeStation station) {
+        Map<UpgradeStation, Material> perStation = lastButtonColor.get(viewer.getUniqueId());
+        if (perStation != null) {
+            perStation.remove(station);
+        }
         PacketEntityManager.destroyEntity(viewer, station.hitboxEntityId());
         PacketEntityManager.destroyEntity(viewer, station.buttonEntityId());
         PacketEntityManager.destroyEntity(viewer, station.wallEntityId());

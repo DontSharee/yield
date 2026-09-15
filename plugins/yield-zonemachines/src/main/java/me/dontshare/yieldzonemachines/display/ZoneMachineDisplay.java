@@ -71,6 +71,8 @@ public final class ZoneMachineDisplay {
 
     private volatile List<ZoneMachine> machines = List.of();
     private final Map<ZoneMachine, Set<UUID>> viewersByMachine = new ConcurrentHashMap<>();
+    /** What each viewer was last actually sent per machine - see {@link #refreshFor}. */
+    private final Map<UUID, Map<ZoneMachine, Rendered>> lastRendered = new ConcurrentHashMap<>();
 
     public ZoneMachineDisplay(JavaPlugin plugin, YieldPacks packs, RebirthService rebirthService,
                                ZoneMachineService machineService, CandyApplyGui candyApplyGui) {
@@ -195,9 +197,24 @@ public final class ZoneMachineDisplay {
         if (viewers == null || !viewers.contains(viewer.getUniqueId())) {
             return;
         }
-        TextDisplayManager.setText(viewer, machine.textEntityId(), buildText(viewer, machine));
+        // Runs for every in-range viewer of every machine once a second, and
+        // a rebirth readout only actually changes when the player's coins
+        // cross a threshold - so the two packets go out when what they carry
+        // differs from what this viewer was last sent, not on every pass.
+        Component text = buildText(viewer, machine);
         Material color = machineService.canUse(viewer, machine) ? Material.LIME_CONCRETE : Material.RED_CONCRETE;
+        Rendered previous = lastRendered
+                .computeIfAbsent(viewer.getUniqueId(), id -> new ConcurrentHashMap<>())
+                .put(machine, new Rendered(text, color));
+        if (previous != null && previous.color() == color && previous.text().equals(text)) {
+            return;
+        }
+        TextDisplayManager.setText(viewer, machine.textEntityId(), text);
         BlockDisplayManager.setBlockState(viewer, machine.buttonEntityId(), color);
+    }
+
+    /** What one viewer was last actually shown for one machine. */
+    private record Rendered(Component text, Material color) {
     }
 
     private void playPushAnimation(Player viewer, ZoneMachine machine) {
@@ -255,6 +272,10 @@ public final class ZoneMachineDisplay {
     }
 
     private void despawnFor(Player viewer, ZoneMachine machine) {
+        Map<ZoneMachine, Rendered> perMachine = lastRendered.get(viewer.getUniqueId());
+        if (perMachine != null) {
+            perMachine.remove(machine);
+        }
         PacketEntityManager.destroyEntity(viewer, machine.hitboxEntityId());
         PacketEntityManager.destroyEntity(viewer, machine.buttonEntityId());
         PacketEntityManager.destroyEntity(viewer, machine.wallEntityId());
