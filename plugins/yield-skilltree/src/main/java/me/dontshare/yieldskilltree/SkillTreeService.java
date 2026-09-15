@@ -2,6 +2,7 @@ package me.dontshare.yieldskilltree;
 
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
+import me.dontshare.yieldskilltree.data.SkillTreeProfile;
 import me.dontshare.yieldskilltree.data.NodeType;
 import me.dontshare.yieldskilltree.data.SkillNode;
 import me.dontshare.yieldskilltree.data.SkillTree;
@@ -30,6 +31,8 @@ public final class SkillTreeService {
 
     private final Supplier<Map<String, SkillTree>> trees;
     private final PlayerDataStore<PackPlayerProfile> store;
+    /** This plugin's own node levels. The pack store above stays for the currency a node costs. */
+    private final PlayerDataStore<SkillTreeProfile> skillStore;
 
     /**
      * A formula's result only depends on (nodeId, kind, level) - never on
@@ -40,9 +43,11 @@ public final class SkillTreeService {
      */
     private final Map<String, Double> formulaCache = new ConcurrentHashMap<>();
 
-    public SkillTreeService(Supplier<Map<String, SkillTree>> trees, PlayerDataStore<PackPlayerProfile> store) {
+    public SkillTreeService(Supplier<Map<String, SkillTree>> trees, PlayerDataStore<PackPlayerProfile> store,
+                             PlayerDataStore<SkillTreeProfile> skillStore) {
         this.trees = trees;
         this.store = store;
+        this.skillStore = skillStore;
     }
 
     /** Call after a content reload - a formula string may have changed under the same (nodeId, level) key. */
@@ -50,8 +55,9 @@ public final class SkillTreeService {
         formulaCache.clear();
     }
 
+    /** Takes the pack profile purely as a player handle - the levels themselves are this plugin's own. */
     public int levelOf(PackPlayerProfile profile, String nodeId) {
-        return profile.getSkillTreeLevels().getOrDefault(nodeId, 0);
+        return skillStore.getOrCreate(profile.getPlayerId()).getLevels().getOrDefault(nodeId, 0);
     }
 
     /** Every id in {@code node.requires()} must be owned (level >= 1) first. */
@@ -104,8 +110,9 @@ public final class SkillTreeService {
             return BuyResult.NO_FUNDS;
         }
         tree.currency().setBalance(profile, balance.subtract(toBigInteger(cost)));
-        profile.getSkillTreeLevels().merge(nodeId, 1, Integer::sum);
+        skillStore.getOrCreate(player.getUniqueId()).getLevels().merge(nodeId, 1, Integer::sum);
         store.save(player.getUniqueId());
+        skillStore.save(player.getUniqueId());
         Bukkit.getPluginManager().callEvent(new SkillNodeBoughtEvent(player, treeId, nodeId, level + 1));
         return BuyResult.BOUGHT;
     }
@@ -158,6 +165,7 @@ public final class SkillTreeService {
         }
         if (bought > 0) {
             store.save(player.getUniqueId());
+            skillStore.save(player.getUniqueId());
         }
         return bought;
     }
@@ -185,7 +193,7 @@ public final class SkillTreeService {
                 break;
             }
             tree.currency().setBalance(profile, balance.subtract(bigCost));
-            profile.getSkillTreeLevels().merge(node.id(), 1, Integer::sum);
+            skillStore.getOrCreate(profile.getPlayerId()).getLevels().merge(node.id(), 1, Integer::sum);
             bought++;
         }
         return bought;

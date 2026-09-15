@@ -1,4 +1,4 @@
-version = "0.0.14"
+version = "0.1.0"
 
 dependencies {
     compileOnly(project(":yield-core"))
@@ -8,4 +8,6 @@ dependencies {
     // small, dependency-free, safe to shade into this plugin's own jar
     // (nothing else on the server needs it).
     implementation("net.objecthunter:exp4j:0.4.8")
+    // For the @BsonId annotation on this plugin's own SkillTreeProfile.
+    compileOnly("org.mongodb:mongodb-driver-sync:5.10.0")
 }

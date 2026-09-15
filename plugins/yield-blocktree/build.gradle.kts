@@ -1,4 +1,4 @@
-version = "0.1.5"
+version = "0.2.0"
 
 dependencies {
     // Not transitive from yield-packs'/yield-zones' own compileOnly
@@ -8,4 +8,6 @@ dependencies {
     compileOnly(project(":yield-core"))
     compileOnly(project(":yield-packs"))
     compileOnly(project(":yield-zones"))
+    // For the @BsonId annotation on this plugin's own BlockTreeProfile.
+    compileOnly("org.mongodb:mongodb-driver-sync:5.10.0")
 }

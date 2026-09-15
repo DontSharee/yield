@@ -67,7 +67,6 @@ public final class PackPlayerProfile implements PlayerRecord {
     private Map<String, String> selectedQuestDifficultyByCategory = new HashMap<>();
     private int prestiges;
     private BigInteger prestigePoints = BigInteger.ZERO;
-    private Map<String, Integer> skillTreeLevels = new HashMap<>();
     private boolean autoFuseEnabled;
     /** True once this player has been shown (or auto-defaulted through) the first-join starter pet choice - see StarterPetService. */
     private boolean starterPetGranted;
@@ -98,16 +97,6 @@ public final class PackPlayerProfile implements PlayerRecord {
     // tiers complete-but-unclaimed at once if progress jumped past more
     // than one threshold, and each needs claiming independently.
     private Set<String> claimedMilestoneKeys = new HashSet<>();
-    // Blocktree (see yield-blocktree) - same idiom as milestoneProgress/
-    // claimedMilestoneKeys above, just keyed by Bukkit Material name instead
-    // of an arbitrary category id.
-    private Map<String, Long> blockTreeProgress = new HashMap<>();
-    private Set<String> claimedBlockTreeTiers = new HashSet<>();
-    // Pickaxe enchants (see yield-mining) - keyed by the enchant's config id
-    // (e.g. "greed"). A missing entry means level/mastery 0, same idiom as
-    // blockTreeProgress's own "absent = 0" convention. pickaxeEnchantDisabled
-    // is a player-toggled "don't roll this one" preference, not a lock -
-    // disenchanting instead removes/refunds the level entirely.
     private Map<String, Integer> pickaxeEnchantLevels = new HashMap<>();
     private Map<String, Integer> pickaxeEnchantMastery = new HashMap<>();
     private Set<String> pickaxeEnchantDisabled = new HashSet<>();
@@ -485,15 +474,6 @@ public final class PackPlayerProfile implements PlayerRecord {
         this.prestigePoints = prestigePoints;
     }
 
-    /** Skill tree node id -> level, one flat namespace shared by every tree (node ids are unique tree-wide). */
-    public Map<String, Integer> getSkillTreeLevels() {
-        return skillTreeLevels;
-    }
-
-    public void setSkillTreeLevels(Map<String, Integer> skillTreeLevels) {
-        this.skillTreeLevels = skillTreeLevels;
-    }
-
     /** Whether AutoFuseService should keep auto-fusing everything fusable for this player - requires the "yieldpacks.autofuse" permission to actually run, checked every tick, not just at toggle time. */
     public boolean isAutoFuseEnabled() {
         return autoFuseEnabled;
@@ -604,14 +584,6 @@ public final class PackPlayerProfile implements PlayerRecord {
 
     public Set<String> getClaimedMilestoneKeys() {
         return claimedMilestoneKeys;
-    }
-
-    public Map<String, Long> getBlockTreeProgress() {
-        return blockTreeProgress;
-    }
-
-    public Set<String> getClaimedBlockTreeTiers() {
-        return claimedBlockTreeTiers;
     }
 
     public Map<String, Integer> getPickaxeEnchantLevels() {

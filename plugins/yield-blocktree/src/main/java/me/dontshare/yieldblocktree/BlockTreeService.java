@@ -5,6 +5,7 @@ import me.dontshare.yieldblocktree.data.BlockTreeEffect;
 import me.dontshare.yieldblocktree.data.BlockTreeEffectType;
 import me.dontshare.yieldblocktree.data.BlockTreeTier;
 import me.dontshare.yieldcore.database.PlayerDataStore;
+import me.dontshare.yieldblocktree.data.BlockTreeProfile;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -41,10 +42,14 @@ public final class BlockTreeService {
 
     private final Supplier<Map<Material, BlockTreeDefinition>> content;
     private final PlayerDataStore<PackPlayerProfile> store;
+    /** This plugin's own progress and claims. The pack store above stays for the rewards a claim pays out. */
+    private final PlayerDataStore<BlockTreeProfile> blockStore;
 
-    public BlockTreeService(Supplier<Map<Material, BlockTreeDefinition>> content, PlayerDataStore<PackPlayerProfile> store) {
+    public BlockTreeService(Supplier<Map<Material, BlockTreeDefinition>> content, PlayerDataStore<PackPlayerProfile> store,
+                             PlayerDataStore<BlockTreeProfile> blockStore) {
         this.content = content;
         this.store = store;
+        this.blockStore = blockStore;
     }
 
     /** One rung of a block's tree whose goal was just reached by a single {@link #recordBreak} call - carries its own index (not just the {@link BlockTreeTier} itself) since a caller wanting to name it ("Tier 3 unlocked!") needs that, not just the goal/effects. */
@@ -80,8 +85,9 @@ public final class BlockTreeService {
         long before = progressOf(profile, material);
         long amount = Math.max(1, Math.round(progressMultiplierContribution(profile)));
         long after = before + amount;
-        profile.getBlockTreeProgress().merge(material.name(), amount, Long::sum);
+        blockStore.getOrCreate(profile.getPlayerId()).getProgress().merge(material.name(), amount, Long::sum);
         store.save(player.getUniqueId());
+        blockStore.save(player.getUniqueId());
 
         List<TierCrossed> crossed = new ArrayList<>();
         List<BlockTreeTier> tiers = def.tiers();
@@ -101,11 +107,11 @@ public final class BlockTreeService {
     }
 
     public long progressOf(PackPlayerProfile profile, Material material) {
-        return profile.getBlockTreeProgress().getOrDefault(material.name(), 0L);
+        return blockStore.getOrCreate(profile.getPlayerId()).getProgress().getOrDefault(material.name(), 0L);
     }
 
     public TierState stateOf(PackPlayerProfile profile, Material material, int tierIndex, BlockTreeTier tier) {
-        if (profile.getClaimedBlockTreeTiers().contains(key(material, tierIndex))) {
+        if (blockStore.getOrCreate(profile.getPlayerId()).getClaimedTiers().contains(key(material, tierIndex))) {
             return TierState.CLAIMED;
         }
         if (!previousClaimed(profile, material, tierIndex)) {
@@ -119,7 +125,7 @@ public final class BlockTreeService {
     }
 
     private boolean previousClaimed(PackPlayerProfile profile, Material material, int tierIndex) {
-        return tierIndex == 0 || profile.getClaimedBlockTreeTiers().contains(key(material, tierIndex - 1));
+        return tierIndex == 0 || blockStore.getOrCreate(profile.getPlayerId()).getClaimedTiers().contains(key(material, tierIndex - 1));
     }
 
     public ClaimResult claim(Player player, Material material, int tierIndex) {
@@ -130,7 +136,7 @@ public final class BlockTreeService {
         BlockTreeTier tier = def.tiers().get(tierIndex);
         PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
         String key = key(material, tierIndex);
-        if (profile.getClaimedBlockTreeTiers().contains(key)) {
+        if (blockStore.getOrCreate(profile.getPlayerId()).getClaimedTiers().contains(key)) {
             return ClaimResult.ALREADY_CLAIMED;
         }
         if (!previousClaimed(profile, material, tierIndex)) {
@@ -139,8 +145,9 @@ public final class BlockTreeService {
         if (progressOf(profile, material) < tier.goal()) {
             return ClaimResult.NOT_COMPLETE;
         }
-        profile.getClaimedBlockTreeTiers().add(key);
+        blockStore.getOrCreate(profile.getPlayerId()).getClaimedTiers().add(key);
         store.save(player.getUniqueId());
+        blockStore.save(player.getUniqueId());
         return ClaimResult.SUCCESS;
     }
 
@@ -152,17 +159,18 @@ public final class BlockTreeService {
         }
         PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
         String key = key(material, tierIndex);
-        if (profile.getClaimedBlockTreeTiers().contains(key)) {
+        if (blockStore.getOrCreate(profile.getPlayerId()).getClaimedTiers().contains(key)) {
             return ClaimResult.ALREADY_CLAIMED;
         }
         for (int i = 0; i < tierIndex; i++) {
-            profile.getClaimedBlockTreeTiers().add(key(material, i));
+            blockStore.getOrCreate(profile.getPlayerId()).getClaimedTiers().add(key(material, i));
         }
         long goal = def.tiers().get(tierIndex).goal();
         if (progressOf(profile, material) < goal) {
-            profile.getBlockTreeProgress().put(material.name(), goal);
+            blockStore.getOrCreate(profile.getPlayerId()).getProgress().put(material.name(), goal);
         }
         store.save(player.getUniqueId());
+        blockStore.save(player.getUniqueId());
         return claim(player, material, tierIndex);
     }
 
@@ -248,7 +256,7 @@ public final class BlockTreeService {
         }
         double total = 0.0;
         for (int i = 0; i < def.tiers().size(); i++) {
-            if (!profile.getClaimedBlockTreeTiers().contains(key(material, i))) {
+            if (!blockStore.getOrCreate(profile.getPlayerId()).getClaimedTiers().contains(key(material, i))) {
                 continue;
             }
             for (BlockTreeEffect effect : def.tiers().get(i).effects()) {
@@ -267,7 +275,7 @@ public final class BlockTreeService {
         }
         double total = 0.0;
         for (int i = 0; i < def.tiers().size(); i++) {
-            if (!profile.getClaimedBlockTreeTiers().contains(key(material, i))) {
+            if (!blockStore.getOrCreate(profile.getPlayerId()).getClaimedTiers().contains(key(material, i))) {
                 continue;
             }
             for (BlockTreeEffect effect : def.tiers().get(i).effects()) {

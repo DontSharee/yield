@@ -8,6 +8,9 @@ import me.dontshare.yieldblocktree.gui.BlockTreeCategoryGui;
 import me.dontshare.yieldblocktree.gui.BlockTreeGui;
 import me.dontshare.yieldblocktree.listener.BlockTreeProgressListener;
 import me.dontshare.yieldcore.YieldCore;
+import me.dontshare.yieldcore.database.PlayerDataStore;
+import me.dontshare.yieldcore.database.PlayerStores;
+import me.dontshare.yieldblocktree.data.BlockTreeProfile;
 import me.dontshare.yieldcore.command.CommandManager;
 import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldzones.YieldZones;
@@ -24,6 +27,7 @@ public final class YieldBlockTree extends JavaPlugin {
 
     private BlockTreeContentLoader contentLoader;
     private volatile Map<Material, BlockTreeDefinition> content;
+    private PlayerDataStore<BlockTreeProfile> blockStore;
     private BlockTreeService blockTreeService;
     private BlockTreeFeedback blockTreeFeedback;
 
@@ -35,7 +39,9 @@ public final class YieldBlockTree extends JavaPlugin {
 
         contentLoader = new BlockTreeContentLoader(this, getLogger());
         content = contentLoader.load();
-        blockTreeService = new BlockTreeService(() -> content, packs.getPlayerStore());
+        blockStore = PlayerStores.register(this, core.getListenerManager(), core.getDatabaseManager(),
+                "blocktree", BlockTreeProfile.class, BlockTreeProfile::new, "block tree data");
+        blockTreeService = new BlockTreeService(() -> content, packs.getPlayerStore(), blockStore);
 
         registerProviders(packs, zones);
         blockTreeFeedback = new BlockTreeFeedback(blockTreeService, packs);
@@ -94,5 +100,9 @@ public final class YieldBlockTree extends JavaPlugin {
         zones.getCubeService().registerDiamondChanceBoostProvider(PROVIDER_KEY, blockTreeService::diamondChanceBoost);
         zones.getPetCombatController().registerDoubleHitChanceProvider(PROVIDER_KEY, blockTreeService::doubleHitChance);
         zones.getPetCombatController().registerTripleHitChanceProvider(PROVIDER_KEY, blockTreeService::tripleHitChance);
+    }
+
+    public PlayerDataStore<BlockTreeProfile> getBlockStore() {
+        return blockStore;
     }
 }

@@ -12,6 +12,8 @@ import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import me.dontshare.yieldblocktree.YieldBlockTree;
 import me.dontshare.yieldcore.text.Formatting;
+import me.dontshare.yieldblocktree.data.BlockTreeProfile;
+import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
@@ -65,10 +67,9 @@ public final class BlockTreeAdminCommand {
             ctx.getSource().getSender().sendMessage(Text.parse("<red>Invalid amount.</red>"));
             return Command.SINGLE_SUCCESS;
         }
-        YieldPacks packs = JavaPlugin.getPlugin(YieldPacks.class);
-        PackPlayerProfile profile = packs.getPlayerStore().getOrCreate(target.getUniqueId());
-        profile.getBlockTreeProgress().merge(material.name(), amount, Long::sum);
-        packs.getPlayerStore().save(target.getUniqueId());
+        PlayerDataStore<BlockTreeProfile> store = JavaPlugin.getPlugin(YieldBlockTree.class).getBlockStore();
+        store.getOrCreate(target.getUniqueId()).getProgress().merge(material.name(), amount, Long::sum);
+        store.save(target.getUniqueId());
         ctx.getSource().getSender().sendMessage(Text.parse("<green>Gave " + target.getName() + " +" + amount + " " + material.name() + " breaks.</green>"));
         return Command.SINGLE_SUCCESS;
     }
@@ -79,11 +80,11 @@ public final class BlockTreeAdminCommand {
         if (material == null) {
             return Command.SINGLE_SUCCESS;
         }
-        YieldPacks packs = JavaPlugin.getPlugin(YieldPacks.class);
-        PackPlayerProfile profile = packs.getPlayerStore().getOrCreate(target.getUniqueId());
-        profile.getBlockTreeProgress().remove(material.name());
-        profile.getClaimedBlockTreeTiers().removeIf(k -> k.startsWith(material.name() + ":"));
-        packs.getPlayerStore().save(target.getUniqueId());
+        PlayerDataStore<BlockTreeProfile> store = JavaPlugin.getPlugin(YieldBlockTree.class).getBlockStore();
+        BlockTreeProfile profile = store.getOrCreate(target.getUniqueId());
+        profile.getProgress().remove(material.name());
+        profile.getClaimedTiers().removeIf(k -> k.startsWith(material.name() + ":"));
+        store.save(target.getUniqueId());
         ctx.getSource().getSender().sendMessage(Text.parse("<green>Reset " + target.getName() + "'s " + material.name() + " blocktree progress.</green>"));
         return Command.SINGLE_SUCCESS;
     }
