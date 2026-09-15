@@ -28,6 +28,8 @@ public final class PackSelectorService {
     private final Supplier<PackContentLoader.ContentSnapshot> content;
     private final PackOpenService openService;
     private final PackStorageGui packStorageGui;
+    /** Pack name last written into slot 4 per player - see {@link #refreshItem}. */
+    private final java.util.Map<java.util.UUID, String> lastRenderedPackName = new java.util.concurrent.ConcurrentHashMap<>();
 
     public PackSelectorService(PackSelectorItem item, PlayerDataStore<PackPlayerProfile> store,
                                 Supplier<PackContentLoader.ContentSnapshot> content, PackOpenService openService,
@@ -43,7 +45,7 @@ public final class PackSelectorService {
     public void ensureItem(Player player) {
         if (!item.isPackSelector(player.getInventory().getItem(4))) {
             PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
-            player.getInventory().setItem(4, item.create(selectedPackName(profile)));
+            write(player, selectedPackName(profile));
         }
     }
 
@@ -58,7 +60,21 @@ public final class PackSelectorService {
             return;
         }
         PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
-        player.getInventory().setItem(4, item.create(selectedPackName(profile)));
+        String packName = selectedPackName(profile);
+        // Called on a timer for every player, but the selection changes maybe
+        // once a minute. Rebuilding regardless meant constructing a fresh
+        // ItemStack and meta - seven parsed components - and marking the slot
+        // dirty (so, an inventory packet) every second, per player, to
+        // produce the item that was already there.
+        if (packName.equals(lastRenderedPackName.get(player.getUniqueId()))) {
+            return;
+        }
+        write(player, packName);
+    }
+
+    private void write(Player player, String packName) {
+        lastRenderedPackName.put(player.getUniqueId(), packName);
+        player.getInventory().setItem(4, item.create(packName));
     }
 
     /**

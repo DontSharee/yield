@@ -6,8 +6,10 @@ import me.dontshare.yieldpacks.pet.PetInstance;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -66,21 +68,76 @@ public final class FusionService {
      * without any special-casing there).
      */
     public List<String> fuseAll(PackPlayerProfile profile, int cap) {
+        return cascade(profile, cap, null);
+    }
+
+    /**
+     * The shared sweep behind {@link #fuseAll} and {@link #fuseAllToTier}.
+     * <p>
+     * Driven off a single count of what's fusable rather than re-deriving it
+     * per candidate. Asking {@code canFuse} about each distinct owned item
+     * meant a fresh pass over the whole bag per question, so simply
+     * establishing that there was nothing to do - the normal outcome when
+     * auto-fuse runs on a timer - cost the bag size times the number of
+     * distinct items owned, every time. Counting once and then decrementing
+     * as we go makes an idle sweep a single pass.
+     *
+     * @param targetTier when set, only fuses whose result is exactly this tier are performed
+     */
+    private List<String> cascade(PackPlayerProfile profile, int cap, FusionTier targetTier) {
+        Map<String, Integer> fusable = fusableCounts(profile);
         List<String> results = new ArrayList<>();
         boolean progressed = true;
         while (results.size() < cap && progressed) {
             progressed = false;
-            for (String itemId : distinctItemIds(profile)) {
+            for (String itemId : List.copyOf(fusable.keySet())) {
                 if (results.size() >= cap) {
                     break;
                 }
-                if (canFuse(profile, itemId)) {
-                    results.add(fuse(profile, itemId));
+                ItemDefinition item = itemRegistry.get().find(itemId).orElse(null);
+                if (item == null || item.fusionTier().next() == null) {
+                    continue;
+                }
+                if (targetTier != null && item.fusionTier().next() != targetTier) {
+                    continue;
+                }
+                while (results.size() < cap && fusable.getOrDefault(itemId, 0) >= COST) {
+                    String nextId = fuseCounted(profile, item, itemId);
+                    if (nextId == null) {
+                        break;
+                    }
+                    fusable.merge(itemId, -COST, Integer::sum);
+                    fusable.merge(nextId, 1, Integer::sum);
+                    results.add(nextId);
                     progressed = true;
                 }
             }
         }
         return results;
+    }
+
+    /** {@link #fuse} without re-deriving whether it's allowed - the caller's count already established that. */
+    private String fuseCounted(PackPlayerProfile profile, ItemDefinition item, String itemId) {
+        List<PetInstance> consumed = fusableInstances(profile, itemId).limit(COST).toList();
+        if (consumed.size() < COST) {
+            return null;
+        }
+        profile.removePets(consumed);
+        String nextId = item.fusionTier().next().idFor(item.baseItemId());
+        profile.addPet(new PetInstance(UUID.randomUUID(), nextId));
+        return nextId;
+    }
+
+    /** How many baseline, unequipped copies of each owned item id there are - one pass over the bag. */
+    private Map<String, Integer> fusableCounts(PackPlayerProfile profile) {
+        Set<UUID> equipped = new HashSet<>(profile.getEquippedPetIds());
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        for (PetInstance pet : profile.getPets()) {
+            if (pet.isBaseline() && !equipped.contains(pet.getInstanceId())) {
+                counts.merge(pet.getItemId(), 1, Integer::sum);
+            }
+        }
+        return counts;
     }
 
     /**
@@ -95,25 +152,7 @@ public final class FusionService {
      * matters for consuming several batches of 3 of the SAME base item.
      */
     public List<String> fuseAllToTier(PackPlayerProfile profile, FusionTier targetTier, int cap) {
-        List<String> results = new ArrayList<>();
-        boolean progressed = true;
-        while (results.size() < cap && progressed) {
-            progressed = false;
-            for (String itemId : distinctItemIds(profile)) {
-                if (results.size() >= cap) {
-                    break;
-                }
-                ItemDefinition item = itemRegistry.get().find(itemId).orElse(null);
-                if (item == null || item.fusionTier().next() != targetTier) {
-                    continue;
-                }
-                if (canFuse(profile, itemId)) {
-                    results.add(fuse(profile, itemId));
-                    progressed = true;
-                }
-            }
-        }
-        return results;
+        return cascade(profile, cap, targetTier);
     }
 
     private java.util.stream.Stream<PetInstance> fusableInstances(PackPlayerProfile profile, String itemId) {
@@ -121,11 +160,4 @@ public final class FusionService {
                 .filter(pet -> pet.getItemId().equals(itemId) && pet.isBaseline() && !profile.isEquipped(pet.getInstanceId()));
     }
 
-    private Set<String> distinctItemIds(PackPlayerProfile profile) {
-        Set<String> ids = new LinkedHashSet<>();
-        for (PetInstance pet : profile.getPets()) {
-            ids.add(pet.getItemId());
-        }
-        return ids;
-    }
 }
