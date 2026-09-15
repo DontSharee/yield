@@ -1,6 +1,8 @@
 package me.dontshare.yieldranks;
 
 import me.dontshare.yieldcore.YieldCore;
+import me.dontshare.yieldcore.database.PlayerStores;
+import me.dontshare.yieldranks.data.RankProfile;
 import me.dontshare.yieldleveling.YieldLeveling;
 import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldranks.command.DonorRankCommand;
@@ -26,17 +28,17 @@ public final class YieldRanks extends JavaPlugin {
 
         contentLoader = new RankContentLoader(this, getLogger());
         ranks = contentLoader.load();
-        rankService = new DonorRankService(() -> ranks, packs.getPlayerStore());
+        rankService = new DonorRankService(() -> ranks, PlayerStores.register(
+                this, core.getListenerManager(), core.getDatabaseManager(),
+                "ranks", RankProfile.class, RankProfile::new, "donor rank data"));
 
-        packs.registerCoinMultiplierProvider(PROVIDER_KEY, rankService::coinMultiplier);
-        packs.registerDiamondMultiplierProvider(PROVIDER_KEY, rankService::diamondMultiplier);
-        packs.getLuckService().registerExtraLuckProvider(PROVIDER_KEY, rankService::luckBonus);
-        packs.getEquipmentService().registerBonusEquipSlotsProvider(PROVIDER_KEY, rankService::bonusPetSlots);
-        packs.getEnchantService().registerBonusSlotProvider(PROVIDER_KEY, rankService::bonusEnchantSlots);
-        // Keyed on the player rather than on yield-packs' profile: yield-leveling
-        // owns its own data now and has no way to hand us one.
+        packs.registerCoinMultiplierProvider(PROVIDER_KEY, profile -> rankService.coinMultiplier(profile.getPlayerId()));
+        packs.registerDiamondMultiplierProvider(PROVIDER_KEY, profile -> rankService.diamondMultiplier(profile.getPlayerId()));
+        packs.getLuckService().registerExtraLuckProvider(PROVIDER_KEY, profile -> rankService.luckBonus(profile.getPlayerId()));
+        packs.getEquipmentService().registerBonusEquipSlotsProvider(PROVIDER_KEY, profile -> rankService.bonusPetSlots(profile.getPlayerId()));
+        packs.getEnchantService().registerBonusSlotProvider(PROVIDER_KEY, profile -> rankService.bonusEnchantSlots(profile.getPlayerId()));
         leveling.getLevelingService().registerXpMultiplierProvider(PROVIDER_KEY,
-                player -> rankService.xpMultiplier(packs.getPlayerStore().getOrCreate(player.getUniqueId())));
+                player -> rankService.xpMultiplier(player.getUniqueId()));
 
         core.getAdminCommandRegistry().register(DonorRankCommand.buildAdminDomain(this, rankService));
     }

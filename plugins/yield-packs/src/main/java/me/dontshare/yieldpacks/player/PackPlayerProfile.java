@@ -68,8 +68,6 @@ public final class PackPlayerProfile implements PlayerRecord {
     private int prestiges;
     private BigInteger prestigePoints = BigInteger.ZERO;
     private Map<String, Integer> skillTreeLevels = new HashMap<>();
-    /** Upgrade type id -> global level, bought at yield-upgrades' physical zone stations - shared across every station of that type, see UpgradeService. */
-    private Map<String, Integer> upgradeLevels = new HashMap<>();
     private boolean autoFuseEnabled;
     /** True once this player has been shown (or auto-defaulted through) the first-join starter pet choice - see StarterPetService. */
     private boolean starterPetGranted;
@@ -77,9 +75,6 @@ public final class PackPlayerProfile implements PlayerRecord {
     private BigInteger lifetimeCoinsEarned = BigInteger.ZERO;
     /** Lifetime damage dealt to world bosses (see yield-zones' WorldBossService) - drives the leaderboard system, same as lifetimeCubeKills. */
     private long lifetimeBossDamage;
-    private String equippedChatColor;
-    private String equippedNameplate;
-    private String equippedTag;
     // Zone ids this player has purchased/unlocked - see ZoneUnlockCost/
     // ZoneLockService (yield-zones). A zone with a free ZoneUnlockCost is
     // never checked against this set at all, so it doesn't need an entry
@@ -145,8 +140,6 @@ public final class PackPlayerProfile implements PlayerRecord {
     // effect. Value is an absolute expiry epoch millis, not a remaining
     // duration, so it keeps counting down correctly across a relog/restart.
     private Map<String, Long> activePotionExpiryMillis = new HashMap<>();
-    /** Purchased rank id ("vip"/"celestial") from yield-ranks' store products, or null - see DonorRankService. Distinct from the unrelated prestige `rank` int above. */
-    private String donorRankId;
     // Ore Bag (see yield-mining's OreBagService) - entry id -> "MATERIAL:multiplier:tierId".
     // Generic string encoding, not a yield-mining type: yield-packs can't
     // depend on yield-mining (the dependency points the other way), same
@@ -501,15 +494,6 @@ public final class PackPlayerProfile implements PlayerRecord {
         this.skillTreeLevels = skillTreeLevels;
     }
 
-    /** Upgrade type id -> global level - see yield-upgrades' UpgradeService. */
-    public Map<String, Integer> getUpgradeLevels() {
-        return upgradeLevels;
-    }
-
-    public void setUpgradeLevels(Map<String, Integer> upgradeLevels) {
-        this.upgradeLevels = upgradeLevels;
-    }
-
     /** Whether AutoFuseService should keep auto-fusing everything fusable for this player - requires the "yieldpacks.autofuse" permission to actually run, checked every tick, not just at toggle time. */
     public boolean isAutoFuseEnabled() {
         return autoFuseEnabled;
@@ -554,32 +538,8 @@ public final class PackPlayerProfile implements PlayerRecord {
     }
 
     /** Equipped chat-color cosmetic id, or null for none - see yield-cosmetics. */
-    public String getEquippedChatColor() {
-        return equippedChatColor;
-    }
-
-    public void setEquippedChatColor(String equippedChatColor) {
-        this.equippedChatColor = equippedChatColor;
-    }
-
     /** Equipped nameplate cosmetic id, or null for none - see yield-cosmetics. */
-    public String getEquippedNameplate() {
-        return equippedNameplate;
-    }
-
-    public void setEquippedNameplate(String equippedNameplate) {
-        this.equippedNameplate = equippedNameplate;
-    }
-
     /** Equipped tag cosmetic id, or null for none - see yield-cosmetics. */
-    public String getEquippedTag() {
-        return equippedTag;
-    }
-
-    public void setEquippedTag(String equippedTag) {
-        this.equippedTag = equippedTag;
-    }
-
     /** Zone ids this player has purchased - see yield-zones' ZoneLockService. A free zone is never checked against this at all. */
     public Set<String> getUnlockedZoneIds() {
         return unlockedZoneIds;
@@ -604,14 +564,6 @@ public final class PackPlayerProfile implements PlayerRecord {
 
     public void setCredits(BigInteger credits) {
         this.credits = credits;
-    }
-
-    public String getDonorRankId() {
-        return donorRankId;
-    }
-
-    public void setDonorRankId(String donorRankId) {
-        this.donorRankId = donorRankId;
     }
 
     public Map<String, String> getOreBagEntries() {

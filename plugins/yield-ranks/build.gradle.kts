@@ -1,4 +1,4 @@
-version = "0.0.5"
+version = "0.1.0"
 
 dependencies {
     // Not transitive from yield-packs' own compileOnly dependency on it -
@@ -13,4 +13,6 @@ dependencies {
     // installed. Still needed at compile time to call CosmeticService
     // directly rather than through reflection.
     compileOnly(project(":yield-cosmetics"))
+    // For the @BsonId annotation on this plugin's own RankProfile.
+    compileOnly("org.mongodb:mongodb-driver-sync:5.10.0")
 }

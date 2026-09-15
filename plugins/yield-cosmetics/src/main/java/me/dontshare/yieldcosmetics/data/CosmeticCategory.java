@@ -1,32 +1,32 @@
 package me.dontshare.yieldcosmetics.data;
 
-import me.dontshare.yieldpacks.player.PackPlayerProfile;
+
 
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 /**
- * The three cosmetic slots on {@link PackPlayerProfile} - each one's
+ * The three cosmetic slots on {@link CosmeticProfile} - each one's
  * accessor pair, config section, and Mongo field path (for {@code
  * CosmeticPopularityService}'s "X players have this" counts) live together
  * here so nothing else needs a switch over the category.
  */
 public enum CosmeticCategory {
-    CHAT_COLOR("Chat Colors", "chat-colors", "packs.equippedChatColor",
-            PackPlayerProfile::getEquippedChatColor, PackPlayerProfile::setEquippedChatColor),
-    NAMEPLATE("Nameplates", "nameplates", "packs.equippedNameplate",
-            PackPlayerProfile::getEquippedNameplate, PackPlayerProfile::setEquippedNameplate),
-    TAG("Tags", "tags", "packs.equippedTag",
-            PackPlayerProfile::getEquippedTag, PackPlayerProfile::setEquippedTag);
+    CHAT_COLOR("Chat Colors", "chat-colors", "cosmetics.equippedChatColor",
+            CosmeticProfile::getEquippedChatColor, CosmeticProfile::setEquippedChatColor),
+    NAMEPLATE("Nameplates", "nameplates", "cosmetics.equippedNameplate",
+            CosmeticProfile::getEquippedNameplate, CosmeticProfile::setEquippedNameplate),
+    TAG("Tags", "tags", "cosmetics.equippedTag",
+            CosmeticProfile::getEquippedTag, CosmeticProfile::setEquippedTag);
 
     private final String displayName;
     private final String configSection;
     private final String mongoField;
-    private final Function<PackPlayerProfile, String> getter;
-    private final BiConsumer<PackPlayerProfile, String> setter;
+    private final Function<CosmeticProfile, String> getter;
+    private final BiConsumer<CosmeticProfile, String> setter;
 
     CosmeticCategory(String displayName, String configSection, String mongoField,
-                      Function<PackPlayerProfile, String> getter, BiConsumer<PackPlayerProfile, String> setter) {
+                      Function<CosmeticProfile, String> getter, BiConsumer<CosmeticProfile, String> setter) {
         this.displayName = displayName;
         this.configSection = configSection;
         this.mongoField = mongoField;
@@ -46,11 +46,11 @@ public enum CosmeticCategory {
         return mongoField;
     }
 
-    public String equippedId(PackPlayerProfile profile) {
+    public String equippedId(CosmeticProfile profile) {
         return getter.apply(profile);
     }
 
-    public void setEquippedId(PackPlayerProfile profile, String cosmeticId) {
+    public void setEquippedId(CosmeticProfile profile, String cosmeticId) {
         setter.accept(profile, cosmeticId);
     }
 }

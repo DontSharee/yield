@@ -8,7 +8,6 @@ import me.dontshare.yieldcore.packet.TextDisplayManager;
 import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.YieldPacks;
-import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import com.github.retrooper.packetevents.util.Vector3f;
 import me.dontshare.yieldupgrades.UpgradeService;
 import me.dontshare.yieldupgrades.data.UpgradeStation;
@@ -145,10 +144,9 @@ public final class UpgradeStationDisplay {
         switch (result) {
             case SUCCESS -> {
                 player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.6f, 1.4f);
-                PackPlayerProfile profile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
                 player.sendMessage(Text.parse("<green>Upgraded <name> to level <level>!</green>",
                         Placeholder.unparsed("name", Formatting.stripLeadingColorCodes(station.type().displayName())),
-                        Placeholder.unparsed("level", String.valueOf(upgradeService.levelOf(profile, station.type().id())))));
+                        Placeholder.unparsed("level", String.valueOf(upgradeService.levelOf(player.getUniqueId(), station.type().id())))));
                 refreshTextFor(player, station);
                 updateColor(player, station);
                 onUpgradeSuccess.accept(player);
@@ -279,8 +277,7 @@ public final class UpgradeStationDisplay {
      * substituted in.
      */
     private Component buildText(Player viewer, UpgradeStation station) {
-        PackPlayerProfile profile = packs.getPlayerStore().getOrCreate(viewer.getUniqueId());
-        int level = upgradeService.levelOf(profile, station.type().id());
+        int level = upgradeService.levelOf(viewer.getUniqueId(), station.type().id());
         int effectiveCap = Math.min(station.cap(), station.type().maxLevel());
         boolean atCap = level >= effectiveCap;
 

@@ -2,6 +2,7 @@ package me.dontshare.yieldupgrades;
 
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
+import me.dontshare.yieldupgrades.data.UpgradeProfile;
 import me.dontshare.yieldupgrades.data.UpgradeContentLoader.UpgradeContent;
 import me.dontshare.yieldupgrades.data.UpgradeEffect;
 import me.dontshare.yieldupgrades.data.UpgradeStation;
@@ -12,6 +13,7 @@ import org.bukkit.entity.Player;
 
 import java.math.BigInteger;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
@@ -32,19 +34,23 @@ public final class UpgradeService {
 
     private final Supplier<UpgradeContent> content;
     private final PlayerDataStore<PackPlayerProfile> store;
+    /** This plugin's own levels. The pack store above stays for the coin balance a purchase spends. */
+    private final PlayerDataStore<UpgradeProfile> upgradeStore;
     private final Supplier<Map<String, ZoneDefinition>> zones;
     private final ZoneLockService zoneLockService;
 
     public UpgradeService(Supplier<UpgradeContent> content, PlayerDataStore<PackPlayerProfile> store,
+                           PlayerDataStore<UpgradeProfile> upgradeStore,
                            Supplier<Map<String, ZoneDefinition>> zones, ZoneLockService zoneLockService) {
         this.content = content;
         this.store = store;
+        this.upgradeStore = upgradeStore;
         this.zones = zones;
         this.zoneLockService = zoneLockService;
     }
 
-    public int levelOf(PackPlayerProfile profile, String typeId) {
-        return profile.getUpgradeLevels().getOrDefault(typeId, 0);
+    public int levelOf(UUID playerId, String typeId) {
+        return upgradeStore.getOrCreate(playerId).getLevels().getOrDefault(typeId, 0);
     }
 
     /** {@code costBase * costGrowth^level} - an exponential per-level curve, deliberately different from the power-curve player/pet leveling uses for its rarer, bigger milestone jumps. */
@@ -58,7 +64,7 @@ public final class UpgradeService {
         if (zone == null || !zoneLockService.isUnlocked(player, zone)) {
             return Result.ZONE_LOCKED;
         }
-        int level = levelOf(profile, station.type().id());
+        int level = levelOf(player.getUniqueId(), station.type().id());
         int effectiveCap = Math.min(station.cap(), station.type().maxLevel());
         if (level >= effectiveCap) {
             return Result.ALREADY_AT_CAP;
@@ -68,8 +74,9 @@ public final class UpgradeService {
             return Result.CANT_AFFORD;
         }
         profile.setCoins(profile.getCoins().subtract(cost));
-        profile.getUpgradeLevels().put(station.type().id(), level + 1);
+        upgradeStore.getOrCreate(player.getUniqueId()).getLevels().put(station.type().id(), level + 1);
         store.save(player.getUniqueId());
+        upgradeStore.save(player.getUniqueId());
         return Result.SUCCESS;
     }
 
@@ -80,7 +87,7 @@ public final class UpgradeService {
         if (zone == null || !zoneLockService.isUnlocked(player, zone)) {
             return false;
         }
-        int level = levelOf(profile, station.type().id());
+        int level = levelOf(player.getUniqueId(), station.type().id());
         int effectiveCap = Math.min(station.cap(), station.type().maxLevel());
         if (level >= effectiveCap) {
             return false;
@@ -108,7 +115,7 @@ public final class UpgradeService {
         double total = 0;
         for (UpgradeType type : content.get().types().values()) {
             if (type.effect() == UpgradeEffect.DIAMOND_BOOST) {
-                total += levelOf(profile, type.id()) * type.chancePerLevel();
+                total += levelOf(profile.getPlayerId(), type.id()) * type.chancePerLevel();
             }
         }
         return total;
@@ -118,7 +125,7 @@ public final class UpgradeService {
         double total = 0;
         for (UpgradeType type : content.get().types().values()) {
             if (type.effect() == UpgradeEffect.DIAMOND_BOOST) {
-                total += levelOf(profile, type.id()) * type.flatPerLevel();
+                total += levelOf(profile.getPlayerId(), type.id()) * type.flatPerLevel();
             }
         }
         return Math.round(total);
@@ -129,7 +136,7 @@ public final class UpgradeService {
         double total = 0;
         for (UpgradeType type : content.get().types().values()) {
             if (type.effect() == UpgradeEffect.PLAYER_SPEED) {
-                total += levelOf(profile, type.id()) * type.valuePerLevel();
+                total += levelOf(profile.getPlayerId(), type.id()) * type.valuePerLevel();
             }
         }
         return total;
@@ -140,7 +147,7 @@ public final class UpgradeService {
         double total = 0;
         for (UpgradeType type : content.get().types().values()) {
             if (type.effect() == UpgradeEffect.CUBE_CAP_BONUS) {
-                total += levelOf(profile, type.id()) * type.valuePerLevel();
+                total += levelOf(profile.getPlayerId(), type.id()) * type.valuePerLevel();
             }
         }
         return (int) Math.round(total);
@@ -151,7 +158,7 @@ public final class UpgradeService {
         double total = 0;
         for (UpgradeType type : content.get().types().values()) {
             if (type.effect() == UpgradeEffect.CUBE_BONUS_CHANCE) {
-                total += levelOf(profile, type.id()) * type.valuePerLevel();
+                total += levelOf(profile.getPlayerId(), type.id()) * type.valuePerLevel();
             }
         }
         return total;
@@ -167,7 +174,7 @@ public final class UpgradeService {
         double total = 1.0;
         for (UpgradeType type : content.get().types().values()) {
             if (type.effect() == effect) {
-                total += levelOf(profile, type.id()) * type.valuePerLevel();
+                total += levelOf(profile.getPlayerId(), type.id()) * type.valuePerLevel();
             }
         }
         return total;

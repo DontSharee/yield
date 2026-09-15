@@ -1,6 +1,9 @@
 package me.dontshare.yieldcosmetics;
 
 import me.dontshare.yieldcore.YieldCore;
+import me.dontshare.yieldcore.database.PlayerDataStore;
+import me.dontshare.yieldcore.database.PlayerStores;
+import me.dontshare.yieldcosmetics.data.CosmeticProfile;
 import me.dontshare.yieldcore.command.CommandManager;
 import me.dontshare.yieldcosmetics.command.CosmeticsAdminCommand;
 import me.dontshare.yieldcosmetics.command.CosmeticsCommand;
@@ -28,7 +31,10 @@ public final class YieldCosmetics extends JavaPlugin {
         content = contentLoader.load();
 
         NameplateService nameplateService = new NameplateService(core.getScoreboardManager());
-        cosmeticService = new CosmeticService(() -> content, packs.getPlayerStore(), nameplateService);
+        PlayerDataStore<CosmeticProfile> store = PlayerStores.register(
+                this, core.getListenerManager(), core.getDatabaseManager(),
+                "cosmetics", CosmeticProfile.class, CosmeticProfile::new, "cosmetic data");
+        cosmeticService = new CosmeticService(() -> content, store, nameplateService);
         CosmeticPopularityService popularityService = new CosmeticPopularityService(this, () -> content, core.getDatabaseManager());
         popularityService.start();
 
@@ -39,7 +45,7 @@ public final class YieldCosmetics extends JavaPlugin {
 
         core.getListenerManager().register(new NameplateJoinListener(cosmeticService, nameplateService));
 
-        CosmeticsGui cosmeticsGui = new CosmeticsGui(packs.getPlayerStore(), cosmeticService, popularityService, core.getGuiManager());
+        CosmeticsGui cosmeticsGui = new CosmeticsGui(store, cosmeticService, popularityService, core.getGuiManager());
 
         CommandManager.register(this, CosmeticsCommand.build(cosmeticsGui), "Browse and equip chat colors, nameplates, and tags", List.of());
         core.getAdminCommandRegistry().register(CosmeticsAdminCommand.build(this));

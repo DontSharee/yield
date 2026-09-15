@@ -1,4 +1,4 @@
-version = "0.1.3"
+version = "0.2.0"
 
 repositories {
     maven("https://repo.codemc.io/repository/maven-releases/")
@@ -23,4 +23,6 @@ dependencies {
     // packetevents Vector3f values itself for BlockDisplayManager's
     // setTransformation overload.
     compileOnly("com.github.retrooper:packetevents-spigot:2.13.0")
+    // For the @BsonId annotation on this plugin's own UpgradeProfile.
+    compileOnly("org.mongodb:mongodb-driver-sync:5.10.0")
 }

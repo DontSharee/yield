@@ -1,6 +1,8 @@
 package me.dontshare.yieldupgrades;
 
 import me.dontshare.yieldcore.YieldCore;
+import me.dontshare.yieldcore.database.PlayerStores;
+import me.dontshare.yieldupgrades.data.UpgradeProfile;
 import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import me.dontshare.yieldrebirth.YieldRebirth;
@@ -48,7 +50,9 @@ public final class YieldUpgrades extends JavaPlugin implements Listener {
         // placeholder map and skip every single station on every fresh boot.
         content = new UpgradeContent(Map.of(), List.of());
 
-        upgradeService = new UpgradeService(() -> content, packs.getPlayerStore(), zones::getZones, zones.getZoneLockService());
+        upgradeService = new UpgradeService(() -> content, packs.getPlayerStore(),
+                PlayerStores.register(this, core.getListenerManager(), core.getDatabaseManager(),
+                        "upgrades", UpgradeProfile.class, UpgradeProfile::new, "upgrade data"), zones::getZones, zones.getZoneLockService());
         display = new UpgradeStationDisplay(this, packs, upgradeService, this::applySpeed);
         display.start();
 

@@ -12,7 +12,7 @@ import me.dontshare.yieldcosmetics.CosmeticPopularityService;
 import me.dontshare.yieldcosmetics.CosmeticService;
 import me.dontshare.yieldcosmetics.data.Cosmetic;
 import me.dontshare.yieldcosmetics.data.CosmeticCategory;
-import me.dontshare.yieldpacks.player.PackPlayerProfile;
+import me.dontshare.yieldcosmetics.data.CosmeticProfile;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -41,7 +41,7 @@ public final class CosmeticsGui {
     private static final int PAGE_SIZE = 36; // rows 2-5
     private static final int[] TAB_SLOTS = {2, 4, 6};
 
-    private final PlayerDataStore<PackPlayerProfile> store;
+    private final PlayerDataStore<CosmeticProfile> store;
     private final CosmeticService cosmeticService;
     private final CosmeticPopularityService popularityService;
     private final GuiManager guiManager;
@@ -49,7 +49,7 @@ public final class CosmeticsGui {
     private final Map<UUID, CosmeticCategory> categoryByPlayer = new ConcurrentHashMap<>();
     private final Map<UUID, Integer> pageByPlayer = new ConcurrentHashMap<>();
 
-    public CosmeticsGui(PlayerDataStore<PackPlayerProfile> store, CosmeticService cosmeticService,
+    public CosmeticsGui(PlayerDataStore<CosmeticProfile> store, CosmeticService cosmeticService,
                          CosmeticPopularityService popularityService, GuiManager guiManager) {
         this.store = store;
         this.cosmeticService = cosmeticService;
@@ -64,7 +64,7 @@ public final class CosmeticsGui {
     private void open(Player player, CosmeticCategory category) {
         UUID uuid = player.getUniqueId();
         categoryByPlayer.put(uuid, category);
-        PackPlayerProfile profile = store.getOrCreate(uuid);
+        CosmeticProfile profile = store.getOrCreate(uuid);
 
         List<Cosmetic> cosmetics = new ArrayList<>(cosmeticService.content().byCategory(category).values());
         Page<Cosmetic> page = Page.of(cosmetics, pageByPlayer.getOrDefault(uuid, 0), PAGE_SIZE);
