@@ -1,4 +1,4 @@
-version = "0.1.0"
+version = "0.1.1"
 
 dependencies {
     // Not transitive from yield-packs' own compileOnly dependency on it -
@@ -6,7 +6,6 @@ dependencies {
     // (PlayerDataStore, ChatFormatter, DatabaseManager) and yield-packs
     // types (PackPlayerProfile, YieldPacks) directly.
     compileOnly(project(":yield-core"))
-    compileOnly(project(":yield-packs"))
     // Needed at compile time for the raw MongoCollection/Document types
     // CosmeticPopularityService queries directly - the real driver classes
     // ship inside yield-core's own shaded jar at runtime (same reasoning as

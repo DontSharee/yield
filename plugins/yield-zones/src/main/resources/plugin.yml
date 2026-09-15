@@ -2,7 +2,7 @@ name: yield-zones
 version: '${version}'
 main: me.dontshare.yieldzones.YieldZones
 api-version: '26.2'
-depend: [yield-packs]
+depend: [yield-core, yield-packs]
 permissions:
   yieldzones.admin:
     default: op

@@ -2,7 +2,7 @@ name: yield-cosmetics
 version: '${version}'
 main: me.dontshare.yieldcosmetics.YieldCosmetics
 api-version: '26.2'
-depend: [yield-packs]
+depend: [yield-core]
 permissions:
   yieldcosmetics.admin:
     default: op

@@ -11,7 +11,6 @@ import me.dontshare.yieldcosmetics.data.CosmeticContentLoader.Content;
 import me.dontshare.yieldcosmetics.data.CosmeticContentLoader;
 import me.dontshare.yieldcosmetics.gui.CosmeticsGui;
 import me.dontshare.yieldcosmetics.listener.NameplateJoinListener;
-import me.dontshare.yieldpacks.YieldPacks;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
@@ -25,7 +24,6 @@ public final class YieldCosmetics extends JavaPlugin {
     @Override
     public void onEnable() {
         YieldCore core = JavaPlugin.getPlugin(YieldCore.class);
-        YieldPacks packs = JavaPlugin.getPlugin(YieldPacks.class);
 
         contentLoader = new CosmeticContentLoader(this, getLogger());
         content = contentLoader.load();

@@ -2,7 +2,7 @@ name: yield-teams
 version: '${version}'
 main: me.dontshare.yieldteams.YieldTeams
 api-version: '26.2'
-depend: [yield-packs, yield-zones]
+depend: [yield-core, yield-packs, yield-zones]
 permissions:
   yieldteams.admin:
     default: op

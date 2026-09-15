@@ -2,7 +2,7 @@ name: yield-quests
 version: '${version}'
 main: me.dontshare.yieldquests.YieldQuests
 api-version: '26.2'
-depend: [yield-packs, yield-zones, yield-rebirth, yield-skilltree]
+depend: [yield-core, yield-packs, yield-zones, yield-rebirth, yield-skilltree]
 softdepend: [HeadDatabase]
 permissions:
   yieldquests.admin:
