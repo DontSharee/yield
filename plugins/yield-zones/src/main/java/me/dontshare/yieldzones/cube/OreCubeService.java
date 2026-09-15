@@ -85,6 +85,8 @@ public final class OreCubeService implements Listener {
     // per-tick work (a couple of map lookups per player) is cheap enough
     // that running it 5x more often is not a real cost.
     private static final long TICK_INTERVAL = 4L;
+    /** {@link #tick()} passes between drift reconciles - 5 x 4 ticks, so once a second. */
+    private static final int RECONCILE_EVERY_N_CYCLES = 5;
     private static final long SUMMARY_INTERVAL = 20L * 60; // 1 minute
     private static final long HIGHLIGHT_TICK_INTERVAL = 2L; // 0.1s - see tickHighlights
     // Effectively unbounded, same as FakeBlockClickRegistry's own click
@@ -306,6 +308,8 @@ public final class OreCubeService implements Listener {
         // Its own, much faster loop - the main tick()'s 1-second cadence
         // would make "what am I looking at" feel laggy and behind.
         Bukkit.getScheduler().runTaskTimer(plugin, this::tickHighlights, HIGHLIGHT_TICK_INTERVAL, HIGHLIGHT_TICK_INTERVAL);
+        // One sweeper for every short visual follow-up - see deferredByTick.
+        Bukkit.getScheduler().runTaskTimer(plugin, this::sweepDeferred, 1L, 1L);
     }
 
     /** White-outlines whichever live cube a player is currently looking at, clearing it the instant they look away - a bonus cube's own persistent colored glow is left alone rather than fought over. */
@@ -412,7 +416,11 @@ public final class OreCubeService implements Listener {
         cube.setHighlighted(false);
     }
 
+    /** Counts {@link #tick()} passes so the reconciles below can run on their own, slower cadence. */
+    private int tickCycle;
+
     private void tick() {
+        boolean reconcileThisCycle = ++tickCycle % RECONCILE_EVERY_N_CYCLES == 0;
         for (Player player : Bukkit.getOnlinePlayers()) {
             ZoneDefinition zone = findZone(player.getLocation());
             ZoneDefinition previous = currentZone.get(player.getUniqueId());
@@ -437,8 +445,17 @@ public final class OreCubeService implements Listener {
                 Bukkit.getPluginManager().callEvent(new ZoneEnteredEvent(player, zone));
             }
             topUpCubes(player, zone);
-            reconcileHealthBars(player);
-            reconcileCubeBlocks(player);
+            // Both reconciles are safety nets for drift that the normal
+            // spawn/despawn paths already handle, so they run once a second
+            // rather than on every one of this loop's five-per-second passes -
+            // which is the guarantee reconcileHealthBars documents anyway.
+            // At the faster cadence the block reconcile alone was re-sending a
+            // block change per live cube per player five times a second to
+            // correct something that is almost never wrong.
+            if (reconcileThisCycle) {
+                reconcileHealthBars(player);
+                reconcileCubeBlocks(player);
+            }
         }
     }
 
@@ -892,10 +909,15 @@ public final class OreCubeService implements Listener {
         BlockDisplayManager.setInterpolation(viewer, entityId, 0, HIT_SHRINK_TICKS, HIT_SHRINK_TICKS);
         BlockDisplayManager.setTransformation(viewer, entityId,
                 new Vector3f(t, t, t), new Vector3f(HIT_SHRINK_SCALE, HIT_SHRINK_SCALE, HIT_SHRINK_SCALE));
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            BlockDisplayManager.setInterpolation(viewer, entityId, 0, HIT_GROW_TICKS, HIT_GROW_TICKS);
-            BlockDisplayManager.setTransformation(viewer, entityId, 0f, 1f);
-        }, HIT_SHRINK_TICKS);
+        UUID viewerId = viewer.getUniqueId();
+        defer(HIT_SHRINK_TICKS, () -> {
+            Player stillOnline = Bukkit.getPlayer(viewerId);
+            if (stillOnline == null) {
+                return;
+            }
+            BlockDisplayManager.setInterpolation(stillOnline, entityId, 0, HIT_GROW_TICKS, HIT_GROW_TICKS);
+            BlockDisplayManager.setTransformation(stillOnline, entityId, 0f, 1f);
+        });
     }
 
     /** A small spark at the moment of impact - purely visual, per cube (each cube hit this tick gets its own spark at its own location). The "thwack" sound is a separate, once-per-flush call - see {@link #flushDamage}. */
@@ -980,16 +1002,57 @@ public final class OreCubeService implements Listener {
 
         PacketEntityManager.beginBundle(viewer);
         TextDisplayManager.spawn(viewer, entityId, spawnAt);
-        TextDisplayManager.setBillboard(viewer, entityId, TextDisplayManager.Billboard.VERTICAL);
-        TextDisplayManager.setBackgroundColor(viewer, entityId, 0x00000000);
-        TextDisplayManager.setStyle(viewer, entityId, true, false, false, TextDisplayManager.Alignment.CENTER);
-        TextDisplayManager.setScale(viewer, entityId, 0.9f, 0.9f, 0.9f);
-        TextDisplayManager.setText(viewer, entityId, text);
-        TextDisplayManager.setInterpolation(viewer, entityId, 0, riseTicks, riseTicks);
+        // Every display field in one packet rather than six. These are spawned
+        // per cube per hit, so the per-field packets were the bulk of what
+        // this method cost.
+        TextDisplayManager.metadata()
+                .billboard(TextDisplayManager.Billboard.VERTICAL)
+                .backgroundColor(0x00000000)
+                .style(true, false, false, TextDisplayManager.Alignment.CENTER)
+                .scale(0.9f, 0.9f, 0.9f)
+                .text(text)
+                .interpolation(0, riseTicks, riseTicks)
+                .send(viewer, entityId);
         PacketEntityManager.endBundle(viewer);
 
         PacketEntityManager.teleportEntity(viewer, entityId, spawnAt.clone().add(0, 0.9, 0));
-        Bukkit.getScheduler().runTaskLater(plugin, () -> PacketEntityManager.destroyEntity(viewer, entityId), lifetimeTicks);
+        scheduleDespawn(viewer, entityId, lifetimeTicks);
+    }
+
+    /**
+     * Short visual follow-ups, bucketed by the tick they come due on.
+     * <p>
+     * Each of these used to schedule its own {@code runTaskLater} - one per
+     * floating number and one per cube hit - which is a great many scheduled
+     * tasks when several pets are hitting several cubes a few times a second,
+     * each for work amounting to a packet or two. One sweeper that only ever
+     * looks at the bucket actually due does the same job.
+     */
+    private final Map<Long, List<Runnable>> deferredByTick = new HashMap<>();
+
+    private void defer(int delayTicks, Runnable action) {
+        deferredByTick.computeIfAbsent(Bukkit.getCurrentTick() + (long) delayTicks, tick -> new ArrayList<>())
+                .add(action);
+    }
+
+    private void sweepDeferred() {
+        List<Runnable> due = deferredByTick.remove((long) Bukkit.getCurrentTick());
+        if (due == null) {
+            return;
+        }
+        for (Runnable action : due) {
+            action.run();
+        }
+    }
+
+    private void scheduleDespawn(Player viewer, int entityId, int lifetimeTicks) {
+        UUID viewerId = viewer.getUniqueId();
+        defer(lifetimeTicks, () -> {
+            Player stillOnline = Bukkit.getPlayer(viewerId);
+            if (stillOnline != null) {
+                PacketEntityManager.destroyEntity(stillOnline, entityId);
+            }
+        });
     }
 
     /**

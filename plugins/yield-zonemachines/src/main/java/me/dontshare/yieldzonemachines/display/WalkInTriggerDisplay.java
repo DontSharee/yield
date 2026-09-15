@@ -36,7 +36,14 @@ public final class WalkInTriggerDisplay {
     private static final int RING_POINTS = 20;
     private static final double ACTIVATION_RADIUS = 1.4;
     private static final double ACTIVATION_HEIGHT = 2.0;
-    private static final double VIEW_DISTANCE_SQUARED = 32.0 * 32.0;
+    /**
+     * Each ring point is its own particle packet per viewer, several times a
+     * second, so this radius sets the packet cost directly - and it is area,
+     * so halving it quarters the audience. A {@value #RING_RADIUS}-block ring
+     * of dust on the floor isn't legible from 32 blocks out anyway; 20 still
+     * shows it from well across a zone.
+     */
+    private static final double VIEW_DISTANCE_SQUARED = 20.0 * 20.0;
     private static final long TICK_INTERVAL = 4L;
 
     private final JavaPlugin plugin;

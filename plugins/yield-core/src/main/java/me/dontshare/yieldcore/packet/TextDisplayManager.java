@@ -87,13 +87,8 @@ public final class TextDisplayManager {
 
     public static void setStyle(Player viewer, int entityId, boolean shadow, boolean seeThrough,
                                  boolean useDefaultBackground, Alignment alignment) {
-        byte flags = 0;
-        if (shadow) flags |= 0x01;
-        if (seeThrough) flags |= 0x02;
-        if (useDefaultBackground) flags |= 0x04;
-        flags |= alignment.value;
-
-        sendMetadata(viewer, entityId, new EntityData<>(27, EntityDataTypes.BYTE, flags));
+        sendMetadata(viewer, entityId,
+                new EntityData<>(27, EntityDataTypes.BYTE, styleFlags(shadow, seeThrough, useDefaultBackground, alignment)));
     }
 
     public static void setBillboard(Player viewer, int entityId, Billboard billboard) {
@@ -126,6 +121,75 @@ public final class TextDisplayManager {
                 new EntityData<>(8, EntityDataTypes.INT, delayTicks),
                 new EntityData<>(9, EntityDataTypes.INT, transformDurationTicks),
                 new EntityData<>(10, EntityDataTypes.INT, positionDurationTicks));
+    }
+
+    /**
+     * Collects several display fields so they go out as one metadata packet
+     * rather than one per field.
+     * <p>
+     * Each setter above sends immediately, which is right for changing a
+     * single field on a live entity but wasteful when configuring a freshly
+     * spawned one - a floating damage number sets six of them at once, and
+     * those are spawned per cube per hit. The protocol carries any number of
+     * fields in a single packet, so setting them up individually was paying
+     * five extra packets per entity for nothing.
+     */
+    public static final class Metadata {
+
+        private final List<EntityData<?>> fields = new java.util.ArrayList<>();
+
+        private Metadata() {
+        }
+
+        public Metadata text(Component text) {
+            fields.add(new EntityData<>(23, EntityDataTypes.ADV_COMPONENT, text));
+            return this;
+        }
+
+        public Metadata backgroundColor(int argb) {
+            fields.add(new EntityData<>(25, EntityDataTypes.INT, argb));
+            return this;
+        }
+
+        public Metadata style(boolean shadow, boolean seeThrough, boolean useDefaultBackground, Alignment alignment) {
+            fields.add(new EntityData<>(27, EntityDataTypes.BYTE, styleFlags(shadow, seeThrough, useDefaultBackground, alignment)));
+            return this;
+        }
+
+        public Metadata billboard(Billboard billboard) {
+            fields.add(new EntityData<>(15, EntityDataTypes.BYTE, billboard.value));
+            return this;
+        }
+
+        public Metadata scale(float x, float y, float z) {
+            fields.add(new EntityData<>(12, EntityDataTypes.VECTOR3F, new Vector3f(x, y, z)));
+            return this;
+        }
+
+        public Metadata interpolation(int delayTicks, int transformDurationTicks, int positionDurationTicks) {
+            fields.add(new EntityData<>(8, EntityDataTypes.INT, delayTicks));
+            fields.add(new EntityData<>(9, EntityDataTypes.INT, transformDurationTicks));
+            fields.add(new EntityData<>(10, EntityDataTypes.INT, positionDurationTicks));
+            return this;
+        }
+
+        /** Sends everything collected so far to this one viewer. */
+        public void send(Player viewer, int entityId) {
+            user(viewer).sendPacket(new WrapperPlayServerEntityMetadata(entityId, List.copyOf(fields)));
+        }
+    }
+
+    public static Metadata metadata() {
+        return new Metadata();
+    }
+
+    private static byte styleFlags(boolean shadow, boolean seeThrough, boolean useDefaultBackground, Alignment alignment) {
+        byte flags = 0;
+        if (shadow) flags |= 0x01;
+        if (seeThrough) flags |= 0x02;
+        if (useDefaultBackground) flags |= 0x04;
+        flags |= alignment.value;
+        return flags;
     }
 
     private static void sendMetadata(Player viewer, int entityId, EntityData<?>... data) {
