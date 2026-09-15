@@ -53,6 +53,9 @@ public final class PetDisplayService {
 
     /** How far (as a fraction of the distance to the target) an attacking pet lunges forward per hit. */
     private static final double LUNGE_REACH = 0.65;
+
+    /** Below this, a yaw change isn't worth a packet - it's far finer than anyone can see. */
+    private static final float YAW_EPSILON_DEGREES = 0.5f;
     /** Duration of both the forward lunge and the return spring-back - see {@link #playAttackLunge}. */
     private static final int LUNGE_TICKS = 3;
 
@@ -66,6 +69,10 @@ public final class PetDisplayService {
     private final Map<UUID, List<PetDisplayInstance>> ownerInstances = new ConcurrentHashMap<>();
     private final Map<UUID, Set<UUID>> viewersByOwner = new ConcurrentHashMap<>();
     private final Map<UUID, Location> lastOwnerLocation = new ConcurrentHashMap<>();
+    /** Owners whose pets lunged since the last cycle, and so need their interpolation window put back - see {@link #moveFor}. */
+    private final Set<UUID> lungedOwners = ConcurrentHashMap.newKeySet();
+    /** Last yaw sent per slot, so a stationary player's pets stop re-sending a rotation that hasn't changed. */
+    private final Map<UUID, float[]> lastYaws = new ConcurrentHashMap<>();
     /** Per-owner, per-equip-slot target overrides - a slot missing from the map stays in formation. Multiple slots may point at different targets at once (see single-send). */
     private final Map<UUID, Map<Integer, Location>> attackOverrides = new ConcurrentHashMap<>();
     private long elapsedTicks;
@@ -141,6 +148,9 @@ public final class PetDisplayService {
         Location lunge = current.clone().add(towardTarget);
 
         PetDisplayInstance instance = instances.get(slot);
+        // The shortened window below sticks until something resets it, so the
+        // next regular cycle has to put it back - see moveFor.
+        lungedOwners.add(ownerId);
         for (UUID viewerId : viewersByOwner.getOrDefault(ownerId, Set.of())) {
             Player viewer = Bukkit.getPlayer(viewerId);
             if (viewer == null) {
@@ -318,6 +328,8 @@ public final class PetDisplayService {
             }
         }
         lastOwnerLocation.remove(ownerId);
+        lungedOwners.remove(ownerId);
+        lastYaws.remove(ownerId);
     }
 
     /** Full teardown for every tracked owner - call on plugin disable so nothing lingers client-side. */
@@ -331,6 +343,8 @@ public final class PetDisplayService {
         ownerInstances.clear();
         viewersByOwner.clear();
         lastOwnerLocation.clear();
+        lungedOwners.clear();
+        lastYaws.clear();
     }
 
     private void updateOwner(Player owner) {
@@ -356,23 +370,62 @@ public final class PetDisplayService {
         // targeting - see computeYaws.
         List<Float> yaws = computeYaws(owner, positions);
 
-        Set<UUID> shouldSee = computeViewers(owner);
+        Set<UUID> shouldSee = computeViewers(owner, current);
         Set<UUID> currentlySeeing = viewersByOwner.computeIfAbsent(ownerId, id -> ConcurrentHashMap.newKeySet());
 
-        for (Player viewer : Bukkit.getOnlinePlayers()) {
-            UUID viewerId = viewer.getUniqueId();
-            boolean shouldSeeNow = shouldSee.contains(viewerId);
-            boolean seeingNow = currentlySeeing.contains(viewerId);
-            if (shouldSeeNow && !seeingNow) {
-                spawnFor(viewer, instances, positions, yaws);
-                currentlySeeing.add(viewerId);
-            } else if (!shouldSeeNow && seeingNow) {
+        // spawnFor already sets each entity's interpolation window, and only a
+        // lunge ever shortens it, so the reset that used to go out on every
+        // move of every pet to every viewer is only actually needed in the
+        // cycle after one happened.
+        boolean resetInterpolation = lungedOwners.remove(ownerId);
+        boolean yawChanged = yawsChanged(ownerId, yaws);
+
+        // Driven off the two viewer sets rather than every online player:
+        // whether someone sees these pets has nothing to do with how many
+        // people are on the server.
+        for (UUID viewerId : List.copyOf(currentlySeeing)) {
+            if (shouldSee.contains(viewerId)) {
+                continue;
+            }
+            Player viewer = Bukkit.getPlayer(viewerId);
+            if (viewer != null) {
                 despawnFor(viewer, instances);
-                currentlySeeing.remove(viewerId);
-            } else if (shouldSeeNow) {
-                moveFor(viewer, instances, positions, yaws);
+            }
+            currentlySeeing.remove(viewerId);
+        }
+        for (UUID viewerId : shouldSee) {
+            Player viewer = Bukkit.getPlayer(viewerId);
+            if (viewer == null) {
+                continue;
+            }
+            if (currentlySeeing.add(viewerId)) {
+                spawnFor(viewer, instances, positions, yaws);
+            } else {
+                moveFor(viewer, instances, positions, yaws, resetInterpolation, yawChanged);
             }
         }
+    }
+
+    /** Whether any slot's yaw actually moved since the last cycle - if none did, the rotation packet has nothing to say. */
+    private boolean yawsChanged(UUID ownerId, List<Float> yaws) {
+        float[] previous = lastYaws.get(ownerId);
+        boolean changed = previous == null || previous.length != yaws.size();
+        if (!changed) {
+            for (int i = 0; i < previous.length; i++) {
+                if (Math.abs(previous[i] - yaws.get(i)) > YAW_EPSILON_DEGREES) {
+                    changed = true;
+                    break;
+                }
+            }
+        }
+        if (changed) {
+            float[] snapshot = new float[yaws.size()];
+            for (int i = 0; i < snapshot.length; i++) {
+                snapshot[i] = yaws.get(i);
+            }
+            lastYaws.put(ownerId, snapshot);
+        }
+        return changed;
     }
 
     /**
@@ -532,13 +585,26 @@ public final class PetDisplayService {
     }
 
     private Set<UUID> computeViewers(Player owner) {
+        return computeViewers(owner, owner.getLocation());
+    }
+
+    /**
+     * Who can currently see {@code owner}'s pets.
+     * <p>
+     * Asks the world for players already near the owner rather than walking
+     * the whole online list. Scanning everyone here, once per owner, made the
+     * display cost grow with the square of the player count every cycle -
+     * several times a second - when all but a handful of those players are
+     * nowhere near. {@code ownerLocation} is passed in so it isn't re-fetched
+     * (and re-allocated) for every candidate.
+     */
+    private Set<UUID> computeViewers(Player owner, Location ownerLocation) {
         Set<UUID> result = new HashSet<>();
-        double viewDistanceSquared = config.viewDistance() * config.viewDistance();
-        for (Player viewer : Bukkit.getOnlinePlayers()) {
-            if (!viewer.getWorld().equals(owner.getWorld())) {
-                continue;
-            }
-            if (viewer.getLocation().distanceSquared(owner.getLocation()) > viewDistanceSquared) {
+        double viewDistance = config.viewDistance();
+        double viewDistanceSquared = viewDistance * viewDistance;
+        for (Player viewer : owner.getWorld().getNearbyPlayers(ownerLocation, viewDistance)) {
+            // getNearbyPlayers works to a bounding box; keep the exact radius.
+            if (viewer.getLocation().distanceSquared(ownerLocation) > viewDistanceSquared) {
                 continue;
             }
             PackPlayerProfile viewerProfile = playerStore.getCached(viewer.getUniqueId());
@@ -596,7 +662,8 @@ public final class PetDisplayService {
         }
     }
 
-    private void moveFor(Player viewer, List<PetDisplayInstance> instances, List<Location> positions, List<Float> yaws) {
+    private void moveFor(Player viewer, List<PetDisplayInstance> instances, List<Location> positions, List<Float> yaws,
+                          boolean resetInterpolation, boolean yawChanged) {
         int ticks = config.updateIntervalTicks();
         // Bundled the same way spawnFor already is - this runs for every
         // pet, every viewer, every update-interval-ticks, so with a large
@@ -617,13 +684,17 @@ public final class PetDisplayService {
             // of this loop's own cadence, arriving early and visibly
             // "pausing" before the next update - the main cause of pet
             // movement looking less smooth than it should.
-            ItemDisplayManager.setInterpolation(viewer, instance.itemEntityId(), 0, ticks, ticks);
-            TextDisplayManager.setInterpolation(viewer, instance.textEntityId(), 0, ticks, ticks);
+            if (resetInterpolation) {
+                ItemDisplayManager.setInterpolation(viewer, instance.itemEntityId(), 0, ticks, ticks);
+                TextDisplayManager.setInterpolation(viewer, instance.textEntityId(), 0, ticks, ticks);
+            }
             PacketEntityManager.teleportEntity(viewer, instance.itemEntityId(), pos);
             PacketEntityManager.teleportEntity(viewer, instance.textEntityId(), pos.clone().add(0, 0.4, 0));
-            // Re-sent every cycle since this must track a live-updating yaw,
-            // not a one-time constant.
-            ItemDisplayManager.setRotation(viewer, instance.itemEntityId(), config.pitchDegrees(), yaws.get(i));
+            // Tracks a live-updating yaw, so it goes out whenever that yaw
+            // actually moved - which, for a player standing still, it doesn't.
+            if (yawChanged) {
+                ItemDisplayManager.setRotation(viewer, instance.itemEntityId(), config.pitchDegrees(), yaws.get(i));
+            }
         }
         PacketEntityManager.endBundle(viewer);
     }
