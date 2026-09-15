@@ -33,7 +33,10 @@ public final class YieldRanks extends JavaPlugin {
         packs.getLuckService().registerExtraLuckProvider(PROVIDER_KEY, rankService::luckBonus);
         packs.getEquipmentService().registerBonusEquipSlotsProvider(PROVIDER_KEY, rankService::bonusPetSlots);
         packs.getEnchantService().registerBonusSlotProvider(PROVIDER_KEY, rankService::bonusEnchantSlots);
-        leveling.getLevelingService().registerXpMultiplierProvider(PROVIDER_KEY, rankService::xpMultiplier);
+        // Keyed on the player rather than on yield-packs' profile: yield-leveling
+        // owns its own data now and has no way to hand us one.
+        leveling.getLevelingService().registerXpMultiplierProvider(PROVIDER_KEY,
+                player -> rankService.xpMultiplier(packs.getPlayerStore().getOrCreate(player.getUniqueId())));
 
         core.getAdminCommandRegistry().register(DonorRankCommand.buildAdminDomain(this, rankService));
     }

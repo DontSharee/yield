@@ -1,11 +1,13 @@
 package me.dontshare.yieldleveling;
 
 import me.dontshare.yieldcore.YieldCore;
+import me.dontshare.yieldcore.database.PlayerDataStore;
+import me.dontshare.yieldcore.database.PlayerStores;
+import me.dontshare.yieldleveling.data.LevelingProfile;
 import me.dontshare.yieldleveling.command.LevelingAdminCommand;
 import me.dontshare.yieldleveling.data.PlayerLevelingConfig;
 import me.dontshare.yieldleveling.data.PlayerLevelingContentLoader;
 import me.dontshare.yieldleveling.listener.PlayerLevelingListener;
-import me.dontshare.yieldpacks.YieldPacks;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -18,13 +20,16 @@ public final class YieldLeveling extends JavaPlugin {
     @Override
     public void onEnable() {
         YieldCore core = JavaPlugin.getPlugin(YieldCore.class);
-        YieldPacks packs = JavaPlugin.getPlugin(YieldPacks.class);
 
         contentLoader = new PlayerLevelingContentLoader(this);
         config = contentLoader.load();
-        levelingService = new PlayerLevelingService(() -> config, packs.getPlayerStore());
 
-        Bukkit.getPluginManager().registerEvents(new PlayerLevelingListener(levelingService, packs.getPlayerStore()), this);
+        PlayerDataStore<LevelingProfile> store = PlayerStores.register(
+                this, core.getListenerManager(), core.getDatabaseManager(),
+                "leveling", LevelingProfile.class, LevelingProfile::new, "leveling data");
+        levelingService = new PlayerLevelingService(() -> config, store);
+
+        Bukkit.getPluginManager().registerEvents(new PlayerLevelingListener(levelingService), this);
         core.getAdminCommandRegistry().register(LevelingAdminCommand.build(this));
     }
 

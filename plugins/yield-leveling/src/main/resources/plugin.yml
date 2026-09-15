@@ -2,7 +2,7 @@ name: yield-leveling
 version: '${version}'
 main: me.dontshare.yieldleveling.YieldLeveling
 api-version: '26.2'
-depend: [yield-core, yield-packs, yield-zones, yield-mining]
+depend: [yield-core, yield-zones, yield-mining]
 permissions:
   yieldleveling.admin:
     default: op

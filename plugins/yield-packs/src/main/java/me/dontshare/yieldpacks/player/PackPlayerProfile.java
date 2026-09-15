@@ -116,12 +116,6 @@ public final class PackPlayerProfile implements PlayerRecord {
     private Map<String, Integer> pickaxeEnchantLevels = new HashMap<>();
     private Map<String, Integer> pickaxeEnchantMastery = new HashMap<>();
     private Set<String> pickaxeEnchantDisabled = new HashSet<>();
-    // Player leveling (see yield-leveling) - a whole-player level/XP stat,
-    // separate from any individual pet's own level/XP. Synced to the
-    // player's real vanilla XP bar (Player#setLevel/setExp) rather than
-    // rendered through any custom UI - see PlayerLevelingService.
-    private int playerLevel = 1;
-    private long playerXp;
     /** A permanent, admin-granted luck bonus (see /admin stats) - additive, same slot shape as every other LuckService contributor. */
     private double adminLuckBonus;
     // Permanent shard bonuses (see me.dontshare.yieldpacks.shard.ShardService)
@@ -678,22 +672,6 @@ public final class PackPlayerProfile implements PlayerRecord {
 
     public Set<String> getPickaxeEnchantDisabled() {
         return pickaxeEnchantDisabled;
-    }
-
-    public int getPlayerLevel() {
-        return playerLevel;
-    }
-
-    public void setPlayerLevel(int playerLevel) {
-        this.playerLevel = playerLevel;
-    }
-
-    public long getPlayerXp() {
-        return playerXp;
-    }
-
-    public void setPlayerXp(long playerXp) {
-        this.playerXp = playerXp;
     }
 
     public Map<String, Long> getActivePotionExpiryMillis() {

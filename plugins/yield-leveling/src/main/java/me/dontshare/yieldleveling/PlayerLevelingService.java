@@ -2,8 +2,8 @@ package me.dontshare.yieldleveling;
 
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.text.Text;
+import me.dontshare.yieldleveling.data.LevelingProfile;
 import me.dontshare.yieldleveling.data.PlayerLevelingConfig;
-import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.title.Title;
@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 /**
  * Whole-player level/XP - separate from any individual pet's own level/XP
  * (see yield-packs' PetLevelingService). Only progress (level/xp) is ever
- * persisted, on {@link PackPlayerProfile} - {@link #xpForLevel} is always
+ * persisted, on this plugin's own {@link LevelingProfile} - {@link #xpForLevel} is always
  * computed fresh from the current config, so a mid-season curve rebalance
  * (editing player-leveling.yml, then /admin leveling reload) applies
  * instantly to every already-leveled player, same philosophy pet leveling
@@ -37,26 +37,32 @@ public final class PlayerLevelingService {
     private static final Duration FADE_OUT = Duration.ofMillis(500);
 
     private final Supplier<PlayerLevelingConfig> config;
-    private final PlayerDataStore<PackPlayerProfile> store;
-    /** Extra XP multiplier sources (e.g. yield-ranks' donor ranks) - multiplied together on top of the base 1.0, same keyed-registry shape as yield-packs' LuckService. */
-    private final Map<String, Function<PackPlayerProfile, Double>> xpMultiplierProviders = new ConcurrentHashMap<>();
+    private final PlayerDataStore<LevelingProfile> store;
+    /**
+     * Extra XP multiplier sources (e.g. yield-ranks' donor ranks) -
+     * multiplied together on top of the base 1.0, same keyed-registry shape
+     * as yield-packs' LuckService. Keyed on the player rather than on any
+     * one plugin's profile type, so a contributor looks up whatever it needs
+     * from its own data without this plugin knowing where that lives.
+     */
+    private final Map<String, Function<Player, Double>> xpMultiplierProviders = new ConcurrentHashMap<>();
 
-    public PlayerLevelingService(Supplier<PlayerLevelingConfig> config, PlayerDataStore<PackPlayerProfile> store) {
+    public PlayerLevelingService(Supplier<PlayerLevelingConfig> config, PlayerDataStore<LevelingProfile> store) {
         this.config = config;
         this.store = store;
     }
 
-    /** The current XP multiplier for this profile - the product of every currently-registered provider (1.0 if none are registered). */
-    public double xpMultiplier(PackPlayerProfile profile) {
+    /** The current XP multiplier for this player - the product of every currently-registered provider (1.0 if none are registered). */
+    public double xpMultiplier(Player player) {
         double total = 1.0;
-        for (Function<PackPlayerProfile, Double> provider : xpMultiplierProviders.values()) {
-            total *= provider.apply(profile);
+        for (Function<Player, Double> provider : xpMultiplierProviders.values()) {
+            total *= provider.apply(player);
         }
         return total;
     }
 
     /** Registers (or replaces) this plugin's own keyed XP-multiplier contribution. */
-    public void registerXpMultiplierProvider(String key, Function<PackPlayerProfile, Double> provider) {
+    public void registerXpMultiplierProvider(String key, Function<Player, Double> provider) {
         xpMultiplierProviders.put(key, provider);
     }
 
@@ -76,17 +82,17 @@ public final class PlayerLevelingService {
         if (amount <= 0) {
             return;
         }
-        PackPlayerProfile profile = store.getCached(player.getUniqueId());
+        LevelingProfile profile = store.getCached(player.getUniqueId());
         if (profile == null) {
             return;
         }
-        amount = Math.round(amount * xpMultiplier(profile));
+        amount = Math.round(amount * xpMultiplier(player));
         int maxLevel = config.get().maxLevel();
-        if (profile.getPlayerLevel() >= maxLevel) {
+        if (profile.getLevel() >= maxLevel) {
             return;
         }
-        long xp = profile.getPlayerXp() + amount;
-        int startLevel = profile.getPlayerLevel();
+        long xp = profile.getXp() + amount;
+        int startLevel = profile.getLevel();
         int level = startLevel;
         while (level < maxLevel) {
             long needed = xpForLevel(level);
@@ -99,10 +105,10 @@ public final class PlayerLevelingService {
         if (level >= maxLevel) {
             xp = 0;
         }
-        profile.setPlayerLevel(level);
-        profile.setPlayerXp(xp);
+        profile.setLevel(level);
+        profile.setXp(xp);
         store.save(player.getUniqueId());
-        syncBar(player, profile);
+        syncBar(player);
         if (level > startLevel) {
             announceLevelUp(player, level);
         }
@@ -117,16 +123,20 @@ public final class PlayerLevelingService {
         player.spawnParticle(Particle.TOTEM_OF_UNDYING, player.getLocation().add(0, 1, 0), 20, 0.4, 0.6, 0.4, 0.05);
     }
 
-    /** Pushes this profile's level/XP onto the player's real vanilla XP bar - call on join (the profile's own load is otherwise never reflected in the bar until the next XP grant) and after every {@link #grantXp}. */
-    public void syncBar(Player player, PackPlayerProfile profile) {
+    /** Pushes this player's level/XP onto their real vanilla XP bar - call on join (the load itself is otherwise never reflected in the bar until the next XP grant) and after every {@link #grantXp}. */
+    public void syncBar(Player player) {
+        LevelingProfile profile = store.getCached(player.getUniqueId());
+        if (profile == null) {
+            return;
+        }
         int maxLevel = config.get().maxLevel();
-        player.setLevel(profile.getPlayerLevel());
-        if (profile.getPlayerLevel() >= maxLevel) {
+        player.setLevel(profile.getLevel());
+        if (profile.getLevel() >= maxLevel) {
             player.setExp(1.0f);
             return;
         }
-        long needed = xpForLevel(profile.getPlayerLevel());
-        float ratio = needed <= 0 ? 0f : (float) Math.max(0.0, Math.min(0.999, profile.getPlayerXp() / (double) needed));
+        long needed = xpForLevel(profile.getLevel());
+        float ratio = needed <= 0 ? 0f : (float) Math.max(0.0, Math.min(0.999, profile.getXp() / (double) needed));
         player.setExp(ratio);
     }
 }
