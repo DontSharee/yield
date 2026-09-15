@@ -48,10 +48,10 @@ public final class FusionService {
         }
         ItemDefinition item = itemRegistry.get().getOrThrow(itemId);
         List<PetInstance> consumed = fusableInstances(profile, itemId).limit(COST).toList();
-        profile.getPets().removeAll(consumed);
+        profile.removePets(consumed);
 
         String nextId = item.fusionTier().next().idFor(item.baseItemId());
-        profile.getPets().add(new PetInstance(UUID.randomUUID(), nextId));
+        profile.addPet(new PetInstance(UUID.randomUUID(), nextId));
         return nextId;
     }
 

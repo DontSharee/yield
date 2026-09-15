@@ -84,7 +84,7 @@ public final class PacksAdminCommand {
         profile.setDiamonds(BigInteger.ZERO);
         profile.setRebirths(0);
         profile.setAutoOpenEnabled(false);
-        profile.getPets().clear();
+        profile.clearPets();
         profile.getEquippedPetIds().clear();
         profile.getPackCollectionProgress().clear();
         profile.getLastObtainedAt().clear();

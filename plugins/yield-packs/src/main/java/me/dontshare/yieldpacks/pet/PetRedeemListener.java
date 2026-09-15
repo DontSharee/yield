@@ -40,7 +40,7 @@ public final class PetRedeemListener implements Listener {
         event.setUseItemInHand(Event.Result.DENY);
 
         PackPlayerProfile profile = playerStore.getOrCreate(player.getUniqueId());
-        profile.getPets().add(pet);
+        profile.addPet(pet);
         item.setAmount(item.getAmount() - 1);
         playerStore.save(player.getUniqueId());
         petDisplayService.refresh(player);

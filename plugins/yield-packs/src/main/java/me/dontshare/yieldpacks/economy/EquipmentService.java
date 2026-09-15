@@ -4,6 +4,7 @@ import me.dontshare.yieldpacks.data.ItemDefinition;
 import me.dontshare.yieldpacks.data.ItemRegistry;
 import me.dontshare.yieldpacks.pet.PetInstance;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
+import org.bukkit.Bukkit;
 
 import java.util.Comparator;
 import java.util.List;
@@ -159,12 +160,54 @@ public final class EquipmentService {
     /** The lowest damage any common pet in {@code packs.yml} lists - the floor a Huge pet falls back to when its owner has never owned a single non-Huge pet, so an all-Huge team is never stuck dealing literal zero damage. */
     private static final double MIN_HUGE_BASIS_DAMAGE = 1.0;
 
-    /** The best {@code effectiveDamage} among every pet this player has ever owned that ISN'T itself Huge - the basis every equipped Huge pet derives its own damage from. Recursion is bounded to depth 1: this only ever calls {@link #effectiveDamage} on pets already filtered to non-Huge. */
+    /** Size past which {@link #damageBasisCache} sheds entries left behind by players who have since logged out. */
+    private static final int BASIS_CACHE_SWEEP_THRESHOLD = 1024;
+
+    private record DamageBasis(int tick, double value) {
+    }
+
+    private final Map<UUID, DamageBasis> damageBasisCache = new ConcurrentHashMap<>();
+
+    /**
+     * The best {@code effectiveDamage} among every pet this player has ever
+     * owned that ISN'T itself Huge - the basis every equipped Huge pet
+     * derives its own damage from. Recursion is bounded to depth 1: this only
+     * ever calls {@link #effectiveDamage} on pets already filtered to
+     * non-Huge.
+     * <p>
+     * Memoized for the current tick. Scanning the whole bag is fine once; the
+     * problem is that {@link #effectiveDamage} needs this for every Huge pet
+     * it is asked about, and the callers ask per equipped pet, several times
+     * a second - so an endgame all-Huge team turned one combat tick into
+     * {@code equipped x bag size} work, and a Bag screen into the square of
+     * the bag size. Nothing that feeds this value can change without the main
+     * thread doing it, so a result is good for the rest of the tick that
+     * produced it, and anything that does change is picked up on the next one.
+     */
     private double bestNormalPetDamage(PackPlayerProfile profile) {
-        return profile.getPets().stream()
-                .filter(pet -> !isHuge(pet))
-                .mapToDouble(pet -> effectiveDamage(profile, pet))
-                .max().orElse(MIN_HUGE_BASIS_DAMAGE);
+        int tick = Bukkit.getCurrentTick();
+        UUID playerId = profile.getPlayerId();
+        DamageBasis cached = damageBasisCache.get(playerId);
+        if (cached != null && cached.tick() == tick) {
+            return cached.value();
+        }
+
+        double best = MIN_HUGE_BASIS_DAMAGE;
+        for (PetInstance pet : profile.getPets()) {
+            if (isHuge(pet)) {
+                continue;
+            }
+            double damage = effectiveDamage(profile, pet);
+            if (damage > best) {
+                best = damage;
+            }
+        }
+
+        if (damageBasisCache.size() > BASIS_CACHE_SWEEP_THRESHOLD) {
+            damageBasisCache.values().removeIf(entry -> entry.tick() != tick);
+        }
+        damageBasisCache.put(playerId, new DamageBasis(tick, best));
+        return best;
     }
 
     private boolean isHuge(PetInstance pet) {

@@ -97,6 +97,12 @@ public final class AuctionBrowseGui {
     }
 
     private void refresh() {
+        // Nobody is looking, so there is nothing to refresh. Without this the
+        // timer pulled and deserialized up to 2000 listings every few seconds
+        // for the entire uptime of the server, viewers or not.
+        if (viewers.isEmpty()) {
+            return;
+        }
         databaseManager.supplyAsync(listingStore::findActive).thenAccept(list -> {
             snapshot = list;
             Bukkit.getScheduler().runTask(plugin, () -> {

@@ -30,6 +30,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -499,7 +500,7 @@ public final class OreCubeService implements Listener {
             if (loc.getBlock().getType() != Material.AIR) {
                 loc.getBlock().setType(Material.AIR, false);
             }
-            player.sendBlockChange(loc, Material.BARRIER.createBlockData());
+            player.sendBlockChange(loc, BARRIER_DATA);
         }
     }
 
@@ -668,7 +669,7 @@ public final class OreCubeService implements Listener {
     private void onLanded(Player owner, ZoneDefinition zone, CubeTier tier, CubeBonus bonus, Location landedAt, int blockEntityId, UUID blockEntityUuid) {
         pendingByPlayer.computeIfAbsent(owner.getUniqueId(), k -> new AtomicInteger()).decrementAndGet();
         if (!owner.isOnline() || !zone.equals(currentZone.get(owner.getUniqueId()))) {
-            owner.sendBlockChange(landedAt, Material.AIR.createBlockData());
+            owner.sendBlockChange(landedAt, AIR_DATA);
             PacketEntityManager.destroyEntity(owner, blockEntityId);
             return;
         }
@@ -772,7 +773,7 @@ public final class OreCubeService implements Listener {
         // packet becomes a harmless no-op once that happens, but the team
         // membership cleanup still matters either way.
         despawnHighlight(player, cube);
-        player.sendBlockChange(cube.location(), Material.AIR.createBlockData());
+        player.sendBlockChange(cube.location(), AIR_DATA);
         PacketEntityManager.destroyEntity(player, cube.blockEntityId());
         FakeBlockClickRegistry.unregister(player, cube.location());
         PacketEntityManager.destroyEntity(player, cube.textEntityId());
@@ -1181,16 +1182,42 @@ public final class OreCubeService implements Listener {
      * than once before the whole segment, since the client doesn't always
      * draw a whole run under one set of codes.
      */
+    /**
+     * Every bar the game can draw, built once.
+     * <p>
+     * A bar has only {@code HP_BAR_SEGMENTS + 1} possible appearances, but it
+     * was being assembled into a ~20-tag string and pushed through
+     * MiniMessage on every damage flush of every cube - several times a
+     * second per player, for one of eleven results.
+     */
+    private static final Component[] HP_BARS = buildHpBars();
+
+    /**
+     * The two constant block states this service sends, built once rather
+     * than per call - the self-heal pass below sends one per live cube per
+     * player several times a second, and was allocating a fresh instance for
+     * every one of them. yield-core's FakeFallingBlock already holds its
+     * barrier this way.
+     */
+    private static final BlockData BARRIER_DATA = Material.BARRIER.createBlockData();
+    private static final BlockData AIR_DATA = Material.AIR.createBlockData();
+
+    private static Component[] buildHpBars() {
+        Component[] bars = new Component[HP_BAR_SEGMENTS + 1];
+        for (int filled = 0; filled <= HP_BAR_SEGMENTS; filled++) {
+            StringBuilder bar = new StringBuilder();
+            for (int i = 0; i < HP_BAR_SEGMENTS; i++) {
+                bar.append(i < filled ? "<green><st> </st></green>" : "<gray><st> </st></gray>");
+            }
+            bars[filled] = Text.parse(bar.toString());
+        }
+        return bars;
+    }
+
     private Component hpBar(OreCube cube) {
         double ratio = cube.tier().maxHp() <= 0 ? 0
                 : Math.max(0, Math.min(1.0, cube.currentHp() / (double) cube.tier().maxHp()));
-        int filled = (int) Math.round(ratio * HP_BAR_SEGMENTS);
-
-        StringBuilder bar = new StringBuilder();
-        for (int i = 0; i < HP_BAR_SEGMENTS; i++) {
-            bar.append(i < filled ? "<green><st> </st></green>" : "<gray><st> </st></gray>");
-        }
-        return Text.parse(bar.toString());
+        return HP_BARS[(int) Math.round(ratio * HP_BAR_SEGMENTS)];
     }
 
     /** The boss bar's own single-line title - still "<bar> <hp>/<max> HP", unlike the floating nametag's separate heart+number line. */
@@ -1278,7 +1305,7 @@ public final class OreCubeService implements Listener {
             Location loc = cube.location();
             if (loc.getWorld().equals(event.getChunk().getWorld())
                     && (loc.getBlockX() >> 4) == chunkX && (loc.getBlockZ() >> 4) == chunkZ) {
-                player.sendBlockChange(loc, Material.BARRIER.createBlockData());
+                player.sendBlockChange(loc, BARRIER_DATA);
             }
         }
     }

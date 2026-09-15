@@ -8,6 +8,7 @@ import org.bson.codecs.pojo.annotations.BsonProperty;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -256,12 +257,64 @@ public final class PackPlayerProfile implements PlayerRecord {
         this.petVisibility = petVisibility;
     }
 
+    /**
+     * Lookup index over {@link #pets}, rebuilt on demand.
+     * <p>
+     * Not persisted - it has no getter/setter, so the POJO codec never sees
+     * it as a property. Invalidated by the mutators below; the size check in
+     * {@link #petIndex()} is a backstop that also catches anything mutating
+     * the list directly, which is why {@link #getPets()} staying writable
+     * doesn't make this unsafe.
+     */
+    private transient Map<UUID, PetInstance> petsById;
+
+    /**
+     * The live list. Prefer {@link #addPet}/{@link #removePet}/
+     * {@link #removePets}/{@link #clearPets} for changes - they keep
+     * {@link #findPet} fast instead of forcing it to rebuild.
+     */
     public List<PetInstance> getPets() {
         return pets;
     }
 
     public void setPets(List<PetInstance> pets) {
         this.pets = pets;
+        this.petsById = null;
+    }
+
+    public void addPet(PetInstance pet) {
+        pets.add(pet);
+        petsById = null;
+    }
+
+    /** Removes the pet with this instance id, returning whether it was there. */
+    public boolean removePet(UUID instanceId) {
+        boolean removed = pets.removeIf(pet -> pet.getInstanceId().equals(instanceId));
+        petsById = null;
+        return removed;
+    }
+
+    public void removePets(Collection<PetInstance> toRemove) {
+        pets.removeAll(toRemove);
+        petsById = null;
+    }
+
+    public void clearPets() {
+        pets.clear();
+        petsById = null;
+    }
+
+    private Map<UUID, PetInstance> petIndex() {
+        Map<UUID, PetInstance> index = petsById;
+        if (index != null && index.size() == pets.size()) {
+            return index;
+        }
+        index = new HashMap<>(Math.max(16, pets.size() * 2));
+        for (PetInstance pet : pets) {
+            index.put(pet.getInstanceId(), pet);
+        }
+        petsById = index;
+        return index;
     }
 
     public List<UUID> getEquippedPetIds() {
@@ -272,9 +325,16 @@ public final class PackPlayerProfile implements PlayerRecord {
         this.equippedPetIds = equippedPetIds;
     }
 
-    /** Looks up one specific pet by its permanent instance id - empty if it's been deleted/fused away. */
+    /**
+     * Looks up one specific pet by its permanent instance id - empty if it's
+     * been deleted/fused away.
+     * <p>
+     * Index-backed rather than a scan: the combat loop resolves every
+     * equipped pet this way several times a second, so a linear pass here
+     * made each of those cost the whole bag.
+     */
     public Optional<PetInstance> findPet(UUID instanceId) {
-        return pets.stream().filter(pet -> pet.getInstanceId().equals(instanceId)).findFirst();
+        return Optional.ofNullable(petIndex().get(instanceId));
     }
 
     /** Whether {@code instanceId} is one of this player's currently equipped pets. */
@@ -319,7 +379,7 @@ public final class PackPlayerProfile implements PlayerRecord {
     /** Grants a brand-new, level-1 baseline instance of this pet, tracks it in the pack's collection progress, and stamps it as just-obtained. Returns the new instance so the caller can auto-equip it. */
     public PetInstance addOwnedItem(String packId, String itemId) {
         PetInstance pet = new PetInstance(UUID.randomUUID(), itemId);
-        pets.add(pet);
+        addPet(pet);
         packCollectionProgress.computeIfAbsent(packId, ignored -> new HashSet<>()).add(itemId);
         lastObtainedAt.put(itemId, System.currentTimeMillis());
         return pet;

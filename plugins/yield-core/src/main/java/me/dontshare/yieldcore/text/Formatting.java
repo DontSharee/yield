@@ -31,6 +31,15 @@ public final class Formatting {
     private static final String NORMAL_LETTERS = "abcdefghijklmnopqrstuvwxyz";
     private static final String TINY_LETTERS = "ᴀʙᴄᴅᴇғɢʜɪᴊᴋʟᴍɴᴏᴘǫʀsᴛᴜᴠᴡxʏᴢ";
 
+    /**
+     * {@link #fancyFont} results, keyed by input. Converting one string walks
+     * the alphabet twice over, allocating a fresh copy each pass - fine once,
+     * but the sidebar and the pack selector item call it on fixed labels for
+     * every player every second, where it was pure repeated work.
+     */
+    private static final java.util.Map<String, String> FANCY_FONT_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final int FANCY_FONT_CACHE_LIMIT = 512;
+
     private static final int[] ROMAN_VALUES = {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
     private static final String[] ROMAN_SYMBOLS = {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
 
@@ -147,12 +156,24 @@ public final class Formatting {
      * way any other template text does.
      */
     public static String fancyFont(String text) {
+        String cached = FANCY_FONT_CACHE.get(text);
+        if (cached != null) {
+            return cached;
+        }
         String result = text;
         for (int i = 0; i < NORMAL_LETTERS.length(); i++) {
             String normal = String.valueOf(NORMAL_LETTERS.charAt(i));
             String tiny = String.valueOf(TINY_LETTERS.charAt(i));
             result = result.replace(normal, tiny);
             result = result.replace("&" + tiny, "&" + normal);
+        }
+        // Bounded rather than unbounded: every caller today passes either a
+        // literal or a value from config (a category, a tier word, a bonus
+        // id), so the real key set is small and fixed - but a cache on a
+        // shared text helper shouldn't be able to grow without limit if that
+        // ever stops being true.
+        if (FANCY_FONT_CACHE.size() < FANCY_FONT_CACHE_LIMIT) {
+            FANCY_FONT_CACHE.put(text, result);
         }
         return result;
     }

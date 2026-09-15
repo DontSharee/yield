@@ -139,7 +139,7 @@ public final class QuestService {
             profile.setCredits(profile.getCredits().add(BigInteger.valueOf(quest.rewardCredits())));
         }
         if (quest.rewardPetId() != null && packs.getItemRegistry().find(quest.rewardPetId()).isPresent()) {
-            profile.getPets().add(new PetInstance(UUID.randomUUID(), quest.rewardPetId()));
+            profile.addPet(new PetInstance(UUID.randomUUID(), quest.rewardPetId()));
         }
         profile.getClaimedQuestIds().add(questId(categoryId, selected));
         store.save(player.getUniqueId());

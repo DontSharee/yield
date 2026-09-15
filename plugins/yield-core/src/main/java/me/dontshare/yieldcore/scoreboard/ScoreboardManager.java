@@ -40,16 +40,45 @@ public final class ScoreboardManager {
     private static final int MAX_LINES = 15; // Minecraft's own sidebar display cap
 
     private final Map<UUID, Scoreboard> boards = new ConcurrentHashMap<>();
+    /**
+     * What each line last actually resolved to, so an unchanged one costs
+     * nothing further.
+     * <p>
+     * This display is rebuilt for every player once a second whether or not
+     * anything on it moved. Without this, each of those rebuilds paid a
+     * MiniMessage parse per line and - because CraftBukkit broadcasts on
+     * every {@code prefix}/{@code setScore} call rather than diffing - sent a
+     * packet per line per player per second to say nothing had changed. Most
+     * lines on a sidebar are identical second to second, so comparing the
+     * resolved string first removes nearly all of both.
+     */
+    private final Map<UUID, String[]> renderedLines = new ConcurrentHashMap<>();
+    private final Map<UUID, String> renderedTitles = new ConcurrentHashMap<>();
+    /** Line count at the last render - every score shifts when this changes, and only then. */
+    private final Map<UUID, Integer> renderedSizes = new ConcurrentHashMap<>();
 
     public void setTitle(Player player, String titleTemplate) {
-        getObjective(player).displayName(render(player, titleTemplate));
+        String resolved = resolve(player, titleTemplate);
+        if (resolved.equals(renderedTitles.get(player.getUniqueId()))) {
+            return;
+        }
+        renderedTitles.put(player.getUniqueId(), resolved);
+        getObjective(player).displayName(Text.parse(resolved));
     }
 
     /** Replaces the visible line list, top to bottom, reusing existing per-line teams where possible. */
     public void setLines(Player player, List<String> lineTemplates) {
         Scoreboard board = boardFor(player);
         Objective objective = getObjective(player);
+        UUID playerId = player.getUniqueId();
         int size = lineTemplates.size();
+
+        String[] previous = renderedLines.get(playerId);
+        if (previous == null || previous.length != size) {
+            previous = new String[size];
+            renderedLines.put(playerId, previous);
+        }
+        boolean sizeChanged = !Integer.valueOf(size).equals(renderedSizes.get(playerId));
 
         for (int i = 0; i < size; i++) {
             String entry = entryFor(i);
@@ -58,9 +87,17 @@ public final class ScoreboardManager {
                 team = board.registerNewTeam(teamNameFor(i));
                 team.addEntry(entry);
             }
-            team.prefix(render(player, lineTemplates.get(i)));
-            objective.getScore(entry).setScore(size - i);
+
+            String resolved = resolve(player, lineTemplates.get(i));
+            if (!resolved.equals(previous[i])) {
+                previous[i] = resolved;
+                team.prefix(Text.parse(resolved));
+            }
+            if (sizeChanged) {
+                objective.getScore(entry).setScore(size - i);
+            }
         }
+        renderedSizes.put(playerId, size);
 
         // Clean up any leftover lines from a previous, longer render.
         for (int i = size; i < MAX_LINES; i++) {
@@ -75,20 +112,26 @@ public final class ScoreboardManager {
 
     /** Resets the player's live scoreboard. Call this while they're still online. */
     public void clear(Player player) {
-        boards.remove(player.getUniqueId());
+        forget(player.getUniqueId());
         player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
     }
 
     /** Drops the cached board reference without touching the (already-disconnected) player. Call on quit. */
     public void unload(UUID playerId) {
-        boards.remove(playerId);
+        forget(playerId);
     }
 
-    private Component render(Player player, String template) {
-        String resolved = Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")
+    private void forget(UUID playerId) {
+        boards.remove(playerId);
+        renderedLines.remove(playerId);
+        renderedTitles.remove(playerId);
+        renderedSizes.remove(playerId);
+    }
+
+    private String resolve(Player player, String template) {
+        return Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")
                 ? PlaceholderAPI.setPlaceholders(player, template)
                 : template;
-        return Text.parse(resolved);
     }
 
     /**

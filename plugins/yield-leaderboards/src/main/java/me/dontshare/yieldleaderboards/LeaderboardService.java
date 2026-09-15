@@ -21,6 +21,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -100,21 +101,31 @@ public final class LeaderboardService {
             return;
         }
         databaseManager.supplyAsync(() -> rank(stat))
-                .thenAccept(ranked -> Bukkit.getScheduler().runTask(plugin, () -> updateHologram(leaderboard, stat, ranked)))
+                .thenAccept(ranked -> Bukkit.getScheduler().runTask(plugin,
+                        () -> updateHologram(leaderboard, stat, ranked.entries(), ranked.names())))
                 .exceptionally(ex -> {
                     plugin.getLogger().warning("Failed to refresh leaderboard '" + leaderboard.id() + "': " + ex.getMessage());
                     return null;
                 });
     }
 
+    /** The top entries plus the display name for each, both resolved off the main thread. */
+    private record Ranking(List<Map.Entry<UUID, Comparable<?>>> entries, Map<UUID, String> names) {
+    }
+
     /** Runs off the main thread - see DatabaseManager's own Javadoc on why this must never run inline on a tick. */
-    private List<Map.Entry<UUID, Comparable<?>>> rank(StatDefinition stat) {
+    private Ranking rank(StatDefinition stat) {
         MongoCollection<Document> collection = databaseManager.getCollection("playerData");
+        // Usernames come from the same projection as the stat. Resolving them
+        // later through Bukkit's OfflinePlayer instead would mean a lookup
+        // that can miss the local usercache and block on Mojang's API - and
+        // it was being done on the main thread.
         List<Document> docs = collection.find()
-                .projection(Projections.include("_id", stat.field()))
+                .projection(Projections.include("_id", stat.field(), "core.username"))
                 .into(new ArrayList<>());
 
         List<Map.Entry<UUID, Comparable<?>>> entries = new ArrayList<>();
+        Map<UUID, String> names = new HashMap<>();
         for (Document doc : docs) {
             UUID id = doc.get("_id", UUID.class);
             if (id == null) {
@@ -122,9 +133,12 @@ public final class LeaderboardService {
             }
             Object raw = resolvePath(doc, stat.field());
             entries.add(Map.entry(id, stat.type().parse(raw)));
+            if (resolvePath(doc, "core.username") instanceof String username) {
+                names.put(id, username);
+            }
         }
         entries.sort((a, b) -> compareDescending(a.getValue(), b.getValue()));
-        return entries.size() > TOP_N ? entries.subList(0, TOP_N) : entries;
+        return new Ranking(entries.size() > TOP_N ? entries.subList(0, TOP_N) : entries, names);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -220,7 +234,8 @@ public final class LeaderboardService {
         player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 0.8f);
     }
 
-    private void updateHologram(LeaderboardDefinition leaderboard, StatDefinition stat, List<Map.Entry<UUID, Comparable<?>>> ranked) {
+    private void updateHologram(LeaderboardDefinition leaderboard, StatDefinition stat,
+                                 List<Map.Entry<UUID, Comparable<?>>> ranked, Map<UUID, String> names) {
         announceChanges(leaderboard, ranked);
         if (!FancyHologramsPlugin.isEnabled()) {
             return;
@@ -241,7 +256,7 @@ public final class LeaderboardService {
         lines.add("");
         int rank = 1;
         for (Map.Entry<UUID, Comparable<?>> entry : ranked) {
-            String name = Optional.ofNullable(Bukkit.getOfflinePlayer(entry.getKey()).getName()).orElse("Unknown");
+            String name = names.getOrDefault(entry.getKey(), "Unknown");
             lines.add("<gold>#" + rank + "</gold> <white>" + name + "</white> <gray>-</gray> <yellow>" + stat.type().format(entry.getValue()) + "</yellow>");
             rank++;
         }

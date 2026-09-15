@@ -50,6 +50,14 @@ public final class AuctionListingStore {
         databaseManager.supplyAsync(() -> {
             collection.createIndex(Indexes.ascending("status"), new IndexOptions().background(true));
             collection.createIndex(Indexes.ascending("sellerId", "status"), new IndexOptions().background(true));
+            // Both of these sort/range on a second field that a "status"-only
+            // index can't serve. Without them Mongo loads every ACTIVE
+            // listing and sorts it in memory, which is not just slow: that
+            // sort has a hard 32MB ceiling, so a busy enough auction house
+            // eventually turns browsing into an outright error rather than a
+            // slow screen.
+            collection.createIndex(Indexes.ascending("status", "listedAtMillis"), new IndexOptions().background(true));
+            collection.createIndex(Indexes.ascending("status", "expiresAtMillis"), new IndexOptions().background(true));
             return null;
         });
     }

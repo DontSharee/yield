@@ -346,7 +346,7 @@ public final class BagGui {
             open(player);
             return;
         }
-        profile.getPets().removeIf(p -> p.getInstanceId().equals(instanceId));
+        profile.removePet(instanceId);
         store.save(player.getUniqueId());
         ItemStack item = withdrawItem.create(entry.item(), pet, entry.rarity(), entry.effectiveDamage());
         player.getInventory().addItem(item).values()
@@ -358,7 +358,7 @@ public final class BagGui {
     /** Permanently removes exactly this one instance - safe against cutting into an equipped copy since equip/delete always act on a specific instance id, and equipped ones are never shown in storage. */
     private void deleteOne(Player player, UUID instanceId) {
         PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
-        profile.getPets().removeIf(pet -> pet.getInstanceId().equals(instanceId));
+        profile.removePet(instanceId);
         store.save(player.getUniqueId());
         player.sendMessage(Text.parse("<gray>Deleted 1x.</gray>"));
         open(player);
