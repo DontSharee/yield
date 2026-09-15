@@ -8,7 +8,7 @@ import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.MenuLore;
 import me.dontshare.yieldmining.data.MiningContent;
 import me.dontshare.yieldmining.data.OreDefinition;
-import me.dontshare.yieldpacks.player.PackPlayerProfile;
+import me.dontshare.yieldmining.data.MiningProfile;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -32,17 +32,17 @@ public final class OreIndexGui {
     private static final int MAX_CONTENT_SLOTS = 45;
 
     private final Supplier<MiningContent> content;
-    private final PlayerDataStore<PackPlayerProfile> store;
+    private final PlayerDataStore<MiningProfile> store;
     private final GuiManager guiManager;
 
-    public OreIndexGui(Supplier<MiningContent> content, PlayerDataStore<PackPlayerProfile> store, GuiManager guiManager) {
+    public OreIndexGui(Supplier<MiningContent> content, PlayerDataStore<MiningProfile> store, GuiManager guiManager) {
         this.content = content;
         this.store = store;
         this.guiManager = guiManager;
     }
 
     public void open(Player player) {
-        PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
+        MiningProfile profile = store.getOrCreate(player.getUniqueId());
         List<OreDefinition> ores = new ArrayList<>(content.get().ores().values());
         ores.removeIf(definition -> definition.dropMaterial() == null);
 

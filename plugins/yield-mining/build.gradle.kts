@@ -1,4 +1,4 @@
-version = "0.6.4"
+version = "0.7.0"
 
 repositories {
     maven("https://repo.codemc.io/repository/maven-releases/")
@@ -16,4 +16,6 @@ dependencies {
     // Location/Vector3f-backed calls itself via BlockDisplayManager/
     // PacketEntityManager.
     compileOnly("com.github.retrooper:packetevents-spigot:2.13.0")
+    // For the @BsonId annotation on this plugin's own MiningProfile.
+    compileOnly("org.mongodb:mongodb-driver-sync:5.10.0")
 }

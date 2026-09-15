@@ -97,9 +97,6 @@ public final class PackPlayerProfile implements PlayerRecord {
     // tiers complete-but-unclaimed at once if progress jumped past more
     // than one threshold, and each needs claiming independently.
     private Set<String> claimedMilestoneKeys = new HashSet<>();
-    private Map<String, Integer> pickaxeEnchantLevels = new HashMap<>();
-    private Map<String, Integer> pickaxeEnchantMastery = new HashMap<>();
-    private Set<String> pickaxeEnchantDisabled = new HashSet<>();
     /** A permanent, admin-granted luck bonus (see /admin stats) - additive, same slot shape as every other LuckService contributor. */
     private double adminLuckBonus;
     // Permanent shard bonuses (see me.dontshare.yieldpacks.shard.ShardService)
@@ -129,21 +126,6 @@ public final class PackPlayerProfile implements PlayerRecord {
     // effect. Value is an absolute expiry epoch millis, not a remaining
     // duration, so it keeps counting down correctly across a relog/restart.
     private Map<String, Long> activePotionExpiryMillis = new HashMap<>();
-    // Ore Bag (see yield-mining's OreBagService) - entry id -> "MATERIAL:multiplier:tierId".
-    // Generic string encoding, not a yield-mining type: yield-packs can't
-    // depend on yield-mining (the dependency points the other way), same
-    // reasoning as PetInstance's own forgeBonuses map.
-    private Map<String, String> oreBagEntries = new LinkedHashMap<>();
-    private boolean oreBagNotificationsEnabled = true;
-    // Ore materials (Material#name()) this player has ever pulled a Special
-    // Ore of - drives /oreindex's discovered-vs-locked state.
-    private Set<String> discoveredOreMaterials = new HashSet<>();
-    // Enchant slots (see yield-packs' EnchantService) - index = slot
-    // position (0-8, 9 total matching PS99's own 6 free + 3 premium),
-    // value "" (empty/unfilled) or "TYPE:RARITY_ID". The durable source
-    // of truth; EnchantGui regenerates the real item shown in each slot
-    // fresh on every open, same "encode as string, rebuild the display
-    // item on demand" idiom as the Ore Bag's own entries.
     private List<String> enchantSlots = newEmptyEnchantSlots();
     // Mastery (see yield-packs' MasteryService) - accumulated XP per
     // MasteryType#name(), always-growing, never spent - level is derived
@@ -546,22 +528,6 @@ public final class PackPlayerProfile implements PlayerRecord {
         this.credits = credits;
     }
 
-    public Map<String, String> getOreBagEntries() {
-        return oreBagEntries;
-    }
-
-    public boolean isOreBagNotificationsEnabled() {
-        return oreBagNotificationsEnabled;
-    }
-
-    public void setOreBagNotificationsEnabled(boolean oreBagNotificationsEnabled) {
-        this.oreBagNotificationsEnabled = oreBagNotificationsEnabled;
-    }
-
-    public Set<String> getDiscoveredOreMaterials() {
-        return discoveredOreMaterials;
-    }
-
     public List<String> getEnchantSlots() {
         return enchantSlots;
     }
@@ -584,18 +550,6 @@ public final class PackPlayerProfile implements PlayerRecord {
 
     public Set<String> getClaimedMilestoneKeys() {
         return claimedMilestoneKeys;
-    }
-
-    public Map<String, Integer> getPickaxeEnchantLevels() {
-        return pickaxeEnchantLevels;
-    }
-
-    public Map<String, Integer> getPickaxeEnchantMastery() {
-        return pickaxeEnchantMastery;
-    }
-
-    public Set<String> getPickaxeEnchantDisabled() {
-        return pickaxeEnchantDisabled;
     }
 
     public Map<String, Long> getActivePotionExpiryMillis() {

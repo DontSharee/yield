@@ -2,6 +2,7 @@ package me.dontshare.yieldmining.enchant;
 
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.math.FormulaEvaluator;
+import me.dontshare.yieldmining.data.MiningProfile;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 
 import java.math.BigInteger;
@@ -49,13 +50,17 @@ public final class PickaxeEnchantService {
 
     private final Supplier<Map<String, PickaxeEnchantDefinition>> content;
     private final PlayerDataStore<PackPlayerProfile> store;
+    /** This plugin's own enchant state. The pack store above stays for the currency a purchase spends. */
+    private final PlayerDataStore<MiningProfile> miningStore;
 
     /** Player -> enchant id -> its current (chance%, boost) pair - see class doc. */
     private final Map<UUID, Map<String, CachedRoll>> cache = new ConcurrentHashMap<>();
 
-    public PickaxeEnchantService(Supplier<Map<String, PickaxeEnchantDefinition>> content, PlayerDataStore<PackPlayerProfile> store) {
+    public PickaxeEnchantService(Supplier<Map<String, PickaxeEnchantDefinition>> content, PlayerDataStore<PackPlayerProfile> store,
+                                  PlayerDataStore<MiningProfile> miningStore) {
         this.content = content;
         this.store = store;
+        this.miningStore = miningStore;
     }
 
     public Map<String, PickaxeEnchantDefinition> enchants() {
@@ -63,20 +68,20 @@ public final class PickaxeEnchantService {
     }
 
     public int levelOf(PackPlayerProfile profile, String enchantId) {
-        return profile.getPickaxeEnchantLevels().getOrDefault(enchantId, 0);
+        return miningStore.getOrCreate(profile.getPlayerId()).getEnchantLevels().getOrDefault(enchantId, 0);
     }
 
     public int masteryOf(PackPlayerProfile profile, String enchantId) {
-        return profile.getPickaxeEnchantMastery().getOrDefault(enchantId, 0);
+        return miningStore.getOrCreate(profile.getPlayerId()).getEnchantMastery().getOrDefault(enchantId, 0);
     }
 
     public boolean isEnabled(PackPlayerProfile profile, String enchantId) {
-        return !profile.getPickaxeEnchantDisabled().contains(enchantId);
+        return !miningStore.getOrCreate(profile.getPlayerId()).getEnchantDisabled().contains(enchantId);
     }
 
     /** A player-toggled "don't roll this one" preference - not a lock, just opts it out of {@link #rollMultiplier}. Doesn't change the math, so no recompute needed. */
     public void togglePreference(PackPlayerProfile profile, String enchantId) {
-        Set<String> disabled = profile.getPickaxeEnchantDisabled();
+        Set<String> disabled = miningStore.getOrCreate(profile.getPlayerId()).getEnchantDisabled();
         if (!disabled.remove(enchantId)) {
             disabled.add(enchantId);
         }
@@ -111,7 +116,7 @@ public final class PickaxeEnchantService {
             return PurchaseResult.CANT_AFFORD;
         }
         def.costCurrency().setBalance(profile, balance.subtract(price));
-        profile.getPickaxeEnchantLevels().put(def.id(), currentLevel + actualAmount);
+        miningStore.getOrCreate(profile.getPlayerId()).getEnchantLevels().put(def.id(), currentLevel + actualAmount);
         recompute(profile);
         return PurchaseResult.SUCCESS;
     }
@@ -125,8 +130,8 @@ public final class PickaxeEnchantService {
         }
         BigInteger refund = priceForLevels(def, 0, currentLevel);
         def.costCurrency().setBalance(profile, def.costCurrency().balanceOf(profile).add(refund));
-        profile.getPickaxeEnchantLevels().remove(def.id());
-        profile.getPickaxeEnchantMastery().remove(def.id());
+        miningStore.getOrCreate(profile.getPlayerId()).getEnchantLevels().remove(def.id());
+        miningStore.getOrCreate(profile.getPlayerId()).getEnchantMastery().remove(def.id());
         recompute(profile);
         return DisenchantResult.SUCCESS;
     }
@@ -155,7 +160,7 @@ public final class PickaxeEnchantService {
             return MasteryResult.CANT_AFFORD;
         }
         profile.setDiamonds(diamonds.subtract(cost));
-        profile.getPickaxeEnchantMastery().put(def.id(), currentMastery + 1);
+        miningStore.getOrCreate(profile.getPlayerId()).getEnchantMastery().put(def.id(), currentMastery + 1);
         recompute(profile);
         return MasteryResult.SUCCESS;
     }

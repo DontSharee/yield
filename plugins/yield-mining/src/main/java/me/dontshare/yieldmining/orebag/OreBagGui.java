@@ -8,6 +8,7 @@ import me.dontshare.yieldcore.gui.Page;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.MenuLore;
 import me.dontshare.yieldmining.orebag.OreBagService.BagEntryView;
+import me.dontshare.yieldmining.data.MiningProfile;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -33,12 +34,15 @@ public final class OreBagGui {
     private static final int NEXT_SLOT = 53;
 
     private final PlayerDataStore<PackPlayerProfile> store;
+    private final PlayerDataStore<MiningProfile> miningStore;
     private final OreBagService service;
     private final GuiManager guiManager;
     private final Map<UUID, Integer> pageIndex = new ConcurrentHashMap<>();
 
-    public OreBagGui(PlayerDataStore<PackPlayerProfile> store, OreBagService service, GuiManager guiManager) {
+    public OreBagGui(PlayerDataStore<PackPlayerProfile> store, PlayerDataStore<MiningProfile> miningStore,
+                      OreBagService service, GuiManager guiManager) {
         this.store = store;
+        this.miningStore = miningStore;
         this.service = service;
         this.guiManager = guiManager;
     }
@@ -58,7 +62,8 @@ public final class OreBagGui {
         }
         builder.fill(IntStream.range(45, 54).filter(s -> s != PREV_SLOT && s != TOGGLE_SLOT && s != CLOSE_SLOT && s != NEXT_SLOT), GuiIcons.filler());
         builder.item(PREV_SLOT, GuiIcons.pageArrow(false, page.hasPrevious()), (clicker, e) -> turnPage(clicker, -1));
-        builder.item(TOGGLE_SLOT, buildToggleIcon(profile), (clicker, e) -> toggleNotifications(clicker));
+        builder.item(TOGGLE_SLOT, buildToggleIcon(miningStore.getOrCreate(player.getUniqueId()).isOreBagNotificationsEnabled()),
+                (clicker, e) -> toggleNotifications(clicker));
         builder.item(CLOSE_SLOT, GuiIcons.closeButton(), (clicker, e) -> clicker.closeInventory());
         builder.item(NEXT_SLOT, GuiIcons.pageArrow(true, page.hasNext()), (clicker, e) -> turnPage(clicker, 1));
 
@@ -80,7 +85,9 @@ public final class OreBagGui {
 
     private void toggleNotifications(Player player) {
         PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
-        profile.setOreBagNotificationsEnabled(!profile.isOreBagNotificationsEnabled());
+        MiningProfile mining = miningStore.getOrCreate(player.getUniqueId());
+        mining.setOreBagNotificationsEnabled(!mining.isOreBagNotificationsEnabled());
+        miningStore.save(player.getUniqueId());
         store.save(player.getUniqueId());
         open(player);
     }
@@ -89,8 +96,7 @@ public final class OreBagGui {
         return service.displayItemFor(entry);
     }
 
-    private ItemStack buildToggleIcon(PackPlayerProfile profile) {
-        boolean on = profile.isOreBagNotificationsEnabled();
+    private ItemStack buildToggleIcon(boolean on) {
         ItemBuilder builder = ItemBuilder.of(on ? Material.BELL : Material.GRAY_DYE)
                 .name(MenuLore.buttonName(ACCENT, "MESSAGE NOTIFICATIONS"));
         MenuLore.button("settings",

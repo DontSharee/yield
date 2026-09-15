@@ -1,6 +1,9 @@
 package me.dontshare.yieldmining;
 
 import me.dontshare.yieldcore.YieldCore;
+import me.dontshare.yieldcore.database.PlayerDataStore;
+import me.dontshare.yieldcore.database.PlayerStores;
+import me.dontshare.yieldmining.data.MiningProfile;
 import me.dontshare.yieldcore.command.CommandManager;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldmining.command.MiningAdminCommand;
@@ -47,6 +50,7 @@ public final class YieldMining extends JavaPlugin {
 
     private MiningContentLoader contentLoader;
     private volatile MiningContent content;
+    private PlayerDataStore<MiningProfile> miningStore;
     private MiningService miningService;
     private MiningItem miningItem;
 
@@ -73,7 +77,9 @@ public final class YieldMining extends JavaPlugin {
 
         enchantContentLoader = new PickaxeEnchantContentLoader(this, getLogger());
         enchantContent = Map.of();
-        enchantService = new PickaxeEnchantService(() -> enchantContent, packs.getPlayerStore());
+        miningStore = PlayerStores.register(this, core.getListenerManager(), core.getDatabaseManager(),
+                "mining", MiningProfile.class, MiningProfile::new, "mining data");
+        enchantService = new PickaxeEnchantService(() -> enchantContent, packs.getPlayerStore(), miningStore);
 
         forgeContentLoader = new ForgeContentLoader(this, getLogger());
         forgeTiers = List.of();
@@ -82,7 +88,7 @@ public final class YieldMining extends JavaPlugin {
         forgeBoostService = new ForgeBoostService(packs.getPlayerStore());
         registerForgeProviders(packs);
 
-        OreBagService oreBagService = new OreBagService(packs.getPlayerStore(), specialOreItem, () -> forgeTiers);
+        OreBagService oreBagService = new OreBagService(packs.getPlayerStore(), miningStore, specialOreItem, () -> forgeTiers);
 
         miningItem = new MiningItem(this);
         miningService = new MiningService(this, () -> content, packs, miningItem, this::onSpotCreated, enchantService,
@@ -98,9 +104,9 @@ public final class YieldMining extends JavaPlugin {
         ForgeGui forgeGui = new ForgeGui(core.getGuiManager(), specialOreItem, forgedItem);
         CommandManager.register(this, ForgeCommand.build(forgeGui), "Combine Special Ore into a held item");
 
-        OreBagGui oreBagGui = new OreBagGui(packs.getPlayerStore(), oreBagService, core.getGuiManager());
+        OreBagGui oreBagGui = new OreBagGui(packs.getPlayerStore(), miningStore, oreBagService, core.getGuiManager());
         CommandManager.register(this, OreBagCommand.build(oreBagGui), "View your Ore Bag");
-        OreIndexGui oreIndexGui = new OreIndexGui(() -> content, packs.getPlayerStore(), core.getGuiManager());
+        OreIndexGui oreIndexGui = new OreIndexGui(() -> content, miningStore, core.getGuiManager());
         CommandManager.register(this, OreIndexCommand.build(oreIndexGui), "Browse the Ore Index");
 
         forgedItemHandler = this::applyForgedItem;

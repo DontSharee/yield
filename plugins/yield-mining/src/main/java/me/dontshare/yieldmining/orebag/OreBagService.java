@@ -5,6 +5,7 @@ import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldmining.forge.SpecialOreItem;
 import me.dontshare.yieldmining.forge.SpecialOreTier;
+import me.dontshare.yieldmining.data.MiningProfile;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -33,12 +34,15 @@ public final class OreBagService {
     }
 
     private final PlayerDataStore<PackPlayerProfile> store;
+    /** This plugin's own bag contents. The pack store above stays for the currency a withdrawal pays out. */
+    private final PlayerDataStore<MiningProfile> miningStore;
     private final SpecialOreItem specialOreItem;
     private final Supplier<List<SpecialOreTier>> tiers;
 
-    public OreBagService(PlayerDataStore<PackPlayerProfile> store, SpecialOreItem specialOreItem,
+    public OreBagService(PlayerDataStore<PackPlayerProfile> store, PlayerDataStore<MiningProfile> miningStore, SpecialOreItem specialOreItem,
                           Supplier<List<SpecialOreTier>> tiers) {
         this.store = store;
+        this.miningStore = miningStore;
         this.specialOreItem = specialOreItem;
         this.tiers = tiers;
     }
@@ -46,10 +50,10 @@ public final class OreBagService {
     /** Called from MiningService.giveDrop instead of handing the item straight to the player. */
     public void add(PackPlayerProfile profile, Player player, Material material, double multiplier, SpecialOreTier tier) {
         String entryId = UUID.randomUUID().toString();
-        profile.getOreBagEntries().put(entryId, material.name() + ":" + multiplier + ":" + tier.id());
-        profile.getDiscoveredOreMaterials().add(material.name());
+        miningStore.getOrCreate(profile.getPlayerId()).getOreBagEntries().put(entryId, material.name() + ":" + multiplier + ":" + tier.id());
+        miningStore.getOrCreate(profile.getPlayerId()).getDiscoveredOreMaterials().add(material.name());
         store.save(player.getUniqueId());
-        if (profile.isOreBagNotificationsEnabled()) {
+        if (miningStore.getOrCreate(profile.getPlayerId()).isOreBagNotificationsEnabled()) {
             player.sendMessage(Text.parse("<green>Special Ore!</green> <gray>" + prettyName(material) + " ("
                     + String.format(Locale.ROOT, "%.2f", multiplier) + "x) added to your Ore Bag.</gray>"));
         }
@@ -58,7 +62,7 @@ public final class OreBagService {
     /** Decoded entries, oldest-obtained first - preserves the backing LinkedHashMap's insertion order. */
     public List<BagEntryView> entries(PackPlayerProfile profile) {
         List<BagEntryView> result = new ArrayList<>();
-        for (Map.Entry<String, String> entry : profile.getOreBagEntries().entrySet()) {
+        for (Map.Entry<String, String> entry : miningStore.getOrCreate(profile.getPlayerId()).getOreBagEntries().entrySet()) {
             BagEntryView view = decode(entry.getKey(), entry.getValue());
             if (view != null) {
                 result.add(view);
@@ -69,7 +73,7 @@ public final class OreBagService {
 
     /** Removes one entry and hands the player the real item (dropped at their feet if their inventory is full). False if the entry id no longer exists (e.g. a double-click). */
     public boolean withdraw(PackPlayerProfile profile, Player player, String entryId) {
-        String encoded = profile.getOreBagEntries().remove(entryId);
+        String encoded = miningStore.getOrCreate(profile.getPlayerId()).getOreBagEntries().remove(entryId);
         if (encoded == null) {
             return false;
         }
