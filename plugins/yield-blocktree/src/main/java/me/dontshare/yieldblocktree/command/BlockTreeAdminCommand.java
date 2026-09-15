@@ -15,8 +15,6 @@ import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldblocktree.data.BlockTreeProfile;
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.text.Text;
-import me.dontshare.yieldpacks.YieldPacks;
-import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
