@@ -6,6 +6,8 @@ import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.model.UpdateOptions;
 import org.bson.BsonDocument;
+import org.bson.BsonValue;
+import org.bson.conversions.Bson;
 import org.bson.BsonDocumentReader;
 import org.bson.BsonDocumentWriter;
 import org.bson.Document;
@@ -17,6 +19,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -64,8 +69,8 @@ public final class PlayerDataStore<T extends PlayerRecord> {
 
     private final Map<UUID, T> cache = new ConcurrentHashMap<>();
     private final Map<UUID, CompletableFuture<Void>> pendingSaves = new ConcurrentHashMap<>();
-    /** Hash of each player's last successfully written document - lets an unchanged autosave skip the write entirely. */
-    private final Map<UUID, Integer> lastWrittenHash = new ConcurrentHashMap<>();
+    /** Per-top-level-field hashes of each player's last successfully written subdocument - see {@link #write}. */
+    private final Map<UUID, Map<String, Integer>> lastFieldHashes = new ConcurrentHashMap<>();
     /** Players still to be visited in the current autosave sweep - see {@link #startAutoSave}. */
     private final ArrayDeque<UUID> autoSaveQueue = new ArrayDeque<>();
     private int autoSaveBudget = 1;
@@ -91,10 +96,11 @@ public final class PlayerDataStore<T extends PlayerRecord> {
      * plugin migrate an old field shape into a new one (e.g. renaming/
      * restructuring a field after a breaking data-model change) without a
      * permanent dual-field shim in the actual POJO. A no-op by default.
-     * Since {@link #save} always {@code $set}s the whole re-serialized
-     * object (never a partial merge), any stale key this migration doesn't
-     * touch simply disappears on that player's very next save - there's
-     * nothing to clean up here beyond adding whatever the new shape needs.
+     * Any stale key this migration doesn't touch simply disappears on that
+     * player's first save after loading, which always writes the whole
+     * re-serialized subdocument rather than a partial merge (see
+     * {@link #write}) - there's nothing to clean up here beyond adding
+     * whatever the new shape needs.
      */
     public void setRawMigration(Function<Document, Document> rawMigration) {
         this.rawMigration = rawMigration != null ? rawMigration : (document -> document);
@@ -155,9 +161,18 @@ public final class PlayerDataStore<T extends PlayerRecord> {
     }
 
     /**
-     * Serializes the cached record and writes it, skipping the round-trip
-     * entirely when nothing has changed since the last write unless
-     * {@code force} is set.
+     * Serializes the cached record and writes back only what actually moved.
+     * <p>
+     * Replacing the whole {@code fieldKey} subdocument on every save means a
+     * player's entire record - for yield-packs, every pet they have ever
+     * owned - is rewritten because one quest counter went up. Since this
+     * store is shared, every feature's save pays for every other feature's
+     * data. Comparing the freshly encoded document against the last one
+     * written, field by field, turns that into a {@code $set} of just the
+     * fields that differ, and into nothing at all when a player is idle.
+     * <p>
+     * A forced save (quit, shutdown) writes the subdocument whole, so nothing
+     * durable rests on the comparison being right.
      */
     private CompletableFuture<Void> write(UUID playerId, boolean force) {
         T record = cache.get(playerId);
@@ -173,18 +188,36 @@ public final class PlayerDataStore<T extends PlayerRecord> {
             return CompletableFuture.failedFuture(e);
         }
 
-        // An idle player's document is byte-identical cycle after cycle, and
-        // a MAJORITY-acknowledged write is far more expensive than the
-        // comparison that avoids it. A forced save (quit, shutdown) always
-        // writes, so nothing durable can rest on this check being right.
-        Integer previous = lastWrittenHash.get(playerId);
-        int current = encoded.hashCode();
-        if (!force && previous != null && previous == current) {
-            return CompletableFuture.completedFuture(null);
+        Map<String, Integer> previous = force ? null : lastFieldHashes.get(playerId);
+        Map<String, Integer> current = new HashMap<>(encoded.size() * 2);
+        for (Map.Entry<String, BsonValue> field : encoded.entrySet()) {
+            current.put(field.getKey(), field.getValue().hashCode());
+        }
+
+        Bson update;
+        if (previous == null) {
+            update = Updates.set(fieldKey, encoded);
+        } else {
+            List<Bson> changes = new ArrayList<>();
+            for (Map.Entry<String, BsonValue> field : encoded.entrySet()) {
+                Integer before = previous.get(field.getKey());
+                if (before == null || before.intValue() != current.get(field.getKey()).intValue()) {
+                    changes.add(Updates.set(fieldKey + "." + field.getKey(), field.getValue()));
+                }
+            }
+            for (String goneKey : previous.keySet()) {
+                if (!current.containsKey(goneKey)) {
+                    changes.add(Updates.unset(fieldKey + "." + goneKey));
+                }
+            }
+            if (changes.isEmpty()) {
+                return CompletableFuture.completedFuture(null);
+            }
+            update = Updates.combine(changes);
         }
 
         CompletableFuture<Void> future = databaseManager.supplyAsync(() -> {
-            collection.updateOne(Filters.eq("_id", playerId), Updates.set(fieldKey, encoded), new UpdateOptions().upsert(true));
+            collection.updateOne(Filters.eq("_id", playerId), update, new UpdateOptions().upsert(true));
             return null;
         });
 
@@ -192,10 +225,13 @@ public final class PlayerDataStore<T extends PlayerRecord> {
         future.whenComplete((ignored, error) -> {
             pendingSaves.remove(playerId, future);
             if (error != null) {
-                lastWrittenHash.remove(playerId);
+                // Cleared, not left stale: the next save must then rewrite the
+                // whole subdocument rather than trusting a baseline that may
+                // never have landed.
+                lastFieldHashes.remove(playerId);
                 logger.log(Level.SEVERE, "Failed to save player data for " + playerId, error);
             } else {
-                lastWrittenHash.put(playerId, current);
+                lastFieldHashes.put(playerId, current);
             }
         });
         return future;
@@ -248,7 +284,7 @@ public final class PlayerDataStore<T extends PlayerRecord> {
     /** Drops a player from the in-memory cache. Call after {@link #save} on quit. */
     public void unload(UUID playerId) {
         cache.remove(playerId);
-        lastWrittenHash.remove(playerId);
+        lastFieldHashes.remove(playerId);
     }
 
     /**
