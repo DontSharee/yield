@@ -1,6 +1,7 @@
 package me.dontshare.yieldachievements.potion;
 
 import me.dontshare.yieldcore.database.PlayerDataStore;
+import me.dontshare.yieldachievements.data.AchievementProfile;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import org.bukkit.entity.Player;
 
@@ -22,9 +23,12 @@ public final class PotionService {
     }
 
     private final PlayerDataStore<PackPlayerProfile> store;
+    /** This plugin's own progress and effects. The pack store above stays for the rewards a claim pays out. */
+    private final PlayerDataStore<AchievementProfile> achievementStore;
 
-    public PotionService(PlayerDataStore<PackPlayerProfile> store) {
+    public PotionService(PlayerDataStore<PackPlayerProfile> store, PlayerDataStore<AchievementProfile> achievementStore) {
         this.store = store;
+        this.achievementStore = achievementStore;
     }
 
     /** Applies {@code potionId}'s effect - null (a no-op) if it isn't a valid potion id. */
@@ -36,10 +40,11 @@ public final class PotionService {
         PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
         String key = def.stackKey();
         long now = System.currentTimeMillis();
-        long currentExpiry = profile.getActivePotionExpiryMillis().getOrDefault(key, 0L);
+        long currentExpiry = achievementStore.getOrCreate(profile.getPlayerId()).getActivePotionExpiryMillis().getOrDefault(key, 0L);
         long base = Math.max(now, currentExpiry);
-        profile.getActivePotionExpiryMillis().put(key, base + def.durationSeconds() * 1000L);
+        achievementStore.getOrCreate(profile.getPlayerId()).getActivePotionExpiryMillis().put(key, base + def.durationSeconds() * 1000L);
         store.save(player.getUniqueId());
+        achievementStore.save(player.getUniqueId());
         return def;
     }
 
@@ -59,7 +64,7 @@ public final class PotionService {
     public double multiplierFor(PackPlayerProfile profile, PotionStat stat) {
         long now = System.currentTimeMillis();
         double total = 1.0;
-        Iterator<Map.Entry<String, Long>> it = profile.getActivePotionExpiryMillis().entrySet().iterator();
+        Iterator<Map.Entry<String, Long>> it = achievementStore.getOrCreate(profile.getPlayerId()).getActivePotionExpiryMillis().entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<String, Long> entry = it.next();
             if (entry.getValue() <= now) {
@@ -78,7 +83,7 @@ public final class PotionService {
     public List<ActivePotion> activePotions(PackPlayerProfile profile) {
         long now = System.currentTimeMillis();
         List<ActivePotion> active = new ArrayList<>();
-        Iterator<Map.Entry<String, Long>> it = profile.getActivePotionExpiryMillis().entrySet().iterator();
+        Iterator<Map.Entry<String, Long>> it = achievementStore.getOrCreate(profile.getPlayerId()).getActivePotionExpiryMillis().entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<String, Long> entry = it.next();
             long remainingMillis = entry.getValue() - now;

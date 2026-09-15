@@ -6,6 +6,7 @@ import me.dontshare.yieldachievements.data.MilestoneTier;
 import me.dontshare.yieldachievements.potion.PotionDefinition;
 import me.dontshare.yieldachievements.potion.PotionItem;
 import me.dontshare.yieldcore.database.PlayerDataStore;
+import me.dontshare.yieldachievements.data.AchievementProfile;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import org.bukkit.entity.Player;
 
@@ -43,11 +44,15 @@ public final class MilestoneService {
 
     private final Supplier<Map<String, MilestoneCategory>> content;
     private final PlayerDataStore<PackPlayerProfile> store;
+    /** This plugin's own progress and effects. The pack store above stays for the rewards a claim pays out. */
+    private final PlayerDataStore<AchievementProfile> achievementStore;
     private final PotionItem potionItem;
 
-    public MilestoneService(Supplier<Map<String, MilestoneCategory>> content, PlayerDataStore<PackPlayerProfile> store, PotionItem potionItem) {
+    public MilestoneService(Supplier<Map<String, MilestoneCategory>> content, PlayerDataStore<PackPlayerProfile> store,
+                             PlayerDataStore<AchievementProfile> achievementStore, PotionItem potionItem) {
         this.content = content;
         this.store = store;
+        this.achievementStore = achievementStore;
         this.potionItem = potionItem;
     }
 
@@ -64,20 +69,21 @@ public final class MilestoneService {
             if (category.trigger() != action) {
                 continue;
             }
-            profile.getMilestoneProgress().merge(category.id(), amount, Long::sum);
+            achievementStore.getOrCreate(profile.getPlayerId()).getMilestoneProgress().merge(category.id(), amount, Long::sum);
             changed = true;
         }
         if (changed) {
             store.save(player.getUniqueId());
+        achievementStore.save(player.getUniqueId());
         }
     }
 
     public long progressOf(PackPlayerProfile profile, String categoryId) {
-        return profile.getMilestoneProgress().getOrDefault(categoryId, 0L);
+        return achievementStore.getOrCreate(profile.getPlayerId()).getMilestoneProgress().getOrDefault(categoryId, 0L);
     }
 
     public TierState stateOf(PackPlayerProfile profile, String categoryId, int tierIndex, MilestoneTier tier) {
-        if (profile.getClaimedMilestoneKeys().contains(key(categoryId, tierIndex))) {
+        if (achievementStore.getOrCreate(profile.getPlayerId()).getClaimedMilestoneKeys().contains(key(categoryId, tierIndex))) {
             return TierState.CLAIMED;
         }
         if (!previousClaimed(profile, categoryId, tierIndex)) {
@@ -94,7 +100,7 @@ public final class MilestoneService {
     }
 
     private boolean previousClaimed(PackPlayerProfile profile, String categoryId, int tierIndex) {
-        return tierIndex == 0 || profile.getClaimedMilestoneKeys().contains(key(categoryId, tierIndex - 1));
+        return tierIndex == 0 || achievementStore.getOrCreate(profile.getPlayerId()).getClaimedMilestoneKeys().contains(key(categoryId, tierIndex - 1));
     }
 
     public ClaimResult claim(Player player, String categoryId, int tierIndex) {
@@ -105,7 +111,7 @@ public final class MilestoneService {
         MilestoneTier tier = category.tiers().get(tierIndex);
         PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
         String key = key(categoryId, tierIndex);
-        if (profile.getClaimedMilestoneKeys().contains(key)) {
+        if (achievementStore.getOrCreate(profile.getPlayerId()).getClaimedMilestoneKeys().contains(key)) {
             return ClaimResult.ALREADY_CLAIMED;
         }
         if (!previousClaimed(profile, categoryId, tierIndex)) {
@@ -114,11 +120,12 @@ public final class MilestoneService {
         if (progressOf(profile, categoryId) < tier.goal()) {
             return ClaimResult.NOT_COMPLETE;
         }
-        profile.getClaimedMilestoneKeys().add(key);
+        achievementStore.getOrCreate(profile.getPlayerId()).getClaimedMilestoneKeys().add(key);
         profile.setCoins(profile.getCoins().add(tier.rewardCoins()));
         profile.setDiamonds(profile.getDiamonds().add(tier.rewardDiamonds()));
         profile.setCredits(profile.getCredits().add(tier.rewardCredits()));
         store.save(player.getUniqueId());
+        achievementStore.save(player.getUniqueId());
 
         if (tier.rewardPotionId() != null) {
             PotionDefinition def = PotionDefinition.parse(tier.rewardPotionId());
@@ -149,17 +156,18 @@ public final class MilestoneService {
         }
         PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
         String key = key(categoryId, tierIndex);
-        if (profile.getClaimedMilestoneKeys().contains(key)) {
+        if (achievementStore.getOrCreate(profile.getPlayerId()).getClaimedMilestoneKeys().contains(key)) {
             return ClaimResult.ALREADY_CLAIMED;
         }
         for (int i = 0; i < tierIndex; i++) {
-            profile.getClaimedMilestoneKeys().add(key(categoryId, i));
+            achievementStore.getOrCreate(profile.getPlayerId()).getClaimedMilestoneKeys().add(key(categoryId, i));
         }
         long goal = category.tiers().get(tierIndex).goal();
         if (progressOf(profile, categoryId) < goal) {
-            profile.getMilestoneProgress().put(categoryId, goal);
+            achievementStore.getOrCreate(profile.getPlayerId()).getMilestoneProgress().put(categoryId, goal);
         }
         store.save(player.getUniqueId());
+        achievementStore.save(player.getUniqueId());
         return claim(player, categoryId, tierIndex);
     }
 }

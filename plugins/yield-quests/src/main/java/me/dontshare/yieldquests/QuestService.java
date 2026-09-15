@@ -4,6 +4,7 @@ import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldpacks.pet.PetInstance;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
+import me.dontshare.yieldquests.data.QuestProfile;
 import me.dontshare.yieldquests.data.GameAction;
 import me.dontshare.yieldquests.data.QuestCategory;
 import me.dontshare.yieldquests.data.QuestContentLoader.QuestContent;
@@ -28,27 +29,31 @@ public final class QuestService {
 
     private final Supplier<QuestContent> content;
     private final PlayerDataStore<PackPlayerProfile> store;
+    /** This plugin's own quest state. The pack store above stays for the rewards a claim pays out. */
+    private final PlayerDataStore<QuestProfile> questStore;
     private final YieldPacks packs;
 
-    public QuestService(Supplier<QuestContent> content, PlayerDataStore<PackPlayerProfile> store, YieldPacks packs) {
+    public QuestService(Supplier<QuestContent> content, PlayerDataStore<PackPlayerProfile> store,
+                         PlayerDataStore<QuestProfile> questStore, YieldPacks packs) {
         this.content = content;
         this.store = store;
+        this.questStore = questStore;
         this.packs = packs;
     }
 
     /** Clears today's progress/claims/selections if the last reset was on an earlier day. */
     public void resetIfNewDay(PackPlayerProfile profile) {
         long today = LocalDate.now().toEpochDay();
-        if (profile.getLastQuestResetDay() != today) {
-            profile.getQuestProgress().clear();
-            profile.getClaimedQuestIds().clear();
-            profile.getSelectedQuestDifficultyByCategory().clear();
-            profile.setLastQuestResetDay(today);
+        if (quests(profile).getLastResetEpochDay() != today) {
+            quests(profile).getProgress().clear();
+            quests(profile).getClaimedIds().clear();
+            quests(profile).getSelectedDifficultyByCategory().clear();
+            quests(profile).setLastResetEpochDay(today);
         }
     }
 
     public QuestDifficulty selectedDifficulty(PackPlayerProfile profile, String categoryId) {
-        String raw = profile.getSelectedQuestDifficultyByCategory().get(categoryId);
+        String raw = quests(profile).getSelectedDifficultyByCategory().get(categoryId);
         if (raw == null) {
             return null;
         }
@@ -66,8 +71,9 @@ public final class QuestService {
         if (selectedDifficulty(profile, categoryId) != null) {
             return false;
         }
-        profile.getSelectedQuestDifficultyByCategory().put(categoryId, difficulty.name());
+        quests(profile).getSelectedDifficultyByCategory().put(categoryId, difficulty.name());
         store.save(player.getUniqueId());
+        questStore.save(player.getUniqueId());
         return true;
     }
 
@@ -88,11 +94,12 @@ public final class QuestService {
             if (quest == null || quest.action() != action) {
                 continue;
             }
-            profile.getQuestProgress().merge(questId(category.id(), selected), amount, Integer::sum);
+            quests(profile).getProgress().merge(questId(category.id(), selected), amount, Integer::sum);
             changed = true;
         }
         if (changed) {
             store.save(player.getUniqueId());
+        questStore.save(player.getUniqueId());
         }
     }
 
@@ -102,7 +109,7 @@ public final class QuestService {
             return false;
         }
         String questId = questId(categoryId, selected);
-        if (profile.getClaimedQuestIds().contains(questId)) {
+        if (quests(profile).getClaimedIds().contains(questId)) {
             return false;
         }
         QuestCategory category = content.get().categories().get(categoryId);
@@ -110,7 +117,7 @@ public final class QuestService {
         if (quest == null) {
             return false;
         }
-        return profile.getQuestProgress().getOrDefault(questId, 0) >= quest.goal();
+        return quests(profile).getProgress().getOrDefault(questId, 0) >= quest.goal();
     }
 
     /**
@@ -141,17 +148,18 @@ public final class QuestService {
         if (quest.rewardPetId() != null && packs.getItemRegistry().find(quest.rewardPetId()).isPresent()) {
             profile.addPet(new PetInstance(UUID.randomUUID(), quest.rewardPetId()));
         }
-        profile.getClaimedQuestIds().add(questId(categoryId, selected));
+        quests(profile).getClaimedIds().add(questId(categoryId, selected));
         store.save(player.getUniqueId());
+        questStore.save(player.getUniqueId());
         return quest;
     }
 
     public int progressOf(PackPlayerProfile profile, String categoryId, QuestDifficulty difficulty) {
-        return profile.getQuestProgress().getOrDefault(questId(categoryId, difficulty), 0);
+        return quests(profile).getProgress().getOrDefault(questId(categoryId, difficulty), 0);
     }
 
     public boolean isClaimed(PackPlayerProfile profile, String categoryId, QuestDifficulty difficulty) {
-        return profile.getClaimedQuestIds().contains(questId(categoryId, difficulty));
+        return quests(profile).getClaimedIds().contains(questId(categoryId, difficulty));
     }
 
     private static String questId(String categoryId, QuestDifficulty difficulty) {
@@ -176,9 +184,15 @@ public final class QuestService {
         if (isClaimed(profile, categoryId, difficulty)) {
             return null;
         }
-        profile.getSelectedQuestDifficultyByCategory().put(categoryId, difficulty.name());
-        profile.getQuestProgress().put(questId(categoryId, difficulty), quest.goal());
+        quests(profile).getSelectedDifficultyByCategory().put(categoryId, difficulty.name());
+        quests(profile).getProgress().put(questId(categoryId, difficulty), quest.goal());
         store.save(player.getUniqueId());
+        questStore.save(player.getUniqueId());
         return claim(player, categoryId);
+    }
+
+    /** This plugin's own record for whoever the given pack profile belongs to. */
+    private QuestProfile quests(PackPlayerProfile profile) {
+        return questStore.getOrCreate(profile.getPlayerId());
     }
 }

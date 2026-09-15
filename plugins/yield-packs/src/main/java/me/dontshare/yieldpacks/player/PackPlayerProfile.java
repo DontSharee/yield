@@ -58,13 +58,6 @@ public final class PackPlayerProfile implements PlayerRecord {
     private Map<String, Integer> stockPurchasedThisCycle = new HashMap<>();
     private long rollCount;
     private AutoTargetMode autoTargetMode = AutoTargetMode.CLOSEST;
-    private long lastQuestResetDay = -1;
-    private Map<String, Integer> questProgress = new HashMap<>();
-    private Set<String> claimedQuestIds = new HashSet<>();
-    // category id -> chosen difficulty ("EASY"/"MEDIUM"/"HARD") for today -
-    // locked in once picked, cleared on the next quest-day reset alongside
-    // questProgress/claimedQuestIds - see yield-quests' QuestService.
-    private Map<String, String> selectedQuestDifficultyByCategory = new HashMap<>();
     private int prestiges;
     private BigInteger prestigePoints = BigInteger.ZERO;
     private boolean autoFuseEnabled;
@@ -83,20 +76,7 @@ public final class PackPlayerProfile implements PlayerRecord {
     // document (name/members/trophy balance/upgrades) lives in its own
     // yield-teams collection, keyed by this id. See yield-teams' TeamStore.
     private UUID teamId;
-    // Achievements/Milestones (see yield-achievements) - both keep their
-    // progress as a plain id -> counter map, same idiom as questProgress
-    // above, rather than reusing existing lifetime-stat fields (cube kills,
-    // etc.) directly - keeping every trackable stat generic and config-
-    // driven, not tied to whichever fields happen to already exist here.
     private BigInteger credits = BigInteger.ZERO;
-    private Map<String, Long> achievementProgress = new HashMap<>();
-    private Set<String> claimedAchievementIds = new HashSet<>();
-    // categoryId -> counter, shared across every tier within that category.
-    private Map<String, Long> milestoneProgress = new HashMap<>();
-    // "categoryId:tierIndex" composite keys - a category can have several
-    // tiers complete-but-unclaimed at once if progress jumped past more
-    // than one threshold, and each needs claiming independently.
-    private Set<String> claimedMilestoneKeys = new HashSet<>();
     /** A permanent, admin-granted luck bonus (see /admin stats) - additive, same slot shape as every other LuckService contributor. */
     private double adminLuckBonus;
     // Permanent shard bonuses (see me.dontshare.yieldpacks.shard.ShardService)
@@ -113,19 +93,6 @@ public final class PackPlayerProfile implements PlayerRecord {
     private double shardLuckBonus;
     private double shardAttackSpeedBonus;
     private double shardCritChanceBonus;
-    // Login streak (see yield-quests' LoginStreakService) - lastLoginEpochDay
-    // is LocalDate#toEpochDay() of the last day a login was actually
-    // credited (never the same day twice), loginStreak the current
-    // consecutive-day count.
-    private long lastLoginEpochDay;
-    private int loginStreak;
-    // Active potion effects (see yield-achievements' PotionService) - keyed
-    // by "STAT_MULTIPLIER" (e.g. "COINS_2.0") so two potions of the same
-    // stat AND multiplier stack duration together, while a different
-    // multiplier of the same stat runs as its own separate, concurrent
-    // effect. Value is an absolute expiry epoch millis, not a remaining
-    // duration, so it keeps counting down correctly across a relog/restart.
-    private Map<String, Long> activePotionExpiryMillis = new HashMap<>();
     private List<String> enchantSlots = newEmptyEnchantSlots();
     // Mastery (see yield-packs' MasteryService) - accumulated XP per
     // MasteryType#name(), always-growing, never spent - level is derived
@@ -402,42 +369,6 @@ public final class PackPlayerProfile implements PlayerRecord {
         this.autoTargetMode = autoTargetMode;
     }
 
-    /** Epoch day (LocalDate.toEpochDay()) that {@link #getQuestProgress()}/{@link #getClaimedQuestIds()} were last reset for - see yield-quests' QuestService. */
-    public long getLastQuestResetDay() {
-        return lastQuestResetDay;
-    }
-
-    public void setLastQuestResetDay(long lastQuestResetDay) {
-        this.lastQuestResetDay = lastQuestResetDay;
-    }
-
-    /** Today's progress toward each daily quest's goal, keyed by quest id - cleared on each new day. */
-    public Map<String, Integer> getQuestProgress() {
-        return questProgress;
-    }
-
-    public void setQuestProgress(Map<String, Integer> questProgress) {
-        this.questProgress = questProgress;
-    }
-
-    /** Which of today's daily quests have already had their reward claimed - cleared on each new day. */
-    public Set<String> getClaimedQuestIds() {
-        return claimedQuestIds;
-    }
-
-    public void setClaimedQuestIds(Set<String> claimedQuestIds) {
-        this.claimedQuestIds = claimedQuestIds;
-    }
-
-    /** category id -> chosen difficulty ("EASY"/"MEDIUM"/"HARD") for today, locked in once picked - see yield-quests' QuestService. */
-    public Map<String, String> getSelectedQuestDifficultyByCategory() {
-        return selectedQuestDifficultyByCategory;
-    }
-
-    public void setSelectedQuestDifficultyByCategory(Map<String, String> selectedQuestDifficultyByCategory) {
-        this.selectedQuestDifficultyByCategory = selectedQuestDifficultyByCategory;
-    }
-
     /** Lifetime count of times this player has Prestiged - see yield-skilltree's PrestigeService. */
     public int getPrestiges() {
         return prestiges;
@@ -536,26 +467,6 @@ public final class PackPlayerProfile implements PlayerRecord {
         return masteryXp;
     }
 
-    public Map<String, Long> getAchievementProgress() {
-        return achievementProgress;
-    }
-
-    public Set<String> getClaimedAchievementIds() {
-        return claimedAchievementIds;
-    }
-
-    public Map<String, Long> getMilestoneProgress() {
-        return milestoneProgress;
-    }
-
-    public Set<String> getClaimedMilestoneKeys() {
-        return claimedMilestoneKeys;
-    }
-
-    public Map<String, Long> getActivePotionExpiryMillis() {
-        return activePotionExpiryMillis;
-    }
-
     public double getAdminLuckBonus() {
         return adminLuckBonus;
     }
@@ -612,19 +523,4 @@ public final class PackPlayerProfile implements PlayerRecord {
         this.shardCritChanceBonus = shardCritChanceBonus;
     }
 
-    public long getLastLoginEpochDay() {
-        return lastLoginEpochDay;
-    }
-
-    public void setLastLoginEpochDay(long lastLoginEpochDay) {
-        this.lastLoginEpochDay = lastLoginEpochDay;
-    }
-
-    public int getLoginStreak() {
-        return loginStreak;
-    }
-
-    public void setLoginStreak(int loginStreak) {
-        this.loginStreak = loginStreak;
-    }
 }

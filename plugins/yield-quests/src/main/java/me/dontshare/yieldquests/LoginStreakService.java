@@ -1,6 +1,8 @@
 package me.dontshare.yieldquests;
 
+import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldpacks.YieldPacks;
+import me.dontshare.yieldquests.data.QuestProfile;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import org.bukkit.entity.Player;
 
@@ -27,25 +29,30 @@ public final class LoginStreakService {
     }
 
     private final YieldPacks packs;
+    /** This plugin's own streak state. The pack store stays for the rewards a streak day grants. */
+    private final PlayerDataStore<QuestProfile> questStore;
 
-    public LoginStreakService(YieldPacks packs) {
+    public LoginStreakService(YieldPacks packs, PlayerDataStore<QuestProfile> questStore) {
         this.packs = packs;
+        this.questStore = questStore;
     }
 
     /** Call once per join - a no-op reward (but still reports the current streak) if this player already logged in today, so relogging never double-grants. */
     public StreakResult recordLogin(Player player) {
         PackPlayerProfile profile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
+        QuestProfile quests = questStore.getOrCreate(player.getUniqueId());
         long today = LocalDate.now().toEpochDay();
-        long last = profile.getLastLoginEpochDay();
+        long last = quests.getLastLoginEpochDay();
 
         if (last == today) {
-            int streak = Math.max(1, profile.getLoginStreak());
+            int streak = Math.max(1, quests.getLoginStreak());
             return new StreakResult(streak, dayInCycle(streak), 0, 0, 0);
         }
 
-        int streak = (last == today - 1) ? profile.getLoginStreak() + 1 : 1;
-        profile.setLoginStreak(streak);
-        profile.setLastLoginEpochDay(today);
+        int streak = (last == today - 1) ? quests.getLoginStreak() + 1 : 1;
+        quests.setLoginStreak(streak);
+        quests.setLastLoginEpochDay(today);
+        questStore.save(player.getUniqueId());
 
         int dayInCycle = dayInCycle(streak);
         long coins = coinsFor(dayInCycle);

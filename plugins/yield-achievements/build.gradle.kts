@@ -1,4 +1,4 @@
-version = "0.0.17"
+version = "0.1.0"
 
 dependencies {
     // Text/CommandManager/Gui - and every other module's own cross-plugin
@@ -13,4 +13,6 @@ dependencies {
     compileOnly(project(":yield-rebirth"))
     compileOnly(project(":yield-skilltree"))
     compileOnly(project(":yield-teams"))
+    // For the @BsonId annotation on this plugin's own AchievementProfile.
+    compileOnly("org.mongodb:mongodb-driver-sync:5.10.0")
 }

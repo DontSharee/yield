@@ -1,6 +1,9 @@
 package me.dontshare.yieldquests;
 
 import me.dontshare.yieldcore.YieldCore;
+import me.dontshare.yieldcore.database.PlayerDataStore;
+import me.dontshare.yieldcore.database.PlayerStores;
+import me.dontshare.yieldquests.data.QuestProfile;
 import me.dontshare.yieldcore.command.CommandManager;
 import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldquests.command.DailyCommand;
@@ -37,9 +40,12 @@ public final class YieldQuests extends JavaPlugin {
         presentsContentLoader = new PresentsContentLoader(this, getLogger());
         presentsContent = presentsContentLoader.load();
 
-        questService = new QuestService(() -> questContent, packs.getPlayerStore(), packs);
+        PlayerDataStore<QuestProfile> questStore = PlayerStores.register(
+                this, core.getListenerManager(), core.getDatabaseManager(),
+                "quests", QuestProfile.class, QuestProfile::new, "quest data");
+        questService = new QuestService(() -> questContent, packs.getPlayerStore(), questStore, packs);
         PresentsService presentsService = new PresentsService(() -> presentsContent, packs);
-        LoginStreakService loginStreakService = new LoginStreakService(packs);
+        LoginStreakService loginStreakService = new LoginStreakService(packs, questStore);
 
         core.getListenerManager().register(new QuestEventListener(questService));
         core.getListenerManager().register(new PresentsSessionListener(presentsService));

@@ -35,6 +35,9 @@ import me.dontshare.yieldachievements.store.StoreProduct;
 import me.dontshare.yieldachievements.store.StoreProductCategory;
 import me.dontshare.yieldachievements.store.StoreService;
 import me.dontshare.yieldcore.YieldCore;
+import me.dontshare.yieldcore.database.PlayerDataStore;
+import me.dontshare.yieldcore.database.PlayerStores;
+import me.dontshare.yieldachievements.data.AchievementProfile;
 import me.dontshare.yieldcore.command.CommandManager;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiIcons;
@@ -78,7 +81,10 @@ public final class YieldAchievements extends JavaPlugin {
         storeProducts = storeContentLoader.load();
 
         potionItem = new PotionItem(this);
-        PotionService potionService = new PotionService(packs.getPlayerStore());
+        PlayerDataStore<AchievementProfile> achievementStore = PlayerStores.register(
+                this, core.getListenerManager(), core.getDatabaseManager(),
+                "achievements", AchievementProfile.class, AchievementProfile::new, "achievement data");
+        PotionService potionService = new PotionService(packs.getPlayerStore(), achievementStore);
         packs.registerCoinMultiplierProvider(PROVIDER_KEY, profile -> potionService.multiplierFor(profile, PotionStat.COINS));
         packs.registerDamageMultiplierProvider(PROVIDER_KEY, profile -> potionService.multiplierFor(profile, PotionStat.DAMAGE));
         packs.getPackOpenService().registerCooldownMultiplierProvider(PROVIDER_KEY, profile -> potionService.multiplierFor(profile, PotionStat.ROLL_SPEED));
@@ -90,8 +96,8 @@ public final class YieldAchievements extends JavaPlugin {
         packs.getLuckService().registerExtraLuckProvider(PROVIDER_KEY, profile -> potionService.multiplierFor(profile, PotionStat.LUCK) - 1.0);
         core.getListenerManager().register(new PotionConsumeListener(potionItem, potionService));
 
-        AchievementService achievementService = new AchievementService(() -> achievements, packs.getPlayerStore());
-        MilestoneService milestoneService = new MilestoneService(() -> milestoneCategories, packs.getPlayerStore(), potionItem);
+        AchievementService achievementService = new AchievementService(() -> achievements, packs.getPlayerStore(), achievementStore);
+        MilestoneService milestoneService = new MilestoneService(() -> milestoneCategories, packs.getPlayerStore(), achievementStore, potionItem);
         StoreService storeService = new StoreService(() -> storeProducts, packs.getPlayerStore());
 
         AchievementsGui achievementsGui = new AchievementsGui(() -> achievements, packs.getPlayerStore(), achievementService, core.getGuiManager());

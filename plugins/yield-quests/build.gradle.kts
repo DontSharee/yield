@@ -1,4 +1,4 @@
-version = "0.3.2"
+version = "0.4.0"
 
 dependencies {
     // Not transitive from other plugins' own compileOnly dependencies on
@@ -15,4 +15,6 @@ dependencies {
     // Present icons in the /daily GUI - see plugin.yml's "softdepend" list.
     // Published on Maven Central directly, no extra repository needed.
     compileOnly("com.arcaniax:HeadDatabase-API:1.3.2")
+    // For the @BsonId annotation on this plugin's own QuestProfile.
+    compileOnly("org.mongodb:mongodb-driver-sync:5.10.0")
 }
