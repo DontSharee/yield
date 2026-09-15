@@ -71,3 +71,6 @@ project(":yield-ranks").projectDir = file("plugins/yield-ranks")
 
 include("yield-spawnnpcs")
 project(":yield-spawnnpcs").projectDir = file("plugins/yield-spawnnpcs")
+
+include("yield-trade")
+project(":yield-trade").projectDir = file("plugins/yield-trade")

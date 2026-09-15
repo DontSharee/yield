@@ -1,0 +1,8 @@
+name: yield-trade
+version: '${version}'
+main: me.dontshare.yieldtrade.YieldTrade
+api-version: '26.2'
+depend: [yield-core, yield-packs]
+permissions:
+  yieldtrade.admin:
+    default: op
