@@ -1,0 +1,116 @@
+# Rank Quest pool - a player always has 3 of these active at once (see
+# RankQuestService), picked at random. Completing one grants its
+# reward-stars immediately; once all 3 active quests are done, a fresh 3
+# get rolled from this same pool. Stars accumulate toward Rank (/rankup).
+#
+# Every value here is a placeholder judgment call - retune freely, no code
+# changes needed (/quests reload picks this back up).
+pool:
+  open_packs_small:
+    display-name: "Open 5 Packs"
+    icon: CHEST
+    action: OPEN_PACK
+    goal: 5
+    reward-stars: 2
+  open_packs_big:
+    display-name: "Open 20 Packs"
+    icon: ENDER_CHEST
+    action: OPEN_PACK
+    goal: 20
+    reward-stars: 6
+  obtain_pets:
+    display-name: "Obtain 10 Pets"
+    icon: EGG
+    action: OBTAIN_PET
+    goal: 10
+    reward-stars: 3
+  equip_pets:
+    display-name: "Equip 5 Pets"
+    icon: LEAD
+    action: EQUIP_PET
+    goal: 5
+    reward-stars: 2
+  unequip_pets:
+    display-name: "Unequip 3 Pets"
+    icon: BARRIER
+    action: UNEQUIP_PET
+    goal: 3
+    reward-stars: 1
+  fuse_pets:
+    display-name: "Fuse 3 Pets"
+    icon: BLAZE_POWDER
+    action: FUSE_PET
+    goal: 3
+    reward-stars: 4
+  feed_candy:
+    display-name: "Feed 10 Candy"
+    icon: SUGAR
+    action: FEED_CANDY
+    goal: 10
+    reward-stars: 3
+  level_pets:
+    display-name: "Level Up Pets 15 Times"
+    icon: EXPERIENCE_BOTTLE
+    action: LEVEL_UP_PET
+    goal: 15
+    reward-stars: 4
+  kill_cubes_small:
+    display-name: "Kill 50 Ore Cubes"
+    icon: DIAMOND_PICKAXE
+    action: KILL_CUBE
+    goal: 50
+    reward-stars: 2
+  kill_cubes_big:
+    display-name: "Kill 250 Ore Cubes"
+    icon: NETHERITE_PICKAXE
+    action: KILL_CUBE
+    goal: 250
+    reward-stars: 6
+  earn_coins_small:
+    display-name: "Earn 5,000 Coins"
+    icon: GOLD_INGOT
+    action: EARN_COINS
+    goal: 5000
+    reward-stars: 2
+  earn_coins_big:
+    display-name: "Earn 25,000 Coins"
+    icon: GOLD_BLOCK
+    action: EARN_COINS
+    goal: 25000
+    reward-stars: 5
+  enter_zones:
+    display-name: "Enter 3 Zones"
+    icon: COMPASS
+    action: ENTER_ZONE
+    goal: 3
+    reward-stars: 2
+  unlock_zone:
+    display-name: "Unlock a New Zone"
+    icon: TRIPWIRE_HOOK
+    action: UNLOCK_ZONE
+    goal: 1
+    reward-stars: 5
+  rebirth:
+    display-name: "Rebirth Once"
+    icon: NETHER_STAR
+    action: REBIRTH
+    goal: 1
+    reward-stars: 8
+  prestige:
+    display-name: "Prestige Once"
+    icon: BEACON
+    action: PRESTIGE
+    goal: 1
+    reward-stars: 10
+  buy_skill_node:
+    display-name: "Buy 3 Skill Nodes"
+    icon: BOOK
+    action: BUY_SKILL_NODE
+    goal: 3
+    reward-stars: 3
+  buy_skill_node_big:
+    display-name: "Buy 8 Skill Nodes"
+    icon: ENCHANTED_BOOK
+    action: BUY_SKILL_NODE
+    goal: 8
+    reward-stars: 7

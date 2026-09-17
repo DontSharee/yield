@@ -3,8 +3,10 @@ package me.dontshare.yieldquests.data;
 import me.dontshare.yieldcore.database.PlayerRecord;
 import org.bson.codecs.pojo.annotations.BsonId;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -29,6 +31,12 @@ public final class QuestProfile implements PlayerRecord {
     /** LocalDate#toEpochDay of the last day a login was credited (never the same day twice). */
     private long lastLoginEpochDay;
     private int loginStreak;
+    /** The 3 Rank Quest template ids currently active for this player (see RankQuestService) - never daily-reset, only rerolled once all 3 are completed. */
+    private List<String> activeRankQuestIds = new ArrayList<>();
+    /** Rank Quest template id -> progress toward its goal, only for the currently active 3. */
+    private Map<String, Long> rankQuestProgress = new HashMap<>();
+    /** Subset of activeRankQuestIds already completed this cycle - cleared together with activeRankQuestIds on reroll. */
+    private Set<String> completedRankQuestIds = new HashSet<>();
 
     public QuestProfile() {
     }
@@ -92,5 +100,29 @@ public final class QuestProfile implements PlayerRecord {
 
     public void setLoginStreak(int loginStreak) {
         this.loginStreak = loginStreak;
+    }
+
+    public List<String> getActiveRankQuestIds() {
+        return activeRankQuestIds;
+    }
+
+    public void setActiveRankQuestIds(List<String> activeRankQuestIds) {
+        this.activeRankQuestIds = activeRankQuestIds;
+    }
+
+    public Map<String, Long> getRankQuestProgress() {
+        return rankQuestProgress;
+    }
+
+    public void setRankQuestProgress(Map<String, Long> rankQuestProgress) {
+        this.rankQuestProgress = rankQuestProgress;
+    }
+
+    public Set<String> getCompletedRankQuestIds() {
+        return completedRankQuestIds;
+    }
+
+    public void setCompletedRankQuestIds(Set<String> completedRankQuestIds) {
+        this.completedRankQuestIds = completedRankQuestIds;
     }
 }
