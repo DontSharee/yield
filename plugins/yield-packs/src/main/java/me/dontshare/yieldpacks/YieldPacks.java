@@ -339,10 +339,14 @@ public final class YieldPacks extends JavaPlugin {
         rankupGui = new RankupGui(playerStore, core.getGuiManager(), rankService);
         // "ranks" is an alias, not a separate command - it replaces the old
         // bare /ranks (donor-rank info readout, removed from yield-ranks),
-        // per the decision that Rankup - the diamond-spend prestige ladder -
-        // is what "/ranks" should mean now, not premium donor ranks (those
-        // live in the Credits Store, reachable via the Store category below).
-        CommandManager.register(this, RankupCommand.build(rankupGui), "Open the Rankup menu", List.of("ranks"));
+        // per the decision that Rankup - the earnable prestige ladder - is
+        // what "/ranks" should mean now, not premium donor ranks (those live
+        // in the Credits Store, reachable via the Store category below).
+        // "rankquests" is also just an alias to this SAME screen - the Rank
+        // Quest board renders inline here (row 0, via RankQuestSource,
+        // registered by yield-quests once it enables) rather than living in
+        // its own separate GUI.
+        CommandManager.register(this, RankupCommand.build(rankupGui), "Open the Rankup menu", List.of("ranks", "rankquests"));
 
         shardService = new ShardService(playerStore);
         shardItem = new ShardItem(this);

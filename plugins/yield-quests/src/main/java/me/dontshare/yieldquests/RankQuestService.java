@@ -3,6 +3,7 @@ package me.dontshare.yieldquests;
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
+import me.dontshare.yieldpacks.rank.RankQuestSource.RankQuestView;
 import me.dontshare.yieldquests.data.GameAction;
 import me.dontshare.yieldquests.data.QuestProfile;
 import me.dontshare.yieldquests.data.RankQuestDefinition;
@@ -58,6 +59,20 @@ public final class RankQuestService {
 
     public boolean isCompleted(PackPlayerProfile profile, String questId) {
         return quests(profile).getCompletedRankQuestIds().contains(questId);
+    }
+
+    /** Adapts {@link #activeQuests} into yield-packs' own view type - registered as a {@code RankQuestSource} onto {@code RankupGui} so the Rank Quest board renders inline there, no separate GUI/command needed. */
+    public List<RankQuestView> viewsFor(Player player) {
+        PackPlayerProfile profile = store.getCached(player.getUniqueId());
+        if (profile == null) {
+            return List.of();
+        }
+        return activeQuests(profile).stream()
+                .map(definition -> new RankQuestView(
+                        definition.displayName(), definition.icon(),
+                        progressOf(profile, definition.id()), definition.goal(), definition.rewardStars(),
+                        isCompleted(profile, definition.id())))
+                .toList();
     }
 
     /** Adds progress toward every active, not-yet-completed quest matching {@code action}; grants Stars immediately on each one reached, and rerolls the trio once all 3 are done. */

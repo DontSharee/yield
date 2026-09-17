@@ -10,7 +10,6 @@ import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldquests.command.DailyCommand;
 import me.dontshare.yieldquests.command.QuestCommand;
 import me.dontshare.yieldquests.command.QuestsAdminCommand;
-import me.dontshare.yieldquests.command.RankQuestCommand;
 import me.dontshare.yieldquests.data.PresentsContentLoader.PresentsContent;
 import me.dontshare.yieldquests.data.PresentsContentLoader;
 import me.dontshare.yieldquests.data.QuestContentLoader.QuestContent;
@@ -18,7 +17,6 @@ import me.dontshare.yieldquests.data.QuestContentLoader;
 import me.dontshare.yieldquests.data.RankQuestContentLoader;
 import me.dontshare.yieldquests.gui.PresentsGui;
 import me.dontshare.yieldquests.gui.QuestGui;
-import me.dontshare.yieldquests.gui.RankQuestGui;
 import me.dontshare.yieldquests.listener.LoginStreakListener;
 import me.dontshare.yieldquests.listener.PresentsSessionListener;
 import me.dontshare.yieldquests.listener.QuestEventListener;
@@ -60,14 +58,17 @@ public final class YieldQuests extends JavaPlugin {
         core.getListenerManager().register(new PresentsSessionListener(presentsService));
         core.getListenerManager().register(new LoginStreakListener(this, loginStreakService));
 
+        // No separate Rank Quest GUI/command - the board renders inline in
+        // yield-packs' own RankupGui (row 0), reachable via /rankup,
+        // /ranks, or /rankquests, all the same screen now.
+        packs.getRankupGui().setQuestSource(rankQuestService::viewsFor);
+
         QuestGui questGui = new QuestGui(packs.getPlayerStore(), () -> questContent, questService, core.getGuiManager(),
                 packs::getItemRegistry);
         PresentsGui presentsGui = new PresentsGui(presentsService, core.getGuiManager());
-        RankQuestGui rankQuestGui = new RankQuestGui(packs.getPlayerStore(), rankQuestService, packs, core.getGuiManager());
 
         CommandManager.register(this, QuestCommand.build(questGui), "View and claim today's daily quests", List.of());
         CommandManager.register(this, DailyCommand.build(presentsGui), "Claim your session's daily presents", List.of());
-        CommandManager.register(this, RankQuestCommand.build(rankQuestGui), "View your active Rank Quests", List.of("stars"));
         core.getAdminCommandRegistry().register(QuestsAdminCommand.build(this, questService));
     }
 
