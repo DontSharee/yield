@@ -7,6 +7,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.entity.Player;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 /**
@@ -19,6 +20,11 @@ import java.util.function.Supplier;
  * to every already-leveled player. Deliberately no title/sound spam per
  * level-up - packs/mining/combat happen far too often for that, so a
  * level-up only flashes a quiet action-bar line.
+ * <p>
+ * Each track unlocks a list of discrete, named {@link MasteryPerk}s at
+ * specific levels (PS99-style) rather than one smooth bonus - see
+ * {@link #sumStat}, the one method every stat-multiplier provider
+ * registered elsewhere (see {@code YieldPacks#onEnable}) calls.
  */
 public final class MasteryService {
 
@@ -78,8 +84,30 @@ public final class MasteryService {
         }
     }
 
-    /** The small passive stat bonus this track currently grants - {@code level * bonusPerLevel}. */
-    public double bonusFor(PackPlayerProfile profile, MasteryType type) {
-        return levelOf(profile, type) * config.get().bonusPerLevel();
+    /** Every perk in {@code type} this player has reached the level for - permanently active once unlocked. */
+    public List<MasteryPerk> unlockedPerks(PackPlayerProfile profile, MasteryType type) {
+        int level = levelOf(profile, type);
+        return config.get().perksFor(type).stream().filter(perk -> perk.level() <= level).toList();
+    }
+
+    /** Every configured perk for {@code type}, locked and unlocked alike, sorted by level - for a browsable list (see {@code MasteryGui}). */
+    public List<MasteryPerk> allPerks(MasteryType type) {
+        return config.get().perksFor(type);
+    }
+
+    /**
+     * The combined bonus {@code type} currently grants toward {@code stat} -
+     * the sum of every unlocked perk's own value for that stat (perks
+     * STACK, never "highest tier only" - see {@link MasteryPerk}'s own
+     * javadoc). This is the one method every stat-multiplier/bonus provider
+     * elsewhere calls; for a multiplicative stat, the CALLER wraps the
+     * result as {@code 1.0 + sumStat(...)}, this method itself always
+     * returns a plain additive number.
+     */
+    public double sumStat(PackPlayerProfile profile, MasteryType type, MasteryStat stat) {
+        return unlockedPerks(profile, type).stream()
+                .filter(perk -> perk.stat() == stat)
+                .mapToDouble(MasteryPerk::value)
+                .sum();
     }
 }
