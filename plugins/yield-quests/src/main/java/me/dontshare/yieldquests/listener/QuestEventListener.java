@@ -38,10 +38,15 @@ public final class QuestEventListener implements Listener {
 
     @EventHandler
     public void onPackOpened(PackOpenedEvent event) {
-        questService.incrementProgress(event.getPlayer(), GameAction.OPEN_PACK, 1);
-        questService.incrementProgress(event.getPlayer(), GameAction.OBTAIN_PET, event.getRolls().size());
-        rankQuestService.incrementProgress(event.getPlayer(), GameAction.OPEN_PACK, 1);
-        rankQuestService.incrementProgress(event.getPlayer(), GameAction.OBTAIN_PET, event.getRolls().size());
+        // A multi-open (see PackOpenService#tryOpenMany) fires ONE event
+        // carrying every roll from the batch, not one event per pack - both
+        // GameActions here must scale by rolls().size(), not a flat 1, or a
+        // 24x multi-open would only ever count as 1 pack toward any quest.
+        int count = event.getRolls().size();
+        questService.incrementProgress(event.getPlayer(), GameAction.OPEN_PACK, count);
+        questService.incrementProgress(event.getPlayer(), GameAction.OBTAIN_PET, count);
+        rankQuestService.incrementProgress(event.getPlayer(), GameAction.OPEN_PACK, count);
+        rankQuestService.incrementProgress(event.getPlayer(), GameAction.OBTAIN_PET, count);
     }
 
     @EventHandler

@@ -43,6 +43,7 @@ import me.dontshare.yieldpacks.gui.BagGui;
 import me.dontshare.yieldpacks.gui.DeleteByRarityGui;
 import me.dontshare.yieldpacks.gui.FusionGui;
 import me.dontshare.yieldpacks.gui.IndexGui;
+import me.dontshare.yieldpacks.gui.PackMultiOpenResultGui;
 import me.dontshare.yieldpacks.gui.PackShopGui;
 import me.dontshare.yieldpacks.gui.PackStorageGui;
 import me.dontshare.yieldpacks.gui.RankupGui;
@@ -326,9 +327,11 @@ public final class YieldPacks extends JavaPlugin {
         CommandManager.register(this, MasteryCommand.build(masteryGui), "View your mastery progress", List.of());
 
         PackShopGui packShopGui = new PackShopGui(stockService, core.getGuiManager(), rollService, () -> content.items());
-        OpenPackDialog openPackDialog = new OpenPackDialog(playerStore, openService);
+        PackMultiOpenResultGui multiOpenResultGui = new PackMultiOpenResultGui(core.getGuiManager(), () -> content.rarities(), iconFactory);
+        OpenPackDialog openPackDialog = new OpenPackDialog(playerStore, openService, multiOpenResultGui);
         PackStorageGui packStorageGui = new PackStorageGui(() -> content, playerStore, core.getGuiManager(), openPackDialog, packShopGui, rollService);
         openPackDialog.setPackStorageGui(packStorageGui);
+        multiOpenResultGui.setPackStorageGui(packStorageGui);
         FusionService fusionService = new FusionService(() -> content.items());
         fusionGui = new FusionGui(playerStore, () -> content.items(), () -> content.rarities(),
                 fusionService, core.getGuiManager(), iconFactory);

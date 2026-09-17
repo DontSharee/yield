@@ -34,10 +34,11 @@ import java.util.function.Supplier;
  * The heart of the game loop, split into two independent steps per the
  * pack-storage redesign: {@link #buyIntoStorage} only ever moves currency
  * into unopened-pack inventory (no rolling at all), and
- * {@link #openOneFromStorage} is the only thing that actually rolls a pet -
- * always exactly one at a time, never in bulk (see
+ * {@link #openOneFromStorage}/{@link #openManyFromStorage} are the only
+ * things that actually roll a pet (see
  * {@code me.dontshare.yieldpacks.roll.PackOpenService}, the only caller,
- * which layers the open cooldown/auto-open loop on top of this).
+ * which layers the open cooldown/auto-open loop/gamepass gate on top of
+ * these).
  */
 public final class PackRollService {
 
@@ -170,6 +171,9 @@ public final class PackRollService {
         return PurchaseResult.success(List.of(), 1.0);
     }
 
+    /** The most packs {@link #openManyFromStorage} will ever open in one call, regardless of how many are requested or stored. */
+    public static final int MULTI_OPEN_CAP = 24;
+
     /** Opens exactly one stored, already-paid-for pack - the only thing that ever rolls a pet. */
     public PurchaseResult openOneFromStorage(Player player, String packId) {
         PackDefinition pack;
@@ -187,6 +191,57 @@ public final class PackRollService {
         profile.getStoredPacks().put(packId, stored - 1);
         advanceActivePackIfExhausted(profile, packId);
 
+        RollOutcome outcome = rollInPlace(player, pack, profile, packId);
+        store.save(player.getUniqueId());
+        petDisplayService.refresh(player);
+        return PurchaseResult.success(List.of(outcome.result()), outcome.luckMultiplier());
+    }
+
+    /**
+     * Opens up to {@code min(count, stored, MULTI_OPEN_CAP)} stored packs at
+     * once - same per-roll logic {@link #openOneFromStorage} uses (luck/
+     * pity, exclusive override, first-time tracking, auto-equip, exists
+     * counter), repeated in memory against the SAME profile instance, with
+     * storage decremented once up front and only ONE {@code store.save}/
+     * {@code petDisplayService.refresh} at the end - same "batch the
+     * persistence" shape {@code FusionService#cascade} already established
+     * for looping a per-unit action N times.
+     */
+    public PurchaseResult openManyFromStorage(Player player, String packId, int count) {
+        PackDefinition pack;
+        try {
+            pack = content.get().packs().getOrThrow(packId);
+        } catch (IllegalArgumentException e) {
+            return PurchaseResult.failure("That pack no longer exists.");
+        }
+
+        PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
+        int stored = profile.getStoredPacks().getOrDefault(packId, 0);
+        int actual = Math.min(Math.min(count, stored), MULTI_OPEN_CAP);
+        if (actual <= 0) {
+            return PurchaseResult.failure("You don't have any " + Formatting.stripLeadingColorCodes(pack.displayName()) + " to open.");
+        }
+        profile.getStoredPacks().put(packId, stored - actual);
+        advanceActivePackIfExhausted(profile, packId);
+
+        List<RollResult> rolls = new ArrayList<>(actual);
+        double lastLuckMultiplier = 1.0;
+        for (int i = 0; i < actual; i++) {
+            RollOutcome outcome = rollInPlace(player, pack, profile, packId);
+            rolls.add(outcome.result());
+            lastLuckMultiplier = outcome.luckMultiplier();
+        }
+        store.save(player.getUniqueId());
+        petDisplayService.refresh(player);
+        return PurchaseResult.success(rolls, lastLuckMultiplier);
+    }
+
+    /** One internal roll result and the luck multiplier that produced it - private since a caller only ever needs the public {@link RollResult} half; the multiplier is just plumbing for {@link PurchaseResult}. */
+    private record RollOutcome(RollResult result, double luckMultiplier) {
+    }
+
+    /** The actual roll + side effects shared by {@link #openOneFromStorage} and {@link #openManyFromStorage} - assumes storage has ALREADY been decremented by the caller; mutates {@code profile} in place (rollCount, exists counter, auto-equip) but never saves/refreshes - callers own that. */
+    private RollOutcome rollInPlace(Player player, PackDefinition pack, PackPlayerProfile profile, String packId) {
         double luckMultiplier = luckService.totalLuckMultiplier(profile) * pityService.multiplierFor(profile.getRollCount());
         ItemDefinition rolled = rollOne(pack, luckMultiplier);
         double exclusiveChance = totalExclusiveFindChance(profile);
@@ -209,9 +264,7 @@ public final class PackRollService {
             existsCounterStore.increment(rolled.id());
         }
         profile.setRollCount(profile.getRollCount() + 1);
-        store.save(player.getUniqueId());
-        petDisplayService.refresh(player);
-        return PurchaseResult.success(List.of(new RollResult(rolled, firstTime)), luckMultiplier);
+        return new RollOutcome(new RollResult(rolled, firstTime), luckMultiplier);
     }
 
     /**

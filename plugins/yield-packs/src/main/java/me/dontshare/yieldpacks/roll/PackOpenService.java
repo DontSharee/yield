@@ -24,10 +24,16 @@ import java.util.function.Supplier;
 /**
  * The single entry point for opening a pack - manual ("Open 1") and
  * auto-open both funnel through {@link #tryOpen}, so the cooldown and the
- * roll-animation toggle apply identically either way. Opening is always
- * exactly one pack; there is no bulk path anywhere in this service.
+ * roll-animation toggle apply identically either way. {@link #tryOpenMany}
+ * is the one bulk exception - gated behind the {@code yieldpacks.multiopen}
+ * gamepass permission, it reuses the same suppression/cooldown guards but
+ * rolls up to {@code PackRollService#MULTI_OPEN_CAP} packs in one go for a
+ * full-screen results grid instead of the usual single-item reveal.
  */
 public final class PackOpenService {
+
+    /** The permission a player needs for {@link #tryOpenMany} - granted by the {@code multi_open_pass} gamepass (see yield-achievements' store.yml), same "bare permission node, no ownership registry" shape as {@code yieldpacks.autofuse}/{@code yieldpacks.automode}. */
+    public static final String MULTI_OPEN_PERMISSION = "yieldpacks.multiopen";
 
     /** Where a call to {@link #tryOpen} came from - decides which reveal (if any) plays. See {@code PackRevealAnimationService}/{@code RollAnimationService}'s own class docs for why this matters. */
     public enum OpenTrigger { MANUAL_COMPASS, DIALOG, AUTO_OPEN }
@@ -158,6 +164,53 @@ public final class PackOpenService {
                 Placeholder.unparsed("result", Formatting.stripLeadingColorCodes(roll.item().displayName()))));
         Bukkit.getPluginManager().callEvent(new PackOpenedEvent(player, packId, result.rolls()));
         return true;
+    }
+
+    /**
+     * The bulk counterpart to {@link #tryOpen} - opens up to {@code
+     * min(count, PackRollService#MULTI_OPEN_CAP, stored)} packs in one
+     * action for the full-screen results grid (see {@code
+     * PackMultiOpenResultGui}), instead of the usual single-item reveal.
+     * Requires {@link #MULTI_OPEN_PERMISSION}. The suppression guard and
+     * cooldown are checked/applied exactly ONCE for the whole batch, not
+     * once per pack - the batch IS the convenience a player is paying for.
+     * {@code enchantService}/{@code masteryService} still fire once PER
+     * roll, same as {@code count} sequential single opens would produce, so
+     * drop odds and Mastery XP stay identical either way. Returns the raw
+     * {@link PackRollService.PurchaseResult} (not a boolean, unlike {@link
+     * #tryOpen}) so the caller can render every roll.
+     */
+    public PackRollService.PurchaseResult tryOpenMany(Player player, String packId, int count) {
+        if (!player.hasPermission(MULTI_OPEN_PERMISSION)) {
+            return PackRollService.PurchaseResult.failure("You need the Multi-Open gamepass for this.");
+        }
+        if (RevealSuppressionRegistry.isActive(player.getUniqueId())) {
+            return PackRollService.PurchaseResult.failure("Still finishing your last reveal.");
+        }
+        PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
+        long cooldownMillis = Math.round(content.get().shop().openCooldownMillis() / cooldownMultiplier(profile));
+        long now = System.currentTimeMillis();
+        long last = lastOpenAtMillis.getOrDefault(player.getUniqueId(), 0L);
+        if (now - last < cooldownMillis) {
+            return PackRollService.PurchaseResult.failure("You're opening too fast - wait a moment.");
+        }
+
+        PackRollService.PurchaseResult result = rollService.openManyFromStorage(player, packId, count);
+        if (!result.success()) {
+            player.sendMessage(Text.parse("<red><reason></red>", Placeholder.unparsed("reason", result.failureReason())));
+            return result;
+        }
+        lastOpenAtMillis.put(player.getUniqueId(), now);
+        for (int i = 0; i < result.rolls().size(); i++) {
+            enchantService.maybeDropBook(player, result.luckMultiplier());
+            masteryService.grantXp(player, MasteryType.PACKS, 1);
+        }
+        player.sendMessage(Text.parse(
+                "<#4BD9FF><bold>Packs</bold></#4BD9FF> <dark_gray>»</dark_gray> <gray>Opened <count>x <pack>!</gray>",
+                Placeholder.unparsed("count", String.valueOf(result.rolls().size())),
+                Placeholder.unparsed("pack", packName(packId))));
+        Bukkit.getPluginManager().callEvent(new PackOpenedEvent(player, packId, result.rolls()));
+        return result;
     }
 
     private String packName(String packId) {

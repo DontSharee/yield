@@ -113,6 +113,17 @@ products:
     commands:
       - "lp user %player% permission set yieldpacks.automode true"
       - "lp user %player% permission set yieldpacks.automode.premium true"
+  multi_open_pass:
+    display-name: "&bMulti-Open Pass"
+    icon: ENDER_CHEST
+    description:
+      - "Unlocks the Open 24 button"
+      - "in the pack-opening dialog,"
+      - "permanently."
+    cost-credits: 1500
+    category: gamepass
+    commands:
+      - "lp user %player% permission set yieldpacks.multiopen true"
   luck_potion:
     display-name: "&a2x Luck Potion"
     icon: PLAYER_HEAD
