@@ -59,6 +59,14 @@ public final class PackPlayerProfile implements PlayerRecord {
     private long lastStockCycleId = -1;
     private Map<String, Integer> stockPurchasedThisCycle = new HashMap<>();
     private long rollCount;
+    // The rarest single pull this player has ever landed, as the "1 in N" the
+    // reveal showed them - so a 1-in-300,000 Huge stays on their record
+    // forever rather than being a message that scrolled past. Set once, never
+    // decreases, and never recomputed from current odds: the whole point is
+    // that it is the number they actually beat at the time, with the luck
+    // they actually had. See PackRollService#rollInPlace.
+    private long bestLuckOneIn;
+    private String bestLuckItemId;
     private AutoTargetMode autoTargetMode = AutoTargetMode.CLOSEST;
     private int prestiges;
     private BigInteger prestigePoints = BigInteger.ZERO;
@@ -362,6 +370,24 @@ public final class PackPlayerProfile implements PlayerRecord {
     }
 
     /** Lifetime count of packs this player has opened - drives the pity system (see PityService). */
+    /** The "1 in N" of the rarest pull this player has ever landed - 0 if they have never opened a pack. */
+    public long getBestLuckOneIn() {
+        return bestLuckOneIn;
+    }
+
+    public void setBestLuckOneIn(long bestLuckOneIn) {
+        this.bestLuckOneIn = bestLuckOneIn;
+    }
+
+    /** The item id behind {@link #getBestLuckOneIn} - null until they land their first pull. */
+    public String getBestLuckItemId() {
+        return bestLuckItemId;
+    }
+
+    public void setBestLuckItemId(String bestLuckItemId) {
+        this.bestLuckItemId = bestLuckItemId;
+    }
+
     public long getRollCount() {
         return rollCount;
     }

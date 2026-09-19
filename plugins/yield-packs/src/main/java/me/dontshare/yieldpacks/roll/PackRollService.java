@@ -7,12 +7,15 @@ import me.dontshare.yieldpacks.data.ItemDefinition;
 import me.dontshare.yieldpacks.data.PackContentLoader;
 import me.dontshare.yieldpacks.data.PackDefinition;
 import me.dontshare.yieldpacks.data.PackPoolEntry;
+import me.dontshare.yieldpacks.data.ItemRegistry;
 import me.dontshare.yieldpacks.data.Rarity;
+import me.dontshare.yieldpacks.data.VariantConfig;
 import me.dontshare.yieldpacks.display.PetDisplayService;
 import me.dontshare.yieldpacks.economy.EquipmentService;
 import me.dontshare.yieldpacks.economy.LuckService;
 import me.dontshare.yieldpacks.event.PetEquippedEvent;
 import me.dontshare.yieldpacks.fusion.FusionTier;
+import me.dontshare.yieldpacks.pet.PetInstance;
 import me.dontshare.yieldpacks.pity.PityService;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import me.dontshare.yieldpacks.shop.ShopStockService;
@@ -42,8 +45,12 @@ import java.util.function.Supplier;
  */
 public final class PackRollService {
 
-    /** One resolved roll: the pet obtained and whether it was newly seen for this pack's collection. */
-    public record RollResult(ItemDefinition item, boolean firstTimeCollected) {
+    /**
+     * One resolved roll: the pet obtained, whether it was newly seen for this
+     * pack's collection, the owned instance itself (so a caller can read its
+     * Shiny flag), and the "1 in N" this exact pull actually beat.
+     */
+    public record RollResult(ItemDefinition item, boolean firstTimeCollected, PetInstance pet, long oneIn, boolean huge) {
     }
 
     /** One pool entry's actual, luck-adjusted odds for a given roll - see {@link #oddsFor}. */
@@ -70,6 +77,9 @@ public final class PackRollService {
     private final ShopStockService shopStockService;
     private final PityService pityService;
 
+    /** A Huge secret's true odds run past a trillion-to-one; clamping keeps "1 in N" a number a person can read. */
+    private static final long MAX_DISPLAYED_ONE_IN = 1_000_000_000_000L;
+
     /** Keyed, composable "chance to override this roll with a random Exclusive-rarity pet" registry (see yield-blocktree) - same shape as {@code LuckService#extraLuckProviders}, summed additively. */
     private final Map<String, Function<PackPlayerProfile, Double>> exclusiveFindChanceProviders = new ConcurrentHashMap<>();
 
@@ -87,6 +97,54 @@ public final class PackRollService {
             total += provider.apply(profile);
         }
         return total;
+    }
+
+    /** One pack's Huge-eligible entries and their weights, renormalized among themselves - see {@link #rollHuge}. */
+    private record HugeCandidate(ItemDefinition huge, double probability) {
+    }
+
+    /**
+     * Which Huge a proc turns into, picked from this pack's own pool by the
+     * SAME weights the normal table uses, restricted to the pets that have a
+     * Huge version at all. Null if the pack contains nothing eligible, in
+     * which case the proc is simply dropped and the normal roll stands.
+     * <p>
+     * Deliberately independent of what the normal roll came up with. The
+     * obvious alternative - "upgrade the pet you just rolled" - sounds
+     * tidier but makes the odds of any particular Huge impossible to state
+     * honestly, because an ineligible roll would have to fall back to
+     * something and that redistribution is invisible to the player. Picking
+     * fresh from the eligible weights means a given Huge's odds are exactly
+     * {@code huge.chance x its share of the eligible weight}, which is a
+     * number the reveal can show and a player can trust.
+     * <p>
+     * Weighting by the pool rather than uniformly is what keeps the rarity
+     * ladder intact inside the Huge chase: a Huge of this pack's common-ish
+     * Rare shows up reasonably often, a Huge of its Secret is a
+     * once-on-the-whole-server event.
+     */
+    private List<HugeCandidate> hugeCandidatesFor(PackDefinition pack) {
+        ItemRegistry items = content.get().items();
+        List<PackPoolEntry> eligible = pack.pool().stream()
+                .filter(entry -> items.find(entry.itemId() + "_huge").isPresent())
+                .toList();
+        double total = eligible.stream().mapToDouble(PackPoolEntry::weight).sum();
+        if (total <= 0) {
+            return List.of();
+        }
+        List<HugeCandidate> candidates = new ArrayList<>(eligible.size());
+        for (PackPoolEntry entry : eligible) {
+            candidates.add(new HugeCandidate(items.getOrThrow(entry.itemId() + "_huge"), entry.weight() / total));
+        }
+        return candidates;
+    }
+
+    private ItemDefinition rollHuge(PackDefinition pack) {
+        List<HugeCandidate> candidates = hugeCandidatesFor(pack);
+        if (candidates.isEmpty()) {
+            return null;
+        }
+        return WeightedRandom.pick(candidates, HugeCandidate::probability).huge();
     }
 
     /** A uniformly-random base-form (non-fused) Exclusive-rarity item, or null if none are configured. */
@@ -251,8 +309,34 @@ public final class PackRollService {
                 rolled = exclusiveOverride;
             }
         }
+        // Huge replaces whatever came up, and is luck-scaled: investing in
+        // luck should move the thing players actually chase. Rolled AFTER the
+        // Exclusive override so the two can't both rewrite the same pull -
+        // whichever lands last is what you get, and Huge is the rarer of the
+        // two by orders of magnitude.
+        VariantConfig variants = content.get().variants();
+        boolean huge = false;
+        double hugeChance = variants.hugeChance() * luckMultiplier;
+        if (hugeChance > 0 && ThreadLocalRandom.current().nextDouble() < hugeChance) {
+            ItemDefinition hugeOverride = rollHuge(pack);
+            if (hugeOverride != null) {
+                rolled = hugeOverride;
+                huge = true;
+            }
+        }
+        // What this pull was worth beating, for the reveal and for the
+        // player's own Best Luck record. A Huge's odds are its own chance
+        // times the odds of the pet it landed on, because you had to clear
+        // both - which is what makes a Huge secret a genuinely absurd number.
+        long oneIn = oneInFor(pack, luckMultiplier, rolled, huge, variants);
+
         boolean firstTime = !hasCollected(profile, packId, rolled.id());
         var newPet = profile.addOwnedItem(packId, rolled.id());
+        // Flat, never luck-scaled - see VariantConfig.
+        if (variants.shinyChance() > 0 && ThreadLocalRandom.current().nextDouble() < variants.shinyChance()) {
+            newPet.setShiny(true);
+        }
+        recordBestLuck(profile, rolled, oneIn);
         if (equipmentService.autoEquipOnRoll(profile, newPet)) {
             // A tutorial-tracking auto-equip is exactly as real as a manual
             // one from the Bag - fire the same event so its EQUIP_PET step
@@ -264,7 +348,7 @@ public final class PackRollService {
             existsCounterStore.increment(rolled.id());
         }
         profile.setRollCount(profile.getRollCount() + 1);
-        return new RollOutcome(new RollResult(rolled, firstTime), luckMultiplier);
+        return new RollOutcome(new RollResult(rolled, firstTime, newPet, oneIn, huge), luckMultiplier);
     }
 
     /**
@@ -295,6 +379,48 @@ public final class PackRollService {
     private boolean hasCollected(PackPlayerProfile profile, String packId, String itemId) {
         Set<String> collected = profile.getPackCollectionProgress().get(packId);
         return collected != null && collected.contains(itemId);
+    }
+
+    /**
+     * The "1 in N" this pull beat. For a normal pet that is just its own
+     * slot in the pack's odds table; for a Huge it also has to clear the
+     * Huge roll itself, so the two chances multiply.
+     * <p>
+     * Capped at {@link #MAX_DISPLAYED_ONE_IN} purely so an absurd product
+     * (a Huge secret runs to the billions) stays a readable number rather
+     * than overflowing a leaderboard column.
+     */
+    private long oneInFor(PackDefinition pack, double luckMultiplier, ItemDefinition rolled,
+                           boolean huge, VariantConfig variants) {
+        double probability;
+        if (huge) {
+            // Two independent gates: the Huge proc itself, then which Huge it
+            // landed on among this pack's eligible weights.
+            double share = hugeCandidatesFor(pack).stream()
+                    .filter(candidate -> candidate.huge().id().equals(rolled.id()))
+                    .mapToDouble(HugeCandidate::probability)
+                    .findFirst()
+                    .orElse(0.0);
+            probability = variants.hugeChance() * luckMultiplier * share;
+        } else {
+            probability = oddsFor(pack, luckMultiplier).stream()
+                    .filter(odds -> odds.item().id().equals(rolled.id()))
+                    .mapToDouble(WeightedOdds::probability)
+                    .findFirst()
+                    .orElse(1.0);
+        }
+        if (probability <= 0) {
+            return MAX_DISPLAYED_ONE_IN;
+        }
+        return (long) Math.min(MAX_DISPLAYED_ONE_IN, Math.round(1.0 / probability));
+    }
+
+    /** Never decreases - a player's Best Luck is the rarest thing they have ever landed, not their most recent. */
+    private void recordBestLuck(PackPlayerProfile profile, ItemDefinition rolled, long oneIn) {
+        if (oneIn > profile.getBestLuckOneIn()) {
+            profile.setBestLuckOneIn(oneIn);
+            profile.setBestLuckItemId(rolled.id());
+        }
     }
 
     /** Every pool entry's actual, luck-adjusted probability for this roll (normalized, sums to 1.0) - the same weighting {@link #rollOne} picks from, exposed for callers that need to display real odds (see yield-packs' pack-reveal reel) or sample statistically-plausible decoys. */

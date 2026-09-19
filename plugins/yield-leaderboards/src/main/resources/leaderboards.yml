@@ -25,3 +25,8 @@ leaderboards:
     title: "BOSS DAMAGE Leaderboard"
     color: "#FF5555"
     stat: boss_damage
+  best_luck_leaderboard:
+    hologram: best_luck_leaderboard
+    title: "BEST LUCK Leaderboard"
+    color: "#B15CFF"
+    stat: best_luck

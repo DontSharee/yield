@@ -47,6 +47,13 @@ public final class BroadcastEventListener implements Listener {
         }
         for (RollResult roll : event.getRolls()) {
             ItemDefinition item = roll.item();
+            // A Huge and a very lucky pull each get their own, better
+            // message below - announcing the same pull twice would read as
+            // a bug, and the rarity-tier line is the least interesting of
+            // the three things we could say about it.
+            if (announceHuge(event, roll) | announceLuckyPull(event, roll)) {
+                continue;
+            }
             if (!config.rarityIds().contains(item.rarityId())) {
                 continue;
             }
@@ -60,6 +67,32 @@ public final class BroadcastEventListener implements Listener {
                     Placeholder.component("rarity_name", rarityName),
                     Placeholder.component("pet_name", petName));
         }
+    }
+
+    /** True if this pull was announced as a Huge, so the caller knows not to announce it again. */
+    private boolean announceHuge(PackOpenedEvent event, RollResult roll) {
+        var config = content.get().huge();
+        if (!config.enabled() || !roll.huge()) {
+            return false;
+        }
+        broadcast(config.messageTemplate(),
+                Placeholder.unparsed("player", event.getPlayer().getName()),
+                Placeholder.component("pet_name", petDisplayComponent(roll.item())),
+                Placeholder.unparsed("one_in", Formatting.format(roll.oneIn())));
+        return true;
+    }
+
+    /** True if this pull cleared the "worth telling everyone" odds threshold and was announced. */
+    private boolean announceLuckyPull(PackOpenedEvent event, RollResult roll) {
+        var config = content.get().luckyPull();
+        if (!config.enabled() || roll.oneIn() < config.minOneIn()) {
+            return false;
+        }
+        broadcast(config.messageTemplate(),
+                Placeholder.unparsed("player", event.getPlayer().getName()),
+                Placeholder.component("pet_name", petDisplayComponent(roll.item())),
+                Placeholder.unparsed("one_in", Formatting.format(roll.oneIn())));
+        return true;
     }
 
     @EventHandler

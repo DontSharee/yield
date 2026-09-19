@@ -7,6 +7,7 @@ import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldcore.text.MenuLore;
 import me.dontshare.yieldpacks.data.ItemDefinition;
+import me.dontshare.yieldpacks.pet.PetLabels;
 import me.dontshare.yieldpacks.data.Rarity;
 import me.dontshare.yieldpacks.data.RarityRegistry;
 import me.dontshare.yieldpacks.item.ItemIconFactory;
@@ -15,6 +16,7 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Supplier;
@@ -75,30 +77,47 @@ public final class PackMultiOpenResultGui {
         guiManager.open(player, builder.build());
     }
 
+    private ItemStack buildResultIcon(RollResult roll) {
+        ItemDefinition item = roll.item();
+        Rarity rarity = rarityOf(item);
+        String color = "<" + rarity.colorHex() + ">";
+        String tag = PetLabels.tagsFor(item, roll.pet());
+        ItemBuilder builder = iconFactory.baseIcon(item)
+                .name((tag != null ? tag + " " : "") + color + Formatting.stripLeadingColorCodes(item.displayName()));
+        List<String> data = new ArrayList<>();
+        if (roll.huge()) {
+            data.add("&6&lHUGE!");
+        }
+        if (roll.pet() != null && roll.pet().isShiny()) {
+            data.add("&e&lSHINY!");
+        }
+        if (roll.firstTimeCollected()) {
+            data.add("&a&lNEW!");
+        }
+        // The number that makes a pull mean something - always shown, not
+        // just on the rare ones, so a player builds a feel for what the
+        // odds actually are before they beat one.
+        data.add("&71 in &f" + Formatting.format(roll.oneIn()));
+        MenuLore.info("multiopen-result", data, color, List.of(rarity.displayName())).forEach(builder::lore);
+        return builder.hideAttributes().build();
+    }
+
     private ItemStack buildHeaderIcon(List<RollResult> rolls) {
+        // Ranked by what the pull actually BEAT, not by rarity tier - a Huge
+        // of a lesser pet is a far bigger moment than an ordinary Mythic,
+        // and the header should say so.
         RollResult best = rolls.stream()
-                .max(Comparator.comparingInt(r -> rarityOf(r.item()).sortOrder()))
+                .max(Comparator.comparingLong(RollResult::oneIn))
                 .orElse(null);
         ItemBuilder builder = ItemBuilder.of(Material.CHEST).name(ACCENT + "&lOpened " + rolls.size() + " Packs!");
         List<String> data = best == null ? List.of() : List.of(
-                "&7Best: " + rarityColor(best.item()) + Formatting.stripLeadingColorCodes(best.item().displayName())
+                "&7Best: " + rarityColor(best.item()) + Formatting.stripLeadingColorCodes(best.item().displayName()),
+                "&7Luck: &f1 in " + Formatting.format(best.oneIn())
         );
         MenuLore.info("multiopen", data, ACCENT, List.of()).forEach(builder::lore);
         return builder.hideAttributes().build();
     }
 
-    private ItemStack buildResultIcon(RollResult roll) {
-        ItemDefinition item = roll.item();
-        Rarity rarity = rarityOf(item);
-        String color = "<" + rarity.colorHex() + ">";
-        ItemBuilder builder = iconFactory.baseIcon(item)
-                .name(color + Formatting.stripLeadingColorCodes(item.displayName()));
-        List<String> data = roll.firstTimeCollected()
-                ? List.of("&a&lNEW!")
-                : List.of();
-        MenuLore.info("multiopen-result", data, color, List.of(rarity.displayName())).forEach(builder::lore);
-        return builder.hideAttributes().build();
-    }
 
     private Rarity rarityOf(ItemDefinition item) {
         return rarityRegistry.get().getOrThrow(item.rarityId());

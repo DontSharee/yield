@@ -204,6 +204,7 @@ public final class YieldPacks extends JavaPlugin {
         candyItem = new CandyItem(this);
         petLevelingService = new PetLevelingService(() -> petLevelingConfig, playerStore, () -> candyConfig, candyItem);
         equipmentService.setLevelMultiplierProvider(petLevelingService::levelMultiplier);
+        equipmentService.setShinyDamageMultiplier(() -> content.variants().shinyDamageMultiplier());
         registerPetItemHandler((player, pet, item) -> {
             var candyOpt = petLevelingService.candyFor(item);
             if (candyOpt.isEmpty()) {

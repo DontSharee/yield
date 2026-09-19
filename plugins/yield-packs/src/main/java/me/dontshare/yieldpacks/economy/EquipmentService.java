@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -31,6 +32,8 @@ public final class EquipmentService {
 
     private final Supplier<ItemRegistry> itemRegistry;
     private final int baseEquipCap;
+    /** How much a Shiny pet's damage is multiplied by - packs.yml's {@code shiny.damage-multiplier}, supplied rather than stored so a content reload picks it up. */
+    private volatile DoubleSupplier shinyDamageMultiplier = () -> 1.0;
 
     /** Extra equip slots from outside sources (e.g. yield-skilltree's EQUIP_SLOTS nodes, yield-ranks' donor ranks) - summed on top of the base cap. Keyed so more than one plugin can contribute at once, matching YieldPacks' own coin/diamond/luck provider pattern. */
     private final Map<String, Function<PackPlayerProfile, Integer>> bonusEquipSlotProviders = new ConcurrentHashMap<>();
@@ -50,6 +53,11 @@ public final class EquipmentService {
     /** Call on the registering plugin's onDisable. */
     public void unregisterBonusEquipSlotsProvider(String key) {
         bonusEquipSlotProviders.remove(key);
+    }
+
+    /** Wired from YieldPacks once content is loaded; defaults to no bonus so this class stays usable before that. */
+    public void setShinyDamageMultiplier(DoubleSupplier supplier) {
+        this.shinyDamageMultiplier = supplier != null ? supplier : (() -> 1.0);
     }
 
     public void setLevelMultiplierProvider(Function<PetInstance, Double> provider) {
@@ -151,10 +159,14 @@ public final class EquipmentService {
         }
         double forgeBonus = 1.0 + pet.getForgeBonuses().getOrDefault("DAMAGE", 0.0);
         double enchantBonus = 1.0 + pet.getEnchantBonuses().getOrDefault("DAMAGE", 0.0);
+        // Shiny is a per-INSTANCE flag, not part of the definition, so it
+        // multiplies both branches below - a Shiny Huge gets it on top of
+        // its Huge percentage, same as a Shiny anything else.
+        double shinyBonus = pet.isShiny() ? shinyDamageMultiplier.getAsDouble() : 1.0;
         if (def.huge()) {
-            return bestNormalPetDamage(profile) * (1.0 + def.hugeDamagePercent()) * forgeBonus * enchantBonus;
+            return bestNormalPetDamage(profile) * (1.0 + def.hugeDamagePercent()) * forgeBonus * enchantBonus * shinyBonus;
         }
-        return def.damage() * levelMultiplierProvider.apply(pet) * forgeBonus * enchantBonus;
+        return def.damage() * levelMultiplierProvider.apply(pet) * forgeBonus * enchantBonus * shinyBonus;
     }
 
     /** The lowest damage any common pet in {@code packs.yml} lists - the floor a Huge pet falls back to when its owner has never owned a single non-Huge pet, so an all-Huge team is never stuck dealing literal zero damage. */

@@ -45,6 +45,13 @@ public final class PetInstance {
     // only for lore display and special-effect hooks like Glittering).
     private Map<String, Double> enchantBonuses = new HashMap<>();
     private List<String> activeUniqueEnchants = new ArrayList<>();
+    // Rolled once, when this pet is obtained, and never changes afterwards
+    // (see PackRollService). Lives here rather than as its own
+    // ItemDefinition because Shiny stacks with everything else a pet can be
+    // - rarity, fusion tier, Huge - and synthesizing a definition per
+    // combination would multiply the registry for no gain. See
+    // VariantConfig for the full reasoning.
+    private boolean shiny;
 
     public PetInstance() {
     }
@@ -69,6 +76,15 @@ public final class PetInstance {
 
     public void setItemId(String itemId) {
         this.itemId = itemId;
+    }
+
+    /** Whether this specific pet rolled Shiny when it was obtained - a permanent, purely-per-instance property. */
+    public boolean isShiny() {
+        return shiny;
+    }
+
+    public void setShiny(boolean shiny) {
+        this.shiny = shiny;
     }
 
     public int getLevel() {

@@ -12,6 +12,23 @@ pack-open:
   rarities: [legendary, mythic, exclusive]
   message: "<gold><bold>★</bold></gold> <white><player></white> <gray>just pulled a</gray> <rarity_name> <gray>pet:</gray> <pet_name><gold><bold> ★</bold></gold>"
 
+# Fires whenever anyone pulls a HUGE pet - the rarest thing in the game and
+# the one moment the whole server should look up for. Takes precedence over
+# pack-open below, so a Huge is never announced twice.
+# Placeholders: <player>, <pet_name> (already colored), <one_in>
+huge:
+  enabled: true
+  message: "<gradient:#FFF6B7:#FFD700:#FFC107><bold>✦ HUGE ✦</bold></gradient> <white><player></white> <gray>just pulled</gray> <pet_name> <dark_gray>(<gray>1 in <one_in></gray>)</dark_gray>"
+
+# Fires on any pull that beat odds of at least "min-one-in", whatever its
+# rarity - so a genuinely absurd Secret gets called out even when it isn't a
+# Huge. Also takes precedence over pack-open.
+# Placeholders: <player>, <pet_name> (already colored), <one_in>
+lucky-pull:
+  enabled: true
+  min-one-in: 100000
+  message: "<gradient:#B15CFF:#33CFFF><bold>⚡</bold></gradient> <white><player></white> <gray>beat</gray> <white>1 in <one_in></white> <gray>and pulled</gray> <pet_name><gray>!</gray>"
+
 # Fires when a fusion produces one of the tiers listed below (RAINBOW,
 # DARK_MATTER - GOLDEN is intentionally excluded by default, too common to
 # be worth a server-wide message).

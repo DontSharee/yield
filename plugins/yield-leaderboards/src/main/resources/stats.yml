@@ -36,3 +36,9 @@ stats:
   boss_damage:
     field: "packs.lifetimeBossDamage"
     type: LONG
+  best_luck:
+    # The "1 in N" of the rarest single pack pull this player has ever landed
+    # (see PackRollService#recordBestLuck) - the one board that ranks a moment
+    # rather than an accumulation, so a brand-new account can top it.
+    field: "packs.bestLuckOneIn"
+    type: LONG

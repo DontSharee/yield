@@ -12,6 +12,7 @@ import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldcore.text.MenuLore;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.data.ItemDefinition;
+import me.dontshare.yieldpacks.pet.PetLabels;
 import me.dontshare.yieldpacks.data.ItemRegistry;
 import me.dontshare.yieldpacks.data.Rarity;
 import me.dontshare.yieldpacks.data.RarityRegistry;
@@ -461,7 +462,7 @@ public final class BagGui {
     /** This item's fusion tier tag (if any) + its plain name + a "[Lv. N]" bracket - never a gradiented name, see FusionTier#tag. A Huge pet's own display-name is expected to already say "Huge" (e.g. "Huge Diamond Wolf") - that's the only indicator it works differently, not a separately-injected badge here. */
     private String buildNameLine(BagEntry entry, boolean equipped) {
         ItemDefinition item = entry.item();
-        String tag = item.fusionTier().tag();
+        String tag = PetLabels.tagsFor(item, entry.representative());
         String prefix = tag != null ? tag + " " : "";
         String levelBracket = " &8[&7Lv. " + entry.representative().getLevel() + "&8]";
         String equippedSuffix = equipped ? " &a[Equipped]" : "";

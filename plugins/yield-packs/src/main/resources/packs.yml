@@ -27,6 +27,66 @@ shop:
 # next, manual or auto-open alike.
 open-cooldown-seconds: 1.0
 
+# ---------------------------------------------------------------------------
+# HUGE PETS - the chase.
+#
+# A Huge is not an entry in any pack's pool. It REPLACES whatever you rolled,
+# at "chance" per roll (multiplied by your luck), with a Huge version of that
+# same pet - so a Huge always comes from the pack you were actually opening.
+# If the pet you rolled has no Huge version (its rarity isn't listed below),
+# one of that pack's own eligible pets is picked instead, so a lucky roll is
+# never wasted.
+#
+# One Huge is synthesized per eligible pet automatically - there is nothing to
+# write here per pet. A Huge's damage is NOT its own stat: it is your best
+# normal pet's damage times (1 + the percent below), which is what makes a
+# Huge pulled in Meadow still worth equipping in Genesis Core, and what makes
+# them the thing worth trading for.
+#
+# "chance" is the odds of getting SOME Huge. Which one it turns out to be is
+# then drawn from this pack's own weights, restricted to eligible pets - so
+# the rarity ladder survives inside the chase. In Meadow that works out to
+# roughly 1 in 5,900 for a Huge of one of its Rares and 1 in 4.4 MILLION for
+# a Huge of its Secret.
+#
+# 1 in 2,500 is set against how many packs the balance model says a player
+# actually opens: about 3,000 across one full pass down the zone ladder (see
+# BALANCE.md), so roughly one Huge per pass, arriving somewhere around the
+# middle zones. Rare enough that chat lighting up means something, common
+# enough to be a chase with an end. Luck multiplies it.
+huge:
+  chance: 0.0004
+  # Rarity -> how much stronger that Huge is than your best normal pet.
+  # A rarity left out of this list simply has no Huge version at all, which
+  # is why commons and uncommons are absent: a Huge Field Mouse would be the
+  # single best pet in the game and cost nothing to chase.
+  damage-percent:
+    rare: 0.50
+    epic: 0.75
+    legendary: 1.00
+    mythic: 1.50
+    exclusive: 2.00
+    secret: 3.00
+
+# SHINY - the other half of the chase, and deliberately the opposite shape.
+#
+# Shiny is a flat roll on every pet you obtain, stacking with everything:
+# rarity, fusion tier, and Huge. A Shiny Golden Huge Star Dragon is a real
+# thing you can own. It is a flag on the owned pet rather than its own
+# definition (see VariantConfig), so it costs nothing in the registry.
+#
+# Deliberately NOT luck-scaled. Luck is already the lever for rarity; leaving
+# one roll untouched by it means there is always a surprise that a maxed-out
+# account hasn't optimised away.
+# 1 in 120 against ~3,000 packs a pass is about 25 Shinies per pass - often
+# enough to be a real, recurring little hit, rare enough that it never stops
+# registering. At the 1-in-40 this started at you would see 75 a pass and
+# stop noticing them entirely.
+shiny:
+  chance: 0.00833
+  damage-multiplier: 1.25
+
+
 # Pity: every "rolls"-th pack a player opens, the very next open gets
 # "multiplier" luck, then falls back to normal. Add more tiers freely - if
 # a roll count matches several at once, the highest multiplier wins.
@@ -161,18 +221,6 @@ items:
     rarity: epic
     damage: 30
     track-exists: true
-  huge_diamond_wolf:
-    # Huge pets don't use their own "damage" stat at all - see EquipmentService#effectiveDamage.
-    # Their damage is (your best owned, non-Huge pet's damage) * (1 + huge-damage-percent).
-    # Any pet can become a Huge pet this way - this one just happens to reuse
-    # Diamond Wolf's own look. The ONLY indicator a pet is Huge is "Huge" in
-    # its own display-name below - no separate badge is added anywhere else.
-    display-name: "&bHuge Diamond Wolf"
-    material: PLAYER_HEAD
-    rarity: epic
-    track-exists: true
-    huge: true
-    huge-damage-percent: 0.5
   obsidian_panther:
     display-name: "&5Obsidian Panther"
     material: PLAYER_HEAD
@@ -185,13 +233,6 @@ items:
     rarity: legendary
     damage: 75
     track-exists: true
-  huge_star_dragon:
-    display-name: "&6Huge Star Dragon"
-    material: PLAYER_HEAD
-    rarity: legendary
-    track-exists: true
-    huge: true
-    huge-damage-percent: 1.0
   phoenix_hatchling:
     display-name: "&6Phoenix Hatchling"
     material: PLAYER_HEAD
@@ -204,13 +245,6 @@ items:
     rarity: mythic
     damage: 170
     track-exists: true
-  huge_void_serpent:
-    display-name: "&dHuge Void Serpent"
-    material: PLAYER_HEAD
-    rarity: mythic
-    track-exists: true
-    huge: true
-    huge-damage-percent: 2.0
   celestial_griffin:
     display-name: "&dCelestial Griffin"
     material: PLAYER_HEAD
@@ -1728,10 +1762,10 @@ packs:
       - { item: tabby_cat, weight: 40 }
       - { item: golden_retriever, weight: 15 }
       - { item: crimson_falcon, weight: 15 }
-      - { item: huge_diamond_wolf, weight: 4 }
+      - { item: diamond_wolf_huge, weight: 4 }
       - { item: obsidian_panther, weight: 4 }
-      - { item: huge_star_dragon, weight: 1 }
-      - { item: huge_void_serpent, weight: 0.25 }
+      - { item: star_dragon_huge, weight: 1 }
+      - { item: void_serpent_huge, weight: 0.25 }
       - { item: eternal_sovereign, weight: 0.02 }
 
   # --- Zone packs (see plugins/yield-zones/src/main/resources/zones.yml) ---

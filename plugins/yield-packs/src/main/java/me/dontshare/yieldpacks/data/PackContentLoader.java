@@ -1,5 +1,6 @@
 package me.dontshare.yieldpacks.data;
 
+import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldpacks.fusion.FusionTier;
 import me.dontshare.yieldpacks.pity.PityTier;
 import me.dontshare.yieldpacks.shop.ShopConfig;
@@ -35,7 +36,7 @@ public final class PackContentLoader {
 
     /** An immutable, atomically-swappable bundle of the registries plus the shop's own settings. */
     public record ContentSnapshot(RarityRegistry rarities, ItemRegistry items, PackRegistry packs, ShopConfig shop,
-                                   List<PityTier> pityTiers) {
+                                   List<PityTier> pityTiers, VariantConfig variants) {
     }
 
     public ContentSnapshot load() {
@@ -44,13 +45,32 @@ public final class PackContentLoader {
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 
         Map<String, Rarity> rarities = loadRarities(config.getConfigurationSection("rarities"));
-        Map<String, ItemDefinition> items = loadItems(config.getConfigurationSection("items"), rarities);
+        VariantConfig variants = loadVariantConfig(config);
+        Map<String, ItemDefinition> items = loadItems(config.getConfigurationSection("items"), rarities, variants);
         Map<String, PackDefinition> packs = loadPacks(config.getConfigurationSection("packs"), items);
         ShopConfig shop = loadShopConfig(config);
         List<PityTier> pityTiers = loadPityTiers(config);
 
         return new ContentSnapshot(new RarityRegistry(rarities), new ItemRegistry(items), new PackRegistry(packs),
-                shop, pityTiers);
+                shop, pityTiers, variants);
+    }
+
+    private VariantConfig loadVariantConfig(YamlConfiguration config) {
+        Map<String, Double> hugePercents = new LinkedHashMap<>();
+        ConfigurationSection percents = config.getConfigurationSection("huge.damage-percent");
+        if (percents != null) {
+            for (String rarityId : percents.getKeys(false)) {
+                hugePercents.put(rarityId, percents.getDouble(rarityId));
+            }
+        }
+        if (hugePercents.isEmpty()) {
+            logger.warning("No 'huge.damage-percent' rarities configured - no Huge pets will exist.");
+        }
+        return new VariantConfig(
+                config.getDouble("huge.chance", VariantConfig.DEFAULTS.hugeChance()),
+                Map.copyOf(hugePercents),
+                config.getDouble("shiny.chance", VariantConfig.DEFAULTS.shinyChance()),
+                config.getDouble("shiny.damage-multiplier", VariantConfig.DEFAULTS.shinyDamageMultiplier()));
     }
 
     private List<PityTier> loadPityTiers(YamlConfiguration config) {
@@ -94,7 +114,7 @@ public final class PackContentLoader {
         return result;
     }
 
-    private Map<String, ItemDefinition> loadItems(ConfigurationSection section, Map<String, Rarity> rarities) {
+    private Map<String, ItemDefinition> loadItems(ConfigurationSection section, Map<String, Rarity> rarities, VariantConfig variants) {
         Map<String, ItemDefinition> result = new LinkedHashMap<>();
         if (section == null) {
             return result;
@@ -131,8 +151,53 @@ public final class PackContentLoader {
                     s.getBoolean("huge", false),
                     s.getDouble("huge-damage-percent", 0.0)));
         }
+        // Order matters: Huges are synthesized from the BASE pets only, and
+        // fusion tiers from everything that isn't Huge. Three of the same
+        // Huge is not a thing anyone will ever hold at these odds, so a
+        // Golden Huge would be dead config.
+        addHugeVariants(result, variants);
         addFusionTiers(result);
         return result;
+    }
+
+    /**
+     * A Huge version of every pet whose rarity appears in packs.yml's
+     * {@code huge.damage-percent} - synthesized rather than hand-written for
+     * the same reason fusion tiers are: there is one per eligible pet, and
+     * keeping them in the config by hand would mean a hundred near-identical
+     * blocks that drift out of sync with their own base pet.
+     * <p>
+     * A Huge is never in a pack's {@code pool:}. It can only arrive by
+     * replacing a normal roll (see {@code PackRollService}), which is what
+     * makes it a surprise rather than a line item in an odds table.
+     */
+    private void addHugeVariants(Map<String, ItemDefinition> items, VariantConfig variants) {
+        for (ItemDefinition base : List.copyOf(items.values())) {
+            if (base.huge() || !variants.hasHugeVariant(base.rarityId())) {
+                continue;
+            }
+            String hugeId = base.id() + "_huge";
+            if (items.containsKey(hugeId)) {
+                continue;
+            }
+            items.put(hugeId, new ItemDefinition(
+                    hugeId,
+                    "Huge " + Formatting.stripLeadingColorCodes(base.displayName()),
+                    base.material(),
+                    base.customModelData(),
+                    base.headDatabaseId(),
+                    base.rarityId(),
+                    // Ignored entirely for a Huge - its damage comes from the
+                    // owner's best normal pet. Carried over only so the Bag's
+                    // sort-by-damage has something stable to fall back on.
+                    base.damage(),
+                    true,
+                    base.lore(),
+                    FusionTier.NORMAL,
+                    hugeId,
+                    true,
+                    variants.hugeDamagePercentFor(base.rarityId())));
+        }
     }
 
     /**
@@ -145,6 +210,9 @@ public final class PackContentLoader {
     private void addFusionTiers(Map<String, ItemDefinition> items) {
         List<ItemDefinition> baseItems = List.copyOf(items.values());
         for (ItemDefinition base : baseItems) {
+            if (base.huge()) {
+                continue;
+            }
             for (FusionTier tier : FusionTier.values()) {
                 if (tier == FusionTier.NORMAL) {
                     continue;

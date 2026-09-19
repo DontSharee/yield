@@ -7,6 +7,7 @@ import me.dontshare.yieldcore.packet.TextDisplayManager;
 import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.data.ItemDefinition;
+import me.dontshare.yieldpacks.pet.PetLabels;
 import me.dontshare.yieldpacks.data.ItemRegistry;
 import me.dontshare.yieldpacks.data.Rarity;
 import me.dontshare.yieldpacks.data.RarityRegistry;
@@ -253,7 +254,7 @@ public final class PetDisplayService {
         List<PetDisplayInstance> instances = new ArrayList<>(equippedIds.size());
         for (UUID instanceId : equippedIds) {
             profile.findPet(instanceId).ifPresent(pet ->
-                    instances.add(new PetDisplayInstance(pet.getItemId(), pet.getLevel(), PacketEntityManager.nextEntityId(), PacketEntityManager.nextEntityId())));
+                    instances.add(new PetDisplayInstance(pet.getItemId(), pet.getLevel(), pet.isShiny(), PacketEntityManager.nextEntityId(), PacketEntityManager.nextEntityId())));
         }
         ownerInstances.put(ownerId, instances);
         // Deliberately simple: a full despawn+rebuild rather than diffing which
@@ -653,7 +654,7 @@ public final class PetDisplayService {
                 TextDisplayManager.setBackgroundColor(viewer, instance.textEntityId(), 0x00000000);
                 TextDisplayManager.setStyle(viewer, instance.textEntityId(), true, false, false,
                         TextDisplayManager.Alignment.CENTER);
-                TextDisplayManager.setText(viewer, instance.textEntityId(), labelFor(item, instance.level()));
+                TextDisplayManager.setText(viewer, instance.textEntityId(), labelFor(item, instance.level(), instance.shiny()));
                 TextDisplayManager.setInterpolation(viewer, instance.textEntityId(), 0,
                         config.updateIntervalTicks(), config.updateIntervalTicks());
 
@@ -717,14 +718,14 @@ public final class PetDisplayService {
      * always be visible at a glance, unlike damage/other stats which stay
      * Bag-only).
      */
-    private Component labelFor(ItemDefinition item, int level) {
+    private Component labelFor(ItemDefinition item, int level, boolean shiny) {
         Rarity rarity = rarityRegistry.get().find(item.rarityId()).orElse(null);
         String rarityColor = rarity != null ? rarity.colorHex() : "#FFFFFF";
         String plainName = Formatting.stripLeadingColorCodes(item.displayName());
         Component nameLine = Text.parse("<" + rarityColor + ">" + plainName);
         Component levelLine = Text.parse("&7[Lv. " + level + "]");
 
-        String tag = item.fusionTier().tag();
+        String tag = PetLabels.tagsFor(item, shiny);
         Component result = tag == null ? nameLine : Text.parse(tag).append(Component.newline()).append(nameLine);
         return result.append(Component.newline()).append(levelLine);
     }
@@ -749,10 +750,10 @@ public final class PetDisplayService {
             return;
         }
         PetDisplayInstance old = instances.get(slot);
-        instances.set(slot, new PetDisplayInstance(old.itemId(), newLevel, old.itemEntityId(), old.textEntityId()));
+        instances.set(slot, new PetDisplayInstance(old.itemId(), newLevel, old.shiny(), old.itemEntityId(), old.textEntityId()));
 
         itemRegistry.get().find(old.itemId()).ifPresent(item -> {
-            Component text = labelFor(item, newLevel);
+            Component text = labelFor(item, newLevel, old.shiny());
             for (UUID viewerId : viewersByOwner.getOrDefault(ownerId, Set.of())) {
                 Player viewer = Bukkit.getPlayer(viewerId);
                 if (viewer != null) {

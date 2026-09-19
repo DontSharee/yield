@@ -20,10 +20,15 @@ public final class BroadcastsContentLoader {
     public record RebirthConfig(boolean enabled, int every, String messageTemplate) {
     }
 
+    /** Fires on any pull whose "1 in N" clears {@code minOneIn} - the one broadcast that scales with how lucky a pull actually was rather than with which tier it belonged to. */
+    public record LuckyPullConfig(boolean enabled, long minOneIn, String messageTemplate) {
+    }
+
     public record SimpleConfig(boolean enabled, String messageTemplate) {
     }
 
-    public record BroadcastsContent(PackOpenConfig packOpen, FusionConfig fusion, RebirthConfig rebirth,
+    public record BroadcastsContent(PackOpenConfig packOpen, SimpleConfig huge, LuckyPullConfig luckyPull,
+                                     FusionConfig fusion, RebirthConfig rebirth,
                                      SimpleConfig prestige, SimpleConfig zoneUnlock, SimpleConfig teamCreate,
                                      SimpleConfig shardFind, SimpleConfig worldBoss) {
     }
@@ -41,6 +46,8 @@ public final class BroadcastsContentLoader {
 
         return new BroadcastsContent(
                 loadPackOpen(config.getConfigurationSection("pack-open")),
+                loadSimple(config.getConfigurationSection("huge"), defaultMessage("huge")),
+                loadLuckyPull(config.getConfigurationSection("lucky-pull")),
                 loadFusion(config.getConfigurationSection("fusion")),
                 loadRebirth(config.getConfigurationSection("rebirth")),
                 loadSimple(config.getConfigurationSection("prestige"), defaultMessage("prestige")),
@@ -58,6 +65,15 @@ public final class BroadcastsContentLoader {
         Set<String> rarities = new HashSet<>(section.getStringList("rarities"));
         return new PackOpenConfig(section.getBoolean("enabled", true), rarities,
                 section.getString("message", defaultMessage("pack-open")));
+    }
+
+    private LuckyPullConfig loadLuckyPull(ConfigurationSection section) {
+        if (section == null) {
+            return new LuckyPullConfig(false, Long.MAX_VALUE, "");
+        }
+        return new LuckyPullConfig(section.getBoolean("enabled", true),
+                Math.max(1L, section.getLong("min-one-in", 100_000L)),
+                section.getString("message", defaultMessage("lucky-pull")));
     }
 
     private FusionConfig loadFusion(ConfigurationSection section) {
