@@ -3,6 +3,9 @@
 # not designed around. Measured pace to the final zone, from the end-to-end
 # playthrough simulation: free 14.9h, VIP 6.7h (2.2x), Celestial 2.1h (7.1x).
 #
+# (These are the DONOR ranks bought with Credits - unrelated to the in-game
+# Rank/Star track in yield-packs' RankService, which is earned, not bought.)
+#
 # Worth knowing before anyone "fixes" bonus-pet-slots for looking enormous:
 # it is not where that advantage comes from. Once duplicates auto-fuse, a
 # squad's top few pets are vastly stronger than the rest of the bag, so going

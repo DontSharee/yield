@@ -43,6 +43,7 @@ import me.dontshare.yieldpacks.gui.BagGui;
 import me.dontshare.yieldpacks.gui.DeleteByRarityGui;
 import me.dontshare.yieldpacks.gui.FusionGui;
 import me.dontshare.yieldpacks.gui.IndexGui;
+import me.dontshare.yieldpacks.gui.PackMultiOpenResultGui;
 import me.dontshare.yieldpacks.gui.PackShopGui;
 import me.dontshare.yieldpacks.gui.PackStorageGui;
 import me.dontshare.yieldpacks.gui.RankupGui;
@@ -59,6 +60,7 @@ import me.dontshare.yieldpacks.mastery.MasteryConfig;
 import me.dontshare.yieldpacks.mastery.MasteryContentLoader;
 import me.dontshare.yieldpacks.mastery.MasteryGui;
 import me.dontshare.yieldpacks.mastery.MasteryService;
+import me.dontshare.yieldpacks.mastery.MasteryStat;
 import me.dontshare.yieldpacks.mastery.MasteryType;
 import me.dontshare.yieldpacks.pet.PetInstance;
 import me.dontshare.yieldpacks.pet.PetInstanceMigration;
@@ -282,13 +284,25 @@ public final class YieldPacks extends JavaPlugin {
         registerAttackSpeedMultiplierProvider("enchants", enchantService.multiplierFor(EnchantType.ATTACK_SPEED));
         luckService.registerExtraLuckProvider("enchants", enchantService.additiveFor(EnchantType.LUCK));
 
-        masteryContentLoader = new MasteryContentLoader(this);
+        masteryContentLoader = new MasteryContentLoader(this, getLogger());
         masteryConfig = masteryContentLoader.load();
         masteryService = new MasteryService(() -> masteryConfig, playerStore);
-        luckService.registerExtraLuckProvider("mastery_packs", profile -> masteryService.bonusFor(profile, MasteryType.PACKS));
-        registerCoinMultiplierProvider("mastery_mining", profile -> 1.0 + masteryService.bonusFor(profile, MasteryType.MINING));
-        registerDamageMultiplierProvider("mastery_combat", profile -> 1.0 + masteryService.bonusFor(profile, MasteryType.COMBAT));
-        registerDiamondMultiplierProvider("mastery_enchants", profile -> 1.0 + masteryService.bonusFor(profile, MasteryType.ENCHANTS));
+        luckService.registerExtraLuckProvider("mastery_packs",
+                profile -> masteryService.sumStat(profile, MasteryType.PACKS, MasteryStat.LUCK));
+        registerCoinMultiplierProvider("mastery_mining",
+                profile -> 1.0 + masteryService.sumStat(profile, MasteryType.MINING, MasteryStat.COIN_MULTIPLIER));
+        registerDamageMultiplierProvider("mastery_combat",
+                profile -> 1.0 + masteryService.sumStat(profile, MasteryType.COMBAT, MasteryStat.DAMAGE_MULTIPLIER));
+        registerAttackSpeedMultiplierProvider("mastery_combat",
+                profile -> 1.0 + masteryService.sumStat(profile, MasteryType.COMBAT, MasteryStat.ATTACK_SPEED_MULTIPLIER));
+        registerDiamondMultiplierProvider("mastery_refinery",
+                profile -> 1.0 + masteryService.sumStat(profile, MasteryType.REFINERY, MasteryStat.DIAMOND_MULTIPLIER));
+        luckService.registerExtraLuckProvider("mastery_refinery",
+                profile -> masteryService.sumStat(profile, MasteryType.REFINERY, MasteryStat.LUCK));
+        equipmentService.registerBonusEquipSlotsProvider("mastery_packs",
+                profile -> (int) Math.round(masteryService.sumStat(profile, MasteryType.PACKS, MasteryStat.EXTRA_PET_SLOTS)));
+        enchantService.registerBonusSlotProvider("mastery_refinery",
+                profile -> (int) Math.round(masteryService.sumStat(profile, MasteryType.REFINERY, MasteryStat.ENCHANT_BONUS_SLOTS)));
 
         petEnchantContentLoader = new PetEnchantContentLoader(this);
         petEnchantContent = petEnchantContentLoader.load();
@@ -303,6 +317,8 @@ public final class YieldPacks extends JavaPlugin {
                 rollService, pityService, () -> content.rarities());
         openService = new PackOpenService(this, () -> content, playerStore, rollService, animationService, reelAnimationService,
                 enchantService, masteryService);
+        openService.registerCooldownMultiplierProvider("mastery_packs",
+                profile -> 1.0 - masteryService.sumStat(profile, MasteryType.PACKS, MasteryStat.OPEN_SPEED_MULTIPLIER));
         openService.start();
 
         enchantGui = new EnchantGui(playerStore, enchantService, enchantItem, () -> content.rarities(), core.getGuiManager());
@@ -311,9 +327,11 @@ public final class YieldPacks extends JavaPlugin {
         CommandManager.register(this, MasteryCommand.build(masteryGui), "View your mastery progress", List.of());
 
         PackShopGui packShopGui = new PackShopGui(stockService, core.getGuiManager(), rollService, () -> content.items());
-        OpenPackDialog openPackDialog = new OpenPackDialog(playerStore, openService);
+        PackMultiOpenResultGui multiOpenResultGui = new PackMultiOpenResultGui(core.getGuiManager(), () -> content.rarities(), iconFactory);
+        OpenPackDialog openPackDialog = new OpenPackDialog(playerStore, openService, multiOpenResultGui);
         PackStorageGui packStorageGui = new PackStorageGui(() -> content, playerStore, core.getGuiManager(), openPackDialog, packShopGui, rollService);
         openPackDialog.setPackStorageGui(packStorageGui);
+        multiOpenResultGui.setPackStorageGui(packStorageGui);
         FusionService fusionService = new FusionService(() -> content.items());
         fusionGui = new FusionGui(playerStore, () -> content.items(), () -> content.rarities(),
                 fusionService, core.getGuiManager(), iconFactory);
@@ -324,10 +342,14 @@ public final class YieldPacks extends JavaPlugin {
         rankupGui = new RankupGui(playerStore, core.getGuiManager(), rankService);
         // "ranks" is an alias, not a separate command - it replaces the old
         // bare /ranks (donor-rank info readout, removed from yield-ranks),
-        // per the decision that Rankup - the diamond-spend prestige ladder -
-        // is what "/ranks" should mean now, not premium donor ranks (those
-        // live in the Credits Store, reachable via the Store category below).
-        CommandManager.register(this, RankupCommand.build(rankupGui), "Open the Rankup menu", List.of("ranks"));
+        // per the decision that Rankup - the earnable prestige ladder - is
+        // what "/ranks" should mean now, not premium donor ranks (those live
+        // in the Credits Store, reachable via the Store category below).
+        // "rankquests" is also just an alias to this SAME screen - the Rank
+        // Quest board renders inline here (row 0, via RankQuestSource,
+        // registered by yield-quests once it enables) rather than living in
+        // its own separate GUI.
+        CommandManager.register(this, RankupCommand.build(rankupGui), "Open the Rankup menu", List.of("ranks", "rankquests"));
 
         shardService = new ShardService(playerStore);
         shardItem = new ShardItem(this);
@@ -351,7 +373,7 @@ public final class YieldPacks extends JavaPlugin {
         PetEnchantSelectGui petEnchantSelectGui = new PetEnchantSelectGui(playerStore, () -> content.items(),
                 () -> content.rarities(), equipmentService, iconFactory, petEnchantService, () -> petEnchantContent, core.getGuiManager());
         PetEnchantTableGui petEnchantTableGui = new PetEnchantTableGui(playerStore, () -> content.items(), () -> content.rarities(),
-                equipmentService, iconFactory, petEnchantService, () -> petEnchantContent, core.getGuiManager(), this);
+                equipmentService, iconFactory, petEnchantService, () -> petEnchantContent, core.getGuiManager(), this, masteryService);
         AutoEnchantGui autoEnchantGui = new AutoEnchantGui(petEnchantService, () -> petEnchantContent, core.getGuiManager());
         petEnchantSelectGui.setTableGui(petEnchantTableGui);
         petEnchantTableGui.setSelectGui(petEnchantSelectGui);

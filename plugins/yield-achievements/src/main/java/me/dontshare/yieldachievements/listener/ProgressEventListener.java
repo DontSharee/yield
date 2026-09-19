@@ -49,8 +49,14 @@ public final class ProgressEventListener implements Listener {
 
     @EventHandler
     public void onPackOpened(PackOpenedEvent event) {
-        trigger(event.getPlayer(), GameAction.OPEN_PACK, 1);
-        trigger(event.getPlayer(), GameAction.OBTAIN_PET, event.getRolls().size());
+        // A multi-open (see yield-packs' PackOpenService#tryOpenMany) fires
+        // ONE event carrying every roll from the batch, not one event per
+        // pack - OPEN_PACK must scale by rolls().size(), not a flat 1, or a
+        // 24x multi-open would only ever count as 1 pack toward any
+        // achievement/milestone.
+        int count = event.getRolls().size();
+        trigger(event.getPlayer(), GameAction.OPEN_PACK, count);
+        trigger(event.getPlayer(), GameAction.OBTAIN_PET, count);
     }
 
     @EventHandler

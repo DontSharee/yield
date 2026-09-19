@@ -1,20 +1,103 @@
-# Masteries - 4 passive per-activity XP tracks (PACKS/ENCHANTS/MINING/
-# COMBAT), leveling automatically just from doing that activity, no
-# purchase gate. Each level grants +bonus-per-level to a small related
-# stat (PACKS -> luck, MINING -> coins, COMBAT -> damage, ENCHANTS ->
-# diamonds) - meaningful by max-level, never disruptive below it. All 4
-# tracks share this one curve. Run /admin packs reload after editing.
+# Masteries - 4 passive per-activity XP tracks (Packs/Mining/Combat/Pet
+# Refinery), leveling automatically just from doing that activity, no
+# purchase gate. Unlike the old smooth-bonus version, each track now unlocks
+# a list of discrete, named PERKS at specific levels (PS99-style) - every
+# perk whose "level" is at or below the player's current level in that
+# track is permanently active, and perks that share a "stat" simply STACK
+# (both add together, no "higher tier replaces lower" logic). All values
+# below are a first-pass judgment call, trivially retunable here without a
+# code change. Run /admin packs reload after editing.
 #
-# BALANCE - COMBAT gains exactly 1 XP per ore cube killed, so this curve is
-# denominated in kills: max level is ~75,000 of them, or roughly 30 hours of
-# active play. That makes masteries the slowest, most passive track in the
-# game on purpose - it is the thing still ticking up once the zone ladder is
-# finished. The old curve (base 50, exponent 1.3) needed ~865,000 kills,
-# which no one would ever have seen the end of.
+# "stat" is which real bonus registry a perk feeds - see MasteryStat.java
+# for the full list (coin_multiplier, damage_multiplier,
+# attack_speed_multiplier, diamond_multiplier, luck, extra_pet_slots,
+# open_speed_multiplier, extra_cube_cap, diamond_chance_boost,
+# cube_bonus_chance_boost, crit_chance, double_hit_chance,
+# triple_hit_chance, enchant_bonus_slots).
 level-curve:
-  base: 10
-  exponent: 1.1
-max-level: 100
-# +20% to that track's stat at max level, up from the old +5% (which was
-# too small to notice after 30 hours of work).
-bonus-per-level: 0.002
+  base: 50
+  exponent: 1.3
+max-level: 99
+
+tracks:
+  packs:
+    perks:
+      - { id: open_speed_1, display-name: "Open Speed I", level: 10, stat: open_speed_multiplier, value: 0.05,
+          description: ["Packs open 5% faster."] }
+      - { id: pet_luck_1, display-name: "Pet Luck I", level: 20, stat: luck, value: 0.02,
+          description: ["+2% luck when rolling a pet."] }
+      - { id: extra_pet_slot_1, display-name: "Extra Pet Slot I", level: 30, stat: extra_pet_slots, value: 1,
+          description: ["+1 equipped pet slot."] }
+      - { id: open_speed_2, display-name: "Open Speed II", level: 40, stat: open_speed_multiplier, value: 0.05,
+          description: ["Packs open another 5% faster."] }
+      - { id: pet_luck_2, display-name: "Pet Luck II", level: 55, stat: luck, value: 0.03,
+          description: ["+3% more luck when rolling a pet."] }
+      - { id: extra_pet_slot_2, display-name: "Extra Pet Slot II", level: 70, stat: extra_pet_slots, value: 1,
+          description: ["+1 more equipped pet slot."] }
+      - { id: open_speed_3, display-name: "Open Speed III", level: 85, stat: open_speed_multiplier, value: 0.10,
+          description: ["Packs open a further 10% faster."] }
+      - { id: pet_luck_3, display-name: "Pet Luck III", level: 99, stat: luck, value: 0.05,
+          description: ["+5% more luck when rolling a pet."] }
+      - { id: extra_pet_slot_3, display-name: "Extra Pet Slot III", level: 99, stat: extra_pet_slots, value: 1,
+          description: ["+1 more equipped pet slot."] }
+
+  mining:
+    perks:
+      - { id: coin_boost_1, display-name: "Coin Boost I", level: 10, stat: coin_multiplier, value: 0.05,
+          description: ["+5% coins from everything."] }
+      - { id: diamond_chance_1, display-name: "Diamond Chance I", level: 20, stat: diamond_chance_boost, value: 0.01,
+          description: ["+1% chance an ore cube drops a diamond."] }
+      - { id: extra_cube_1, display-name: "Extra Cube I", level: 30, stat: extra_cube_cap, value: 1,
+          description: ["+1 max concurrent ore cube."] }
+      - { id: coin_boost_2, display-name: "Coin Boost II", level: 40, stat: coin_multiplier, value: 0.05,
+          description: ["+5% more coins from everything."] }
+      - { id: bonus_cube_chance_1, display-name: "Bonus Cube Chance I", level: 55, stat: cube_bonus_chance_boost, value: 0.01,
+          description: ["+1% chance a spawned cube is a bonus cube."] }
+      - { id: extra_cube_2, display-name: "Extra Cube II", level: 70, stat: extra_cube_cap, value: 1,
+          description: ["+1 more max concurrent ore cube."] }
+      - { id: coin_boost_3, display-name: "Coin Boost III", level: 85, stat: coin_multiplier, value: 0.10,
+          description: ["+10% more coins from everything."] }
+      - { id: diamond_chance_2, display-name: "Diamond Chance II", level: 99, stat: diamond_chance_boost, value: 0.02,
+          description: ["+2% more chance an ore cube drops a diamond."] }
+      - { id: bonus_cube_chance_2, display-name: "Bonus Cube Chance II", level: 99, stat: cube_bonus_chance_boost, value: 0.02,
+          description: ["+2% more chance a spawned cube is a bonus cube."] }
+
+  combat:
+    perks:
+      - { id: damage_boost_1, display-name: "Damage Boost I", level: 10, stat: damage_multiplier, value: 0.05,
+          description: ["+5% pet damage."] }
+      - { id: crit_chance_1, display-name: "Crit Chance I", level: 20, stat: crit_chance, value: 0.02,
+          description: ["+2% chance a hit crits (2x damage)."] }
+      - { id: attack_speed_1, display-name: "Attack Speed I", level: 30, stat: attack_speed_multiplier, value: 0.03,
+          description: ["+3% pet attack speed."] }
+      - { id: damage_boost_2, display-name: "Damage Boost II", level: 40, stat: damage_multiplier, value: 0.05,
+          description: ["+5% more pet damage."] }
+      - { id: double_hit_chance_1, display-name: "Double Hit Chance I", level: 55, stat: double_hit_chance, value: 0.02,
+          description: ["+2% chance a hit strikes twice."] }
+      - { id: crit_chance_2, display-name: "Crit Chance II", level: 70, stat: crit_chance, value: 0.03,
+          description: ["+3% more crit chance."] }
+      - { id: damage_boost_3, display-name: "Damage Boost III", level: 85, stat: damage_multiplier, value: 0.10,
+          description: ["+10% more pet damage."] }
+      - { id: triple_hit_chance_1, display-name: "Triple Hit Chance I", level: 99, stat: triple_hit_chance, value: 0.01,
+          description: ["+1% chance a hit strikes three times."] }
+      - { id: attack_speed_2, display-name: "Attack Speed II", level: 99, stat: attack_speed_multiplier, value: 0.05,
+          description: ["+5% more pet attack speed."] }
+
+  refinery:
+    perks:
+      - { id: diamond_boost_1, display-name: "Diamond Boost I", level: 10, stat: diamond_multiplier, value: 0.05,
+          description: ["+5% diamonds from everything."] }
+      - { id: enchant_slot_1, display-name: "Enchant Slot I", level: 20, stat: enchant_bonus_slots, value: 1,
+          description: ["+1 player Enchant Book slot."] }
+      - { id: diamond_boost_2, display-name: "Diamond Boost II", level: 35, stat: diamond_multiplier, value: 0.05,
+          description: ["+5% more diamonds from everything."] }
+      - { id: refinery_luck_1, display-name: "Luck I", level: 50, stat: luck, value: 0.03,
+          description: ["+3% luck."] }
+      - { id: enchant_slot_2, display-name: "Enchant Slot II", level: 65, stat: enchant_bonus_slots, value: 1,
+          description: ["+1 more player Enchant Book slot."] }
+      - { id: diamond_boost_3, display-name: "Diamond Boost III", level: 80, stat: diamond_multiplier, value: 0.10,
+          description: ["+10% more diamonds from everything."] }
+      - { id: refinery_luck_2, display-name: "Luck II", level: 99, stat: luck, value: 0.05,
+          description: ["+5% more luck."] }
+      - { id: enchant_slot_3, display-name: "Enchant Slot III", level: 99, stat: enchant_bonus_slots, value: 1,
+          description: ["+1 more player Enchant Book slot."] }

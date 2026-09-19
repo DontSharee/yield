@@ -37,8 +37,10 @@ public final class PackPlayerProfile implements PlayerRecord {
     @BsonProperty("gems")
     private BigInteger diamonds = BigInteger.ZERO;
     private int rebirths;
-    /** Purchased with diamonds (see RankService) - a permanent, ever-climbing prestige track separate from rebirths, boosting diamond income. Rendered as a Roman numeral (Formatting#toRoman) everywhere it's shown. */
-    private int rank;
+    /** Earned from completing Rank Quests (see yield-quests' RankQuestService) - accumulates forever. Rank itself is never stored, always derived fresh from this via RankService#rankOf, same "never cache a derived value" shape as MasteryService#levelOf. */
+    private long stars;
+    /** Sequential claim watermark for RankService's per-rank reward - the highest rank whose one-time coin/diamond reward has already been claimed. */
+    private int claimedRank;
     private boolean autoOpenEnabled;
     private boolean rollAnimationEnabled = true;
     private PetVisibility petVisibility = PetVisibility.ALL;
@@ -147,12 +149,20 @@ public final class PackPlayerProfile implements PlayerRecord {
         this.rebirths = rebirths;
     }
 
-    public int getRank() {
-        return rank;
+    public long getStars() {
+        return stars;
     }
 
-    public void setRank(int rank) {
-        this.rank = rank;
+    public void setStars(long stars) {
+        this.stars = stars;
+    }
+
+    public int getClaimedRank() {
+        return claimedRank;
+    }
+
+    public void setClaimedRank(int claimedRank) {
+        this.claimedRank = claimedRank;
     }
 
     /** Whether PackOpenService should keep auto-opening {@link #getActivePackId()} until its storage runs out. */

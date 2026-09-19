@@ -119,7 +119,7 @@ zones:
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
     # Coins are the real gate; the diamond side-cost is small enough to
     # come along for free while grinding, and exists so diamonds have a
-    # reason to be banked rather than dumped entirely into ranks.
+    # reason to be banked rather than spent the moment they land.
     # NOTE: the turn-in ITEM costs that used to sit here are gone. They
     # asked for Packed Ice, Magma Blocks, Ancient Debris and so on -
     # none of which this server has any source for, so every zone past

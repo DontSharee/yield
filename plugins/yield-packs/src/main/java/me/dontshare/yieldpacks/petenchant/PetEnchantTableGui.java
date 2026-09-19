@@ -14,6 +14,8 @@ import me.dontshare.yieldpacks.data.Rarity;
 import me.dontshare.yieldpacks.data.RarityRegistry;
 import me.dontshare.yieldpacks.economy.EquipmentService;
 import me.dontshare.yieldpacks.item.ItemIconFactory;
+import me.dontshare.yieldpacks.mastery.MasteryService;
+import me.dontshare.yieldpacks.mastery.MasteryType;
 import me.dontshare.yieldpacks.pet.PetInstance;
 import me.dontshare.yieldpacks.petenchant.PetEnchantContentLoader.PetEnchantContent;
 import me.dontshare.yieldpacks.petenchant.PetEnchantService.CommonRoll;
@@ -68,6 +70,7 @@ public final class PetEnchantTableGui {
     private final Supplier<PetEnchantContent> content;
     private final GuiManager guiManager;
     private final JavaPlugin plugin;
+    private final MasteryService masteryService;
     private final Map<UUID, BukkitTask> autoTaskByPlayer = new HashMap<>();
     private PetEnchantSelectGui selectGui;
     private AutoEnchantGui autoEnchantGui;
@@ -75,7 +78,8 @@ public final class PetEnchantTableGui {
     public PetEnchantTableGui(PlayerDataStore<PackPlayerProfile> store, Supplier<ItemRegistry> itemRegistry,
                                Supplier<RarityRegistry> rarityRegistry, EquipmentService equipmentService,
                                ItemIconFactory iconFactory, PetEnchantService enchantService,
-                               Supplier<PetEnchantContent> content, GuiManager guiManager, JavaPlugin plugin) {
+                               Supplier<PetEnchantContent> content, GuiManager guiManager, JavaPlugin plugin,
+                               MasteryService masteryService) {
         this.store = store;
         this.itemRegistry = itemRegistry;
         this.rarityRegistry = rarityRegistry;
@@ -85,6 +89,7 @@ public final class PetEnchantTableGui {
         this.content = content;
         this.guiManager = guiManager;
         this.plugin = plugin;
+        this.masteryService = masteryService;
     }
 
     /** Set once, right after both GUIs exist - see {@code PetEnchantSelectGui#setTableGui}'s own javadoc on this pattern. */
@@ -145,7 +150,7 @@ public final class PetEnchantTableGui {
         }
 
         enchantService.spend(profile);
-        store.save(player.getUniqueId());
+        masteryService.grantXp(player, MasteryType.REFINERY, 1);
         RollResult result = enchantService.rollFor(pet);
         gui.set(ENCHANT_SLOT, buildEnchantButton(profile, pet), null); // grey out while rolling
         playRollAnimation(player, gui, 0, () -> {
@@ -276,9 +281,13 @@ public final class PetEnchantTableGui {
             // result already lives on the in-memory PetInstance the whole
             // loop shares, so nothing is lost by batching the save, and the
             // decoy-free auto rolls have no per-attempt visual anyway.
+            // REFINERY mastery xp is granted here too (grantXp saves on its
+            // own), batched to the SAME cadence rather than once per roll -
+            // masteryService.grantXp would otherwise reintroduce exactly the
+            // sustained per-roll DB save this batching was built to avoid.
             if (matched || rollsSincePersist[0] >= AUTO_PERSIST_EVERY_N_ROLLS) {
+                masteryService.grantXp(player, MasteryType.REFINERY, rollsSincePersist[0]);
                 rollsSincePersist[0] = 0;
-                store.save(playerId);
                 refreshTableSlots(player);
             }
         }, 0L, AUTO_ROLL_INTERVAL_TICKS);

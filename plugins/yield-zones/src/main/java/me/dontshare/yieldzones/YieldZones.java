@@ -13,6 +13,8 @@ import me.dontshare.yieldcore.YieldCore;
 import me.dontshare.yieldcore.command.CommandManager;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.YieldPacks;
+import me.dontshare.yieldpacks.mastery.MasteryStat;
+import me.dontshare.yieldpacks.mastery.MasteryType;
 import me.dontshare.yieldpacks.player.AttackMode;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import me.dontshare.yieldpacks.player.SendMode;
@@ -76,6 +78,22 @@ public final class YieldZones extends JavaPlugin {
         // one - same direction every other cross-plugin provider
         // registration in this codebase already goes.
         combatController.registerCritChanceProvider("shards", profile -> packs.getShardService().critChanceBonus(profile));
+        // Same "self-registered here, not by yield-packs" reasoning as
+        // Shards' own crit registration above - Mastery perks are a
+        // yield-packs concept, but crit/multi-hit/cube-cap/diamond-chance
+        // are entirely yield-zones ones.
+        combatController.registerCritChanceProvider("mastery_combat",
+                profile -> packs.getMasteryService().sumStat(profile, MasteryType.COMBAT, MasteryStat.CRIT_CHANCE));
+        combatController.registerDoubleHitChanceProvider("mastery_combat",
+                profile -> packs.getMasteryService().sumStat(profile, MasteryType.COMBAT, MasteryStat.DOUBLE_HIT_CHANCE));
+        combatController.registerTripleHitChanceProvider("mastery_combat",
+                profile -> packs.getMasteryService().sumStat(profile, MasteryType.COMBAT, MasteryStat.TRIPLE_HIT_CHANCE));
+        cubeService.registerExtraCubeCapProvider("mastery_mining",
+                profile -> (int) Math.round(packs.getMasteryService().sumStat(profile, MasteryType.MINING, MasteryStat.EXTRA_CUBE_CAP)));
+        cubeService.registerDiamondChanceBoostProvider("mastery_mining",
+                profile -> packs.getMasteryService().sumStat(profile, MasteryType.MINING, MasteryStat.DIAMOND_CHANCE_BOOST));
+        cubeService.registerCubeBonusChanceBoostProvider("mastery_mining",
+                profile -> packs.getMasteryService().sumStat(profile, MasteryType.MINING, MasteryStat.CUBE_BONUS_CHANCE_BOOST));
 
         // Left-click behavior depends on the player's current send mode -
         // AUTO always overrides the shared target (there's no per-slot

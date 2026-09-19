@@ -163,9 +163,11 @@ Worth recording, because several of these were not "tuning" problems.
   unlocks are coins + a light diamond side-cost.
 - **Diamond income was completely flat.** A cube kill paid exactly one
   diamond in Genesis Core, the same as in Meadow, while everything priced in
-  diamonds kept climbing. Ranks cost `1000 × 1.15^n` — rank 20 alone was past
-  a hundred hours. Cube tiers now carry a `diamond-value` that scales with
-  the zone, and rank pricing was rebuilt around it.
+  diamonds kept climbing. Cube tiers now carry a `diamond-value` that scales
+  with the zone. (Rank was the worst offender at the time — `1000 × 1.15^n`,
+  putting rank 20 alone past a hundred hours — but Rank has since moved to
+  the Star/quest track, so today's diamond sinks are the Enchanting Table,
+  the premium packs, and zone unlocks' side-cost.)
 - **Cube HP and pet damage were `int`.** A dark-matter-fused secret pet in
   the last zone deals ~1.8×10¹⁰ damage, which silently overflows. The whole
   damage path is `long` now.
@@ -225,7 +227,26 @@ without touching anything on the store page.
 
 ---
 
-## 6. Knobs
+## 6. Not covered by this model
+
+Two systems were rebuilt while this pass was in flight and are **not** part
+of the model above. Both carry their own "first-pass judgment call" notes,
+and neither was retuned here — changing them belongs with whoever designed
+them. For reference against the balanced kill rate (~35-40 cubes a minute):
+
+- **Masteries** (`masteries.yml`). The XP curve is `50 × level^1.3`, and
+  Combat earns 1 XP per cube kill. That puts the first perk at level 10
+  around 3,800 kills (~1.7 h), the `extra_pet_slot_1` perk at level 30
+  around 50,000 kills (~22 h), and level 99 around 848,000 kills (~370 h).
+  The early perks land well; the top of the track is currently far beyond
+  the ~15 h it takes to finish the zone ladder.
+- **Rank Quests / Stars** (`rank-quests.yml`, `RankService`). Rewards are
+  Stars only, so this sits outside the coin economy entirely and nothing
+  here conflicts with it.
+
+---
+
+## 7. Knobs
 
 Turn these, in roughly this order, when something feels off:
 
@@ -246,7 +267,7 @@ wall or gets skipped.
 
 ---
 
-## 7. Re-deriving the numbers
+## 8. Re-deriving the numbers
 
 The model is reproducible. Given the combat maths in §1, for each zone:
 
