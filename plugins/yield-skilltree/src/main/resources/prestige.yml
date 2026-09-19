@@ -2,5 +2,12 @@
 # resets Coins and Rebirth count back to 0 (Bag/equipped pets/fusions are
 # never touched) and grants "points-per-prestige" Prestige Points to spend
 # in the Prestige Upgrades tree (/prestigeupgrades).
+#
+# BALANCE - 100 rebirths is roughly where the rebirth curve in
+# yield-rebirth's rebirth.yml starts costing more than it gives back, so
+# that is the natural moment to offer the reset. The whole prestige tree
+# costs 45 points; at 1 point a prestige that was 45 full resets, which
+# nobody was ever going to finish. At 3 it is 15 - a real endgame goal that
+# is still actually completable.
 rebirths-required: 100
-points-per-prestige: 1
+points-per-prestige: 3

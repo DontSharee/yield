@@ -20,8 +20,17 @@ public final class RankService {
     /** Same reasoning as RebirthService's own cap - coins/diamonds are unbounded (BigInteger), so a misconfigured near-1.0 growth rate against a huge balance could otherwise loop essentially forever. */
     private static final int MAX_RANKS_PER_PREVIEW = 100_000;
 
-    private static final long BASE_COST_DIAMONDS = 1_000L;
-    private static final double COST_GROWTH = 1.15;
+    /**
+     * Diamond income is roughly 5 a minute in Meadow and climbs with the zone
+     * ladder (see zones.yml's per-tier {@code diamond-value}), so rank 1 is
+     * about five minutes of play and the curve keeps pace from there: ~rank 15
+     * by Crystal Caverns, ~rank 50 by Netherite Wastes, ~rank 85 by the end of
+     * the zone ladder. The old 1,000-diamond base was priced against a diamond
+     * economy that never grew at all - a single flat diamond per cube kill,
+     * forever - which put rank 20 alone past a hundred hours.
+     */
+    private static final long BASE_COST_DIAMONDS = 25L;
+    private static final double COST_GROWTH = 1.16;
     /** +2% diamonds per rank, additive - same shape every other "1.0 + Σ" multiplier in this codebase uses. */
     private static final double DIAMOND_BONUS_PER_RANK = 0.02;
 

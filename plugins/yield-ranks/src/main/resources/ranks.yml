@@ -1,3 +1,21 @@
+# BALANCE - these numbers are deliberately UNCHANGED. The server is balanced
+# for a free player (see BALANCE.md); donor ranks were measured afterwards,
+# not designed around. Measured pace to the final zone, from the end-to-end
+# playthrough simulation: free 14.9h, VIP 6.7h (2.2x), Celestial 2.1h (7.1x).
+#
+# Worth knowing before anyone "fixes" bonus-pet-slots for looking enormous:
+# it is not where that advantage comes from. Once duplicates auto-fuse, a
+# squad's top few pets are vastly stronger than the rest of the bag, so going
+# from 8 slots to 88 raises total volley by only ~10% - and most of even that
+# is wasted, because a settled squad already one-shots its zone's tier-1
+# cube and kill time floors out at the 1-second retarget cooldown. The real
+# donor advantage is coin-multiplier (which has no ceiling) plus the premium
+# auto-switch cooldown (which attacks that floor directly - it takes the
+# squad retarget from 1.0s to 0.2s, and kill time floors out at exactly that
+# number). The pet slots read as huge on the store page and are, in
+# practice, a collection perk. If Celestial ever needs reining in, raise
+# PREMIUM_AUTO_SWITCH_FLOOR_TICKS in PetCombatController - not this file.
+#
 # Donor rank definitions - purchased via /buy (yield-achievements' store,
 # see store.yml's "vip_rank"/"celestial_rank" products), applied via
 # "/admin ranks apply <player> <id>" (run as one of that product's own

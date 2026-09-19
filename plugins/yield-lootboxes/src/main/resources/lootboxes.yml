@@ -22,13 +22,20 @@
 #     the same escape hatch yield-achievements' Store already uses, e.g. for
 #     a LuckPerms-granted cosmetic, or (see yield-achievements' own
 #     "/admin potions give") a potion: "admin potions give %player% COINS 2 3600".
+# BALANCE - the coin/diamond entries are sized against the MID-game (roughly
+# Obsidian Rift, ~1.5 hours in), not the start. A crate that pays a new
+# player's next four zone unlocks in one click would delete the early game
+# for anyone who bought one; at these values a crate is a very good day for
+# a mid-game player and a nice top-up for a late one. The pets are the real
+# prize either way - Huge and Exclusive pets scale off your own best pet, so
+# they never go out of date.
 boxes:
   mythic_crate:
     display-name: "&d&lMythic Crate"
     icon: ENDER_CHEST
     pool:
-      - { type: flat-coins, weight: 40, amount: 50000 }
-      - { type: flat-diamonds, weight: 25, amount: 25 }
+      - { type: flat-coins, weight: 40, amount: 50000000 }
+      - { type: flat-diamonds, weight: 25, amount: 25000 }
       - { type: flat-credits, weight: 15, amount: 50 }
       - { type: pet, weight: 15, pet-item: void_serpent }
       - { type: pet, weight: 4, pet-item: huge_star_dragon }
@@ -38,7 +45,7 @@ boxes:
     display-name: "&b&lExclusive Crate"
     icon: CYAN_SHULKER_BOX
     pool:
-      - { type: flat-coins, weight: 30, amount: 250000 }
-      - { type: flat-diamonds, weight: 20, amount: 100 }
+      - { type: flat-coins, weight: 30, amount: 500000000 }
+      - { type: flat-diamonds, weight: 20, amount: 200000 }
       - { type: pet, weight: 30, pet-item: huge_void_serpent }
       - { type: pet, weight: 20, pet-item: cosmic_leviathan }

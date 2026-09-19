@@ -25,7 +25,11 @@
 # PetEnchantService#rollFor. A normal Common landing is always just 1.
 
 economy:
-  diamond-cost: 50
+  # Priced to bite around Emerald Depths/Obsidian Rift, where a roll is a
+  # few minutes of diamond income. It deliberately stops being a real cost
+  # later on: the good outcomes here are rare Uniques, and the intended
+  # late-game behaviour is to sit at the table and re-roll for them.
+  diamond-cost: 1500
   unique-weight-each: 9
 
 commons:

@@ -148,11 +148,11 @@ public final class PetCombatController implements Listener {
      * queued hits on the same cube in one tick combine into a single kill/
      * payout rather than each re-running it.
      */
-    private void applyDamage(Player player, PackPlayerProfile profile, OreCube target, int amount, UUID petId) {
+    private void applyDamage(Player player, PackPlayerProfile profile, OreCube target, long amount, UUID petId) {
         ThreadLocalRandom random = ThreadLocalRandom.current();
         double critChance = BASE_CRIT_CHANCE + sumProviders(critChanceProviders, profile);
         boolean crit = random.nextDouble() < critChance;
-        int finalAmount = crit ? (int) Math.round(amount * CRIT_MULTIPLIER) : amount;
+        long finalAmount = crit ? Math.round(amount * CRIT_MULTIPLIER) : amount;
         if (crit) {
             cubeService.playCritFlourish(player, target);
         }
@@ -350,7 +350,7 @@ public final class PetCombatController implements Listener {
             }
             cooldowns.put(petId, currentTick + Math.round(ATTACK_INTERVAL_TICKS / packs.attackSpeedMultiplier(profile)));
             double damage = packs.getEquipmentService().effectiveDamage(profile, pet) * packs.damageMultiplier(profile);
-            applyDamage(player, profile, finalTarget, (int) Math.round(damage), petId);
+            applyDamage(player, profile, finalTarget, Math.round(damage), petId);
             packs.getPetDisplayService().playAttackLunge(player, slot);
         }
     }
@@ -422,7 +422,7 @@ public final class PetCombatController implements Listener {
             }
             cooldowns.put(petId, currentTick + Math.round(ATTACK_INTERVAL_TICKS / packs.attackSpeedMultiplier(profile)));
             double damage = packs.getEquipmentService().effectiveDamage(profile, pet) * packs.damageMultiplier(profile);
-            applyDamage(player, profile, target, (int) Math.round(damage), petId);
+            applyDamage(player, profile, target, Math.round(damage), petId);
             packs.getPetDisplayService().playAttackLunge(player, slot);
         }
     }
@@ -496,7 +496,7 @@ public final class PetCombatController implements Listener {
             }
             cooldowns.put(petId, currentTick + Math.round(ATTACK_INTERVAL_TICKS / packs.attackSpeedMultiplier(profile)));
             double damage = packs.getEquipmentService().effectiveDamage(profile, pet) * packs.damageMultiplier(profile);
-            applyDamage(player, profile, target, (int) Math.round(damage), petId);
+            applyDamage(player, profile, target, Math.round(damage), petId);
             packs.getPetDisplayService().playAttackLunge(player, slot);
         }
     }

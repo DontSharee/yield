@@ -53,167 +53,314 @@
 # Tiers are sorted by "goal" automatically, so declaration order doesn't
 # matter. A block missing exactly 7 tiers just logs a warning - it still
 # works with however many it has.
+#
+# BALANCE - the old goals (100 / 1,000 / 10,000 ... 2,500,000 Stone) were
+# written without reference to how long anyone actually spends in a zone. At
+# ~38 cube kills a minute, and with Meadow being a four-minute stop, a
+# player breaks about 120 Stone in a whole pass through it - so tier 2 of
+# the very first tree was already out of reach and tiers 3-7 were decoration.
+#
+# Every goal below is derived from that block's own real expected break
+# count: how many of it a player breaks in one full pass down the ladder,
+# summed over every zone and tier it appears in. Tier 1 is ~10% of one pass
+# (a few minutes), tier 4 is ~1.5 passes ("you cleared this properly"), and
+# tier 7 is ~25 passes - a deliberate camp, or a lot of rebirth loops.
+# Trees were also added for blocks much further down the ladder, so the
+# system has something to say in the late game instead of being three
+# Meadow blocks. Each tree still ends in exactly one big, permanent,
+# server-wide perk, and no block has two.
 blocks:
   stone:
+    # The block every player breaks first, so it carries the perk that makes the whole system faster to climb - +100% blocktree progress from EVERY block, not just this one.
+    # ~117 of these are broken in one full pass down the zone ladder.
     material: STONE
     display-name: "&7Stone"
     icon: STONE
     tiers:
-      - goal: 100
+      - goal: 15
         effects:
           - { type: flat-coins, value: 5 }
-      - goal: 1000
+      - goal: 40
         effects:
           - { type: flat-coins, value: 10 }
-          - { type: flat-diamonds, value: 5 }
-      - goal: 10000
+      - goal: 100
         effects:
-          - { type: flat-coins, value: 25 }
-      - goal: 50000
+          - { type: flat-coins, value: 20 }
+      - goal: 200
         effects:
-          - { type: flat-coins, value: 50 }
-          - { type: flat-diamonds, value: 15 }
+          - { type: flat-coins, value: 40 }
           - { type: unlock-shard-drop, value: 0.01, data: CRIT_CHANCE }
-      - goal: 200000
+      - goal: 500
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
           - { type: unlock-shard-drop, value: 0.015, data: LUCK }
-      - goal: 750000
+      - goal: 1500
         effects:
           - { type: block-coin-multiplier, value: 0.25 }
           - { type: unlock-shard-drop, value: 0.02, data: COINS }
-      - goal: 2500000
+      - goal: 3000
         effects:
-          # The foundational, most-broken block gets the "makes the whole
-          # grind easier" perk - +100% (2x) blocktree progress from every
-          # block, not just Stone.
           - { type: progress-multiplier, value: 1.0 }
 
   copper_block:
+    # ~29 of these are broken in one full pass down the zone ladder.
     material: COPPER_BLOCK
     display-name: "&6Copper Block"
     icon: COPPER_BLOCK
     tiers:
-      - goal: 25
+      - goal: 5
+        effects:
+          - { type: flat-coins, value: 5 }
+      - goal: 10
         effects:
           - { type: flat-coins, value: 10 }
-      - goal: 250
+      - goal: 25
         effects:
           - { type: flat-coins, value: 20 }
-          - { type: flat-diamonds, value: 5 }
-      - goal: 2500
+      - goal: 50
         effects:
-          - { type: flat-coins, value: 50 }
-      - goal: 12500
-        effects:
-          - { type: flat-coins, value: 100 }
-          - { type: flat-diamonds, value: 20 }
-      - goal: 50000
+          - { type: flat-coins, value: 40 }
+      - goal: 150
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
-      - goal: 200000
+      - goal: 300
         effects:
           - { type: block-coin-multiplier, value: 0.25 }
           - { type: unlock-shard-drop, value: 0.02, data: DAMAGE }
-      - goal: 750000
+      - goal: 800
         effects:
-          - { type: double-hit-chance, value: 0.10 }
+          - { type: double-hit-chance, value: 0.1 }
 
   iron_block:
+    # Meadow's tier-3 and Iron Foothills' tier-2, so it fills off the rare big cubes in one zone and the mid cubes in the next.
+    # ~50 of these are broken in one full pass down the zone ladder.
     material: IRON_BLOCK
     display-name: "&fIron Block"
     icon: IRON_BLOCK
     tiers:
-      - goal: 10
+      - goal: 5
         effects:
-          - { type: flat-coins, value: 25 }
-      - goal: 100
+          - { type: flat-coins, value: 40 }
+      - goal: 15
         effects:
-          - { type: flat-coins, value: 50 }
-          - { type: flat-diamonds, value: 10 }
-      - goal: 1000
+          - { type: flat-coins, value: 80 }
+      - goal: 40
         effects:
-          - { type: flat-coins, value: 100 }
-      - goal: 5000
+          - { type: flat-coins, value: 150 }
+      - goal: 80
         effects:
-          - { type: flat-coins, value: 250 }
-          - { type: flat-diamonds, value: 50 }
-      - goal: 20000
+          - { type: flat-coins, value: 300 }
+      - goal: 200
         effects:
-          - { type: block-coin-multiplier, value: 0.15 }
+          - { type: block-coin-multiplier, value: 0.10 }
           - { type: unlock-shard-drop, value: 0.02, data: ATTACK_SPEED }
-      - goal: 75000
+      - goal: 500
         effects:
-          - { type: block-coin-multiplier, value: 0.35 }
+          - { type: block-coin-multiplier, value: 0.25 }
           - { type: unlock-shard-drop, value: 0.015, data: DIAMONDS }
-      - goal: 300000
+      - goal: 1500
         effects:
           - { type: exclusive-find-chance, value: 0.02 }
 
-  # Commented-out templates for zones.yml's currently-commented future
-  # tiers - add for real once those zones ship.
-  #  packed_ice:
-  #    material: PACKED_ICE
-  #    display-name: "&bPacked Ice"
-  #    icon: PACKED_ICE
-  #    tiers: [ ... ]
-  #  basalt:
-  #    material: BASALT
-  #    display-name: "&8Basalt"
-  #    icon: BASALT
-  #    tiers: [ ... ]
-  #  magma_block:
-  #    material: MAGMA_BLOCK
-  #    display-name: "&cMagma Block"
-  #    icon: MAGMA_BLOCK
-  #    tiers: [ ... ]
-  #  ancient_debris:
-  #    material: ANCIENT_DEBRIS
-  #    display-name: "&4Ancient Debris"
-  #    icon: ANCIENT_DEBRIS
-  #    tiers: [ ... ]
-  #  amethyst_block:
-  #    material: AMETHYST_BLOCK
-  #    display-name: "&dAmethyst Block"
-  #    icon: AMETHYST_BLOCK
-  #    tiers: [ ... ]
-  #  diamond_block:
-  #    material: DIAMOND_BLOCK
-  #    display-name: "&bDiamond Block"
-  #    icon: DIAMOND_BLOCK
-  #    tiers: [ ... ]
-  #  emerald_block:
-  #    material: EMERALD_BLOCK
-  #    display-name: "&aEmerald Block"
-  #    icon: EMERALD_BLOCK
-  #    tiers: [ ... ]
-  #  obsidian:
-  #    material: OBSIDIAN
-  #    display-name: "&5Obsidian"
-  #    icon: OBSIDIAN
-  #    tiers: [ ... ]
-  #  crying_obsidian:
-  #    material: CRYING_OBSIDIAN
-  #    display-name: "&dCrying Obsidian"
-  #    icon: CRYING_OBSIDIAN
-  #    tiers: [ ... ]
-  #  netherite_block:
-  #    material: NETHERITE_BLOCK
-  #    display-name: "&8Netherite Block"
-  #    icon: NETHERITE_BLOCK
-  #    tiers: [ ... ]
-  #  end_stone:
-  #    material: END_STONE
-  #    display-name: "&fEnd Stone"
-  #    icon: END_STONE
-  #    tiers: [ ... ]
-  #  purpur_block:
-  #    material: PURPUR_BLOCK
-  #    display-name: "&5Purpur Block"
-  #    icon: PURPUR_BLOCK
-  #    tiers: [ ... ]
-  #  beacon:
-  #    material: BEACON
-  #    display-name: "&bBeacon"
-  #    icon: BEACON
-  #    tiers: [ ... ]
+  blackstone:
+    # ~804 of these are broken in one full pass down the zone ladder.
+    material: BLACKSTONE
+    display-name: "&8Blackstone"
+    icon: BLACKSTONE
+    tiers:
+      - goal: 100
+        effects:
+          - { type: flat-coins, value: 10000 }
+      - goal: 250
+        effects:
+          - { type: flat-coins, value: 20000 }
+      - goal: 800
+        effects:
+          - { type: flat-coins, value: 40000 }
+      - goal: 1500
+        effects:
+          - { type: flat-coins, value: 80000 }
+      - goal: 4000
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 10000
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 25000
+        effects:
+          - { type: global-coin-multiplier, value: 0.25 }
+
+  deepslate:
+    # Tier-1 of BOTH Diamond Hollow and Emerald Depths, so this one fills across two whole zones.
+    # ~1,052 of these are broken in one full pass down the zone ladder.
+    material: DEEPSLATE
+    display-name: "&8Deepslate"
+    icon: DEEPSLATE
+    tiers:
+      - goal: 150
+        effects:
+          - { type: flat-coins, value: 4000 }
+      - goal: 400
+        effects:
+          - { type: flat-coins, value: 8000 }
+      - goal: 800
+        effects:
+          - { type: flat-coins, value: 20000 }
+      - goal: 2000
+        effects:
+          - { type: flat-coins, value: 40000 }
+      - goal: 5000
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+          - { type: unlock-shard-drop, value: 0.02, data: DAMAGE }
+      - goal: 15000
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 30000
+        effects:
+          - { type: global-damage-multiplier, value: 0.25 }
+
+  obsidian:
+    # Spans Obsidian Rift, Void Expanse and Cosmic Abyss - it keeps ticking over most of the back half of the ladder.
+    # ~5,325 of these are broken in one full pass down the zone ladder.
+    material: OBSIDIAN
+    display-name: "&5Obsidian"
+    icon: OBSIDIAN
+    tiers:
+      - goal: 600
+        effects:
+          - { type: flat-coins, value: 20000000 }
+      - goal: 2000
+        effects:
+          - { type: flat-coins, value: 40000000 }
+      - goal: 4000
+        effects:
+          - { type: flat-coins, value: 80000000 }
+      - goal: 8000
+        effects:
+          - { type: flat-coins, value: 200000000 }
+      - goal: 25000
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 60000
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+          - { type: unlock-shard-drop, value: 0.02, data: COINS }
+      - goal: 150000
+        effects:
+          - { type: global-attack-speed-multiplier, value: 0.15 }
+
+  end_stone:
+    # ~4,471 of these are broken in one full pass down the zone ladder.
+    material: END_STONE
+    display-name: "&fEnd Stone"
+    icon: END_STONE
+    tiers:
+      - goal: 500
+        effects:
+          - { type: flat-coins, value: 3000000 }
+      - goal: 1500
+        effects:
+          - { type: flat-coins, value: 6000000 }
+      - goal: 4000
+        effects:
+          - { type: flat-coins, value: 15000000 }
+      - goal: 8000
+        effects:
+          - { type: flat-coins, value: 25000000 }
+      - goal: 20000
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 50000
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 150000
+        effects:
+          - { type: diamond-chance-boost, value: 0.05 }
+
+  purpur_block:
+    # ~2,957 of these are broken in one full pass down the zone ladder.
+    material: PURPUR_BLOCK
+    display-name: "&5Purpur Block"
+    icon: PURPUR_BLOCK
+    tiers:
+      - goal: 300
+        effects:
+          - { type: flat-coins, value: 1500000 }
+      - goal: 1000
+        effects:
+          - { type: flat-coins, value: 2500000 }
+      - goal: 2500
+        effects:
+          - { type: flat-coins, value: 5000000 }
+      - goal: 5000
+        effects:
+          - { type: flat-coins, value: 10000000 }
+      - goal: 15000
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 30000
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 80000
+        effects:
+          - { type: global-luck-boost, value: 0.5 }
+
+  netherite_block:
+    # ~6,647 of these are broken in one full pass down the zone ladder.
+    material: NETHERITE_BLOCK
+    display-name: "&8Netherite Block"
+    icon: NETHERITE_BLOCK
+    tiers:
+      - goal: 800
+        effects:
+          - { type: flat-coins, value: 50000000 }
+      - goal: 2000
+        effects:
+          - { type: flat-coins, value: 100000000 }
+      - goal: 5000
+        effects:
+          - { type: flat-coins, value: 200000000 }
+      - goal: 10000
+        effects:
+          - { type: flat-coins, value: 400000000 }
+      - goal: 30000
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 80000
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+          - { type: unlock-shard-drop, value: 0.02, data: DIAMONDS }
+      - goal: 200000
+        effects:
+          - { type: triple-hit-chance, value: 0.1 }
+
+  diamond_block:
+    # The deepest tree in the game: Diamond Hollow's tier-3 all the way through to Genesis Core's tier-1. Tier 7 is a genuine end-of-ladder trophy.
+    # ~8,678 of these are broken in one full pass down the zone ladder.
+    material: DIAMOND_BLOCK
+    display-name: "&bDiamond Block"
+    icon: DIAMOND_BLOCK
+    tiers:
+      - goal: 1000
+        effects:
+          - { type: flat-coins, value: 400000000 }
+      - goal: 3000
+        effects:
+          - { type: flat-coins, value: 800000000 }
+      - goal: 8000
+        effects:
+          - { type: flat-coins, value: 1500000000 }
+      - goal: 15000
+        effects:
+          - { type: flat-coins, value: 3000000000 }
+      - goal: 40000
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 100000
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 250000
+        effects:
+          - { type: roll-speed-multiplier, value: 0.5 }
+

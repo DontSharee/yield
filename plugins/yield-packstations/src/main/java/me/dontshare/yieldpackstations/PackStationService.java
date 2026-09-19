@@ -17,12 +17,27 @@ import java.util.function.Supplier;
 /**
  * The purchase flow for a physical pack station - mirrors yield-upgrades'
  * own {@code UpgradeService}, except a station never levels anything up, it
- * just buys one unit of its pack into storage (unlimited supply, no shop-
- * stock cap - see {@code PackRollService#buyStationPack}).
+ * just buys its pack into storage (unlimited supply, no shop-stock cap -
+ * see {@code PackRollService#buyStationPack}).
+ * <p>
+ * A plain smack buys one; smacking while SNEAKING buys up to {@link
+ * #BULK_PURCHASE_AMOUNT} at once. That exists because of how the packs are
+ * priced: a zone pack costs roughly 1/150th of a minute's income in its own
+ * zone, deliberately, so that walking into a new zone and rebuilding a squad
+ * from its pack station takes a couple of minutes rather than the better
+ * part of an hour (see BALANCE.md). At one pack per click that would be
+ * hundreds of clicks, which is not a loop anyone would actually play.
  */
 public final class PackStationService {
 
     public enum Result { SUCCESS, ZONE_LOCKED, CANT_AFFORD, NO_STOCK_CONFIGURED }
+
+    /** How many a sneak-smack buys, at most - fewer if that's all the player can afford. */
+    public static final int BULK_PURCHASE_AMOUNT = 10;
+
+    /** How many were actually bought, so the caller can say so. Zero whenever {@code result} isn't SUCCESS. */
+    public record Purchase(Result result, int quantity) {
+    }
 
     private final YieldPacks packs;
     private final Supplier<Map<String, ZoneDefinition>> zones;
@@ -55,16 +70,39 @@ public final class PackStationService {
                 && profile.getDiamonds().compareTo(BigInteger.valueOf(pack.diamondCost())) >= 0;
     }
 
-    public Result attemptPurchase(Player player, PackStation station) {
+    public Purchase attemptPurchase(Player player, PackStation station, boolean bulk) {
         if (!station.isBlackMarket() && !zoneUnlocked(player, station)) {
-            return Result.ZONE_LOCKED;
+            return new Purchase(Result.ZONE_LOCKED, 0);
         }
         String packId = currentPackId(station);
-        if (packId == null) {
-            return Result.NO_STOCK_CONFIGURED;
+        PackDefinition pack = resolvePack(station);
+        if (packId == null || pack == null) {
+            return new Purchase(Result.NO_STOCK_CONFIGURED, 0);
         }
-        PackRollService.PurchaseResult result = packs.getPackRollService().buyStationPack(player, packId, 1);
-        return result.success() ? Result.SUCCESS : Result.CANT_AFFORD;
+        // Resolved up front rather than handed straight to buyStationPack,
+        // which is all-or-nothing on cost - asking it for 10 when the player
+        // can only afford 7 would buy nothing at all.
+        int quantity = bulk ? affordableCount(player, pack) : 1;
+        if (quantity <= 0) {
+            return new Purchase(Result.CANT_AFFORD, 0);
+        }
+        PackRollService.PurchaseResult result = packs.getPackRollService().buyStationPack(player, packId, quantity);
+        return result.success() ? new Purchase(Result.SUCCESS, quantity) : new Purchase(Result.CANT_AFFORD, 0);
+    }
+
+    /** How many of {@code pack} this player could buy right now, capped at {@link #BULK_PURCHASE_AMOUNT}. */
+    private int affordableCount(Player player, PackDefinition pack) {
+        PackPlayerProfile profile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
+        int affordable = BULK_PURCHASE_AMOUNT;
+        if (pack.coinCost() > 0) {
+            affordable = (int) Math.min(affordable,
+                    profile.getCoins().divide(BigInteger.valueOf(pack.coinCost())).min(BigInteger.valueOf(affordable)).longValue());
+        }
+        if (pack.diamondCost() > 0) {
+            affordable = (int) Math.min(affordable,
+                    profile.getDiamonds().divide(BigInteger.valueOf(pack.diamondCost())).min(BigInteger.valueOf(affordable)).longValue());
+        }
+        return affordable;
     }
 
     private boolean zoneUnlocked(Player player, PackStation station) {

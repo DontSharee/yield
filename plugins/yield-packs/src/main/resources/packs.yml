@@ -98,68 +98,68 @@ items:
     display-name: "&fStarter Pup"
     material: PLAYER_HEAD
     rarity: common
-    damage: 1
+    damage: 4
     track-exists: false
   starter_kitten:
     display-name: "&7Starter Kitten"
     material: PLAYER_HEAD
     rarity: common
-    damage: 1
+    damage: 4
     track-exists: false
   stray_cat:
     display-name: "&7Stray Cat"
     material: PLAYER_HEAD
     # head-database-id: "12345"   # uncomment and set once you have a real HeadDatabase id
     rarity: common
-    damage: 2
+    damage: 3
     track-exists: false
   puppy:
     display-name: "&fPuppy"
     material: PLAYER_HEAD
     rarity: common
-    damage: 3
+    damage: 4
     track-exists: false
   bunny:
     display-name: "&fBunny"
     material: PLAYER_HEAD
     rarity: common
-    damage: 2
+    damage: 3
     track-exists: false
   golden_retriever:
     display-name: "&eGolden Retriever"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 8
+    damage: 10
     track-exists: false
   emerald_lizard:
     display-name: "&aEmerald Lizard"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 12
+    damage: 13
     track-exists: false
   arctic_fox:
     display-name: "&fArctic Fox"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 5
+    damage: 6
     track-exists: false
   tabby_cat:
     display-name: "&6Tabby Cat"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 6
+    damage: 7
     track-exists: false
   crimson_falcon:
     display-name: "&cCrimson Falcon"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 14
+    damage: 16
     track-exists: false
   diamond_wolf:
     display-name: "&bDiamond Wolf"
     material: PLAYER_HEAD
     rarity: epic
-    damage: 25
+    damage: 30
     track-exists: true
   huge_diamond_wolf:
     # Huge pets don't use their own "damage" stat at all - see EquipmentService#effectiveDamage.
@@ -177,13 +177,13 @@ items:
     display-name: "&5Obsidian Panther"
     material: PLAYER_HEAD
     rarity: epic
-    damage: 32
+    damage: 38
     track-exists: true
   star_dragon:
     display-name: "&6Star Dragon"
     material: PLAYER_HEAD
     rarity: legendary
-    damage: 60
+    damage: 75
     track-exists: true
   huge_star_dragon:
     display-name: "&6Huge Star Dragon"
@@ -196,13 +196,13 @@ items:
     display-name: "&6Phoenix Hatchling"
     material: PLAYER_HEAD
     rarity: legendary
-    damage: 75
+    damage: 95
     track-exists: true
   void_serpent:
     display-name: "&dVoid Serpent"
     material: PLAYER_HEAD
     rarity: mythic
-    damage: 130
+    damage: 170
     track-exists: true
   huge_void_serpent:
     display-name: "&dHuge Void Serpent"
@@ -215,13 +215,13 @@ items:
     display-name: "&dCelestial Griffin"
     material: PLAYER_HEAD
     rarity: mythic
-    damage: 155
+    damage: 210
     track-exists: true
   cosmic_leviathan:
     display-name: "&bCosmic Leviathan"
     material: PLAYER_HEAD
     rarity: exclusive
-    damage: 300
+    damage: 1200
     track-exists: true
   # Black-market-only - never appears in any zone station's own pool (see
   # "elite_genesis_core_pack" below), a deliberate carve-out from the
@@ -231,7 +231,7 @@ items:
     display-name: "&5&lVoid Empress"
     material: PLAYER_HEAD
     rarity: exclusive
-    damage: 450
+    damage: 2500
     track-exists: true
   # Secret-rarity pets - the one slot every pack's pool reserves at an
   # extremely low weight, regardless of the pack's own price tier. Three
@@ -242,19 +242,19 @@ items:
     display-name: "&d&lWandering Voidling"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 600
+    damage: 6000
     track-exists: true
   ashen_devourer:
     display-name: "&4&lAshen Devourer"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 2000
+    damage: 25000
     track-exists: true
   eternal_sovereign:
     display-name: "&6&lEternal Sovereign"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 6000
+    damage: 120000
     track-exists: true
 
   # --- Meadow (zone 1/20) - baseline 2 damage ---
@@ -262,61 +262,61 @@ items:
     display-name: "&7Field Mouse"
     material: PLAYER_HEAD
     rarity: common
-    damage: 2
+    damage: 1
     track-exists: true
   zone_meadow_meadow_hare:
     display-name: "&7Meadow Hare"
     material: PLAYER_HEAD
     rarity: common
-    damage: 2
+    damage: 1
     track-exists: true
   zone_meadow_swift_fox:
     display-name: "&aSwift Fox"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 3
+    damage: 2
     track-exists: true
   zone_meadow_spotted_doe:
     display-name: "&aSpotted Doe"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 3
+    damage: 2
     track-exists: true
   zone_meadow_iron_ram:
     display-name: "&9Iron Ram"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 6
+    damage: 3
     track-exists: true
   zone_meadow_storm_falcon:
     display-name: "&9Storm Falcon"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 6
+    damage: 3
     track-exists: true
   zone_meadow_meadow_champion:
     display-name: "&bMeadow Champion"
     material: PLAYER_HEAD
     rarity: epic
-    damage: 10
+    damage: 6
     track-exists: true
   zone_meadow_sovereign_stag:
     display-name: "&6Sovereign Stag"
     material: PLAYER_HEAD
     rarity: legendary
-    damage: 18
+    damage: 12
     track-exists: true
   zone_meadow_radiant_unicorn:
     display-name: "&dRadiant Unicorn"
     material: PLAYER_HEAD
     rarity: mythic
-    damage: 34
+    damage: 26
     track-exists: true
   zone_meadow_primordial_meadowking:
     display-name: "&d&lPrimordial Meadowking"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 120
+    damage: 100
     track-exists: true
 
   # --- Frostpeak (zone 2/20) - baseline 4 damage ---
@@ -324,61 +324,61 @@ items:
     display-name: "&7Snow Vole"
     material: PLAYER_HEAD
     rarity: common
-    damage: 4
+    damage: 1
     track-exists: true
   zone_frostpeak_frost_hare:
     display-name: "&7Frost Hare"
     material: PLAYER_HEAD
     rarity: common
-    damage: 4
+    damage: 1
     track-exists: true
   zone_frostpeak_swift_owl:
     display-name: "&aSwift Owl"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 6
+    damage: 2
     track-exists: true
   zone_frostpeak_spotted_lynx:
     display-name: "&aSpotted Lynx"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 6
+    damage: 2
     track-exists: true
   zone_frostpeak_iron_wolf:
     display-name: "&9Iron Wolf"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 10
+    damage: 3
     track-exists: true
   zone_frostpeak_storm_hawk:
     display-name: "&9Storm Hawk"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 10
+    damage: 3
     track-exists: true
   zone_frostpeak_frostpeak_champion:
     display-name: "&bFrostpeak Champion"
     material: PLAYER_HEAD
     rarity: epic
-    damage: 18
+    damage: 6
     track-exists: true
   zone_frostpeak_sovereign_yeti:
     display-name: "&6Sovereign Yeti"
     material: PLAYER_HEAD
     rarity: legendary
-    damage: 32
+    damage: 12
     track-exists: true
   zone_frostpeak_glacial_wyrm:
     display-name: "&dGlacial Wyrm"
     material: PLAYER_HEAD
     rarity: mythic
-    damage: 60
+    damage: 26
     track-exists: true
   zone_frostpeak_primordial_frostking:
     display-name: "&d&lPrimordial Frostking"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 210
+    damage: 100
     track-exists: true
 
   # --- Iron Foothills (zone 3/20) - baseline 6 damage ---
@@ -386,61 +386,61 @@ items:
     display-name: "&7Stone Badger"
     material: PLAYER_HEAD
     rarity: common
-    damage: 6
+    damage: 2
     track-exists: true
   zone_iron_foothills_hill_boar:
     display-name: "&7Hill Boar"
     material: PLAYER_HEAD
     rarity: common
-    damage: 6
+    damage: 2
     track-exists: true
   zone_iron_foothills_swift_goat:
     display-name: "&aSwift Goat"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 10
+    damage: 3
     track-exists: true
   zone_iron_foothills_spotted_marmot:
     display-name: "&aSpotted Marmot"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 10
+    damage: 3
     track-exists: true
   zone_iron_foothills_iron_bull:
     display-name: "&9Iron Bull"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 17
+    damage: 6
     track-exists: true
   zone_iron_foothills_storm_ram:
     display-name: "&9Storm Ram"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 17
+    damage: 6
     track-exists: true
   zone_iron_foothills_iron_foothills_champion:
     display-name: "&bIron Foothills Champion"
     material: PLAYER_HEAD
     rarity: epic
-    damage: 31
+    damage: 12
     track-exists: true
   zone_iron_foothills_sovereign_golem:
     display-name: "&6Sovereign Golem"
     material: PLAYER_HEAD
     rarity: legendary
-    damage: 55
+    damage: 24
     track-exists: true
   zone_iron_foothills_ironclad_behemoth:
     display-name: "&dIronclad Behemoth"
     material: PLAYER_HEAD
     rarity: mythic
-    damage: 104
+    damage: 52
     track-exists: true
   zone_iron_foothills_primordial_foundryking:
     display-name: "&d&lPrimordial Foundryking"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 368
+    damage: 200
     track-exists: true
 
   # --- Sulfur Flats (zone 4/20) - baseline 11 damage ---
@@ -448,61 +448,61 @@ items:
     display-name: "&7Sulfur Toad"
     material: PLAYER_HEAD
     rarity: common
-    damage: 11
+    damage: 4
     track-exists: true
   zone_sulfur_flats_flats_wasp:
     display-name: "&7Flats Wasp"
     material: PLAYER_HEAD
     rarity: common
-    damage: 11
+    damage: 4
     track-exists: true
   zone_sulfur_flats_swift_scorpion:
     display-name: "&aSwift Scorpion"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 17
+    damage: 6
     track-exists: true
   zone_sulfur_flats_spotted_vulture:
     display-name: "&aSpotted Vulture"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 17
+    damage: 6
     track-exists: true
   zone_sulfur_flats_iron_basilisk:
     display-name: "&9Iron Basilisk"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 30
+    damage: 12
     track-exists: true
   zone_sulfur_flats_storm_adder:
     display-name: "&9Storm Adder"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 30
+    damage: 12
     track-exists: true
   zone_sulfur_flats_sulfur_flats_champion:
     display-name: "&bSulfur Flats Champion"
     material: PLAYER_HEAD
     rarity: epic
-    damage: 54
+    damage: 24
     track-exists: true
   zone_sulfur_flats_sovereign_wyrm:
     display-name: "&6Sovereign Wyrm"
     material: PLAYER_HEAD
     rarity: legendary
-    damage: 96
+    damage: 48
     track-exists: true
   zone_sulfur_flats_venomous_hydra:
     display-name: "&dVenomous Hydra"
     material: PLAYER_HEAD
     rarity: mythic
-    damage: 182
+    damage: 104
     track-exists: true
   zone_sulfur_flats_primordial_miasmaking:
     display-name: "&d&lPrimordial Miasmaking"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 643
+    damage: 400
     track-exists: true
 
   # --- Scorched Wastes (zone 5/20) - baseline 19 damage ---
@@ -510,61 +510,61 @@ items:
     display-name: "&7Ash Jackal"
     material: PLAYER_HEAD
     rarity: common
-    damage: 19
+    damage: 8
     track-exists: true
   zone_scorched_wastes_waste_vulture:
     display-name: "&7Waste Vulture"
     material: PLAYER_HEAD
     rarity: common
-    damage: 19
+    damage: 8
     track-exists: true
   zone_scorched_wastes_swift_salamander:
     display-name: "&aSwift Salamander"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 30
+    damage: 13
     track-exists: true
   zone_scorched_wastes_spotted_cobra:
     display-name: "&aSpotted Cobra"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 30
+    damage: 13
     track-exists: true
   zone_scorched_wastes_iron_scorpion:
     display-name: "&9Iron Scorpion"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 53
+    damage: 24
     track-exists: true
   zone_scorched_wastes_storm_drake:
     display-name: "&9Storm Drake"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 53
+    damage: 24
     track-exists: true
   zone_scorched_wastes_scorched_wastes_champion:
     display-name: "&bScorched Wastes Champion"
     material: PLAYER_HEAD
     rarity: epic
-    damage: 94
+    damage: 48
     track-exists: true
   zone_scorched_wastes_sovereign_djinn:
     display-name: "&6Sovereign Djinn"
     material: PLAYER_HEAD
     rarity: legendary
-    damage: 169
+    damage: 96
     track-exists: true
   zone_scorched_wastes_blazing_phoenix:
     display-name: "&dBlazing Phoenix"
     material: PLAYER_HEAD
     rarity: mythic
-    damage: 319
+    damage: 208
     track-exists: true
   zone_scorched_wastes_primordial_cinderking:
     display-name: "&d&lPrimordial Cinderking"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 1125
+    damage: 800
     track-exists: true
 
   # --- Crystal Caverns (zone 6/20) - baseline 33 damage ---
@@ -572,61 +572,61 @@ items:
     display-name: "&7Cave Bat"
     material: PLAYER_HEAD
     rarity: common
-    damage: 33
+    damage: 15
     track-exists: true
   zone_crystal_caverns_crystal_mole:
     display-name: "&7Crystal Mole"
     material: PLAYER_HEAD
     rarity: common
-    damage: 33
+    damage: 15
     track-exists: true
   zone_crystal_caverns_swift_spider:
     display-name: "&aSwift Spider"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 53
+    damage: 24
     track-exists: true
   zone_crystal_caverns_spotted_gecko:
     display-name: "&aSpotted Gecko"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 53
+    damage: 24
     track-exists: true
   zone_crystal_caverns_iron_golem:
     display-name: "&9Iron Golem"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 92
+    damage: 45
     track-exists: true
   zone_crystal_caverns_storm_wraith:
     display-name: "&9Storm Wraith"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 92
+    damage: 45
     track-exists: true
   zone_crystal_caverns_crystal_caverns_champion:
     display-name: "&bCrystal Caverns Champion"
     material: PLAYER_HEAD
     rarity: epic
-    damage: 164
+    damage: 90
     track-exists: true
   zone_crystal_caverns_sovereign_behemoth:
     display-name: "&6Sovereign Behemoth"
     material: PLAYER_HEAD
     rarity: legendary
-    damage: 295
+    damage: 180
     track-exists: true
   zone_crystal_caverns_prismatic_elemental:
     display-name: "&dPrismatic Elemental"
     material: PLAYER_HEAD
     rarity: mythic
-    damage: 558
+    damage: 390
     track-exists: true
   zone_crystal_caverns_primordial_gemking:
     display-name: "&d&lPrimordial Gemking"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 1970
+    damage: 1500
     track-exists: true
 
   # --- Diamond Hollow (zone 7/20) - baseline 57 damage ---
@@ -634,61 +634,61 @@ items:
     display-name: "&7Hollow Beetle"
     material: PLAYER_HEAD
     rarity: common
-    damage: 57
+    damage: 30
     track-exists: true
   zone_diamond_hollow_diamond_mole:
     display-name: "&7Diamond Mole"
     material: PLAYER_HEAD
     rarity: common
-    damage: 57
+    damage: 30
     track-exists: true
   zone_diamond_hollow_swift_wyrm:
     display-name: "&aSwift Wyrm"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 92
+    damage: 48
     track-exists: true
   zone_diamond_hollow_spotted_roach:
     display-name: "&aSpotted Roach"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 92
+    damage: 48
     track-exists: true
   zone_diamond_hollow_iron_sentinel:
     display-name: "&9Iron Sentinel"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 161
+    damage: 90
     track-exists: true
   zone_diamond_hollow_storm_golem:
     display-name: "&9Storm Golem"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 161
+    damage: 90
     track-exists: true
   zone_diamond_hollow_diamond_hollow_champion:
     display-name: "&bDiamond Hollow Champion"
     material: PLAYER_HEAD
     rarity: epic
-    damage: 287
+    damage: 180
     track-exists: true
   zone_diamond_hollow_sovereign_titan:
     display-name: "&6Sovereign Titan"
     material: PLAYER_HEAD
     rarity: legendary
-    damage: 517
+    damage: 360
     track-exists: true
   zone_diamond_hollow_adamant_colossus:
     display-name: "&dAdamant Colossus"
     material: PLAYER_HEAD
     rarity: mythic
-    damage: 977
+    damage: 780
     track-exists: true
   zone_diamond_hollow_primordial_vaultking:
     display-name: "&d&lPrimordial Vaultking"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 3447
+    damage: 3000
     track-exists: true
 
   # --- Emerald Depths (zone 8/20) - baseline 101 damage ---
@@ -696,61 +696,61 @@ items:
     display-name: "&7Depths Frog"
     material: PLAYER_HEAD
     rarity: common
-    damage: 101
+    damage: 60
     track-exists: true
   zone_emerald_depths_emerald_newt:
     display-name: "&7Emerald Newt"
     material: PLAYER_HEAD
     rarity: common
-    damage: 101
+    damage: 60
     track-exists: true
   zone_emerald_depths_swift_serpent:
     display-name: "&aSwift Serpent"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 161
+    damage: 96
     track-exists: true
   zone_emerald_depths_spotted_panther:
     display-name: "&aSpotted Panther"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 161
+    damage: 96
     track-exists: true
   zone_emerald_depths_iron_chimera:
     display-name: "&9Iron Chimera"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 281
+    damage: 180
     track-exists: true
   zone_emerald_depths_storm_hydra:
     display-name: "&9Storm Hydra"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 281
+    damage: 180
     track-exists: true
   zone_emerald_depths_emerald_depths_champion:
     display-name: "&bEmerald Depths Champion"
     material: PLAYER_HEAD
     rarity: epic
-    damage: 503
+    damage: 360
     track-exists: true
   zone_emerald_depths_sovereign_wyvern:
     display-name: "&6Sovereign Wyvern"
     material: PLAYER_HEAD
     rarity: legendary
-    damage: 905
+    damage: 720
     track-exists: true
   zone_emerald_depths_verdant_leviathan:
     display-name: "&dVerdant Leviathan"
     material: PLAYER_HEAD
     rarity: mythic
-    damage: 1709
+    damage: 1560
     track-exists: true
   zone_emerald_depths_primordial_depthking:
     display-name: "&d&lPrimordial Depthking"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 6032
+    damage: 6000
     track-exists: true
 
   # --- Obsidian Rift (zone 9/20) - baseline 176 damage ---
@@ -758,61 +758,61 @@ items:
     display-name: "&7Rift Raven"
     material: PLAYER_HEAD
     rarity: common
-    damage: 176
+    damage: 150
     track-exists: true
   zone_obsidian_rift_obsidian_imp:
     display-name: "&7Obsidian Imp"
     material: PLAYER_HEAD
     rarity: common
-    damage: 176
+    damage: 150
     track-exists: true
   zone_obsidian_rift_swift_gargoyle:
     display-name: "&aSwift Gargoyle"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 281
+    damage: 240
     track-exists: true
   zone_obsidian_rift_spotted_wraith:
     display-name: "&aSpotted Wraith"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 281
+    damage: 240
     track-exists: true
   zone_obsidian_rift_iron_reaper:
     display-name: "&9Iron Reaper"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 493
+    damage: 450
     track-exists: true
   zone_obsidian_rift_storm_fiend:
     display-name: "&9Storm Fiend"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 493
+    damage: 450
     track-exists: true
   zone_obsidian_rift_obsidian_rift_champion:
     display-name: "&bObsidian Rift Champion"
     material: PLAYER_HEAD
     rarity: epic
-    damage: 880
+    damage: 900
     track-exists: true
   zone_obsidian_rift_sovereign_abomination:
     display-name: "&6Sovereign Abomination"
     material: PLAYER_HEAD
     rarity: legendary
-    damage: 1583
+    damage: 1800
     track-exists: true
   zone_obsidian_rift_shattered_colossus:
     display-name: "&dShattered Colossus"
     material: PLAYER_HEAD
     rarity: mythic
-    damage: 2991
+    damage: 3900
     track-exists: true
   zone_obsidian_rift_primordial_riftking:
     display-name: "&d&lPrimordial Riftking"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 10556
+    damage: 15000
     track-exists: true
 
   # --- Void Expanse (zone 10/20) - baseline 308 damage ---
@@ -820,61 +820,61 @@ items:
     display-name: "&7Void Moth"
     material: PLAYER_HEAD
     rarity: common
-    damage: 308
+    damage: 300
     track-exists: true
   zone_void_expanse_expanse_specter:
     display-name: "&7Expanse Specter"
     material: PLAYER_HEAD
     rarity: common
-    damage: 308
+    damage: 300
     track-exists: true
   zone_void_expanse_swift_stalker:
     display-name: "&aSwift Stalker"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 493
+    damage: 480
     track-exists: true
   zone_void_expanse_spotted_horror:
     display-name: "&aSpotted Horror"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 493
+    damage: 480
     track-exists: true
   zone_void_expanse_iron_collapsar:
     display-name: "&9Iron Collapsar"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 862
+    damage: 900
     track-exists: true
   zone_void_expanse_storm_wraith:
     display-name: "&9Storm Wraith"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 862
+    damage: 900
     track-exists: true
   zone_void_expanse_void_expanse_champion:
     display-name: "&bVoid Expanse Champion"
     material: PLAYER_HEAD
     rarity: epic
-    damage: 1539
+    damage: 1800
     track-exists: true
   zone_void_expanse_sovereign_singularity:
     display-name: "&6Sovereign Singularity"
     material: PLAYER_HEAD
     rarity: legendary
-    damage: 2771
+    damage: 3600
     track-exists: true
   zone_void_expanse_entropic_horror:
     display-name: "&dEntropic Horror"
     material: PLAYER_HEAD
     rarity: mythic
-    damage: 5234
+    damage: 7800
     track-exists: true
   zone_void_expanse_primordial_voidking:
     display-name: "&d&lPrimordial Voidking"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 18472
+    damage: 30000
     track-exists: true
 
   # --- Netherite Wastes (zone 11/20) - baseline 539 damage ---
@@ -882,61 +882,61 @@ items:
     display-name: "&7Waste Piglet"
     material: PLAYER_HEAD
     rarity: common
-    damage: 539
+    damage: 600
     track-exists: true
   zone_netherite_wastes_netherite_hound:
     display-name: "&7Netherite Hound"
     material: PLAYER_HEAD
     rarity: common
-    damage: 539
+    damage: 600
     track-exists: true
   zone_netherite_wastes_swift_ghast:
     display-name: "&aSwift Ghast"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 862
+    damage: 960
     track-exists: true
   zone_netherite_wastes_spotted_brute:
     display-name: "&aSpotted Brute"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 862
+    damage: 960
     track-exists: true
   zone_netherite_wastes_iron_warlord:
     display-name: "&9Iron Warlord"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 1509
+    damage: 1800
     track-exists: true
   zone_netherite_wastes_storm_hellhound:
     display-name: "&9Storm Hellhound"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 1509
+    damage: 1800
     track-exists: true
   zone_netherite_wastes_netherite_wastes_champion:
     display-name: "&bNetherite Wastes Champion"
     material: PLAYER_HEAD
     rarity: epic
-    damage: 2694
+    damage: 3600
     track-exists: true
   zone_netherite_wastes_sovereign_overlord:
     display-name: "&6Sovereign Overlord"
     material: PLAYER_HEAD
     rarity: legendary
-    damage: 4849
+    damage: 7200
     track-exists: true
   zone_netherite_wastes_infernal_juggernaut:
     display-name: "&dInfernal Juggernaut"
     material: PLAYER_HEAD
     rarity: mythic
-    damage: 9159
+    damage: 15600
     track-exists: true
   zone_netherite_wastes_primordial_netherking:
     display-name: "&d&lPrimordial Netherking"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 32327
+    damage: 60000
     track-exists: true
 
   # --- Ancient Ruins (zone 12/20) - baseline 943 damage ---
@@ -944,61 +944,61 @@ items:
     display-name: "&7Ruin Scarab"
     material: PLAYER_HEAD
     rarity: common
-    damage: 943
+    damage: 1500
     track-exists: true
   zone_ancient_ruins_ancient_sphinx:
     display-name: "&7Ancient Sphinx"
     material: PLAYER_HEAD
     rarity: common
-    damage: 943
+    damage: 1500
     track-exists: true
   zone_ancient_ruins_swift_golem:
     display-name: "&aSwift Golem"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 1509
+    damage: 2400
     track-exists: true
   zone_ancient_ruins_spotted_jackal:
     display-name: "&aSpotted Jackal"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 1509
+    damage: 2400
     track-exists: true
   zone_ancient_ruins_iron_guardian:
     display-name: "&9Iron Guardian"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 2640
+    damage: 4500
     track-exists: true
   zone_ancient_ruins_storm_pharaoh:
     display-name: "&9Storm Pharaoh"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 2640
+    damage: 4500
     track-exists: true
   zone_ancient_ruins_ancient_ruins_champion:
     display-name: "&bAncient Ruins Champion"
     material: PLAYER_HEAD
     rarity: epic
-    damage: 4714
+    damage: 9000
     track-exists: true
   zone_ancient_ruins_sovereign_colossus:
     display-name: "&6Sovereign Colossus"
     material: PLAYER_HEAD
     rarity: legendary
-    damage: 8486
+    damage: 18000
     track-exists: true
   zone_ancient_ruins_eternal_sphinx:
     display-name: "&dEternal Sphinx"
     material: PLAYER_HEAD
     rarity: mythic
-    damage: 16029
+    damage: 39000
     track-exists: true
   zone_ancient_ruins_primordial_ruinking:
     display-name: "&d&lPrimordial Ruinking"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 56572
+    damage: 150000
     track-exists: true
 
   # --- End Barrens (zone 13/20) - baseline 1650 damage ---
@@ -1006,61 +1006,61 @@ items:
     display-name: "&7Barren Enderling"
     material: PLAYER_HEAD
     rarity: common
-    damage: 1650
+    damage: 3000
     track-exists: true
   zone_end_barrens_end_shulker:
     display-name: "&7End Shulker"
     material: PLAYER_HEAD
     rarity: common
-    damage: 1650
+    damage: 3000
     track-exists: true
   zone_end_barrens_swift_wraith:
     display-name: "&aSwift Wraith"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 2640
+    damage: 4800
     track-exists: true
   zone_end_barrens_spotted_warden:
     display-name: "&aSpotted Warden"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 2640
+    damage: 4800
     track-exists: true
   zone_end_barrens_iron_herald:
     display-name: "&9Iron Herald"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 4620
+    damage: 9000
     track-exists: true
   zone_end_barrens_storm_sentinel:
     display-name: "&9Storm Sentinel"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 4620
+    damage: 9000
     track-exists: true
   zone_end_barrens_end_barrens_champion:
     display-name: "&bEnd Barrens Champion"
     material: PLAYER_HEAD
     rarity: epic
-    damage: 8250
+    damage: 18000
     track-exists: true
   zone_end_barrens_sovereign_warden:
     display-name: "&6Sovereign Warden"
     material: PLAYER_HEAD
     rarity: legendary
-    damage: 14850
+    damage: 36000
     track-exists: true
   zone_end_barrens_endless_herald:
     display-name: "&dEndless Herald"
     material: PLAYER_HEAD
     rarity: mythic
-    damage: 28050
+    damage: 78000
     track-exists: true
   zone_end_barrens_primordial_endking:
     display-name: "&d&lPrimordial Endking"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 99001
+    damage: 300000
     track-exists: true
 
   # --- Purpur Spires (zone 14/20) - baseline 2888 damage ---
@@ -1068,61 +1068,61 @@ items:
     display-name: "&7Spire Wisp"
     material: PLAYER_HEAD
     rarity: common
-    damage: 2888
+    damage: 8000
     track-exists: true
   zone_purpur_spires_purpur_mage:
     display-name: "&7Purpur Mage"
     material: PLAYER_HEAD
     rarity: common
-    damage: 2888
+    damage: 8000
     track-exists: true
   zone_purpur_spires_swift_sentinel:
     display-name: "&aSwift Sentinel"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 4620
+    damage: 12800
     track-exists: true
   zone_purpur_spires_spotted_archon:
     display-name: "&aSpotted Archon"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 4620
+    damage: 12800
     track-exists: true
   zone_purpur_spires_iron_seraph:
     display-name: "&9Iron Seraph"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 8085
+    damage: 24000
     track-exists: true
   zone_purpur_spires_storm_oracle:
     display-name: "&9Storm Oracle"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 8085
+    damage: 24000
     track-exists: true
   zone_purpur_spires_purpur_spires_champion:
     display-name: "&bPurpur Spires Champion"
     material: PLAYER_HEAD
     rarity: epic
-    damage: 14438
+    damage: 48000
     track-exists: true
   zone_purpur_spires_sovereign_archon:
     display-name: "&6Sovereign Archon"
     material: PLAYER_HEAD
     rarity: legendary
-    damage: 25988
+    damage: 96000
     track-exists: true
   zone_purpur_spires_arcane_seraph:
     display-name: "&dArcane Seraph"
     material: PLAYER_HEAD
     rarity: mythic
-    damage: 49088
+    damage: 208000
     track-exists: true
   zone_purpur_spires_primordial_spireking:
     display-name: "&d&lPrimordial Spireking"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 173251
+    damage: 800000
     track-exists: true
 
   # --- Celestial Sanctum (zone 15/20) - baseline 5053 damage ---
@@ -1130,61 +1130,61 @@ items:
     display-name: "&7Sanctum Dove"
     material: PLAYER_HEAD
     rarity: common
-    damage: 5053
+    damage: 20000
     track-exists: true
   zone_celestial_sanctum_celestial_cherub:
     display-name: "&7Celestial Cherub"
     material: PLAYER_HEAD
     rarity: common
-    damage: 5053
+    damage: 20000
     track-exists: true
   zone_celestial_sanctum_swift_paladin:
     display-name: "&aSwift Paladin"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 8085
+    damage: 32000
     track-exists: true
   zone_celestial_sanctum_spotted_seraph:
     display-name: "&aSpotted Seraph"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 8085
+    damage: 32000
     track-exists: true
   zone_celestial_sanctum_iron_archangel:
     display-name: "&9Iron Archangel"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 14149
+    damage: 60000
     track-exists: true
   zone_celestial_sanctum_storm_deity:
     display-name: "&9Storm Deity"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 14149
+    damage: 60000
     track-exists: true
   zone_celestial_sanctum_celestial_sanctum_champion:
     display-name: "&bCelestial Sanctum Champion"
     material: PLAYER_HEAD
     rarity: epic
-    damage: 25266
+    damage: 120000
     track-exists: true
   zone_celestial_sanctum_sovereign_archangel:
     display-name: "&6Sovereign Archangel"
     material: PLAYER_HEAD
     rarity: legendary
-    damage: 45478
+    damage: 240000
     track-exists: true
   zone_celestial_sanctum_divine_seraph:
     display-name: "&dDivine Seraph"
     material: PLAYER_HEAD
     rarity: mythic
-    damage: 85904
+    damage: 520000
     track-exists: true
   zone_celestial_sanctum_primordial_sanctumking:
     display-name: "&d&lPrimordial Sanctumking"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 303189
+    damage: 2000000
     track-exists: true
 
   # --- Starlight Fields (zone 16/20) - baseline 8843 damage ---
@@ -1192,61 +1192,61 @@ items:
     display-name: "&7Field Firefly"
     material: PLAYER_HEAD
     rarity: common
-    damage: 8843
+    damage: 40000
     track-exists: true
   zone_starlight_fields_starlight_comet:
     display-name: "&7Starlight Comet"
     material: PLAYER_HEAD
     rarity: common
-    damage: 8843
+    damage: 40000
     track-exists: true
   zone_starlight_fields_swift_starling:
     display-name: "&aSwift Starling"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 14149
+    damage: 64000
     track-exists: true
   zone_starlight_fields_spotted_nova:
     display-name: "&aSpotted Nova"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 14149
+    damage: 64000
     track-exists: true
   zone_starlight_fields_iron_constellation:
     display-name: "&9Iron Constellation"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 24760
+    damage: 120000
     track-exists: true
   zone_starlight_fields_storm_cosmos:
     display-name: "&9Storm Cosmos"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 24760
+    damage: 120000
     track-exists: true
   zone_starlight_fields_starlight_fields_champion:
     display-name: "&bStarlight Fields Champion"
     material: PLAYER_HEAD
     rarity: epic
-    damage: 44215
+    damage: 240000
     track-exists: true
   zone_starlight_fields_sovereign_nova:
     display-name: "&6Sovereign Nova"
     material: PLAYER_HEAD
     rarity: legendary
-    damage: 79587
+    damage: 480000
     track-exists: true
   zone_starlight_fields_galactic_comet:
     display-name: "&dGalactic Comet"
     material: PLAYER_HEAD
     rarity: mythic
-    damage: 150331
+    damage: 1040000
     track-exists: true
   zone_starlight_fields_primordial_starking:
     display-name: "&d&lPrimordial Starking"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 530581
+    damage: 4000000
     track-exists: true
 
   # --- Cosmic Abyss (zone 17/20) - baseline 15475 damage ---
@@ -1254,61 +1254,61 @@ items:
     display-name: "&7Abyss Nebula"
     material: PLAYER_HEAD
     rarity: common
-    damage: 15475
+    damage: 80000
     track-exists: true
   zone_cosmic_abyss_cosmic_voidling:
     display-name: "&7Cosmic Voidling"
     material: PLAYER_HEAD
     rarity: common
-    damage: 15475
+    damage: 80000
     track-exists: true
   zone_cosmic_abyss_swift_wraith:
     display-name: "&aSwift Wraith"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 24760
+    damage: 128000
     track-exists: true
   zone_cosmic_abyss_spotted_leviathan:
     display-name: "&aSpotted Leviathan"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 24760
+    damage: 128000
     track-exists: true
   zone_cosmic_abyss_iron_singularity:
     display-name: "&9Iron Singularity"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 43331
+    damage: 240000
     track-exists: true
   zone_cosmic_abyss_storm_eclipse:
     display-name: "&9Storm Eclipse"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 43331
+    damage: 240000
     track-exists: true
   zone_cosmic_abyss_cosmic_abyss_champion:
     display-name: "&bCosmic Abyss Champion"
     material: PLAYER_HEAD
     rarity: epic
-    damage: 77376
+    damage: 480000
     track-exists: true
   zone_cosmic_abyss_sovereign_eclipse:
     display-name: "&6Sovereign Eclipse"
     material: PLAYER_HEAD
     rarity: legendary
-    damage: 139278
+    damage: 960000
     track-exists: true
   zone_cosmic_abyss_boundless_leviathan:
     display-name: "&dBoundless Leviathan"
     material: PLAYER_HEAD
     rarity: mythic
-    damage: 263080
+    damage: 2080000
     track-exists: true
   zone_cosmic_abyss_primordial_cosmicking:
     display-name: "&d&lPrimordial Cosmicking"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 928517
+    damage: 8000000
     track-exists: true
 
   # --- Eternal Forge (zone 18/20) - baseline 27082 damage ---
@@ -1316,61 +1316,61 @@ items:
     display-name: "&7Forge Ember"
     material: PLAYER_HEAD
     rarity: common
-    damage: 27082
+    damage: 200000
     track-exists: true
   zone_eternal_forge_eternal_smith:
     display-name: "&7Eternal Smith"
     material: PLAYER_HEAD
     rarity: common
-    damage: 27082
+    damage: 200000
     track-exists: true
   zone_eternal_forge_swift_golem:
     display-name: "&aSwift Golem"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 43331
+    damage: 320000
     track-exists: true
   zone_eternal_forge_spotted_forgemaster:
     display-name: "&aSpotted Forgemaster"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 43331
+    damage: 320000
     track-exists: true
   zone_eternal_forge_iron_inferno:
     display-name: "&9Iron Inferno"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 75829
+    damage: 600000
     track-exists: true
   zone_eternal_forge_storm_creator:
     display-name: "&9Storm Creator"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 75829
+    damage: 600000
     track-exists: true
   zone_eternal_forge_eternal_forge_champion:
     display-name: "&bEternal Forge Champion"
     material: PLAYER_HEAD
     rarity: epic
-    damage: 135409
+    damage: 1200000
     track-exists: true
   zone_eternal_forge_sovereign_forgemaster:
     display-name: "&6Sovereign Forgemaster"
     material: PLAYER_HEAD
     rarity: legendary
-    damage: 243736
+    damage: 2400000
     track-exists: true
   zone_eternal_forge_everlasting_inferno:
     display-name: "&dEverlasting Inferno"
     material: PLAYER_HEAD
     rarity: mythic
-    damage: 460390
+    damage: 5200000
     track-exists: true
   zone_eternal_forge_primordial_forgeking:
     display-name: "&d&lPrimordial Forgeking"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 1624905
+    damage: 20000000
     track-exists: true
 
   # --- Astral Peak (zone 19/20) - baseline 47393 damage ---
@@ -1378,61 +1378,61 @@ items:
     display-name: "&7Peak Falcon"
     material: PLAYER_HEAD
     rarity: common
-    damage: 47393
+    damage: 500000
     track-exists: true
   zone_astral_peak_astral_ram:
     display-name: "&7Astral Ram"
     material: PLAYER_HEAD
     rarity: common
-    damage: 47393
+    damage: 500000
     track-exists: true
   zone_astral_peak_swift_griffin:
     display-name: "&aSwift Griffin"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 75829
+    damage: 800000
     track-exists: true
   zone_astral_peak_spotted_djinn:
     display-name: "&aSpotted Djinn"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 75829
+    damage: 800000
     track-exists: true
   zone_astral_peak_iron_ascendant:
     display-name: "&9Iron Ascendant"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 132701
+    damage: 1500000
     track-exists: true
   zone_astral_peak_storm_zenith:
     display-name: "&9Storm Zenith"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 132701
+    damage: 1500000
     track-exists: true
   zone_astral_peak_astral_peak_champion:
     display-name: "&bAstral Peak Champion"
     material: PLAYER_HEAD
     rarity: epic
-    damage: 236965
+    damage: 3000000
     track-exists: true
   zone_astral_peak_sovereign_griffin:
     display-name: "&6Sovereign Griffin"
     material: PLAYER_HEAD
     rarity: legendary
-    damage: 426538
+    damage: 6000000
     track-exists: true
   zone_astral_peak_ascendant_djinn:
     display-name: "&dAscendant Djinn"
     material: PLAYER_HEAD
     rarity: mythic
-    damage: 805682
+    damage: 13000000
     track-exists: true
   zone_astral_peak_primordial_astralking:
     display-name: "&d&lPrimordial Astralking"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 2843584
+    damage: 50000000
     track-exists: true
 
   # --- Genesis Core (zone 20/20) - baseline 82938 damage ---
@@ -1440,61 +1440,61 @@ items:
     display-name: "&7Core Sprout"
     material: PLAYER_HEAD
     rarity: common
-    damage: 82938
+    damage: 1250000
     track-exists: true
   zone_genesis_core_genesis_seedling:
     display-name: "&7Genesis Seedling"
     material: PLAYER_HEAD
     rarity: common
-    damage: 82938
+    damage: 1250000
     track-exists: true
   zone_genesis_core_swift_progenitor:
     display-name: "&aSwift Progenitor"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 132701
+    damage: 2000000
     track-exists: true
   zone_genesis_core_spotted_architect:
     display-name: "&aSpotted Architect"
     material: PLAYER_HEAD
     rarity: uncommon
-    damage: 132701
+    damage: 2000000
     track-exists: true
   zone_genesis_core_iron_creator:
     display-name: "&9Iron Creator"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 232226
+    damage: 3750000
     track-exists: true
   zone_genesis_core_storm_primordial:
     display-name: "&9Storm Primordial"
     material: PLAYER_HEAD
     rarity: rare
-    damage: 232226
+    damage: 3750000
     track-exists: true
   zone_genesis_core_genesis_core_champion:
     display-name: "&bGenesis Core Champion"
     material: PLAYER_HEAD
     rarity: epic
-    damage: 414689
+    damage: 7500000
     track-exists: true
   zone_genesis_core_sovereign_architect:
     display-name: "&6Sovereign Architect"
     material: PLAYER_HEAD
     rarity: legendary
-    damage: 746441
+    damage: 15000000
     track-exists: true
   zone_genesis_core_absolute_progenitor:
     display-name: "&dAbsolute Progenitor"
     material: PLAYER_HEAD
     rarity: mythic
-    damage: 1409944
+    damage: 32500000
     track-exists: true
   zone_genesis_core_primordial_genesisking:
     display-name: "&d&lPrimordial Genesisking"
     material: PLAYER_HEAD
     rarity: secret
-    damage: 4976273
+    damage: 125000000
     track-exists: true
 
 packs:
@@ -1519,12 +1519,12 @@ packs:
       - { item: diamond_wolf, weight: 4 }
       - { item: obsidian_panther, weight: 4 }
       - { item: star_dragon, weight: 1 }
-      - { item: void_serpent, weight: 0.2 }
-      - { item: wandering_voidling, weight: 0.01 }
+      - { item: void_serpent, weight: 0.25 }
+      - { item: wandering_voidling, weight: 0.02 }
   common_pack:
     display-name: "&7Common Pack"
     material: CHEST
-    coin-cost: 100
+    coin-cost: 150
     diamond-cost: 0
     sort: 1
     shop-weight: 90
@@ -1542,12 +1542,12 @@ packs:
       - { item: diamond_wolf, weight: 4 }
       - { item: obsidian_panther, weight: 4 }
       - { item: star_dragon, weight: 1 }
-      - { item: void_serpent, weight: 0.2 }
-      - { item: wandering_voidling, weight: 0.01 }
+      - { item: void_serpent, weight: 0.25 }
+      - { item: wandering_voidling, weight: 0.02 }
   uncommon_pack:
     display-name: "&aUncommon Pack"
     material: TRAPPED_CHEST
-    coin-cost: 1000
+    coin-cost: 1500
     diamond-cost: 0
     sort: 2
     shop-weight: 40
@@ -1565,12 +1565,12 @@ packs:
       - { item: diamond_wolf, weight: 4 }
       - { item: obsidian_panther, weight: 4 }
       - { item: phoenix_hatchling, weight: 1 }
-      - { item: celestial_griffin, weight: 0.2 }
-      - { item: wandering_voidling, weight: 0.01 }
+      - { item: celestial_griffin, weight: 0.25 }
+      - { item: wandering_voidling, weight: 0.02 }
   value_pack:
     display-name: "&eValue Pack"
     material: BARREL
-    coin-cost: 2000
+    coin-cost: 8000
     diamond-cost: 0
     sort: 3
     shop-weight: 20
@@ -1588,13 +1588,13 @@ packs:
       - { item: diamond_wolf, weight: 4 }
       - { item: obsidian_panther, weight: 4 }
       - { item: star_dragon, weight: 1 }
-      - { item: void_serpent, weight: 0.2 }
-      - { item: ashen_devourer, weight: 0.01 }
+      - { item: void_serpent, weight: 0.25 }
+      - { item: ashen_devourer, weight: 0.02 }
   rare_pack:
     display-name: "&9Rare Pack"
     material: ENDER_CHEST
-    coin-cost: 500
-    diamond-cost: 5
+    coin-cost: 30000
+    diamond-cost: 40
     sort: 4
     shop-weight: 15
     shop-luck-exponent: 0.6
@@ -1611,12 +1611,12 @@ packs:
       - { item: diamond_wolf, weight: 4 }
       - { item: obsidian_panther, weight: 4 }
       - { item: star_dragon, weight: 1 }
-      - { item: void_serpent, weight: 0.2 }
-      - { item: ashen_devourer, weight: 0.01 }
+      - { item: void_serpent, weight: 0.25 }
+      - { item: ashen_devourer, weight: 0.02 }
   jackpot_pack:
     display-name: "&d&lJackpot Pack"
     material: SHULKER_BOX
-    coin-cost: 10000
+    coin-cost: 250000
     diamond-cost: 0
     sort: 5
     shop-weight: 3
@@ -1634,13 +1634,13 @@ packs:
       - { item: diamond_wolf, weight: 4 }
       - { item: obsidian_panther, weight: 4 }
       - { item: phoenix_hatchling, weight: 1 }
-      - { item: void_serpent, weight: 0.2 }
-      - { item: ashen_devourer, weight: 0.01 }
+      - { item: void_serpent, weight: 0.25 }
+      - { item: ashen_devourer, weight: 0.02 }
   epic_pack:
     display-name: "&5Epic Pack"
     material: SHULKER_BOX
-    coin-cost: 5000
-    diamond-cost: 15
+    coin-cost: 1000000
+    diamond-cost: 300
     sort: 6
     shop-weight: 6
     shop-luck-exponent: 0.8
@@ -1657,13 +1657,13 @@ packs:
       - { item: diamond_wolf, weight: 4 }
       - { item: obsidian_panther, weight: 4 }
       - { item: star_dragon, weight: 1 }
-      - { item: celestial_griffin, weight: 0.2 }
-      - { item: ashen_devourer, weight: 0.01 }
+      - { item: celestial_griffin, weight: 0.25 }
+      - { item: ashen_devourer, weight: 0.02 }
   legendary_pack:
     display-name: "&6&lLegendary Pack"
     material: YELLOW_SHULKER_BOX
-    coin-cost: 25000
-    diamond-cost: 50
+    coin-cost: 10000000
+    diamond-cost: 2000
     sort: 7
     shop-weight: 2
     shop-luck-exponent: 1.0
@@ -1680,13 +1680,13 @@ packs:
       - { item: diamond_wolf, weight: 4 }
       - { item: obsidian_panther, weight: 4 }
       - { item: phoenix_hatchling, weight: 1 }
-      - { item: void_serpent, weight: 0.2 }
-      - { item: eternal_sovereign, weight: 0.01 }
+      - { item: void_serpent, weight: 0.25 }
+      - { item: eternal_sovereign, weight: 0.02 }
   mythic_pack:
     display-name: "&d&lMythic Pack"
     material: PURPLE_SHULKER_BOX
-    coin-cost: 150000
-    diamond-cost: 250
+    coin-cost: 300000000
+    diamond-cost: 30000
     sort: 8
     shop-weight: 0.5
     shop-luck-exponent: 1.3
@@ -1703,8 +1703,8 @@ packs:
       - { item: diamond_wolf, weight: 4 }
       - { item: obsidian_panther, weight: 4 }
       - { item: star_dragon, weight: 1 }
-      - { item: celestial_griffin, weight: 0.2 }
-      - { item: eternal_sovereign, weight: 0.01 }
+      - { item: celestial_griffin, weight: 0.25 }
+      - { item: eternal_sovereign, weight: 0.02 }
   # Renamed from "Exclusive Pack" - Exclusive-rarity pets (Cosmic Leviathan)
   # no longer drop from any normal pack; they're only obtainable through
   # yield-blocktree's exclusive-find-chance perk and lootboxes. This slot now
@@ -1713,8 +1713,8 @@ packs:
   titan_pack:
     display-name: "&b&lTitan Pack"
     material: CYAN_SHULKER_BOX
-    coin-cost: 1000000
-    diamond-cost: 1000
+    coin-cost: 20000000000
+    diamond-cost: 500000
     sort: 9
     shop-weight: 0.05
     shop-luck-exponent: 1.6
@@ -1731,8 +1731,8 @@ packs:
       - { item: huge_diamond_wolf, weight: 4 }
       - { item: obsidian_panther, weight: 4 }
       - { item: huge_star_dragon, weight: 1 }
-      - { item: huge_void_serpent, weight: 0.2 }
-      - { item: eternal_sovereign, weight: 0.01 }
+      - { item: huge_void_serpent, weight: 0.25 }
+      - { item: eternal_sovereign, weight: 0.02 }
 
   # --- Zone packs (see plugins/yield-zones/src/main/resources/zones.yml) ---
   # One dedicated pack per zone, sold only at that zone's own physical
@@ -1759,12 +1759,12 @@ packs:
       - { item: zone_meadow_storm_falcon, weight: 15 }
       - { item: zone_meadow_meadow_champion, weight: 4 }
       - { item: zone_meadow_sovereign_stag, weight: 1 }
-      - { item: zone_meadow_radiant_unicorn, weight: 0.2 }
-      - { item: zone_meadow_primordial_meadowking, weight: 0.01 }
+      - { item: zone_meadow_radiant_unicorn, weight: 0.25 }
+      - { item: zone_meadow_primordial_meadowking, weight: 0.02 }
   zone_frostpeak_pack:
     display-name: "&bFrostpeak Pack"
     material: CHEST
-    coin-cost: 88
+    coin-cost: 100
     diamond-cost: 0
     sort: 101
     shop-weight: 0
@@ -1780,12 +1780,12 @@ packs:
       - { item: zone_frostpeak_storm_hawk, weight: 15 }
       - { item: zone_frostpeak_frostpeak_champion, weight: 4 }
       - { item: zone_frostpeak_sovereign_yeti, weight: 1 }
-      - { item: zone_frostpeak_glacial_wyrm, weight: 0.2 }
-      - { item: zone_frostpeak_primordial_frostking, weight: 0.01 }
+      - { item: zone_frostpeak_glacial_wyrm, weight: 0.25 }
+      - { item: zone_frostpeak_primordial_frostking, weight: 0.02 }
   zone_iron_foothills_pack:
     display-name: "&7Iron Foothills Pack"
     material: CHEST
-    coin-cost: 153
+    coin-cost: 300
     diamond-cost: 0
     sort: 102
     shop-weight: 0
@@ -1801,12 +1801,12 @@ packs:
       - { item: zone_iron_foothills_storm_ram, weight: 15 }
       - { item: zone_iron_foothills_iron_foothills_champion, weight: 4 }
       - { item: zone_iron_foothills_sovereign_golem, weight: 1 }
-      - { item: zone_iron_foothills_ironclad_behemoth, weight: 0.2 }
-      - { item: zone_iron_foothills_primordial_foundryking, weight: 0.01 }
+      - { item: zone_iron_foothills_ironclad_behemoth, weight: 0.25 }
+      - { item: zone_iron_foothills_primordial_foundryking, weight: 0.02 }
   zone_sulfur_flats_pack:
     display-name: "&eSulfur Flats Pack"
     material: CHEST
-    coin-cost: 268
+    coin-cost: 700
     diamond-cost: 0
     sort: 103
     shop-weight: 0
@@ -1822,12 +1822,12 @@ packs:
       - { item: zone_sulfur_flats_storm_adder, weight: 15 }
       - { item: zone_sulfur_flats_sulfur_flats_champion, weight: 4 }
       - { item: zone_sulfur_flats_sovereign_wyrm, weight: 1 }
-      - { item: zone_sulfur_flats_venomous_hydra, weight: 0.2 }
-      - { item: zone_sulfur_flats_primordial_miasmaking, weight: 0.01 }
+      - { item: zone_sulfur_flats_venomous_hydra, weight: 0.25 }
+      - { item: zone_sulfur_flats_primordial_miasmaking, weight: 0.02 }
   zone_scorched_wastes_pack:
     display-name: "&cScorched Wastes Pack"
     material: CHEST
-    coin-cost: 469
+    coin-cost: 2000
     diamond-cost: 0
     sort: 104
     shop-weight: 0
@@ -1843,12 +1843,12 @@ packs:
       - { item: zone_scorched_wastes_storm_drake, weight: 15 }
       - { item: zone_scorched_wastes_scorched_wastes_champion, weight: 4 }
       - { item: zone_scorched_wastes_sovereign_djinn, weight: 1 }
-      - { item: zone_scorched_wastes_blazing_phoenix, weight: 0.2 }
-      - { item: zone_scorched_wastes_primordial_cinderking, weight: 0.01 }
+      - { item: zone_scorched_wastes_blazing_phoenix, weight: 0.25 }
+      - { item: zone_scorched_wastes_primordial_cinderking, weight: 0.02 }
   zone_crystal_caverns_pack:
     display-name: "&dCrystal Caverns Pack"
     material: CHEST
-    coin-cost: 821
+    coin-cost: 9000
     diamond-cost: 0
     sort: 105
     shop-weight: 0
@@ -1864,12 +1864,12 @@ packs:
       - { item: zone_crystal_caverns_storm_wraith, weight: 15 }
       - { item: zone_crystal_caverns_crystal_caverns_champion, weight: 4 }
       - { item: zone_crystal_caverns_sovereign_behemoth, weight: 1 }
-      - { item: zone_crystal_caverns_prismatic_elemental, weight: 0.2 }
-      - { item: zone_crystal_caverns_primordial_gemking, weight: 0.01 }
+      - { item: zone_crystal_caverns_prismatic_elemental, weight: 0.25 }
+      - { item: zone_crystal_caverns_primordial_gemking, weight: 0.02 }
   zone_diamond_hollow_pack:
     display-name: "&bDiamond Hollow Pack"
     material: CHEST
-    coin-cost: 1436
+    coin-cost: 30000
     diamond-cost: 0
     sort: 106
     shop-weight: 0
@@ -1885,12 +1885,12 @@ packs:
       - { item: zone_diamond_hollow_storm_golem, weight: 15 }
       - { item: zone_diamond_hollow_diamond_hollow_champion, weight: 4 }
       - { item: zone_diamond_hollow_sovereign_titan, weight: 1 }
-      - { item: zone_diamond_hollow_adamant_colossus, weight: 0.2 }
-      - { item: zone_diamond_hollow_primordial_vaultking, weight: 0.01 }
+      - { item: zone_diamond_hollow_adamant_colossus, weight: 0.25 }
+      - { item: zone_diamond_hollow_primordial_vaultking, weight: 0.02 }
   zone_emerald_depths_pack:
     display-name: "&2Emerald Depths Pack"
     material: CHEST
-    coin-cost: 2513
+    coin-cost: 100000
     diamond-cost: 0
     sort: 107
     shop-weight: 0
@@ -1906,12 +1906,12 @@ packs:
       - { item: zone_emerald_depths_storm_hydra, weight: 15 }
       - { item: zone_emerald_depths_emerald_depths_champion, weight: 4 }
       - { item: zone_emerald_depths_sovereign_wyvern, weight: 1 }
-      - { item: zone_emerald_depths_verdant_leviathan, weight: 0.2 }
-      - { item: zone_emerald_depths_primordial_depthking, weight: 0.01 }
+      - { item: zone_emerald_depths_verdant_leviathan, weight: 0.25 }
+      - { item: zone_emerald_depths_primordial_depthking, weight: 0.02 }
   zone_obsidian_rift_pack:
     display-name: "&8Obsidian Rift Pack"
     material: CHEST
-    coin-cost: 4398
+    coin-cost: 450000
     diamond-cost: 0
     sort: 108
     shop-weight: 0
@@ -1927,12 +1927,12 @@ packs:
       - { item: zone_obsidian_rift_storm_fiend, weight: 15 }
       - { item: zone_obsidian_rift_obsidian_rift_champion, weight: 4 }
       - { item: zone_obsidian_rift_sovereign_abomination, weight: 1 }
-      - { item: zone_obsidian_rift_shattered_colossus, weight: 0.2 }
-      - { item: zone_obsidian_rift_primordial_riftking, weight: 0.01 }
+      - { item: zone_obsidian_rift_shattered_colossus, weight: 0.25 }
+      - { item: zone_obsidian_rift_primordial_riftking, weight: 0.02 }
   zone_void_expanse_pack:
     display-name: "&5Void Expanse Pack"
     material: CHEST
-    coin-cost: 7697
+    coin-cost: 2000000
     diamond-cost: 0
     sort: 109
     shop-weight: 0
@@ -1948,12 +1948,12 @@ packs:
       - { item: zone_void_expanse_storm_wraith, weight: 15 }
       - { item: zone_void_expanse_void_expanse_champion, weight: 4 }
       - { item: zone_void_expanse_sovereign_singularity, weight: 1 }
-      - { item: zone_void_expanse_entropic_horror, weight: 0.2 }
-      - { item: zone_void_expanse_primordial_voidking, weight: 0.01 }
+      - { item: zone_void_expanse_entropic_horror, weight: 0.25 }
+      - { item: zone_void_expanse_primordial_voidking, weight: 0.02 }
   zone_netherite_wastes_pack:
     display-name: "&4Netherite Wastes Pack"
     material: CHEST
-    coin-cost: 13469
+    coin-cost: 8000000
     diamond-cost: 0
     sort: 110
     shop-weight: 0
@@ -1969,12 +1969,12 @@ packs:
       - { item: zone_netherite_wastes_storm_hellhound, weight: 15 }
       - { item: zone_netherite_wastes_netherite_wastes_champion, weight: 4 }
       - { item: zone_netherite_wastes_sovereign_overlord, weight: 1 }
-      - { item: zone_netherite_wastes_infernal_juggernaut, weight: 0.2 }
-      - { item: zone_netherite_wastes_primordial_netherking, weight: 0.01 }
+      - { item: zone_netherite_wastes_infernal_juggernaut, weight: 0.25 }
+      - { item: zone_netherite_wastes_primordial_netherking, weight: 0.02 }
   zone_ancient_ruins_pack:
     display-name: "&8Ancient Ruins Pack"
     material: CHEST
-    coin-cost: 23572
+    coin-cost: 30000000
     diamond-cost: 0
     sort: 111
     shop-weight: 0
@@ -1990,12 +1990,12 @@ packs:
       - { item: zone_ancient_ruins_storm_pharaoh, weight: 15 }
       - { item: zone_ancient_ruins_ancient_ruins_champion, weight: 4 }
       - { item: zone_ancient_ruins_sovereign_colossus, weight: 1 }
-      - { item: zone_ancient_ruins_eternal_sphinx, weight: 0.2 }
-      - { item: zone_ancient_ruins_primordial_ruinking, weight: 0.01 }
+      - { item: zone_ancient_ruins_eternal_sphinx, weight: 0.25 }
+      - { item: zone_ancient_ruins_primordial_ruinking, weight: 0.02 }
   zone_end_barrens_pack:
     display-name: "&eEnd Barrens Pack"
     material: CHEST
-    coin-cost: 41250
+    coin-cost: 100000000
     diamond-cost: 0
     sort: 112
     shop-weight: 0
@@ -2011,12 +2011,12 @@ packs:
       - { item: zone_end_barrens_storm_sentinel, weight: 15 }
       - { item: zone_end_barrens_end_barrens_champion, weight: 4 }
       - { item: zone_end_barrens_sovereign_warden, weight: 1 }
-      - { item: zone_end_barrens_endless_herald, weight: 0.2 }
-      - { item: zone_end_barrens_primordial_endking, weight: 0.01 }
+      - { item: zone_end_barrens_endless_herald, weight: 0.25 }
+      - { item: zone_end_barrens_primordial_endking, weight: 0.02 }
   zone_purpur_spires_pack:
     display-name: "&dPurpur Spires Pack"
     material: CHEST
-    coin-cost: 72188
+    coin-cost: 300000000
     diamond-cost: 0
     sort: 113
     shop-weight: 0
@@ -2032,12 +2032,12 @@ packs:
       - { item: zone_purpur_spires_storm_oracle, weight: 15 }
       - { item: zone_purpur_spires_purpur_spires_champion, weight: 4 }
       - { item: zone_purpur_spires_sovereign_archon, weight: 1 }
-      - { item: zone_purpur_spires_arcane_seraph, weight: 0.2 }
-      - { item: zone_purpur_spires_primordial_spireking, weight: 0.01 }
+      - { item: zone_purpur_spires_arcane_seraph, weight: 0.25 }
+      - { item: zone_purpur_spires_primordial_spireking, weight: 0.02 }
   zone_celestial_sanctum_pack:
     display-name: "&eCelestial Sanctum Pack"
     material: CHEST
-    coin-cost: 126329
+    coin-cost: 1000000000
     diamond-cost: 0
     sort: 114
     shop-weight: 0
@@ -2053,12 +2053,12 @@ packs:
       - { item: zone_celestial_sanctum_storm_deity, weight: 15 }
       - { item: zone_celestial_sanctum_celestial_sanctum_champion, weight: 4 }
       - { item: zone_celestial_sanctum_sovereign_archangel, weight: 1 }
-      - { item: zone_celestial_sanctum_divine_seraph, weight: 0.2 }
-      - { item: zone_celestial_sanctum_primordial_sanctumking, weight: 0.01 }
+      - { item: zone_celestial_sanctum_divine_seraph, weight: 0.25 }
+      - { item: zone_celestial_sanctum_primordial_sanctumking, weight: 0.02 }
   zone_starlight_fields_pack:
     display-name: "&bStarlight Fields Pack"
     material: CHEST
-    coin-cost: 221076
+    coin-cost: 3000000000
     diamond-cost: 0
     sort: 115
     shop-weight: 0
@@ -2074,12 +2074,12 @@ packs:
       - { item: zone_starlight_fields_storm_cosmos, weight: 15 }
       - { item: zone_starlight_fields_starlight_fields_champion, weight: 4 }
       - { item: zone_starlight_fields_sovereign_nova, weight: 1 }
-      - { item: zone_starlight_fields_galactic_comet, weight: 0.2 }
-      - { item: zone_starlight_fields_primordial_starking, weight: 0.01 }
+      - { item: zone_starlight_fields_galactic_comet, weight: 0.25 }
+      - { item: zone_starlight_fields_primordial_starking, weight: 0.02 }
   zone_cosmic_abyss_pack:
     display-name: "&5Cosmic Abyss Pack"
     material: CHEST
-    coin-cost: 386882
+    coin-cost: 10000000000
     diamond-cost: 0
     sort: 116
     shop-weight: 0
@@ -2095,12 +2095,12 @@ packs:
       - { item: zone_cosmic_abyss_storm_eclipse, weight: 15 }
       - { item: zone_cosmic_abyss_cosmic_abyss_champion, weight: 4 }
       - { item: zone_cosmic_abyss_sovereign_eclipse, weight: 1 }
-      - { item: zone_cosmic_abyss_boundless_leviathan, weight: 0.2 }
-      - { item: zone_cosmic_abyss_primordial_cosmicking, weight: 0.01 }
+      - { item: zone_cosmic_abyss_boundless_leviathan, weight: 0.25 }
+      - { item: zone_cosmic_abyss_primordial_cosmicking, weight: 0.02 }
   zone_eternal_forge_pack:
     display-name: "&6Eternal Forge Pack"
     material: CHEST
-    coin-cost: 677044
+    coin-cost: 30000000000
     diamond-cost: 0
     sort: 117
     shop-weight: 0
@@ -2116,12 +2116,12 @@ packs:
       - { item: zone_eternal_forge_storm_creator, weight: 15 }
       - { item: zone_eternal_forge_eternal_forge_champion, weight: 4 }
       - { item: zone_eternal_forge_sovereign_forgemaster, weight: 1 }
-      - { item: zone_eternal_forge_everlasting_inferno, weight: 0.2 }
-      - { item: zone_eternal_forge_primordial_forgeking, weight: 0.01 }
+      - { item: zone_eternal_forge_everlasting_inferno, weight: 0.25 }
+      - { item: zone_eternal_forge_primordial_forgeking, weight: 0.02 }
   zone_astral_peak_pack:
     display-name: "&dAstral Peak Pack"
     material: CHEST
-    coin-cost: 1184827
+    coin-cost: 100000000000
     diamond-cost: 0
     sort: 118
     shop-weight: 0
@@ -2137,12 +2137,12 @@ packs:
       - { item: zone_astral_peak_storm_zenith, weight: 15 }
       - { item: zone_astral_peak_astral_peak_champion, weight: 4 }
       - { item: zone_astral_peak_sovereign_griffin, weight: 1 }
-      - { item: zone_astral_peak_ascendant_djinn, weight: 0.2 }
-      - { item: zone_astral_peak_primordial_astralking, weight: 0.01 }
+      - { item: zone_astral_peak_ascendant_djinn, weight: 0.25 }
+      - { item: zone_astral_peak_primordial_astralking, weight: 0.02 }
   zone_genesis_core_pack:
     display-name: "&eGenesis Core Pack"
     material: CHEST
-    coin-cost: 2073447
+    coin-cost: 300000000000
     diamond-cost: 0
     sort: 119
     shop-weight: 0
@@ -2158,8 +2158,8 @@ packs:
       - { item: zone_genesis_core_storm_primordial, weight: 15 }
       - { item: zone_genesis_core_genesis_core_champion, weight: 4 }
       - { item: zone_genesis_core_sovereign_architect, weight: 1 }
-      - { item: zone_genesis_core_absolute_progenitor, weight: 0.2 }
-      - { item: zone_genesis_core_primordial_genesisking, weight: 0.01 }
+      - { item: zone_genesis_core_absolute_progenitor, weight: 0.25 }
+      - { item: zone_genesis_core_primordial_genesisking, weight: 0.02 }
 
   # --- Black market packs (see yield-packstations pack-stations.yml) ---
   # Only ever sold through the black market's hourly rotation - rarer
@@ -2167,8 +2167,8 @@ packs:
   elite_frostpeak_pack:
     display-name: "&bFrostbound Cache"
     material: ENDER_CHEST
-    coin-cost: 5000
-    diamond-cost: 20
+    coin-cost: 2500
+    diamond-cost: 30
     sort: 200
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -2188,8 +2188,8 @@ packs:
   elite_crystal_caverns_pack:
     display-name: "&dCrystalline Cache"
     material: ENDER_CHEST
-    coin-cost: 250000
-    diamond-cost: 200
+    coin-cost: 400000
+    diamond-cost: 3000
     sort: 201
     shop-weight: 0
     shop-luck-exponent: 0.0
@@ -2209,8 +2209,8 @@ packs:
   elite_genesis_core_pack:
     display-name: "&eGenesis Cache"
     material: ENDER_CHEST
-    coin-cost: 50000000
-    diamond-cost: 5000
+    coin-cost: 5000000000000
+    diamond-cost: 100000000
     sort: 202
     shop-weight: 0
     shop-luck-exponent: 0.0

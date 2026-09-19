@@ -15,6 +15,20 @@
 # Cost = cost-base * cost-growth^level (an exponential per-level curve -
 # many small, frequent purchases, unlike the rarer big milestone jumps
 # player/pet leveling uses a power curve for).
+#
+# BALANCE - cost-growth is 1.28, not the old 1.12. Coin income climbs ~4x
+# per zone (see zones.yml), so at 1.12 every station was fully maxed out
+# within an hour and then contributed nothing for the rest of the game. At
+# 1.28, buying a type out to whichever cap the current zone offers costs
+# roughly one zone-stay's spare income for the WHOLE ladder - the stations
+# stay a live coin sink from Meadow to Genesis Core.
+#
+# The other half of that is the "stations:" list at the bottom. There used
+# to be exactly five stations, all in Meadow, all capped at level 10 - so
+# Coin Boost and Damage Boost were permanently stuck at +10% no matter how
+# deep a player got. There is now a full set at every other zone, each with
+# a cap 10 levels higher than the last, so the caps climb alongside the
+# zones the player is actually clearing.
 
 types:
   coin_boost:
@@ -23,8 +37,8 @@ types:
     effect: COIN_MULTIPLIER
     value-per-level: 0.01      # +1% coins per level
     max-level: 100
-    cost-base: 500
-    cost-growth: 1.12
+    cost-base: 60
+    cost-growth: 1.28
   # id stays "gem_boost" - it's the literal key persisted per-player in
   # PackPlayerProfile#getUpgradeLevels, so renaming it here would orphan
   # every existing player's already-purchased levels in this upgrade.
@@ -35,84 +49,120 @@ types:
     chance-per-level: 0.001    # +0.1% diamond drop chance per level
     flat-per-level: 0.02       # +0.02 flat diamonds per level (rounded at payout)
     max-level: 100
-    cost-base: 800
-    cost-growth: 1.12
+    cost-base: 90
+    cost-growth: 1.28
   damage_boost:
     display-name: "&cDamage Boost"
     icon: IRON_SWORD
     effect: DAMAGE_MULTIPLIER
     value-per-level: 0.01      # +1% damage per level
     max-level: 100
-    cost-base: 600
-    cost-growth: 1.12
+    cost-base: 60
+    cost-growth: 1.28
   rebirth_boost:
     display-name: "&dRebirth Boost"
     icon: NETHER_STAR
     effect: REBIRTH_GRANT_MULTIPLIER
     value-per-level: 0.01      # +1% bonus EFFECTIVE rebirths granted per rebirth, per level
     max-level: 50
-    cost-base: 2000
-    cost-growth: 1.15
+    cost-base: 400
+    cost-growth: 1.3
   speed_boost:
     display-name: "&aSpeed Boost"
     icon: SUGAR
     effect: PLAYER_SPEED
     value-per-level: 0.002     # added directly to walk speed (vanilla base 0.2) per level
     max-level: 20
-    cost-base: 1000
-    cost-growth: 1.1
+    cost-base: 250
+    cost-growth: 1.22
+  # More cubes on the floor at once is the single strongest quality-of-life
+  # buy in the game (it removes waiting entirely), so it is priced like it.
   cube_cap_boost:
     display-name: "&eCube Capacity"
     icon: CHEST
     effect: CUBE_CAP_BONUS
     value-per-level: 1        # +1 concurrent cube slot per level (zones ship with a base of 10)
     max-level: 10
-    cost-base: 5000
-    cost-growth: 1.3
+    cost-base: 1200
+    cost-growth: 1.55
   cube_luck_boost:
     display-name: "&dLucky Cubes"
     icon: NAUTILUS_SHELL
     effect: CUBE_BONUS_CHANCE
     value-per-level: 0.002    # +0.2% chance per level, added to every zone's golden/diamond cube-bonus roll
     max-level: 25
-    cost-base: 3000
-    cost-growth: 1.15
+    cost-base: 600
+    cost-growth: 1.4
+  # This one directly shortens the 1-second squad retarget that sets the
+  # floor on kill speed - at max level it cuts ~30% off every cube's time.
+  # Priced as the most expensive thing on the wall for exactly that reason.
   auto_switch_speed:
     display-name: "&bQuick Reflexes"
     icon: FEATHER
     effect: AUTO_SWITCH_SPEED
     value-per-level: 0.05     # +5% faster Auto Mode target-switching per level
     max-level: 10
-    cost-base: 4000
-    cost-growth: 1.2
+    cost-base: 1500
+    cost-growth: 1.6
 
-# Stations sit on meadow's own real floor (Y 98, Z 51.5-109.5, see
-# zones.yml) just inside the entrance, spread across the zone's width so
-# they don't crowd each other - adjust to match whatever's actually built
-# there.
+# Stations sit on each zone's own real floor (Y 98, see zones.yml) just
+# inside the entrance, spread across the zone's width so they don't crowd
+# each other. Every other zone carries a full set; each set's "cap" is 10
+# levels higher than the previous one, so a stat you maxed in Meadow opens
+# back up the moment you buy into Iron Foothills. Adjust the coordinates
+# in-game once the later zones are actually built - the Z values follow
+# zones.yml's own 94-block per-zone pitch, same as every other station in
+# this repo.
 stations:
-  - zone: meadow
-    type: coin_boost
-    cap: 10
-    location: [world, -6, 98, 58, 180, 0]
-  - zone: meadow
-    type: damage_boost
-    cap: 10
-    location: [world, -2, 98, 58, 180, 0]
-  - zone: meadow
-    type: cube_cap_boost
-    cap: 10
-    location: [world, 2, 98, 58, 180, 0]
-  - zone: meadow
-    type: cube_luck_boost
-    cap: 25
-    location: [world, 6, 98, 58, 180, 0]
-  - zone: meadow
-    type: auto_switch_speed
-    cap: 10
-    location: [world, 10, 98, 58, 180, 0]
-  # Add a higher-cap station for the same type once a second zone exists:
-  # - zone: frostpeak
-  #   type: damage_boost
-  #   cap: 20
-  #   location: [world, ...]
+  # meadow - cap 10
+  - { zone: meadow, type: coin_boost, cap: 10, location: [world, -6, 98, 58, 180, 0] }
+  - { zone: meadow, type: damage_boost, cap: 10, location: [world, -2, 98, 58, 180, 0] }
+  - { zone: meadow, type: cube_cap_boost, cap: 10, location: [world, 2, 98, 58, 180, 0] }
+  - { zone: meadow, type: cube_luck_boost, cap: 10, location: [world, 6, 98, 58, 180, 0] }
+  - { zone: meadow, type: auto_switch_speed, cap: 10, location: [world, 10, 98, 58, 180, 0] }
+  - { zone: meadow, type: gem_boost, cap: 10, location: [world, -10, 98, 58, 180, 0] }
+  - { zone: meadow, type: speed_boost, cap: 10, location: [world, 14, 98, 58, 180, 0] }
+  - { zone: meadow, type: rebirth_boost, cap: 10, location: [world, -14, 98, 58, 180, 0] }
+  # iron_foothills - cap 20
+  - { zone: iron_foothills, type: coin_boost, cap: 20, location: [world, -6, 98, 246, 180, 0] }
+  - { zone: iron_foothills, type: damage_boost, cap: 20, location: [world, -2, 98, 246, 180, 0] }
+  - { zone: iron_foothills, type: cube_luck_boost, cap: 20, location: [world, 6, 98, 246, 180, 0] }
+  - { zone: iron_foothills, type: gem_boost, cap: 20, location: [world, -10, 98, 246, 180, 0] }
+  - { zone: iron_foothills, type: speed_boost, cap: 20, location: [world, 14, 98, 246, 180, 0] }
+  - { zone: iron_foothills, type: rebirth_boost, cap: 20, location: [world, -14, 98, 246, 180, 0] }
+  # scorched_wastes - cap 30
+  - { zone: scorched_wastes, type: coin_boost, cap: 30, location: [world, -6, 98, 434, 180, 0] }
+  - { zone: scorched_wastes, type: damage_boost, cap: 30, location: [world, -2, 98, 434, 180, 0] }
+  - { zone: scorched_wastes, type: cube_luck_boost, cap: 25, location: [world, 6, 98, 434, 180, 0] }
+  - { zone: scorched_wastes, type: gem_boost, cap: 30, location: [world, -10, 98, 434, 180, 0] }
+  - { zone: scorched_wastes, type: rebirth_boost, cap: 30, location: [world, -14, 98, 434, 180, 0] }
+  # diamond_hollow - cap 40
+  - { zone: diamond_hollow, type: coin_boost, cap: 40, location: [world, -6, 98, 622, 180, 0] }
+  - { zone: diamond_hollow, type: damage_boost, cap: 40, location: [world, -2, 98, 622, 180, 0] }
+  - { zone: diamond_hollow, type: gem_boost, cap: 40, location: [world, -10, 98, 622, 180, 0] }
+  - { zone: diamond_hollow, type: rebirth_boost, cap: 40, location: [world, -14, 98, 622, 180, 0] }
+  # obsidian_rift - cap 50
+  - { zone: obsidian_rift, type: coin_boost, cap: 50, location: [world, -6, 98, 810, 180, 0] }
+  - { zone: obsidian_rift, type: damage_boost, cap: 50, location: [world, -2, 98, 810, 180, 0] }
+  - { zone: obsidian_rift, type: gem_boost, cap: 50, location: [world, -10, 98, 810, 180, 0] }
+  - { zone: obsidian_rift, type: rebirth_boost, cap: 50, location: [world, -14, 98, 810, 180, 0] }
+  # netherite_wastes - cap 60
+  - { zone: netherite_wastes, type: coin_boost, cap: 60, location: [world, -6, 98, 998, 180, 0] }
+  - { zone: netherite_wastes, type: damage_boost, cap: 60, location: [world, -2, 98, 998, 180, 0] }
+  - { zone: netherite_wastes, type: gem_boost, cap: 60, location: [world, -10, 98, 998, 180, 0] }
+  # end_barrens - cap 70
+  - { zone: end_barrens, type: coin_boost, cap: 70, location: [world, -6, 98, 1186, 180, 0] }
+  - { zone: end_barrens, type: damage_boost, cap: 70, location: [world, -2, 98, 1186, 180, 0] }
+  - { zone: end_barrens, type: gem_boost, cap: 70, location: [world, -10, 98, 1186, 180, 0] }
+  # celestial_sanctum - cap 80
+  - { zone: celestial_sanctum, type: coin_boost, cap: 80, location: [world, -6, 98, 1374, 180, 0] }
+  - { zone: celestial_sanctum, type: damage_boost, cap: 80, location: [world, -2, 98, 1374, 180, 0] }
+  - { zone: celestial_sanctum, type: gem_boost, cap: 80, location: [world, -10, 98, 1374, 180, 0] }
+  # cosmic_abyss - cap 90
+  - { zone: cosmic_abyss, type: coin_boost, cap: 90, location: [world, -6, 98, 1562, 180, 0] }
+  - { zone: cosmic_abyss, type: damage_boost, cap: 90, location: [world, -2, 98, 1562, 180, 0] }
+  - { zone: cosmic_abyss, type: gem_boost, cap: 90, location: [world, -10, 98, 1562, 180, 0] }
+  # astral_peak - cap 100
+  - { zone: astral_peak, type: coin_boost, cap: 100, location: [world, -6, 98, 1750, 180, 0] }
+  - { zone: astral_peak, type: damage_boost, cap: 100, location: [world, -2, 98, 1750, 180, 0] }
+  - { zone: astral_peak, type: gem_boost, cap: 100, location: [world, -10, 98, 1750, 180, 0] }

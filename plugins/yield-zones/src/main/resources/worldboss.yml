@@ -15,16 +15,72 @@
 # roll for one to appear.
 # "despawn-after-minutes" - gives up and clears the arena if nobody
 # finishes it off in time.
+#
+# BALANCE - there used to be exactly one boss, in Meadow, with 500,000 HP
+# and a 1,000,000-coin reward. A Meadow squad deals roughly 70 damage a
+# second, so it was a two-hour solo fight; and the payout was worth more
+# than the first NINE zone unlocks combined, so any group that did manage
+# it skipped most of the game.
+#
+# Each boss below is sized off its own zone's tier-1 cube HP: max-hp is
+# ~300x it, which is about four minutes of solo damage for a player who
+# belongs in that zone, or well under a minute for a handful of them. The
+# rewards are ~15 minutes of that zone's coin income and ~30 minutes of its
+# diamond income - a great find, never a shortcut past a zone.
+#
+# One boss sits at every sixth zone so there is always a next one to chase.
+# The locations follow zones.yml's own 94-block per-zone pitch, centered in
+# the corridor and a couple of blocks off the floor; adjust in-game once
+# the later zones are actually built.
 bosses:
   meadow_titan:
     zone: meadow
     display-name: "Meadow Titan"
-    material: NETHERITE_BLOCK
+    material: IRON_BLOCK
     size: 5
-    location: [0, 90, 20]
-    max-hp: 500000
+    location: [0, 100, 81]
+    max-hp: 3600
     check-interval-minutes: 10
     spawn-chance: 0.5
-    reward-coins: 1000000
-    reward-diamonds: 500
+    reward-coins: 25000
+    reward-diamonds: 150
     despawn-after-minutes: 30
+
+  hollow_colossus:
+    zone: diamond_hollow
+    display-name: "Hollow Colossus"
+    material: DIAMOND_BLOCK
+    size: 6
+    location: [0, 100, 645]
+    max-hp: 3600000
+    check-interval-minutes: 15
+    spawn-chance: 0.5
+    reward-coins: 25000000
+    reward-diamonds: 4500
+    despawn-after-minutes: 30
+
+  barren_warden:
+    zone: end_barrens
+    display-name: "Barren Warden"
+    material: PURPUR_BLOCK
+    size: 7
+    location: [0, 100, 1209]
+    max-hp: 1050000000
+    check-interval-minutes: 20
+    spawn-chance: 0.5
+    reward-coins: 25000000000
+    reward-diamonds: 220000
+    despawn-after-minutes: 45
+
+  astral_devourer:
+    zone: astral_peak
+    display-name: "Astral Devourer"
+    material: BEACON
+    size: 8
+    location: [0, 100, 1773]
+    max-hp: 312000000000
+    check-interval-minutes: 30
+    spawn-chance: 0.5
+    reward-coins: 20000000000000
+    reward-diamonds: 10000000
+    despawn-after-minutes: 60

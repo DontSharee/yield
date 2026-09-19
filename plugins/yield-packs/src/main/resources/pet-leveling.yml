@@ -6,9 +6,18 @@
 #
 # xpForLevel(level) = base * level^exponent - how much XP a pet needs to go
 # from its current level to the next one.
+#
+# BALANCE - every pet a player is currently fighting with gets the full kill
+# XP (not a split share), so the whole squad levels together. The curve is
+# deliberately shallow: a pet bought partway through a zone has to reach a
+# useful level before the player moves on, and zone stays are only 4-25
+# minutes for the first half of the game. At meadow's kill rate a fresh pet
+# clears level 20 in about six minutes; in the late zones, where cube
+# xp-value is ~70x higher, it is near-instant and the LEVEL CAP below (not
+# the XP) is what actually limits a pet.
 level-curve:
-  base: 100
-  exponent: 1.4
+  base: 25
+  exponent: 1.2
 
 # Each level above 1 adds this fraction to a pet's base damage - a level 21
 # pet (20 levels above baseline) hits for base-damage * (1 + 20 * 0.05) =
@@ -18,6 +27,10 @@ damage-per-level: 0.05
 max-level: 99
 # Before any candy - see candy.yml. A pet can never level past
 # min(max-level, default-level-cap + bonus-level-cap-from-candy).
+# Candy is therefore the whole mid/late-game damage lever: the balance model
+# assumes a committed player is running pets around level 40-45 (a ~3x
+# damage multiplier) by the back half of the zone ladder, which is 4-5
+# candies fed into each pet.
 default-level-cap: 20
 
 # Cumulative - a level-30 pet has every milestone at or below level 30

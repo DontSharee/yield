@@ -134,12 +134,14 @@ public final class PackStationDisplay {
 
     private void handleClick(Player player, PackStation station) {
         playPushAnimation(player, station);
-        PackStationService.Result result = stationService.attemptPurchase(player, station);
-        switch (result) {
+        // Sneak to buy a stack at once - see PackStationService#BULK_PURCHASE_AMOUNT.
+        PackStationService.Purchase purchase = stationService.attemptPurchase(player, station, player.isSneaking());
+        switch (purchase.result()) {
             case SUCCESS -> {
                 player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.6f, 1.4f);
                 PackDefinition pack = packs.getPackRegistry().find(stationService.currentPackId(station)).orElse(null);
-                player.sendMessage(Text.parse("<green>Bought 1x <name>!</green>",
+                player.sendMessage(Text.parse("<green>Bought <count>x <name>!</green>",
+                        Placeholder.unparsed("count", String.valueOf(purchase.quantity())),
                         Placeholder.unparsed("name", pack != null ? Formatting.stripLeadingColorCodes(pack.displayName()) : "pack")));
                 refreshFor(player, station);
             }

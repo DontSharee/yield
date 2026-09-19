@@ -11,6 +11,32 @@
 #     - every owned node of that type (across BOTH trees) sums into one
 #       running total, consumed as (1.0 + total).
 #   EQUIP_SLOTS - summed the same way, consumed as (base cap + total).
+#
+# BALANCE - two things were wrong here and both are fixed below.
+#
+# 1. Every EQUIP_SLOTS node had "value-formula: 1", and valueFor() is the
+#    TOTAL at a level, not a per-level increment - so "Extra Pet Slot" at
+#    max level 4 granted exactly ONE slot, not four. All four slot nodes now
+#    use "<level>", which is what their max-levels always implied: 4 + 3 + 2
+#    + 1 = 10 extra slots on top of the base 6.
+# 2. The whole tree used to cost about 2 million coins to max out, which is
+#    under two minutes of income by Diamond Hollow - the entire thing was
+#    finished and forgotten a third of the way through the zone ladder.
+#    Costs now span the ladder: the first nodes are a few thousand coins in
+#    Frostpeak, the last are trillions in Eternal Forge, and the pet-slot
+#    line specifically is paced to hand over roughly one extra slot every
+#    two or three zones, which is what the combat maths in zones.yml
+#    assumes a player is fighting with.
+#
+# One thing worth knowing before re-pricing anything here: EQUIP_SLOTS is
+# worth far less than it looks. Once duplicates auto-fuse, a squad's top few
+# pets are enormously stronger than the rest of the bag, so going from 8
+# slots to 28 raises total volley by only ~10% - and because a settled squad
+# already one-shots its zone's tier-1 cube, most of even that is wasted. The
+# slot line is therefore priced as a convenience, not as the power spike it
+# superficially resembles. The COIN nodes are the genuinely expensive ones,
+# because coin multipliers are the only thing in the game with no
+# diminishing return at all.
 currency: COINS
 nodes:
   roll_speed:
@@ -24,7 +50,7 @@ nodes:
     # sits in the column between them. Keep this convention when adding
     # nodes, or the tree turns back into an unreadable scatter.
     max-level: 10
-    cost-formula: "300 * <level>^1.5"
+    cost-formula: "2000 * <level>^2.5"
     value-formula: "0.05 * <level>"
     type: ROLL_SPEED_MULTIPLIER
   luck_boost:
@@ -33,7 +59,7 @@ nodes:
     slot: 1
     requires: []
     max-level: 5
-    cost-formula: "800 * <level>^1.8"
+    cost-formula: "5000 * <level>^3"
     value-formula: "0.03 * <level>"
     type: LUCK_MULTIPLIER
   coin_boost:
@@ -42,7 +68,7 @@ nodes:
     slot: 7
     requires: []
     max-level: 5
-    cost-formula: "1500 * <level>^1.7"
+    cost-formula: "20000 * <level>^3.5"
     value-formula: "0.1 * <level>"
     type: COIN_MULTIPLIER
   greater_luck:
@@ -51,7 +77,7 @@ nodes:
     slot: 10
     requires: [luck_boost]
     max-level: 5
-    cost-formula: "4000 * <level>^1.9"
+    cost-formula: "500000 * <level>^3.5"
     value-formula: "0.04 * <level>"
     type: LUCK_MULTIPLIER
   pet_slot:
@@ -60,8 +86,8 @@ nodes:
     slot: 13
     requires: [roll_speed]
     max-level: 4
-    cost-formula: "2500 * <level>^2.2"
-    value-formula: "1"
+    cost-formula: "3750 * 4^<level>"
+    value-formula: "<level>"
     type: EQUIP_SLOTS
   golden_touch:
     display-name: "&6Golden Touch"
@@ -69,7 +95,7 @@ nodes:
     slot: 16
     requires: [coin_boost]
     max-level: 5
-    cost-formula: "5000 * <level>^1.8"
+    cost-formula: "2000000 * <level>^3.5"
     value-formula: "0.08 * <level>"
     type: COIN_MULTIPLIER
   fortune_seeker:
@@ -78,7 +104,7 @@ nodes:
     slot: 19
     requires: [greater_luck]
     max-level: 5
-    cost-formula: "10000 * <level>^2.0"
+    cost-formula: "50000000 * <level>^3.5"
     value-formula: "0.05 * <level>"
     type: LUCK_MULTIPLIER
   swift_rolling:
@@ -87,7 +113,7 @@ nodes:
     slot: 22
     requires: [pet_slot]
     max-level: 8
-    cost-formula: "6000 * <level>^1.6"
+    cost-formula: "2000000 * <level>^3"
     value-formula: "0.04 * <level>"
     type: ROLL_SPEED_MULTIPLIER
   second_pet_slot:
@@ -96,8 +122,8 @@ nodes:
     slot: 23
     requires: [pet_slot, coin_boost]
     max-level: 3
-    cost-formula: "20000 * <level>^2.4"
-    value-formula: "1"
+    cost-formula: "1000000 * 6^<level>"
+    value-formula: "<level>"
     type: EQUIP_SLOTS
   pet_damage:
     display-name: "&cPet Training"
@@ -105,7 +131,7 @@ nodes:
     slot: 17
     requires: [coin_boost]
     max-level: 6
-    cost-formula: "7000 * <level>^1.8"
+    cost-formula: "1000000 * <level>^3.5"
     value-formula: "0.03 * <level>"
     type: DAMAGE_MULTIPLIER
   midas_blessing:
@@ -114,7 +140,7 @@ nodes:
     slot: 25
     requires: [golden_touch]
     max-level: 5
-    cost-formula: "18000 * <level>^1.9"
+    cost-formula: "2000000000 * <level>^3.5"
     value-formula: "0.06 * <level>"
     type: COIN_MULTIPLIER
   hyper_rolling:
@@ -123,7 +149,7 @@ nodes:
     slot: 31
     requires: [swift_rolling]
     max-level: 5
-    cost-formula: "25000 * <level>^1.7"
+    cost-formula: "200000000 * <level>^3.5"
     value-formula: "0.03 * <level>"
     type: ROLL_SPEED_MULTIPLIER
   third_pet_slot:
@@ -132,8 +158,8 @@ nodes:
     slot: 32
     requires: [second_pet_slot]
     max-level: 2
-    cost-formula: "60000 * <level>^2.5"
-    value-formula: "1"
+    cost-formula: "50000000 * 8^<level>"
+    value-formula: "<level>"
     type: EQUIP_SLOTS
   berserker:
     display-name: "&cBerserker"
@@ -141,7 +167,7 @@ nodes:
     slot: 26
     requires: [pet_damage]
     max-level: 6
-    cost-formula: "22000 * <level>^1.9"
+    cost-formula: "20000000 * <level>^3.5"
     value-formula: "0.03 * <level>"
     type: DAMAGE_MULTIPLIER
   rampage:
@@ -150,7 +176,7 @@ nodes:
     slot: 35
     requires: [berserker]
     max-level: 5
-    cost-formula: "40000 * <level>^2.0"
+    cost-formula: "200000000 * <level>^3.5"
     value-formula: "0.04 * <level>"
     type: DAMAGE_MULTIPLIER
   fourth_pet_slot:
@@ -159,6 +185,6 @@ nodes:
     slot: 42
     requires: [third_pet_slot, midas_blessing]
     max-level: 1
-    cost-formula: "150000"
-    value-formula: "1"
+    cost-formula: "50000000000"
+    value-formula: "<level>"
     type: EQUIP_SLOTS

@@ -12,44 +12,51 @@
 # yield-achievements' PotionDefinition: "POTION_<STAT>_<MULTIPLIER>_<SECONDS>",
 # STAT one of COINS/DAMAGE/LUCK/ROLL_SPEED) works, handed over as a real,
 # drinkable item on claim rather than auto-consumed.
+# BALANCE - unlike daily quests, these are LIFETIME counters, so each tier
+# can be aimed at the zone band a player is realistically in when they trip
+# it, and the rewards track the coin ladder in zones.yml rather than sitting
+# flat. Goals are sized against the real kill rate (~35-40 cubes a minute):
+# 250 cubes is the first ten minutes, 300,000 is the whole zone ladder and
+# then some. The rebirth ladder stops at 250 because the rebirth curve
+# itself runs out of road somewhere past 200 - see yield-rebirth.
 categories:
   cubes_killed:
     display-name: "&cCubes Killed"
     icon: IRON_PICKAXE
     trigger: KILL_CUBE
     tiers:
-      - { goal: 100, reward-coins: 1000, reward-diamonds: 0, reward-credits: 10 }
-      - { goal: 1000, reward-coins: 10000, reward-diamonds: 5, reward-credits: 25, reward-potion: POTION_LUCK_2_600 }
-      - { goal: 10000, reward-coins: 100000, reward-diamonds: 25, reward-credits: 100, reward-potion: POTION_DAMAGE_2_900 }
-      - { goal: 100000, reward-coins: 1000000, reward-diamonds: 100, reward-credits: 500, reward-potion: POTION_LUCK_3_1800 }
-      - { goal: 1000000, reward-coins: 10000000, reward-diamonds: 500, reward-credits: 2500, reward-potion: POTION_COINS_3_3600 }
+      - { goal: 250, reward-coins: 15000, reward-diamonds: 10, reward-credits: 10 }
+      - { goal: 2500, reward-coins: 250000, reward-diamonds: 60, reward-credits: 25, reward-potion: POTION_LUCK_2_600 }
+      - { goal: 15000, reward-coins: 8000000, reward-diamonds: 800, reward-credits: 100, reward-potion: POTION_DAMAGE_2_900 }
+      - { goal: 75000, reward-coins: 400000000, reward-diamonds: 20000, reward-credits: 500, reward-potion: POTION_LUCK_3_1800 }
+      - { goal: 300000, reward-coins: 30000000000, reward-diamonds: 500000, reward-credits: 2500, reward-potion: POTION_COINS_3_3600 }
 
   coins_earned:
     display-name: "&6Coins Earned"
     icon: SUNFLOWER
     trigger: EARN_COINS
     tiers:
-      - { goal: 100000, reward-coins: 5000, reward-diamonds: 0, reward-credits: 10 }
-      - { goal: 1000000, reward-coins: 50000, reward-diamonds: 10, reward-credits: 50 }
-      - { goal: 100000000, reward-coins: 500000, reward-diamonds: 50, reward-credits: 200 }
-      - { goal: 10000000000, reward-coins: 5000000, reward-diamonds: 250, reward-credits: 1000 }
+      - { goal: 250000, reward-coins: 25000, reward-diamonds: 10, reward-credits: 10 }
+      - { goal: 50000000, reward-coins: 5000000, reward-diamonds: 250, reward-credits: 50 }
+      - { goal: 25000000000, reward-coins: 2500000000, reward-diamonds: 25000, reward-credits: 200 }
+      - { goal: 10000000000000, reward-coins: 1000000000000, reward-diamonds: 2000000, reward-credits: 1000 }
 
   packs_opened:
     display-name: "&fPacks Opened"
     icon: CHEST
     trigger: OPEN_PACK
     tiers:
-      - { goal: 50, reward-coins: 2000, reward-diamonds: 0, reward-credits: 10 }
-      - { goal: 500, reward-coins: 20000, reward-diamonds: 10, reward-credits: 50 }
-      - { goal: 5000, reward-coins: 200000, reward-diamonds: 50, reward-credits: 250 }
-      - { goal: 50000, reward-coins: 2000000, reward-diamonds: 200, reward-credits: 1000 }
+      - { goal: 50, reward-coins: 10000, reward-diamonds: 10, reward-credits: 10 }
+      - { goal: 500, reward-coins: 1500000, reward-diamonds: 200, reward-credits: 50 }
+      - { goal: 3000, reward-coins: 750000000, reward-diamonds: 15000, reward-credits: 250 }
+      - { goal: 15000, reward-coins: 150000000000, reward-diamonds: 1000000, reward-credits: 1000 }
 
   rebirths:
     display-name: "&bRebirths"
     icon: NETHER_STAR
     trigger: REBIRTH
     tiers:
-      - { goal: 5, reward-coins: 10000, reward-diamonds: 10, reward-credits: 25 }
-      - { goal: 25, reward-coins: 100000, reward-diamonds: 50, reward-credits: 100 }
-      - { goal: 100, reward-coins: 1000000, reward-diamonds: 250, reward-credits: 500 }
-      - { goal: 500, reward-coins: 10000000, reward-diamonds: 1000, reward-credits: 2500 }
+      - { goal: 10, reward-coins: 50000, reward-diamonds: 25, reward-credits: 25 }
+      - { goal: 50, reward-coins: 10000000, reward-diamonds: 500, reward-credits: 100 }
+      - { goal: 125, reward-coins: 5000000000, reward-diamonds: 50000, reward-credits: 500 }
+      - { goal: 250, reward-coins: 500000000000, reward-diamonds: 1500000, reward-credits: 2500 }

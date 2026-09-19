@@ -14,60 +14,67 @@
 #   yield-mining has no direct dependency on yield-leveling).
 # regen-seconds: how long the spot stays broken (for the player who broke
 #   it - everyone else's copy is unaffected) before it regenerates for them.
+# BALANCE - these coin rewards are flat: mining does NOT scale with the zone
+# ladder, and is not meant to. They are sized so that mining is a genuinely
+# competitive alternative to cube-fighting for roughly the first hour (a
+# diamond ore is worth about the same as a good cube in Sulfur Flats), and
+# then quietly becomes a rounding error on coins. That is fine, because the
+# real product of mining is Special Ore -> /forge -> permanent per-pet DAMAGE
+# bonuses, and those never stop mattering.
 ores:
   coal_ore:
     drop-material: COAL
     drop-min: 1
     drop-max: 2
-    coin-reward: 15
+    coin-reward: 120
     xp: 3
     regen-seconds: 20
   copper_ore:
     drop-material: RAW_COPPER
     drop-min: 2
     drop-max: 5
-    coin-reward: 20
+    coin-reward: 160
     xp: 4
     regen-seconds: 25
   iron_ore:
     drop-material: RAW_IRON
     drop-min: 1
     drop-max: 1
-    coin-reward: 30
+    coin-reward: 240
     xp: 6
     regen-seconds: 30
   redstone_ore:
     drop-material: REDSTONE
     drop-min: 4
     drop-max: 5
-    coin-reward: 40
+    coin-reward: 320
     xp: 8
     regen-seconds: 35
   lapis_ore:
     drop-material: LAPIS_LAZULI
     drop-min: 4
     drop-max: 9
-    coin-reward: 45
+    coin-reward: 360
     xp: 8
     regen-seconds: 35
   gold_ore:
     drop-material: RAW_GOLD
     drop-min: 1
     drop-max: 1
-    coin-reward: 60
+    coin-reward: 500
     xp: 10
     regen-seconds: 45
   diamond_ore:
     drop-material: DIAMOND
     drop-min: 1
     drop-max: 1
-    coin-reward: 150
+    coin-reward: 1200
     xp: 25
     regen-seconds: 90
   emerald_ore:
     drop-material: EMERALD
     drop-min: 1
     drop-max: 1
-    coin-reward: 180
+    coin-reward: 1500
     xp: 30
     regen-seconds: 100

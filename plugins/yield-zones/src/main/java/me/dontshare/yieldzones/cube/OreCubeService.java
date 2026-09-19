@@ -171,8 +171,8 @@ public final class OreCubeService implements Listener {
     }
 
     /** One cube's accumulated damage this tick, and every pet instance that contributed at least one hit - see queueDamage/flushDamage. */
-    private record PendingDamage(int amount, Set<UUID> contributingInstanceIds) {
-        PendingDamage add(int moreAmount, UUID petInstanceId) {
+    private record PendingDamage(long amount, Set<UUID> contributingInstanceIds) {
+        PendingDamage add(long moreAmount, UUID petInstanceId) {
             Set<UUID> merged = new HashSet<>(contributingInstanceIds);
             merged.add(petInstanceId);
             return new PendingDamage(amount + moreAmount, merged);
@@ -821,7 +821,7 @@ public final class OreCubeService implements Listener {
      * after every pet's hit for that tick has been queued, to apply the
      * combined total exactly once.
      */
-    public void queueDamage(Player player, OreCube cube, int amount, UUID petInstanceId) {
+    public void queueDamage(Player player, OreCube cube, long amount, UUID petInstanceId) {
         if (amount <= 0) {
             return;
         }
@@ -860,7 +860,7 @@ public final class OreCubeService implements Listener {
         try {
             for (Map.Entry<OreCube, PendingDamage> entry : queued.entrySet()) {
                 OreCube cube = entry.getKey();
-                int amount = entry.getValue().amount();
+                long amount = entry.getValue().amount();
                 Location center = cube.location().clone().add(0.5, 0.5, 0.5);
                 showDamageIndicator(player, center, amount);
                 showHitImpact(player, center);
@@ -953,7 +953,7 @@ public final class OreCubeService implements Listener {
     }
 
     /** "-<amount>" in red, floating up from a randomized spot near the cube so simultaneous hits from several pets don't overlap. */
-    private void showDamageIndicator(Player viewer, Location center, int amount) {
+    private void showDamageIndicator(Player viewer, Location center, long amount) {
         Component text = Text.parse("<#FF3B3B>-<amount></#FF3B3B>", Placeholder.unparsed("amount", Formatting.format(amount)));
         spawnFloatingText(viewer, center, text, DAMAGE_INDICATOR_RISE_TICKS, DAMAGE_INDICATOR_LIFETIME_TICKS);
     }
@@ -1132,7 +1132,10 @@ public final class OreCubeService implements Listener {
         boolean hasGlittering = packs.getPetEnchantService().hasBonusDiamondDropEnchant(contributors);
         double luck = luckService.totalLuckMultiplier(profile);
         double diamondChance = 0.05 * luck + diamondChanceBoostSum(profile) + (hasGlittering ? 0.5 : 0.0);
-        int diamondsEarned = guaranteedDiamond || ThreadLocalRandom.current().nextDouble() < diamondChance ? 1 : 0;
+        // The roll is a flat chance; the TIER decides how big the payout is,
+        // so diamond income tracks the zone the same way coins do.
+        int diamondsEarned = guaranteedDiamond || ThreadLocalRandom.current().nextDouble() < diamondChance
+                ? (int) tier.diamondValue() : 0;
         diamondsEarned += (int) flatBonusSum(flatDiamondBonusProviders, profile, tier.material());
         if (diamondsEarned > 0) {
             diamondsEarned = (int) Math.round(diamondsEarned * packs.diamondMultiplier(profile));

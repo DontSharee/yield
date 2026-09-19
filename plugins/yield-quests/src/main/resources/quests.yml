@@ -31,6 +31,13 @@
 #   REBIRTH        - a rebirth taken
 #   PRESTIGE       - a prestige taken
 #   BUY_SKILL_NODE - a skill tree node leveled up (manual buy or auto-buy)
+# BALANCE - a quest reward is a FLAT number in an economy that climbs ~4x a
+# zone, so it can only ever be aimed at one band of the game. These are aimed
+# at roughly Scorched Wastes through Diamond Hollow (zones 5-7, the first
+# couple of hours): a hard quest there is worth a few minutes of grinding -
+# a genuinely nice bonus - while for a brand-new player it is a real leg up
+# and for a late-game player it is pocket change. Diamonds are the part that
+# keeps mattering, since ranks and the enchanting table price in them.
 categories:
   combat:
     display-name: "&cCombat"
@@ -39,21 +46,21 @@ categories:
       display-name: "&aCube Crusher I"
       action: KILL_CUBE
       goal: 10
-      reward-coins: 500
-      reward-diamonds: 0
+      reward-coins: 25000
+      reward-diamonds: 10
     medium:
       display-name: "&6Cube Crusher II"
       action: KILL_CUBE
       goal: 30
-      reward-coins: 1500
-      reward-diamonds: 1
+      reward-coins: 120000
+      reward-diamonds: 40
       reward-credits: 5
     hard:
       display-name: "&cCube Crusher III"
       action: KILL_CUBE
       goal: 75
-      reward-coins: 4000
-      reward-diamonds: 3
+      reward-coins: 400000
+      reward-diamonds: 120
       reward-credits: 15
 
   economy:
@@ -63,21 +70,21 @@ categories:
       display-name: "&aPack Opener I"
       action: OPEN_PACK
       goal: 5
-      reward-coins: 400
-      reward-diamonds: 0
+      reward-coins: 25000
+      reward-diamonds: 10
     medium:
       display-name: "&6Pack Opener II"
       action: OPEN_PACK
       goal: 15
-      reward-coins: 1200
-      reward-diamonds: 1
+      reward-coins: 120000
+      reward-diamonds: 40
       reward-credits: 5
     hard:
       display-name: "&cPack Opener III"
       action: OPEN_PACK
       goal: 40
-      reward-coins: 3500
-      reward-diamonds: 2
+      reward-coins: 400000
+      reward-diamonds: 120
       reward-credits: 15
 
   collection:
@@ -87,21 +94,21 @@ categories:
       display-name: "&aFusion Starter"
       action: FUSE_PET
       goal: 1
-      reward-coins: 600
-      reward-diamonds: 0
+      reward-coins: 30000
+      reward-diamonds: 10
     medium:
       display-name: "&6Fusion Adept"
       action: FUSE_PET
       goal: 3
-      reward-coins: 1800
-      reward-diamonds: 1
+      reward-coins: 150000
+      reward-diamonds: 40
       reward-credits: 5
     hard:
       display-name: "&cFusion Master"
       action: FUSE_PET
       goal: 8
-      reward-coins: 5000
-      reward-diamonds: 3
+      reward-coins: 500000
+      reward-diamonds: 150
       reward-credits: 15
       reward-pet: diamond_wolf
 
@@ -112,19 +119,19 @@ categories:
       display-name: "&aLevel Chaser I"
       action: LEVEL_UP_PET
       goal: 5
-      reward-coins: 500
-      reward-diamonds: 0
+      reward-coins: 25000
+      reward-diamonds: 10
     medium:
       display-name: "&6Level Chaser II"
       action: LEVEL_UP_PET
       goal: 15
-      reward-coins: 1500
-      reward-diamonds: 1
+      reward-coins: 120000
+      reward-diamonds: 40
       reward-credits: 5
     hard:
       display-name: "&cLevel Chaser III"
       action: LEVEL_UP_PET
       goal: 40
-      reward-coins: 4000
-      reward-diamonds: 2
+      reward-coins: 400000
+      reward-diamonds: 120
       reward-credits: 15

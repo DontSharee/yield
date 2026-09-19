@@ -17,7 +17,7 @@ public final class OreCube {
     private final CubeBonus bonus;
     private final int glowEntityId;
     private final UUID glowEntityUuid;
-    private int currentHp;
+    private long currentHp;
     // Whether the temporary white "you're looking at this one" outline is
     // currently applied - toggled as a glow flag directly on this cube's own
     // body entity (see OreCubeService#spawnHighlight/despawnHighlight), not
@@ -77,12 +77,12 @@ public final class OreCube {
         return glowEntityUuid;
     }
 
-    public int currentHp() {
+    public long currentHp() {
         return currentHp;
     }
 
     /** Applies damage, clamped at 0 - never goes negative. Returns true once this brings it to (or below) 0. */
-    public boolean damage(int amount) {
+    public boolean damage(long amount) {
         currentHp = Math.max(0, currentHp - amount);
         return currentHp <= 0;
     }

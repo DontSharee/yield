@@ -4,8 +4,17 @@
 # stat (PACKS -> luck, MINING -> coins, COMBAT -> damage, ENCHANTS ->
 # diamonds) - meaningful by max-level, never disruptive below it. All 4
 # tracks share this one curve. Run /admin packs reload after editing.
+#
+# BALANCE - COMBAT gains exactly 1 XP per ore cube killed, so this curve is
+# denominated in kills: max level is ~75,000 of them, or roughly 30 hours of
+# active play. That makes masteries the slowest, most passive track in the
+# game on purpose - it is the thing still ticking up once the zone ladder is
+# finished. The old curve (base 50, exponent 1.3) needed ~865,000 kills,
+# which no one would ever have seen the end of.
 level-curve:
-  base: 50
-  exponent: 1.3
+  base: 10
+  exponent: 1.1
 max-level: 100
-bonus-per-level: 0.0005
+# +20% to that track's stat at max level, up from the old +5% (which was
+# too small to notice after 30 hours of work).
+bonus-per-level: 0.002

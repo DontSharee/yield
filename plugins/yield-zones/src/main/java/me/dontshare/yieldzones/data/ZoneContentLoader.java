@@ -83,11 +83,15 @@ public final class ZoneContentLoader {
                 logger.warning("Zone '" + id + "' has a cube tier with an invalid material '" + materialName + "' - skipping entry.");
                 continue;
             }
-            int maxHp = entry.get("max-hp") instanceof Number n ? n.intValue() : 20;
+            long maxHp = entry.get("max-hp") instanceof Number n ? n.longValue() : 20;
             long coinValue = entry.get("coin-value") instanceof Number n ? n.longValue() : 1;
+            // Defaults to 1 so a tier written before this field existed keeps
+            // paying exactly the single diamond it always did.
+            long diamondValue = entry.get("diamond-value") instanceof Number n ? n.longValue() : 1;
             long xpValue = entry.get("xp-value") instanceof Number n ? n.longValue() : 1;
             double weight = entry.get("weight") instanceof Number n ? n.doubleValue() : 1.0;
-            tiers.add(new CubeTier(material, Math.max(1, maxHp), Math.max(0, coinValue), Math.max(0, xpValue), Math.max(0.01, weight)));
+            tiers.add(new CubeTier(material, Math.max(1L, maxHp), Math.max(0, coinValue), Math.max(1, diamondValue),
+                    Math.max(0, xpValue), Math.max(0.01, weight)));
         }
         if (tiers.isEmpty()) {
             logger.warning("Zone '" + id + "' has no valid cube tiers - skipping zone.");

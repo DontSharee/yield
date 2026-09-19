@@ -2,7 +2,7 @@
 # formula candy/diamond drops already use). A dropped trophy is a real,
 # physical item - right-click it to deposit into your team's balance.
 trophy:
-  drop-chance: 0.01
+  drop-chance: 0.015
   material: NETHER_STAR
   display-name: "&6Team Trophy"
 

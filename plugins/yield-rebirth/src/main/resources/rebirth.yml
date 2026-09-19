@@ -3,13 +3,24 @@
 # player's coin balance - it never resets the balance to zero, and never
 # touches the bag or equipped pets.
 #
-# Tuned for a fast-paced, high-economy feel: a low base-cost and a shallow
-# growth rate mean early rebirths come cheap and often (rather than the old
-# 1.5x-per-rebirth curve, where each one cost half again as much as the
-# last), and coin-bonus-per-rebirth is 5x the old 1% - big, escalating
-# multipliers are the whole point of grinding this deep.
-base-cost: 2500
-growth: 1.12
+# BALANCE - rebirth is the one multiplier a player interacts with constantly,
+# so it is tuned against the zone ladder in zones.yml rather than in a
+# vacuum:
+#   - the first rebirth lands about 2-3 minutes into a brand-new account
+#   - ~25 rebirths by Crystal Caverns (zone 6, ~35 min in)
+#   - ~50 rebirths by Emerald Depths (zone 8, ~1 hour in) - which is also
+#     where /trade unlocks, so the trade gate is reached by simply playing
+#   - ~75 rebirths by Netherite Wastes (zone 11, ~2.5 hours in)
+#   - it runs out of road somewhere past 200, where one more rebirth costs
+#     more than the final zone earns in a sitting - that soft ceiling is
+#     what Prestige exists to break (see yield-skilltree's prestige.yml)
+#
+# growth is 1.14 rather than the old 1.12 because coin income now climbs
+# ~4x per zone instead of ~2x; at 1.12 a mid-game player could buy hundreds
+# of rebirths in a single sitting and the multiplier stopped meaning
+# anything.
+base-cost: 4000
+growth: 1.14
 # The permanent coin-income bonus per rebirth, e.g. 0.05 = +5% per rebirth
 # (rebirth 20 = +100% coins, rebirth 100 = +500%). See RebirthService#coinMultiplier.
 coin-bonus-per-rebirth: 0.05
