@@ -29,6 +29,8 @@ public final class IndexGui {
     private final LuckService luckService;
     private final GuiManager guiManager;
     private final PackShopGui packShopGui;
+    /** Set after construction - the two screens point at each other, so one of them has to be wired second. */
+    private HugeIndexGui hugeIndexGui;
 
     public IndexGui(Supplier<PackContentLoader.ContentSnapshot> content, PlayerDataStore<PackPlayerProfile> store,
                      LuckService luckService, GuiManager guiManager, PackShopGui packShopGui) {
@@ -37,6 +39,10 @@ public final class IndexGui {
         this.luckService = luckService;
         this.guiManager = guiManager;
         this.packShopGui = packShopGui;
+    }
+
+    public void setHugeIndexGui(HugeIndexGui hugeIndexGui) {
+        this.hugeIndexGui = hugeIndexGui;
     }
 
     public void open(Player player) {
@@ -52,13 +58,27 @@ public final class IndexGui {
             if (slot >= contentRows * 9) {
                 break;
             }
-            Set<String> collected = profile.getPackCollectionProgress().getOrDefault(pack.id(), Set.of());
-            builder.item(slot, buildIcon(pack, collected.size()), (clicker, event) -> packShopGui.open(clicker));
+            builder.item(slot, buildIcon(pack, luckService.collectedFromPool(profile, pack)),
+                    (clicker, event) -> packShopGui.open(clicker));
             slot++;
         }
         builder.fill(IntStream.range(contentRows * 9, totalRows * 9), GuiIcons.filler());
         builder.item(totalRows * 9 - 5, GuiIcons.closeButton(), (clicker, event) -> clicker.closeInventory());
+        // Huges are never in a pack's pool, so they cannot appear on this
+        // screen at all - this is the only way in to seeing them.
+        if (hugeIndexGui != null) {
+            builder.item(totalRows * 9 - 7, hugeIndexButton(), (clicker, event) -> hugeIndexGui.open(clicker));
+        }
         guiManager.open(player, builder.build());
+    }
+
+    private ItemStack hugeIndexButton() {
+        ItemBuilder builder = ItemBuilder.of(org.bukkit.Material.NETHER_STAR)
+                .name(MenuLore.buttonName("<#FFD700>", "HUGE INDEX"));
+        MenuLore.button("huge index",
+                List.of(" &7Every &6Huge&7 in the game,", " &7and which ones you've found."),
+                "<#FFD700>", "Click to Open").forEach(builder::lore);
+        return builder.hideAttributes().build();
     }
 
     private ItemStack buildIcon(PackDefinition pack, int collectedCount) {

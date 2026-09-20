@@ -8,6 +8,7 @@ import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.chat.RebirthChatBadge;
 import me.dontshare.yieldpacks.command.AutoTargetCommand;
 import me.dontshare.yieldpacks.command.BagCommand;
+import me.dontshare.yieldpacks.command.HugeIndexCommand;
 import me.dontshare.yieldpacks.command.IndexCommand;
 import me.dontshare.yieldpacks.command.PackStorageCommand;
 import me.dontshare.yieldpacks.command.PacksAdminCommand;
@@ -42,6 +43,7 @@ import me.dontshare.yieldpacks.fusion.FusionService;
 import me.dontshare.yieldpacks.gui.BagGui;
 import me.dontshare.yieldpacks.gui.DeleteByRarityGui;
 import me.dontshare.yieldpacks.gui.FusionGui;
+import me.dontshare.yieldpacks.gui.HugeIndexGui;
 import me.dontshare.yieldpacks.gui.IndexGui;
 import me.dontshare.yieldpacks.gui.PackMultiOpenResultGui;
 import me.dontshare.yieldpacks.gui.PackShopGui;
@@ -370,6 +372,8 @@ public final class YieldPacks extends JavaPlugin {
                 core.getGuiManager(), iconFactory, petDisplayService, deleteByRarityGui, petLevelingService,
                 withdrawItem, existsCounterStore, this::applyPetItemHandlers, () -> petEnchantContent);
         IndexGui indexGui = new IndexGui(() -> content, playerStore, luckService, core.getGuiManager(), packShopGui);
+        HugeIndexGui hugeIndexGui = new HugeIndexGui(() -> content, playerStore, iconFactory, core.getGuiManager());
+        indexGui.setHugeIndexGui(hugeIndexGui);
 
         PetEnchantSelectGui petEnchantSelectGui = new PetEnchantSelectGui(playerStore, () -> content.items(),
                 () -> content.rarities(), equipmentService, iconFactory, petEnchantService, () -> petEnchantContent, core.getGuiManager());
@@ -422,6 +426,7 @@ public final class YieldPacks extends JavaPlugin {
         CommandManager.register(this, StoreCommand.build(storeHubGui), "Open the Store - Ranks, Gamepasses, Bundles and more", List.of());
         CommandManager.register(this, BagCommand.build(bagGui), "Open your bag", List.of("pets"));
         CommandManager.register(this, IndexCommand.build(indexGui), "Open your collection index", List.of());
+        CommandManager.register(this, HugeIndexCommand.build(hugeIndexGui), "Browse every Huge pet in the game", List.of());
         core.getAdminCommandRegistry().register(PacksAdminCommand.build(this));
         core.getAdminCommandRegistry().register(StatsAdminCommand.build(this));
         core.getAdminCommandRegistry().register(PetsAdminCommand.build(this));
