@@ -10,7 +10,6 @@ import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.data.PackDefinition;
-import me.dontshare.yieldpacks.gui.PackMultiOpenResultGui;
 import me.dontshare.yieldpacks.gui.PackStorageGui;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import me.dontshare.yieldpacks.roll.PackOpenService;
@@ -22,28 +21,42 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Replaces the old bulk QuantityPickerDialog - a stored pack can only be
- * opened one at a time via "Open 1" (plus a toggle for auto-opening this
- * pack, which repeats "Open 1" on a cooldown until storage runs out - see
- * PackOpenService), UNLESS the player owns the Multi-Open gamepass
- * ({@link PackOpenService#MULTI_OPEN_PERMISSION}), in which case a fixed
- * "Open &lt;n&gt;" button also appears (n = min(MULTI_OPEN_CAP, stored)) -
- * no free-form quantity prompt, matching the old dialog's removal reasoning.
+ * Replaces the old bulk QuantityPickerDialog - a stored pack is opened from
+ * a fixed ladder of quantities ({@link #MULTI_OPEN_TIERS}) rather than a
+ * free-form quantity prompt, matching the old dialog's removal reasoning.
+ * "Open 1x" is always there; the bigger tiers need the Multi-Open gamepass
+ * ({@link PackOpenService#MULTI_OPEN_PERMISSION}) and only show once you
+ * actually have that many stored, so the dialog never offers an open it
+ * would then have to refuse. There's also a toggle for auto-opening this
+ * pack, which repeats a 1x open on a cooldown until storage runs out - see
+ * PackOpenService.
+ * <p>
+ * Every button here hands off to {@link PackOpenService}, which owns the
+ * reveal: the results are shown in the world in front of the player (one
+ * reel for a 1x, a grid of the whole haul for the bigger tiers), so a
+ * successful open deliberately does NOT re-open this dialog - it would
+ * cover the very thing the player clicked to see. Only a REFUSED open
+ * (cooldown, empty storage) brings the dialog back.
  */
 public final class OpenPackDialog {
 
     private static final int BUTTON_WIDTH = 150;
+    /**
+     * The quantities offered, in order. 1 is ungated; the rest need the
+     * gamepass. Kept well under {@link PackRollService#MULTI_OPEN_CAP} (24)
+     * so the whole ladder is always openable in one action, and small
+     * enough at the top end that 15 results still fit the in-world reveal
+     * grid legibly.
+     */
+    private static final int[] MULTI_OPEN_TIERS = {3, 5, 15};
 
     private final PlayerDataStore<PackPlayerProfile> playerStore;
     private final PackOpenService openService;
-    private final PackMultiOpenResultGui multiOpenResultGui;
     private PackStorageGui packStorageGui;
 
-    public OpenPackDialog(PlayerDataStore<PackPlayerProfile> playerStore, PackOpenService openService,
-                           PackMultiOpenResultGui multiOpenResultGui) {
+    public OpenPackDialog(PlayerDataStore<PackPlayerProfile> playerStore, PackOpenService openService) {
         this.playerStore = playerStore;
         this.openService = openService;
-        this.multiOpenResultGui = multiOpenResultGui;
     }
 
     /** Breaks the constructor cycle with {@link PackStorageGui} (which itself needs this class for its pack-click handlers) - same setter-injection idiom as MilestoneCategoryGui/MilestonesGui. Lets both exit paths (Close, or opening your last stored pack) land back on a freshly-rebuilt storage screen instead of a stale one. */
@@ -67,35 +80,31 @@ public final class OpenPackDialog {
         int stored = profile.getStoredPacks().getOrDefault(pack.id(), 0);
 
         List<ActionButton> buttons = new ArrayList<>();
-        buttons.add(ActionButton.builder(Text.parse("Open 1"))
+        buttons.add(ActionButton.builder(Text.parse("Open 1x"))
                 .width(BUTTON_WIDTH)
                 .action(DialogAction.customClick((view, audience) -> {
-                            openService.tryOpen(player, pack.id(), PackOpenService.OpenTrigger.DIALOG);
-                            // The dialog itself is a static snapshot from when it was
-                            // built - Paper doesn't live-update a shown Dialog's body/
-                            // buttons - so refresh it to reflect the new stored count,
-                            // unless that was the last one, in which case there's
-                            // nothing left to open and the screen should just close.
-                            PackPlayerProfile updated = playerStore.getCached(player.getUniqueId());
-                            int remaining = updated != null ? updated.getStoredPacks().getOrDefault(pack.id(), 0) : 0;
-                            if (remaining > 0) {
+                            if (!openService.tryOpen(player, pack.id(), PackOpenService.OpenTrigger.DIALOG)) {
+                                // Refused - still on cooldown, or that was
+                                // the last pack and something else claimed
+                                // it. Nothing is being revealed, so put the
+                                // dialog back rather than leaving the
+                                // player on an empty screen.
                                 open(player, pack);
-                            } else {
-                                returnToStorage(player);
                             }
                         },
                         ClickCallback.Options.builder().build()))
                 .build());
 
-        if (player.hasPermission(PackOpenService.MULTI_OPEN_PERMISSION) && stored > 1) {
-            int multiOpenCount = Math.min(PackRollService.MULTI_OPEN_CAP, stored);
-            buttons.add(ActionButton.builder(Text.parse("Open " + multiOpenCount))
+        boolean multiOpen = player.hasPermission(PackOpenService.MULTI_OPEN_PERMISSION);
+        for (int tier : MULTI_OPEN_TIERS) {
+            if (!multiOpen || stored < tier) {
+                continue;
+            }
+            int count = tier;
+            buttons.add(ActionButton.builder(Text.parse("Open " + count + "x"))
                     .width(BUTTON_WIDTH)
                     .action(DialogAction.customClick((view, audience) -> {
-                                PackRollService.PurchaseResult result = openService.tryOpenMany(player, pack.id(), multiOpenCount);
-                                if (result.success()) {
-                                    multiOpenResultGui.open(player, result.rolls());
-                                } else {
+                                if (!openService.tryOpenMany(player, pack.id(), count).success()) {
                                     open(player, pack);
                                 }
                             },

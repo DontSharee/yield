@@ -23,12 +23,13 @@ import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 /**
- * The PS99-style "egg grid" reveal for a multi-open (see {@code
- * PackOpenService#tryOpenMany}) - a full-screen, read-only grid of every
- * item rolled at once, instead of the single-item Title {@code
- * RollAnimationService} shows for a normal 1-pack open. Purely a display:
- * every roll has already been applied (pets granted, XP/exists-counter/
- * events already fired) by the time this opens.
+ * The chest-GUI fallback for a multi-open (see {@code
+ * PackOpenService#tryOpenMany}) - a read-only grid of every item rolled at
+ * once. Only shown to players who have turned roll animations off; everyone
+ * else gets the same haul as an in-world grid in front of them (see {@code
+ * PackRevealAnimationService#playMultiReveal}). Purely a display: every
+ * roll has already been applied (pets granted, XP/exists-counter/events
+ * already fired) by the time this opens.
  */
 public final class PackMultiOpenResultGui {
 

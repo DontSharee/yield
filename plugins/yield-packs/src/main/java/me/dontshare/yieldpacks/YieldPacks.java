@@ -84,7 +84,6 @@ import me.dontshare.yieldpacks.roll.ExistsCounterStore;
 import me.dontshare.yieldpacks.roll.PackOpenService;
 import me.dontshare.yieldpacks.roll.PackRevealAnimationService;
 import me.dontshare.yieldpacks.roll.PackRollService;
-import me.dontshare.yieldpacks.roll.RollAnimationService;
 import me.dontshare.yieldpacks.selector.BagSelectorItem;
 import me.dontshare.yieldpacks.selector.BagSelectorListener;
 import me.dontshare.yieldpacks.selector.PackActionBarService;
@@ -315,10 +314,9 @@ public final class YieldPacks extends JavaPlugin {
         registerAttackSpeedMultiplierProvider("pet_enchants", petEnchantService::attackSpeedMultiplier);
         luckService.registerExtraLuckProvider("pet_enchants", petEnchantService::luckBonus);
 
-        RollAnimationService animationService = new RollAnimationService(() -> content.rarities());
         PackRevealAnimationService reelAnimationService = new PackRevealAnimationService(this, () -> content,
                 rollService, pityService, () -> content.rarities());
-        openService = new PackOpenService(this, () -> content, playerStore, rollService, animationService, reelAnimationService,
+        openService = new PackOpenService(this, () -> content, playerStore, rollService, reelAnimationService,
                 enchantService, masteryService);
         openService.registerCooldownMultiplierProvider("mastery_packs",
                 profile -> 1.0 - masteryService.sumStat(profile, MasteryType.PACKS, MasteryStat.OPEN_SPEED_MULTIPLIER));
@@ -331,7 +329,11 @@ public final class YieldPacks extends JavaPlugin {
 
         PackShopGui packShopGui = new PackShopGui(stockService, core.getGuiManager(), rollService, () -> content.items());
         PackMultiOpenResultGui multiOpenResultGui = new PackMultiOpenResultGui(core.getGuiManager(), () -> content.rarities(), iconFactory);
-        OpenPackDialog openPackDialog = new OpenPackDialog(playerStore, openService, multiOpenResultGui);
+        OpenPackDialog openPackDialog = new OpenPackDialog(playerStore, openService);
+        // The bulk reveal lives in the world now; this GUI is the fallback
+        // for players who have roll animations turned off (see
+        // PackOpenService#tryOpenMany).
+        openService.setMultiOpenResultGui(multiOpenResultGui);
         PackStorageGui packStorageGui = new PackStorageGui(() -> content, playerStore, core.getGuiManager(), openPackDialog, packShopGui, rollService);
         openPackDialog.setPackStorageGui(packStorageGui);
         multiOpenResultGui.setPackStorageGui(packStorageGui);

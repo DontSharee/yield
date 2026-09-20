@@ -7,6 +7,7 @@ import me.dontshare.yieldpacks.data.PackContentLoader;
 import me.dontshare.yieldpacks.data.PackDefinition;
 import me.dontshare.yieldpacks.enchant.EnchantService;
 import me.dontshare.yieldpacks.event.PackOpenedEvent;
+import me.dontshare.yieldpacks.gui.PackMultiOpenResultGui;
 import me.dontshare.yieldpacks.mastery.MasteryService;
 import me.dontshare.yieldpacks.mastery.MasteryType;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
@@ -22,13 +23,18 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * The single entry point for opening a pack - manual ("Open 1") and
- * auto-open both funnel through {@link #tryOpen}, so the cooldown and the
- * roll-animation toggle apply identically either way. {@link #tryOpenMany}
+ * The single entry point for opening a pack - the compass, the storage
+ * dialog's "Open 1" and auto-open all funnel through {@link #tryOpen}, so
+ * the cooldown, the reveal and the roll-animation toggle apply identically
+ * however the open was asked for. {@link #tryOpenMany}
  * is the one bulk exception - gated behind the {@code yieldpacks.multiopen}
  * gamepass permission, it reuses the same suppression/cooldown guards but
- * rolls up to {@code PackRollService#MULTI_OPEN_CAP} packs in one go for a
- * full-screen results grid instead of the usual single-item reveal.
+ * rolls up to {@code PackRollService#MULTI_OPEN_CAP} packs in one go and
+ * reveals the whole haul at once - as an in-world grid floating in front
+ * of the player (same packet-display machinery as the single-open reel,
+ * minus the spin: the packs have already been opened, so what's left to
+ * show is the haul, not suspense), or as a chest-grid summary for players
+ * who have turned roll animations off.
  */
 public final class PackOpenService {
 
@@ -42,11 +48,17 @@ public final class PackOpenService {
     private final Supplier<PackContentLoader.ContentSnapshot> content;
     private final PlayerDataStore<PackPlayerProfile> store;
     private final PackRollService rollService;
-    private final RollAnimationService animationService;
     private final PackRevealAnimationService reelAnimationService;
     private final EnchantService enchantService;
     private final MasteryService masteryService;
     private final Map<UUID, Long> lastOpenAtMillis = new ConcurrentHashMap<>();
+    // Only ever used as the no-animation fallback for tryOpenMany - set
+    // after construction because the GUI is built later in YieldPacks'
+    // startup (same setter-injection idiom as OpenPackDialog's own
+    // PackStorageGui). Nullable, and treated as such: a missing GUI
+    // degrades to the chat summary every bulk open already sends, never
+    // an NPE mid-open.
+    private PackMultiOpenResultGui multiOpenResultGui;
 
     /**
      * Shortens the open cooldown for a player - each registered factor
@@ -62,16 +74,20 @@ public final class PackOpenService {
 
     public PackOpenService(JavaPlugin plugin, Supplier<PackContentLoader.ContentSnapshot> content,
                             PlayerDataStore<PackPlayerProfile> store, PackRollService rollService,
-                            RollAnimationService animationService, PackRevealAnimationService reelAnimationService,
+                            PackRevealAnimationService reelAnimationService,
                             EnchantService enchantService, MasteryService masteryService) {
         this.plugin = plugin;
         this.content = content;
         this.store = store;
         this.rollService = rollService;
-        this.animationService = animationService;
         this.reelAnimationService = reelAnimationService;
         this.enchantService = enchantService;
         this.masteryService = masteryService;
+    }
+
+    /** See {@link #multiOpenResultGui}. Keeps the "which reveal plays" decision in this one class, alongside tryOpen's reel/compact-reel split, rather than duplicating the roll-animation check in every caller. */
+    public void setMultiOpenResultGui(PackMultiOpenResultGui multiOpenResultGui) {
+        this.multiOpenResultGui = multiOpenResultGui;
     }
 
     public void registerCooldownMultiplierProvider(String key, Function<PackPlayerProfile, Double> provider) {
@@ -133,30 +149,31 @@ public final class PackOpenService {
         masteryService.grantXp(player, MasteryType.PACKS, 1);
 
         PackRollService.RollResult roll = result.rolls().get(0);
-        switch (trigger) {
-            case MANUAL_COMPASS, AUTO_OPEN -> {
-                // Auto-open is just a manual open the player didn't have to
-                // click for - it gets the exact same reveal. The
-                // roll-animation toggle only decides whether that reveal is
-                // the full in-world reel or just the action-bar-only
-                // cycling (still real odds, still the pity bar), never
-                // silence.
-                PackDefinition pack = content.get().packs().getOrThrow(packId);
-                // openOneFromStorage already incremented rollCount for this
-                // roll - the pity bar shown throughout the reel must
-                // reflect the count as it stood BEFORE this roll.
-                long rollCountBefore = profile.getRollCount() - 1;
-                if (profile.isRollAnimationEnabled()) {
-                    reelAnimationService.playReel(player, pack, roll.item(), result.luckMultiplier(), rollCountBefore);
-                } else {
-                    reelAnimationService.playCompactReel(player, pack, roll.item(), result.luckMultiplier(), rollCountBefore);
-                }
-            }
-            case DIALOG -> {
-                if (profile.isRollAnimationEnabled()) {
-                    animationService.play(player, result.rolls());
-                }
-            }
+        // Every trigger gets the same reveal. Auto-open is just a manual
+        // open the player didn't have to click for, and a "Open 1" from the
+        // storage dialog is the same single pack as a compass press - the
+        // dialog used to answer with a Title instead, which meant the one
+        // screen a player picks their quantity on was also the one that
+        // never showed them the reel. The roll-animation toggle only
+        // decides whether the reveal is the full in-world reel or just the
+        // action-bar-only cycling (still real odds, still the pity bar),
+        // never silence.
+        if (trigger == OpenTrigger.DIALOG) {
+            // The reel plays in the world - the dialog has to be out of the
+            // way to see it. (Paper closes a dialog on a button click by
+            // default; this covers the rest.)
+            player.closeDialog();
+            player.closeInventory();
+        }
+        PackDefinition pack = content.get().packs().getOrThrow(packId);
+        // openOneFromStorage already incremented rollCount for this roll -
+        // the pity bar shown throughout the reel must reflect the count as
+        // it stood BEFORE this roll.
+        long rollCountBefore = profile.getRollCount() - 1;
+        if (profile.isRollAnimationEnabled()) {
+            reelAnimationService.playReel(player, pack, roll.item(), result.luckMultiplier(), rollCountBefore);
+        } else {
+            reelAnimationService.playCompactReel(player, pack, roll.item(), result.luckMultiplier(), rollCountBefore);
         }
         player.sendMessage(Text.parse(
                 "<#4BD9FF><bold>Packs</bold></#4BD9FF> <dark_gray>»</dark_gray> <gray>Opened <pack>: <result></gray>",
@@ -204,6 +221,17 @@ public final class PackOpenService {
         for (int i = 0; i < result.rolls().size(); i++) {
             enchantService.maybeDropBook(player, result.luckMultiplier());
             masteryService.grantXp(player, MasteryType.PACKS, 1);
+        }
+        if (profile.isRollAnimationEnabled()) {
+            // The grid is drawn in the world, in front of the player, so
+            // every screen has to be out of the way first - the dialog the
+            // click came from, and whatever GUI was behind it.
+            player.closeDialog();
+            player.closeInventory();
+            PackDefinition pack = content.get().packs().getOrThrow(packId);
+            reelAnimationService.playMultiReveal(player, pack, result.rolls(), result.luckMultiplier());
+        } else if (multiOpenResultGui != null) {
+            multiOpenResultGui.open(player, result.rolls());
         }
         player.sendMessage(Text.parse(
                 "<#4BD9FF><bold>Packs</bold></#4BD9FF> <dark_gray>»</dark_gray> <gray>Opened <count>x <pack>!</gray>",

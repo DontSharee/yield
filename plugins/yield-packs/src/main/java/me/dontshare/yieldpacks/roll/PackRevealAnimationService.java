@@ -27,10 +27,12 @@ import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
 /**
@@ -422,6 +424,157 @@ public final class PackRevealAnimationService {
                 Placeholder.unparsed("n", Formatting.format((double) oneInN)));
 
         return rarityLine.append(Component.newline()).append(nameLine).append(Component.newline()).append(oddsLine);
+    }
+
+    // ------------------------------------------------------------------
+    // Multi-open reveal
+    // ------------------------------------------------------------------
+
+    /** Results per row before wrapping - 5 keeps a 15x open to three readable rows rather than one wall of items. */
+    private static final int MULTI_COLUMNS = 5;
+    private static final float MULTI_COL_SPACING = 1.2f;
+    private static final float MULTI_ROW_SPACING = 1.25f;
+    private static final float MULTI_ITEM_SCALE = 0.62f;
+
+    private record MultiContext(Player player, UUID playerId, int count, int[] itemIds, int[] textIds,
+                                 List<PackRollService.RollResult> rolls, BukkitTask[] trackingTaskHolder) {
+    }
+
+    /**
+     * The bulk counterpart to {@link #playReel} - every result from one
+     * multi-open shown at once, in a grid in front of the player.
+     * <p>
+     * Deliberately NO reel. The single-open reveal earns its spin because
+     * there is one unknown and the suspense IS the moment; a bulk open has
+     * already happened and what the player wants is to see the haul. Fifteen
+     * sequential reels would run for the better part of a minute, and even
+     * one shared spin only delays the part anyone cares about. The grid
+     * simply appears, holds long enough to read, and goes away.
+     */
+    public void playMultiReveal(Player player, PackDefinition pack, List<PackRollService.RollResult> rolls,
+                                 double luckMultiplier) {
+        if (rolls.isEmpty()) {
+            return;
+        }
+        int count = rolls.size();
+        int[] itemIds = new int[count];
+        int[] textIds = new int[count];
+        for (int i = 0; i < count; i++) {
+            itemIds[i] = PacketEntityManager.nextEntityId();
+            textIds[i] = PacketEntityManager.nextEntityId();
+        }
+
+        UUID playerId = player.getUniqueId();
+        RevealSuppressionRegistry.begin(playerId);
+
+        Location[] slots = multiSlotLocations(player, count);
+        PacketEntityManager.beginBundle(player);
+        for (int i = 0; i < count; i++) {
+            PackRollService.RollResult roll = rolls.get(i);
+            ItemDisplayManager.spawn(player, itemIds[i], slots[i]);
+            ItemDisplayManager.setItem(player, itemIds[i], iconFactory.baseIcon(roll.item()).build());
+            ItemDisplayManager.setScale(player, itemIds[i], MULTI_ITEM_SCALE, MULTI_ITEM_SCALE, MULTI_ITEM_SCALE);
+            ItemDisplayManager.setRotation(player, itemIds[i], 0f, facingYawTowardPlayer(slots[i], player));
+            ItemDisplayManager.setInterpolation(player, itemIds[i], 0, TRACK_INTERVAL_TICKS, TRACK_INTERVAL_TICKS);
+
+            TextDisplayManager.spawn(player, textIds[i], slots[i].clone().add(0, 0.45, 0));
+            TextDisplayManager.setBillboard(player, textIds[i], TextDisplayManager.Billboard.VERTICAL);
+            TextDisplayManager.setBackgroundColor(player, textIds[i], 0x00000000);
+            TextDisplayManager.setStyle(player, textIds[i], true, false, false, TextDisplayManager.Alignment.CENTER);
+            TextDisplayManager.setText(player, textIds[i], multiSlotLabel(roll));
+            TextDisplayManager.setInterpolation(player, textIds[i], 0, TRACK_INTERVAL_TICKS, TRACK_INTERVAL_TICKS);
+        }
+        PacketEntityManager.endBundle(player);
+
+        BukkitTask[] trackingTaskHolder = new BukkitTask[1];
+        MultiContext ctx = new MultiContext(player, playerId, count, itemIds, textIds, rolls, trackingTaskHolder);
+        trackingTaskHolder[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> trackMulti(ctx), 0L, TRACK_INTERVAL_TICKS);
+
+        // Fanfare keyed to the best pull of the batch, ranked by what it
+        // actually BEAT - so a Huge of a lesser pet still takes the moment
+        // over an ordinary high-rarity one.
+        PackRollService.RollResult best = rolls.stream()
+                .max(Comparator.comparingLong(PackRollService.RollResult::oneIn))
+                .orElse(rolls.get(0));
+        TierConfig cfg = configFor(tierFor(rarityRegistry.get().find(best.item().rarityId()).orElse(null)));
+        for (Location slot : slots) {
+            player.spawnParticle(cfg.particle(), slot, Math.max(4, cfg.particleCount() / count), 0.25, 0.25, 0.25, 0.02);
+        }
+        player.playSound(player.getLocation(), cfg.sound(), 1f, cfg.pitch());
+
+        // Held longer for a bigger haul - fifteen results need more time to
+        // read than three do.
+        long holdTicks = cfg.holdTicks() + 10L * Math.min(6, count);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> despawnMulti(ctx), holdTicks);
+    }
+
+    private void trackMulti(MultiContext ctx) {
+        Player player = ctx.player();
+        if (!player.isOnline()) {
+            ctx.trackingTaskHolder()[0].cancel();
+            return;
+        }
+        Location[] slots = multiSlotLocations(player, ctx.count());
+        for (int i = 0; i < ctx.count(); i++) {
+            PacketEntityManager.teleportEntity(player, ctx.itemIds()[i], slots[i]);
+            ItemDisplayManager.setRotation(player, ctx.itemIds()[i], 0f, facingYawTowardPlayer(slots[i], player));
+            PacketEntityManager.teleportEntity(player, ctx.textIds()[i], slots[i].clone().add(0, 0.45, 0));
+        }
+    }
+
+
+
+    private void despawnMulti(MultiContext ctx) {
+        BukkitTask tracking = ctx.trackingTaskHolder()[0];
+        if (tracking != null) {
+            tracking.cancel();
+        }
+        Player player = ctx.player();
+        if (player.isOnline()) {
+            PacketEntityManager.beginBundle(player);
+            for (int i = 0; i < ctx.count(); i++) {
+                PacketEntityManager.destroyEntity(player, ctx.itemIds()[i]);
+                PacketEntityManager.destroyEntity(player, ctx.textIds()[i]);
+            }
+            PacketEntityManager.endBundle(player);
+        }
+        RevealSuppressionRegistry.end(ctx.playerId());
+    }
+
+    /**
+     * Two lines rather than the single reel's three - a grid packs rows
+     * close enough together that a third line visibly collides with the row
+     * below it.
+     */
+    private Component multiSlotLabel(PackRollService.RollResult roll) {
+        ItemDefinition item = roll.item();
+        Rarity rarity = rarityRegistry.get().find(item.rarityId()).orElse(null);
+        String colorHex = rarity != null ? rarity.colorHex() : "#FFFFFF";
+        Component nameLine = Text.parse("<" + colorHex + "><bold><name></bold>",
+                Placeholder.unparsed("name", Formatting.stripLeadingColorCodes(item.displayName())));
+        Component oddsLine = Text.parse("<gray>(1 in <n>)</gray>",
+                Placeholder.unparsed("n", Formatting.format((double) roll.oneIn())));
+        return nameLine.append(Component.newline()).append(oddsLine);
+    }
+
+    /** A centred grid in front of the player - {@value #MULTI_COLUMNS} per row, wrapping downward, vertically centred on eye level. */
+    private Location[] multiSlotLocations(Player player, int count) {
+        Location eye = player.getEyeLocation();
+        Vector forward = eye.getDirection().setY(0).normalize();
+        Vector right = new Vector(-forward.getZ(), 0, forward.getX()).normalize();
+        Location anchor = eye.clone().add(forward.multiply(FORWARD_DISTANCE));
+
+        int rows = (count + MULTI_COLUMNS - 1) / MULTI_COLUMNS;
+        Location[] slots = new Location[count];
+        for (int i = 0; i < count; i++) {
+            int row = i / MULTI_COLUMNS;
+            int col = i % MULTI_COLUMNS;
+            int inThisRow = Math.min(MULTI_COLUMNS, count - row * MULTI_COLUMNS);
+            double xOffset = (col - (inThisRow - 1) / 2.0) * MULTI_COL_SPACING;
+            double yOffset = ((rows - 1) / 2.0 - row) * MULTI_ROW_SPACING;
+            slots[i] = anchor.clone().add(right.clone().multiply(xOffset)).add(0, yOffset, 0);
+        }
+        return slots;
     }
 
     private Tier tierFor(Rarity rarity) {

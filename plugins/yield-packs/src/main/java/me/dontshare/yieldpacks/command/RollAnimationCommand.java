@@ -9,7 +9,7 @@ import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import org.bukkit.entity.Player;
 
-/** Toggles the Title/sound roll reveal on pack opens (see RollAnimationService). */
+/** Toggles the in-world roll reveal on pack opens - off falls back to the action-bar reel and, for a multi-open, the chest-grid summary (see PackRevealAnimationService / PackMultiOpenResultGui). */
 public final class RollAnimationCommand {
 
     private RollAnimationCommand() {
