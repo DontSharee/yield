@@ -3,6 +3,7 @@ package me.dontshare.yieldachievements;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -25,6 +26,9 @@ import me.dontshare.yieldachievements.gui.MilestonesGui;
 import me.dontshare.yieldachievements.gui.PotionsGui;
 import me.dontshare.yieldachievements.gui.StoreGui;
 import me.dontshare.yieldachievements.listener.ProgressEventListener;
+import me.dontshare.yieldachievements.boost.ServerBoost;
+import me.dontshare.yieldachievements.boost.ServerBoostService;
+import me.dontshare.yieldachievements.boost.ServerBoostStore;
 import me.dontshare.yieldachievements.potion.PotionConsumeListener;
 import me.dontshare.yieldachievements.potion.PotionDefinition;
 import me.dontshare.yieldachievements.potion.PotionItem;
@@ -52,6 +56,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -59,6 +64,7 @@ import java.util.Map;
 public final class YieldAchievements extends JavaPlugin {
 
     private static final String PROVIDER_KEY = "potions";
+    private static final String BOOST_PROVIDER_KEY = "server_boosts";
 
     private AchievementContentLoader achievementContentLoader;
     private volatile Map<String, AchievementDefinition> achievements;
@@ -67,6 +73,7 @@ public final class YieldAchievements extends JavaPlugin {
     private StoreContentLoader storeContentLoader;
     private volatile Map<String, StoreProduct> storeProducts;
     private PotionItem potionItem;
+    private ServerBoostService serverBoostService;
 
     @Override
     public void onEnable() {
@@ -95,6 +102,19 @@ public final class YieldAchievements extends JavaPlugin {
         // real thing here as it does for the product-based stats above.
         packs.getLuckService().registerExtraLuckProvider(PROVIDER_KEY, profile -> potionService.multiplierFor(profile, PotionStat.LUCK) - 1.0);
         core.getListenerManager().register(new PotionConsumeListener(potionItem, potionService));
+
+        // A server boost is a potion everybody is drinking at once, so it
+        // feeds the very same registries - the profile argument is ignored
+        // because the multiplier is shared, not per-player.
+        serverBoostService = new ServerBoostService(this, core.getDatabaseManager(),
+                new ServerBoostStore(core.getDatabaseManager()));
+        packs.registerCoinMultiplierProvider(BOOST_PROVIDER_KEY, profile -> serverBoostService.multiplierFor(PotionStat.COINS));
+        packs.registerDamageMultiplierProvider(BOOST_PROVIDER_KEY, profile -> serverBoostService.multiplierFor(PotionStat.DAMAGE));
+        packs.getPackOpenService().registerCooldownMultiplierProvider(BOOST_PROVIDER_KEY, profile -> serverBoostService.multiplierFor(PotionStat.ROLL_SPEED));
+        // Same additive-vs-multiplicative conversion the potion line above
+        // documents - LuckService sums bonuses rather than multiplying them.
+        packs.getLuckService().registerExtraLuckProvider(BOOST_PROVIDER_KEY, profile -> serverBoostService.multiplierFor(PotionStat.LUCK) - 1.0);
+        serverBoostService.start();
 
         AchievementService achievementService = new AchievementService(() -> achievements, packs.getPlayerStore(), achievementStore);
         MilestoneService milestoneService = new MilestoneService(() -> milestoneCategories, packs.getPlayerStore(), achievementStore, potionItem);
@@ -135,6 +155,7 @@ public final class YieldAchievements extends JavaPlugin {
         core.getAdminCommandRegistry().register(buildAchievementsAdminCommand(achievementService));
         core.getAdminCommandRegistry().register(buildMilestonesAdminCommand(milestoneService));
         core.getAdminCommandRegistry().register(buildPotionsAdminCommand());
+        core.getAdminCommandRegistry().register(buildBoostAdminCommand());
     }
 
     private static ItemStack categoryIcon(Material material, String label, boolean selected, String... descriptionLines) {
@@ -152,6 +173,71 @@ public final class YieldAchievements extends JavaPlugin {
         MenuLore.info("store", List.of(), "<gray>", List.of(description)).forEach(builder::lore);
         gui.set(31, builder.hideAttributes().build(), null);
         gui.set(49, GuiIcons.closeButton(), (clicker, e) -> clicker.closeInventory());
+    }
+
+    /**
+     * {@code /admin boost start <stat> <multiplier> <seconds>} and
+     * {@code /admin boost stop <stat> <multiplier>}, plus a listing. Admin-driven
+     * rather than config-driven on purpose: a server boost is an event
+     * somebody decides to run, not a schedule - and anything that should be
+     * automatic can call {@code ServerBoostService#startBoost} directly.
+     */
+    private LiteralCommandNode<CommandSourceStack> buildBoostAdminCommand() {
+        return Commands.literal("boost")
+                .then(Commands.literal("start")
+                        .then(Commands.argument("stat", StringArgumentType.word())
+                                .then(Commands.argument("multiplier", DoubleArgumentType.doubleArg(0.01))
+                                        .then(Commands.argument("seconds", IntegerArgumentType.integer(1))
+                                                .executes(ctx -> {
+                                                    PotionStat stat = parseStat(ctx.getSource(), StringArgumentType.getString(ctx, "stat"));
+                                                    if (stat == null) {
+                                                        return Command.SINGLE_SUCCESS;
+                                                    }
+                                                    serverBoostService.startBoost(stat,
+                                                            DoubleArgumentType.getDouble(ctx, "multiplier"),
+                                                            IntegerArgumentType.getInteger(ctx, "seconds"),
+                                                            ctx.getSource().getSender().getName());
+                                                    return Command.SINGLE_SUCCESS;
+                                                })))))
+                .then(Commands.literal("stop")
+                        .then(Commands.argument("stat", StringArgumentType.word())
+                                .then(Commands.argument("multiplier", DoubleArgumentType.doubleArg(0.01))
+                                        .executes(ctx -> {
+                                            PotionStat stat = parseStat(ctx.getSource(), StringArgumentType.getString(ctx, "stat"));
+                                            if (stat == null) {
+                                                return Command.SINGLE_SUCCESS;
+                                            }
+                                            boolean stopped = serverBoostService.stopBoost(stat, DoubleArgumentType.getDouble(ctx, "multiplier"));
+                                            ctx.getSource().getSender().sendMessage(stopped
+                                                    ? Text.parse("<green>Boost ended.</green>")
+                                                    : Text.parse("<red>No boost like that is running.</red>"));
+                                            return Command.SINGLE_SUCCESS;
+                                        }))))
+                .then(Commands.literal("list")
+                        .executes(ctx -> {
+                            List<ServerBoost> boosts = serverBoostService.activeBoosts();
+                            if (boosts.isEmpty()) {
+                                ctx.getSource().getSender().sendMessage(Text.parse("<gray>No server boosts are running.</gray>"));
+                                return Command.SINGLE_SUCCESS;
+                            }
+                            for (ServerBoost boost : boosts) {
+                                ctx.getSource().getSender().sendMessage(Text.parse("<white>" + boost.multiplierLabel() + " "
+                                        + boost.stat().name() + "</white> <gray>- " + boost.remainingSeconds() + "s left</gray>"));
+                            }
+                            return Command.SINGLE_SUCCESS;
+                        }))
+                .build();
+    }
+
+    /** Resolves a stat name for the boost command, reporting the valid set rather than failing silently. */
+    private PotionStat parseStat(CommandSourceStack source, String raw) {
+        try {
+            return PotionStat.valueOf(raw.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            source.getSender().sendMessage(Text.parse("<red>Unknown stat '" + raw + "' - expected one of "
+                    + Arrays.toString(PotionStat.values()) + ".</red>"));
+            return null;
+        }
     }
 
     private LiteralCommandNode<CommandSourceStack> buildAchievementsAdminCommand(AchievementService achievementService) {
