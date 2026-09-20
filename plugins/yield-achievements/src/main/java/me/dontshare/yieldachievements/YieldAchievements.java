@@ -27,6 +27,10 @@ import me.dontshare.yieldachievements.gui.PotionsGui;
 import me.dontshare.yieldachievements.gui.StoreGui;
 import me.dontshare.yieldachievements.listener.ProgressEventListener;
 import me.dontshare.yieldachievements.boost.ServerBoost;
+import me.dontshare.yieldachievements.donation.DonationGoalService;
+import me.dontshare.yieldachievements.donation.DonationGoalStore;
+import me.dontshare.yieldachievements.donation.PendingPurchaseListener;
+import me.dontshare.yieldachievements.donation.PendingPurchaseStore;
 import me.dontshare.yieldachievements.boost.ServerBoostService;
 import me.dontshare.yieldachievements.boost.ServerBoostStore;
 import me.dontshare.yieldachievements.potion.PotionConsumeListener;
@@ -47,15 +51,20 @@ import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiIcons;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.MenuLore;
+import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldpacks.store.StoreCategory;
 import me.dontshare.yieldpacks.store.StoreHubGui;
 import org.bukkit.Material;
+import me.dontshare.yieldpacks.player.PackPlayerProfile;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -65,6 +74,7 @@ public final class YieldAchievements extends JavaPlugin {
 
     private static final String PROVIDER_KEY = "potions";
     private static final String BOOST_PROVIDER_KEY = "server_boosts";
+    private static final String DONATION_PROVIDER_KEY = "donation_goal";
 
     private AchievementContentLoader achievementContentLoader;
     private volatile Map<String, AchievementDefinition> achievements;
@@ -74,10 +84,15 @@ public final class YieldAchievements extends JavaPlugin {
     private volatile Map<String, StoreProduct> storeProducts;
     private PotionItem potionItem;
     private ServerBoostService serverBoostService;
+    private DonationGoalService donationGoalService;
+    /** Held as a field only so the Tebex purchase command can reach it - everything else takes what it needs as a parameter. */
+    private PlayerDataStore<PackPlayerProfile> packStore;
+    private PendingPurchaseStore pendingPurchaseStore;
 
     @Override
     public void onEnable() {
         YieldPacks packs = JavaPlugin.getPlugin(YieldPacks.class);
+        packStore = packs.getPlayerStore();
         YieldCore core = JavaPlugin.getPlugin(YieldCore.class);
 
         achievementContentLoader = new AchievementContentLoader(this, getLogger());
@@ -115,6 +130,16 @@ public final class YieldAchievements extends JavaPlugin {
         // documents - LuckService sums bonuses rather than multiplying them.
         packs.getLuckService().registerExtraLuckProvider(BOOST_PROVIDER_KEY, profile -> serverBoostService.multiplierFor(PotionStat.LUCK) - 1.0);
         serverBoostService.start();
+
+        // Permanent, server-wide, coins only - see DonationGoalService for
+        // why it is deliberately not damage or luck.
+        donationGoalService = new DonationGoalService(this, core.getDatabaseManager(),
+                new DonationGoalStore(core.getDatabaseManager()));
+        packs.registerCoinMultiplierProvider(DONATION_PROVIDER_KEY, profile -> donationGoalService.coinMultiplier());
+        donationGoalService.start();
+        pendingPurchaseStore = new PendingPurchaseStore(core.getDatabaseManager());
+        core.getListenerManager().register(new PendingPurchaseListener(this, core.getDatabaseManager(),
+                pendingPurchaseStore, packStore));
 
         AchievementService achievementService = new AchievementService(() -> achievements, packs.getPlayerStore(), achievementStore);
         MilestoneService milestoneService = new MilestoneService(() -> milestoneCategories, packs.getPlayerStore(), achievementStore, potionItem);
@@ -156,6 +181,7 @@ public final class YieldAchievements extends JavaPlugin {
         core.getAdminCommandRegistry().register(buildMilestonesAdminCommand(milestoneService));
         core.getAdminCommandRegistry().register(buildPotionsAdminCommand());
         core.getAdminCommandRegistry().register(buildBoostAdminCommand());
+        core.getAdminCommandRegistry().register(buildStoreAdminCommand());
     }
 
     private static ItemStack categoryIcon(Material material, String label, boolean selected, String... descriptionLines) {
@@ -173,6 +199,90 @@ public final class YieldAchievements extends JavaPlugin {
         MenuLore.info("store", List.of(), "<gray>", List.of(description)).forEach(builder::lore);
         gui.set(31, builder.hideAttributes().build(), null);
         gui.set(49, GuiIcons.closeButton(), (clicker, e) -> clicker.closeInventory());
+    }
+
+    /**
+     * {@code /admin store purchase <player> <credits> [package name]} - the
+     * command Tebex runs on a completed payment, e.g.
+     * {@code admin store purchase %player_name% 499 VIP Rank}.
+     * <p>
+     * It does three things in one call so a Tebex package only ever needs
+     * one line: grants the credits, announces the purchase, and counts it
+     * toward the community donation goal.
+     * <p>
+     * The target is a raw NAME, not a player selector, because most
+     * webstore purchases happen on the site while the buyer is offline -
+     * that is the common case, not an edge case. An offline buyer's credits
+     * are queued (see {@code PendingPurchaseStore}) and handed over the
+     * moment they next join, so a purchase can never be silently dropped
+     * and the Tebex package does not need to be marked "online only". The
+     * donation goal is credited immediately either way: the money was paid
+     * whether or not anyone is logged in to see it.
+     * <p>
+     * {@code /admin store setgoal <creditsTowardGoal> <goalsCompleted>} is
+     * the correction path for a refund or a chargeback; it is silent on
+     * purpose.
+     */
+    private LiteralCommandNode<CommandSourceStack> buildStoreAdminCommand() {
+        return Commands.literal("store")
+                .then(Commands.literal("purchase")
+                        .then(Commands.argument("player", StringArgumentType.word())
+                                .then(Commands.argument("credits", IntegerArgumentType.integer(1))
+                                        .executes(ctx -> grantPurchase(ctx, null))
+                                        .then(Commands.argument("package", StringArgumentType.greedyString())
+                                                .executes(ctx -> grantPurchase(ctx, StringArgumentType.getString(ctx, "package")))))))
+                .then(Commands.literal("setgoal")
+                        .then(Commands.argument("creditsTowardGoal", IntegerArgumentType.integer(0))
+                                .then(Commands.argument("goalsCompleted", IntegerArgumentType.integer(0))
+                                        .executes(ctx -> {
+                                            donationGoalService.setProgress(
+                                                    IntegerArgumentType.getInteger(ctx, "creditsTowardGoal"),
+                                                    IntegerArgumentType.getInteger(ctx, "goalsCompleted"));
+                                            ctx.getSource().getSender().sendMessage(Text.parse("<green>Donation progress updated.</green>"));
+                                            return Command.SINGLE_SUCCESS;
+                                        }))))
+                .then(Commands.literal("goal")
+                        .executes(ctx -> {
+                            var progress = donationGoalService.progress();
+                            ctx.getSource().getSender().sendMessage(Text.parse(
+                                    "<gray>Toward this goal:</gray> <white>$" + String.format(Locale.ROOT, "%.2f", progress.dollarsTowardGoal())
+                                            + "</white> <gray>/ $100  |  goals completed:</gray> <white>" + progress.goalsCompleted()
+                                            + "</white> <gray>(" + progress.permanentMultiplier() + "x coins)  |  lifetime:</gray> <white>"
+                                            + progress.lifetimeCredits() + " credits</white>"));
+                            return Command.SINGLE_SUCCESS;
+                        }))
+                .build();
+    }
+
+    private int grantPurchase(CommandContext<CommandSourceStack> ctx, String packageName) {
+        String name = StringArgumentType.getString(ctx, "player");
+        long credits = IntegerArgumentType.getInteger(ctx, "credits");
+        Player online = Bukkit.getPlayerExact(name);
+
+        if (online != null) {
+            PackPlayerProfile profile = packStore.getOrCreate(online.getUniqueId());
+            profile.setCredits(profile.getCredits().add(BigInteger.valueOf(credits)));
+            packStore.save(online.getUniqueId());
+            online.sendMessage(Text.parse("<green>Thank you! <white><credits></white> Credits have been added to your account.</green>",
+                    Placeholder.unparsed("credits", Formatting.format(credits))));
+        } else {
+            // Off the main thread - a Mongo insert must never block a tick,
+            // and nothing downstream depends on it having finished.
+            PendingPurchaseStore queue = pendingPurchaseStore;
+            JavaPlugin.getPlugin(YieldCore.class).getDatabaseManager().supplyAsync(() -> {
+                queue.queue(name, credits, packageName);
+                return null;
+            });
+        }
+
+        // Announced and counted regardless of whether the buyer is around to
+        // see it - the purchase happened either way.
+        donationGoalService.announcePurchase(online != null ? online.getName() : name, credits, packageName);
+        donationGoalService.recordPurchase(credits);
+
+        ctx.getSource().getSender().sendMessage(Text.parse("<green>Granted <white>" + credits + "</white> credits to "
+                + name + (online != null ? "" : " (queued - they're offline)") + ".</green>"));
+        return Command.SINGLE_SUCCESS;
     }
 
     /**

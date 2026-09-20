@@ -250,7 +250,39 @@ without touching anything on the store page.
 
 ---
 
-## 6. Not covered by this model
+## 6. The donation goal moves this whole model
+
+Every $100 the server takes permanently adds **+0.1 to a server-wide coin
+multiplier**, forever, for everybody (see `DonationGoalService`). That is a
+deliberate design choice, but it is also the one thing that will quietly
+invalidate the pacing table above, so it is worth stating plainly:
+
+| donated lifetime | permanent coin multiplier | time to Genesis Core |
+|---|---|---|
+| $0 | 1.0× | 13.1 h |
+| $500 | 1.5× | ~9 h |
+| $1,000 | 2.0× | ~7 h |
+| $2,500 | 3.5× | ~4 h |
+| $5,000 | 6.0× | ~2.5 h |
+
+(Coin income scales directly with the multiplier while unlock costs stay
+fixed, so time-to-unlock falls roughly in proportion. Those are estimates
+from that relationship, not separate simulation runs.)
+
+It is **coins only**, on purpose, and it should stay that way. Coins are the
+one stat with no ceiling in the combat model. A permanent unbounded *damage*
+multiplier would push every cube past the one-shot threshold and flatten
+combat; a permanent *luck* multiplier would inflate Huge and Secret odds
+forever and cheapen the chase. A coin multiplier just moves everyone along
+the same curve faster, which is what a community goal should do.
+
+If the ladder ever starts feeling too short because of this, the lever is
+`MULTIPLIER_PER_GOAL` in `DonationGoalStore` (or raising the late-game
+unlock costs), not removing the reward.
+
+---
+
+## 7. Not covered by this model
 
 Two systems were rebuilt while this pass was in flight and are **not** part
 of the model above. Both carry their own "first-pass judgment call" notes,
@@ -269,7 +301,7 @@ them. For reference against the balanced kill rate (~35-40 cubes a minute):
 
 ---
 
-## 7. Knobs
+## 8. Knobs
 
 Turn these, in roughly this order, when something feels off:
 
@@ -291,7 +323,7 @@ wall or gets skipped.
 
 ---
 
-## 8. Re-deriving the numbers
+## 9. Re-deriving the numbers
 
 The model is reproducible. Given the combat maths in §1, for each zone:
 

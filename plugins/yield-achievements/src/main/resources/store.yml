@@ -1,5 +1,25 @@
-# /buy - spend Credits (earned from achievements/milestones) on ranks and
-# gamepasses. "category" (rank/gamepass) is which Store tab a product shows
+# /buy - spend Credits (earned from achievements/milestones, or bought) on
+# ranks and gamepasses.
+#
+# TEBEX / BUYCRAFT SETUP
+# Point each webstore package at this one console command:
+#
+#     admin store purchase %player_name% <credits> <package name>
+#
+# e.g. for a $4.99 package:  admin store purchase %player_name% 499 VIP Rank
+#
+# It grants the credits, broadcasts a thank-you, and counts the purchase
+# toward the community donation goal, all in one call. The package name is
+# optional - leave it off and the broadcast says the credit amount instead.
+#
+# The package does NOT need to be marked "run only when online": if the
+# buyer is offline the credits are queued and handed over the moment they
+# next join, and the donation goal is credited immediately either way.
+#
+# CREDITS ARE CENTS. The prices below are the convention the whole system
+# assumes: 499 = $4.99, 5999 = $59.99, 1000 = $10.00. That is what makes
+# the donation goal's "$100" mean 10,000 credits - if you price packages
+# differently, change CREDITS_PER_DOLLAR in DonationGoalStore to match. "category" (rank/gamepass) is which Store tab a product shows
 # under. "commands" run as CONSOLE on purchase, "%player%" replaced with the
 # buyer's name - works with whatever permissions plugin is actually
 # installed (LuckPerms here), and isn't limited to a single permission
