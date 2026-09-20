@@ -98,6 +98,32 @@ zones:
     # highest multiplier wins. "color" must be one of vanilla's 16 named
     # team colors (gold/aqua/light_purple/etc) - glow color is a hard
     # vanilla limitation, not an arbitrary hex value.
+    # TREASURE - the zone's one "stop what you're doing" moment.
+    #
+    # Mechanically an ordinary cube tier (it falls, has HP, takes damage and
+    # pays out through the same path), with three differences that are all
+    # about making it an event: it always glows gold so it can be spotted
+    # from across the zone, it pays roughly 6x the coins per point of HP that
+    # a normal cube does, and it hands over a stack of this zone's own packs.
+    #
+    # weight 0.6 against the tiers' 100/25/5 is 1 in 218 cubes - about one
+    # chest every six minutes at the balanced kill rate. It takes ~10 seconds
+    # to break, which is the pause it is meant to be, and is worth ~14% on top
+    # of everything else earned in the window between two of them.
+    #
+    # The packs, not the coins, are the point: coins are already what the
+    # inflated coin-value pays, and a second pile of them would just be a
+    # bigger number. Packs are what a player turns into power, so a chest
+    # reads as "your squad just got better".
+    treasure:
+      material: CHEST
+      weight: 0.6
+      max-hp: 120
+      coin-value: 600
+      diamond-value: 25
+      xp-value: 300
+      reward-pack: zone_meadow_pack
+      reward-pack-amount: 8
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
@@ -114,6 +140,15 @@ zones:
       - { material: SNOW_BLOCK, max-hp: 60, coin-value: 25, diamond-value: 2, xp-value: 25, weight: 100 }
       - { material: PACKED_ICE, max-hp: 180, coin-value: 100, diamond-value: 6, xp-value: 75, weight: 25 }
       - { material: BLUE_ICE, max-hp: 420, coin-value: 300, diamond-value: 16, xp-value: 200, weight: 5 }
+    treasure:
+      material: CHEST
+      weight: 0.6
+      max-hp: 600
+      coin-value: 1500
+      diamond-value: 50
+      xp-value: 375
+      reward-pack: zone_frostpeak_pack
+      reward-pack-amount: 8
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
@@ -142,6 +177,15 @@ zones:
       - { material: COBBLESTONE, max-hp: 200, coin-value: 65, diamond-value: 4, xp-value: 31, weight: 100 }
       - { material: IRON_BLOCK, max-hp: 600, coin-value: 260, diamond-value: 12, xp-value: 93, weight: 25 }
       - { material: RAW_IRON_BLOCK, max-hp: 1400, coin-value: 780, diamond-value: 32, xp-value: 248, weight: 5 }
+    treasure:
+      material: CHEST
+      weight: 0.6
+      max-hp: 2000
+      coin-value: 3900
+      diamond-value: 100
+      xp-value: 465
+      reward-pack: zone_iron_foothills_pack
+      reward-pack-amount: 8
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
@@ -163,6 +207,15 @@ zones:
       - { material: NETHERRACK, max-hp: 600, coin-value: 175, diamond-value: 7, xp-value: 39, weight: 100 }
       - { material: GOLD_BLOCK, max-hp: 1800, coin-value: 700, diamond-value: 21, xp-value: 117, weight: 25 }
       - { material: MAGMA_BLOCK, max-hp: 4200, coin-value: 2100, diamond-value: 56, xp-value: 312, weight: 5 }
+    treasure:
+      material: CHEST
+      weight: 0.6
+      max-hp: 6000
+      coin-value: 10500
+      diamond-value: 175
+      xp-value: 585
+      reward-pack: zone_sulfur_flats_pack
+      reward-pack-amount: 8
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
@@ -184,6 +237,15 @@ zones:
       - { material: BASALT, max-hp: 1700, coin-value: 450, diamond-value: 13, xp-value: 49, weight: 100 }
       - { material: BLACKSTONE, max-hp: 5100, coin-value: 1800, diamond-value: 39, xp-value: 147, weight: 25 }
       - { material: MAGMA_BLOCK, max-hp: 11900, coin-value: 5400, diamond-value: 104, xp-value: 392, weight: 5 }
+    treasure:
+      material: CHEST
+      weight: 0.6
+      max-hp: 17000
+      coin-value: 27000
+      diamond-value: 325
+      xp-value: 735
+      reward-pack: zone_scorched_wastes_pack
+      reward-pack-amount: 8
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
@@ -205,6 +267,15 @@ zones:
       - { material: CALCITE, max-hp: 4800, coin-value: 1200, diamond-value: 25, xp-value: 61, weight: 100 }
       - { material: AMETHYST_BLOCK, max-hp: 14400, coin-value: 4800, diamond-value: 75, xp-value: 183, weight: 25 }
       - { material: DRIPSTONE_BLOCK, max-hp: 33600, coin-value: 14400, diamond-value: 200, xp-value: 488, weight: 5 }
+    treasure:
+      material: CHEST
+      weight: 0.6
+      max-hp: 48000
+      coin-value: 72000
+      diamond-value: 625
+      xp-value: 915
+      reward-pack: zone_crystal_caverns_pack
+      reward-pack-amount: 8
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
@@ -226,6 +297,15 @@ zones:
       - { material: DEEPSLATE, max-hp: 12000, coin-value: 3000, diamond-value: 45, xp-value: 76, weight: 100 }
       - { material: DEEPSLATE_DIAMOND_ORE, max-hp: 36000, coin-value: 12000, diamond-value: 135, xp-value: 228, weight: 25 }
       - { material: DIAMOND_BLOCK, max-hp: 84000, coin-value: 36000, diamond-value: 360, xp-value: 608, weight: 5 }
+    treasure:
+      material: CHEST
+      weight: 0.6
+      max-hp: 120000
+      coin-value: 180000
+      diamond-value: 1125
+      xp-value: 1140
+      reward-pack: zone_diamond_hollow_pack
+      reward-pack-amount: 8
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
@@ -247,6 +327,15 @@ zones:
       - { material: DEEPSLATE, max-hp: 32000, coin-value: 8000, diamond-value: 90, xp-value: 95, weight: 100 }
       - { material: DEEPSLATE_EMERALD_ORE, max-hp: 96000, coin-value: 32000, diamond-value: 270, xp-value: 285, weight: 25 }
       - { material: EMERALD_BLOCK, max-hp: 224000, coin-value: 96000, diamond-value: 720, xp-value: 760, weight: 5 }
+    treasure:
+      material: CHEST
+      weight: 0.6
+      max-hp: 320000
+      coin-value: 480000
+      diamond-value: 2250
+      xp-value: 1425
+      reward-pack: zone_emerald_depths_pack
+      reward-pack-amount: 8
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
@@ -268,6 +357,15 @@ zones:
       - { material: BLACKSTONE, max-hp: 80000, coin-value: 20000, diamond-value: 170, xp-value: 120, weight: 100 }
       - { material: OBSIDIAN, max-hp: 240000, coin-value: 80000, diamond-value: 510, xp-value: 360, weight: 25 }
       - { material: CRYING_OBSIDIAN, max-hp: 560000, coin-value: 240000, diamond-value: 1360, xp-value: 960, weight: 5 }
+    treasure:
+      material: CHEST
+      weight: 0.6
+      max-hp: 800000
+      coin-value: 1200000
+      diamond-value: 4250
+      xp-value: 1800
+      reward-pack: zone_obsidian_rift_pack
+      reward-pack-amount: 8
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
@@ -289,6 +387,15 @@ zones:
       - { material: OBSIDIAN, max-hp: 200000, coin-value: 50000, diamond-value: 320, xp-value: 150, weight: 100 }
       - { material: CRYING_OBSIDIAN, max-hp: 600000, coin-value: 200000, diamond-value: 960, xp-value: 450, weight: 25 }
       - { material: NETHERITE_BLOCK, max-hp: 1400000, coin-value: 600000, diamond-value: 2560, xp-value: 1200, weight: 5 }
+    treasure:
+      material: CHEST
+      weight: 0.6
+      max-hp: 2000000
+      coin-value: 3000000
+      diamond-value: 8000
+      xp-value: 2250
+      reward-pack: zone_void_expanse_pack
+      reward-pack-amount: 8
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
@@ -310,6 +417,15 @@ zones:
       - { material: ANCIENT_DEBRIS, max-hp: 520000, coin-value: 130000, diamond-value: 600, xp-value: 185, weight: 100 }
       - { material: NETHERITE_BLOCK, max-hp: 1560000, coin-value: 520000, diamond-value: 1800, xp-value: 555, weight: 25 }
       - { material: RESPAWN_ANCHOR, max-hp: 3640000, coin-value: 1560000, diamond-value: 4800, xp-value: 1480, weight: 5 }
+    treasure:
+      material: CHEST
+      weight: 0.6
+      max-hp: 5200000
+      coin-value: 7800000
+      diamond-value: 15000
+      xp-value: 2775
+      reward-pack: zone_netherite_wastes_pack
+      reward-pack-amount: 8
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
@@ -331,6 +447,15 @@ zones:
       - { material: COBBLED_DEEPSLATE, max-hp: 1360000, coin-value: 340000, diamond-value: 1150, xp-value: 230, weight: 100 }
       - { material: ANCIENT_DEBRIS, max-hp: 4080000, coin-value: 1360000, diamond-value: 3450, xp-value: 690, weight: 25 }
       - { material: CHISELED_DEEPSLATE, max-hp: 9520000, coin-value: 4080000, diamond-value: 9200, xp-value: 1840, weight: 5 }
+    treasure:
+      material: CHEST
+      weight: 0.6
+      max-hp: 13600000
+      coin-value: 20400000
+      diamond-value: 28750
+      xp-value: 3450
+      reward-pack: zone_ancient_ruins_pack
+      reward-pack-amount: 8
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
@@ -352,6 +477,15 @@ zones:
       - { material: END_STONE, max-hp: 3500000, coin-value: 875000, diamond-value: 2200, xp-value: 290, weight: 100 }
       - { material: END_STONE_BRICKS, max-hp: 10500000, coin-value: 3500000, diamond-value: 6600, xp-value: 870, weight: 25 }
       - { material: PURPUR_BLOCK, max-hp: 24500000, coin-value: 10500000, diamond-value: 17600, xp-value: 2320, weight: 5 }
+    treasure:
+      material: CHEST
+      weight: 0.6
+      max-hp: 35000000
+      coin-value: 52500000
+      diamond-value: 55000
+      xp-value: 4350
+      reward-pack: zone_end_barrens_pack
+      reward-pack-amount: 8
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
@@ -373,6 +507,15 @@ zones:
       - { material: PURPUR_BLOCK, max-hp: 9000000, coin-value: 2250000, diamond-value: 4200, xp-value: 360, weight: 100 }
       - { material: PURPUR_PILLAR, max-hp: 27000000, coin-value: 9000000, diamond-value: 12600, xp-value: 1080, weight: 25 }
       - { material: SHULKER_BOX, max-hp: 63000000, coin-value: 27000000, diamond-value: 33600, xp-value: 2880, weight: 5 }
+    treasure:
+      material: CHEST
+      weight: 0.6
+      max-hp: 90000000
+      coin-value: 135000000
+      diamond-value: 105000
+      xp-value: 5400
+      reward-pack: zone_purpur_spires_pack
+      reward-pack-amount: 8
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
@@ -394,6 +537,15 @@ zones:
       - { material: END_STONE, max-hp: 23000000, coin-value: 5800000, diamond-value: 8000, xp-value: 450, weight: 100 }
       - { material: PURPUR_BLOCK, max-hp: 69000000, coin-value: 23200000, diamond-value: 24000, xp-value: 1350, weight: 25 }
       - { material: BEACON, max-hp: 161000000, coin-value: 69600000, diamond-value: 64000, xp-value: 3600, weight: 5 }
+    treasure:
+      material: CHEST
+      weight: 0.6
+      max-hp: 230000000
+      coin-value: 348000000
+      diamond-value: 200000
+      xp-value: 6750
+      reward-pack: zone_celestial_sanctum_pack
+      reward-pack-amount: 8
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
@@ -415,6 +567,15 @@ zones:
       - { material: GLOWSTONE, max-hp: 60000000, coin-value: 15000000, diamond-value: 15000, xp-value: 560, weight: 100 }
       - { material: SEA_LANTERN, max-hp: 180000000, coin-value: 60000000, diamond-value: 45000, xp-value: 1680, weight: 25 }
       - { material: BEACON, max-hp: 420000000, coin-value: 180000000, diamond-value: 120000, xp-value: 4480, weight: 5 }
+    treasure:
+      material: CHEST
+      weight: 0.6
+      max-hp: 600000000
+      coin-value: 900000000
+      diamond-value: 375000
+      xp-value: 8400
+      reward-pack: zone_starlight_fields_pack
+      reward-pack-amount: 8
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
@@ -436,6 +597,15 @@ zones:
       - { material: OBSIDIAN, max-hp: 152000000, coin-value: 38000000, diamond-value: 29000, xp-value: 700, weight: 100 }
       - { material: NETHERITE_BLOCK, max-hp: 456000000, coin-value: 152000000, diamond-value: 87000, xp-value: 2100, weight: 25 }
       - { material: BEACON, max-hp: 1064000000, coin-value: 456000000, diamond-value: 232000, xp-value: 5600, weight: 5 }
+    treasure:
+      material: CHEST
+      weight: 0.6
+      max-hp: 1520000000
+      coin-value: 2280000000
+      diamond-value: 725000
+      xp-value: 10500
+      reward-pack: zone_cosmic_abyss_pack
+      reward-pack-amount: 8
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
@@ -457,6 +627,15 @@ zones:
       - { material: NETHERITE_BLOCK, max-hp: 400000000, coin-value: 100000000, diamond-value: 55000, xp-value: 880, weight: 100 }
       - { material: ANCIENT_DEBRIS, max-hp: 1200000000, coin-value: 400000000, diamond-value: 165000, xp-value: 2640, weight: 25 }
       - { material: BEACON, max-hp: 2800000000, coin-value: 1200000000, diamond-value: 440000, xp-value: 7040, weight: 5 }
+    treasure:
+      material: CHEST
+      weight: 0.6
+      max-hp: 4000000000
+      coin-value: 6000000000
+      diamond-value: 1375000
+      xp-value: 13200
+      reward-pack: zone_eternal_forge_pack
+      reward-pack-amount: 8
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
@@ -478,6 +657,15 @@ zones:
       - { material: AMETHYST_BLOCK, max-hp: 1040000000, coin-value: 260000000, diamond-value: 105000, xp-value: 1100, weight: 100 }
       - { material: DIAMOND_BLOCK, max-hp: 3120000000, coin-value: 1040000000, diamond-value: 315000, xp-value: 3300, weight: 25 }
       - { material: BEACON, max-hp: 7280000000, coin-value: 3120000000, diamond-value: 840000, xp-value: 8800, weight: 5 }
+    treasure:
+      material: CHEST
+      weight: 0.6
+      max-hp: 10400000000
+      coin-value: 15600000000
+      diamond-value: 2625000
+      xp-value: 16500
+      reward-pack: zone_astral_peak_pack
+      reward-pack-amount: 8
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
@@ -499,6 +687,15 @@ zones:
       - { material: DIAMOND_BLOCK, max-hp: 2700000000, coin-value: 675000000, diamond-value: 200000, xp-value: 1400, weight: 100 }
       - { material: EMERALD_BLOCK, max-hp: 8100000000, coin-value: 2700000000, diamond-value: 600000, xp-value: 4200, weight: 25 }
       - { material: BEACON, max-hp: 18900000000, coin-value: 8100000000, diamond-value: 1600000, xp-value: 11200, weight: 5 }
+    treasure:
+      material: CHEST
+      weight: 0.6
+      max-hp: 27000000000
+      coin-value: 40500000000
+      diamond-value: 5000000
+      xp-value: 21000
+      reward-pack: zone_genesis_core_pack
+      reward-pack-amount: 8
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }

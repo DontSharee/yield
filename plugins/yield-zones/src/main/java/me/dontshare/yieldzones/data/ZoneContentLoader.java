@@ -93,6 +93,13 @@ public final class ZoneContentLoader {
             tiers.add(new CubeTier(material, Math.max(1L, maxHp), Math.max(0, coinValue), Math.max(1, diamondValue),
                     Math.max(0, xpValue), Math.max(0.01, weight)));
         }
+        CubeTier treasure = loadTreasure(section.getConfigurationSection("treasure"), id);
+        if (treasure != null) {
+            // Appended to the same weighted list the normal tiers live in, so
+            // it rolls through rollTier with no special-casing at the spawn
+            // site at all - its rarity is just its weight against theirs.
+            tiers.add(treasure);
+        }
         if (tiers.isEmpty()) {
             logger.warning("Zone '" + id + "' has no valid cube tiers - skipping zone.");
             return null;
@@ -128,6 +135,27 @@ public final class ZoneContentLoader {
     }
 
     /** Absent "unlock:" section = {@link ZoneUnlockCost#FREE} - the zone is open to everyone, no wall/purchase gate at all. */
+    /** A zone's optional treasure chest - null when the zone has no {@code treasure:} section. */
+    private CubeTier loadTreasure(ConfigurationSection section, String zoneId) {
+        if (section == null) {
+            return null;
+        }
+        Material material = Material.matchMaterial(section.getString("material", "CHEST"));
+        if (material == null) {
+            logger.warning("Zone '" + zoneId + "' has an invalid treasure material - defaulting to CHEST.");
+            material = Material.CHEST;
+        }
+        return new CubeTier(material,
+                Math.max(1L, section.getLong("max-hp", 100L)),
+                Math.max(0L, section.getLong("coin-value", 0L)),
+                Math.max(1L, section.getLong("diamond-value", 1L)),
+                Math.max(0L, section.getLong("xp-value", 0L)),
+                Math.max(0.001, section.getDouble("weight", 0.6)),
+                true,
+                section.getString("reward-pack"),
+                Math.max(0, section.getInt("reward-pack-amount", 0)));
+    }
+
     private ZoneUnlockCost loadUnlockCost(String id, ConfigurationSection section) {
         ConfigurationSection unlock = section.getConfigurationSection("unlock");
         if (unlock == null) {

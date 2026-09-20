@@ -25,6 +25,7 @@ import me.dontshare.yieldzones.event.OreCubeKilledEvent;
 import me.dontshare.yieldzones.event.ZoneEnteredEvent;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -636,7 +637,17 @@ public final class OreCubeService implements Listener {
         // centered the way a real vanilla FallingBlock entity's hitbox is.
         Location spawnAt = new Location(region.world(), x, spawnY, z);
 
-        CubeBonus bonus = rollBonus(zone, packs.getPlayerStore().getOrCreate(playerId));
+        CubeBonus rolledBonus = rollBonus(zone, packs.getPlayerStore().getOrCreate(playerId));
+        if (tier.treasure() && rolledBonus == null) {
+            // A chest must be visible from across the zone or nobody walks to
+            // it. Reusing the bonus glow rather than inventing a second
+            // highlight path means it gets the same see-through-walls outline
+            // every bonus cube already has, for free. Multiplier 1.0 so this
+            // is purely a light: a chest that ALSO rolls a real golden/diamond
+            // bonus keeps that one instead, and keeps its multiplier.
+            rolledBonus = TREASURE_GLOW;
+        }
+        final CubeBonus bonus = rolledBonus;
         pendingByPlayer.computeIfAbsent(playerId, k -> new AtomicInteger()).incrementAndGet();
         long column = packColumn(x, z);
         var blockData = tier.material().createBlockData();
@@ -667,6 +678,9 @@ public final class OreCubeService implements Listener {
     private static long packColumn(int x, int z) {
         return (((long) x) << 32) | (z & 0xFFFFFFFFL);
     }
+
+    /** The neutral, purely-cosmetic glow a treasure chest falls back to when it didn't roll a real bonus of its own - see spawnCubeFor. */
+    private static final CubeBonus TREASURE_GLOW = new CubeBonus("treasure", 0.0, 1.0, NamedTextColor.GOLD);
 
     /** Independent of tier - every spawn also rolls each configured bonus's own chance (boosted by any registered CUBE_BONUS_CHANCE upgrades, clamped to 100%); the highest-multiplier one that hits (if any) wins. Null for a plain cube. */
     private CubeBonus rollBonus(ZoneDefinition zone, PackPlayerProfile profile) {
@@ -958,6 +972,33 @@ public final class OreCubeService implements Listener {
         spawnFloatingText(viewer, center, text, DAMAGE_INDICATOR_RISE_TICKS, DAMAGE_INDICATOR_LIFETIME_TICKS);
     }
 
+    /**
+     * A chest's own reward on top of the coins/diamonds every cube pays -
+     * a stack of that zone's packs, dropped straight into pack storage.
+     * <p>
+     * Deliberately packs rather than more coins: coins are already what the
+     * chest's inflated coin-value pays, and a second pile of them would just
+     * be a bigger number. Packs are the thing a player turns into power, so
+     * a chest reads as "your squad just got better" rather than "the counter
+     * moved", and it feeds the pack-opening loop the rest of the game is
+     * built around.
+     */
+    private void grantTreasurePacks(Player player, PackPlayerProfile profile, CubeTier tier) {
+        String packId = tier.rewardPackId();
+        if (packId == null || tier.rewardPackAmount() <= 0) {
+            return;
+        }
+        profile.getStoredPacks().merge(packId, tier.rewardPackAmount(), Integer::sum);
+        String packName = packs.getPackRegistry().find(packId)
+                .map(pack -> Formatting.stripLeadingColorCodes(pack.displayName()))
+                .orElse("Pack");
+        player.sendMessage(Text.parse("<#FFD700><bold>TREASURE!</bold></#FFD700> <gray>+<amount>x</gray> <white><pack></white>",
+                Placeholder.unparsed("amount", String.valueOf(tier.rewardPackAmount())),
+                Placeholder.unparsed("pack", packName)));
+        player.playSound(player.getLocation(), Sound.BLOCK_CHEST_OPEN, 1f, 1.1f);
+        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.7f, 1.6f);
+    }
+
     /** "+<coins> coins" (and "+<diamonds> diamonds" only if any were earned), floating up from the cube on a kill - a combo of 2+ gets its own line, right where the player is already looking. */
     private void showEarningsIndicator(Player viewer, Location center, long coins, int diamondsEarned, int combo) {
         Component text = Text.parse("<#55FF7F>+<coins> coins</#55FF7F>", Placeholder.unparsed("coins", Formatting.format(coins)));
@@ -1140,6 +1181,9 @@ public final class OreCubeService implements Listener {
         if (diamondsEarned > 0) {
             diamondsEarned = (int) Math.round(diamondsEarned * packs.diamondMultiplier(profile));
             profile.setDiamonds(profile.getDiamonds().add(BigInteger.valueOf(diamondsEarned)));
+        }
+        if (tier.treasure()) {
+            grantTreasurePacks(player, profile, tier);
         }
         profile.setLifetimeCubeKills(profile.getLifetimeCubeKills() + 1);
         profile.setLifetimeCoinsEarned(profile.getLifetimeCoinsEarned().add(BigInteger.valueOf(coins)));

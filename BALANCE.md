@@ -105,6 +105,29 @@ smacking a pack station buys ten at once** — at one per click the intended
 "arrive, buy a stack, watch your damage jump" moment would be several
 hundred clicks.
 
+### Treasure chests
+
+Each zone rolls a fourth, much rarer cube tier: a gold-glowing chest at
+weight `0.6` against the normal tiers' `100/25/5`, so **1 in 218 cubes —
+about one every six minutes**. It takes ~10 seconds to break and pays about
+6× the coins per point of HP a normal cube does, plus **8 of that zone's own
+packs**.
+
+The packs rather than more coins are the point. Coins are already what the
+chest's inflated coin value pays, and a second pile of them would just be a
+bigger number; packs are what a player turns into power, so a chest reads as
+"your squad just got better".
+
+It is modelled as a cube *tier*, not a separate entity, so targeting, combo,
+the damage pipeline and the payout path all work for it unchanged.
+
+**What it costs the curve:** free packs scale with time-in-zone, and the late
+zones are long, so the last zone gets ~140% more packs than the budget alone
+would buy. Measured end to end that only compresses the whole game by **12%
+(14.9 h → 13.1 h)**, because squad damage grows as roughly packs^0.55 and the
+1-second kill floor caps what the extra damage can buy. If that is too much,
+`reward-pack-amount` in each zone's `treasure:` block is the dial.
+
 ### Why a new zone feels like a power spike
 
 You walk into a new zone carrying the **previous** zone's pets, which are
@@ -132,14 +155,14 @@ tree along the way:
 | reach | at | gap from the last |
 |---|---|---|
 | Frostpeak | 5 min | 5 min |
-| Sulfur Flats | 20 min | 8 min |
-| Crystal Caverns | 41 min | 11 min |
-| Emerald Depths | 1.2 h | 18 min |
-| Netherite Wastes | 2.0 h | 18 min |
-| End Barrens | 3.0 h | 30 min |
-| Starlight Fields | 5.9 h | 72 min |
-| Eternal Forge | 9.1 h | 114 min |
-| Genesis Core | 14.9 h | 3.4 h |
+| Sulfur Flats | 18 min | 7 min |
+| Crystal Caverns | 36 min | 10 min |
+| Emerald Depths | 1.0 h | 12 min |
+| Netherite Wastes | 1.8 h | 18 min |
+| End Barrens | 2.7 h | 30 min |
+| Starlight Fields | 5.2 h | 66 min |
+| Eternal Forge | 8.0 h | 96 min |
+| Genesis Core | 13.1 h | 3.0 h |
 
 **Five zones inside the first half hour**, and a final zone that is a
 multi-session goal — the gap between unlocks grows about 40× across the
@@ -201,9 +224,9 @@ Measured pace to the final zone, from the same playthrough simulation:
 
 | | time to Genesis Core | vs free |
 |---|---|---|
-| free | 14.9 h | 1.0× |
-| VIP | 6.7 h | 2.2× |
-| Celestial | 2.1 h | 7.1× |
+| free | 13.1 h | 1.0× |
+| VIP | 5.9 h | 2.2× |
+| Celestial | 1.8 h | 7.3× |
 
 One thing worth knowing, because it is counter-intuitive: **the +20 / +80 pet
 slots are not where that advantage comes from.** Once duplicates auto-fuse,
@@ -258,6 +281,7 @@ Turn these, in roughly this order, when something feels off:
 | Cubes die too fast, combat feels flat | Raise `max-hp` relative to `coin-value` (currently 4×) |
 | Cubes are spongy | Lower `max-hp`, or raise the zone pack's pet damage |
 | No power spike on entering a zone | Lower the zone's pack cost so a new squad comes together faster |
+| Chests too frequent / too generous | `weight` and `reward-pack-amount` in each zone's `treasure:` block |
 | Rebirth stops mattering | `growth` in `rebirth.yml` (higher = fewer, bigger rebirths) |
 | Upgrades get maxed and forgotten | `cost-growth` in `yield-upgrades/upgrades.yml`, and the station `cap` ladder |
 
