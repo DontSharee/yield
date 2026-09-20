@@ -127,19 +127,19 @@ public final class DonationGoalService {
         // Only the whole-dollar figure and the goal count are ever shown, so
         // rebuilding the title for every credit would be churn nobody sees.
         String key = (long) current.dollarsTowardGoal() + "/" + current.goalsCompleted();
-        BossBar current_bar = bar;
-        if (current_bar == null) {
-            current_bar = BossBar.bossBar(titleFor(current), current.goalProgress(),
+        BossBar visible = bar;
+        if (visible == null) {
+            visible = BossBar.bossBar(titleFor(current), current.goalProgress(),
                     BossBar.Color.YELLOW, BossBar.Overlay.NOTCHED_10);
-            bar = current_bar;
+            bar = visible;
             renderedTitleKey = key;
         } else if (!key.equals(renderedTitleKey)) {
-            current_bar.name(titleFor(current));
-            current_bar.progress(current.goalProgress());
+            visible.name(titleFor(current));
+            visible.progress(current.goalProgress());
             renderedTitleKey = key;
         }
         for (Player player : Bukkit.getOnlinePlayers()) {
-            player.showBossBar(current_bar);
+            player.showBossBar(visible);
         }
     }
 

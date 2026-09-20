@@ -124,8 +124,33 @@ public final class PetInstance {
         return activeUniqueEnchants;
     }
 
-    /** Still at baseline (never equipped-and-fought, never fed candy) - interchangeable with any other baseline copy of the same item id. Fusion/bulk-delete only ever touch these. */
+    /**
+     * Still at baseline - genuinely interchangeable with any other baseline
+     * copy of the same item id, so the Bag may stack them into one slot and
+     * fusion/bulk-delete may consume them without asking which one.
+     * <p>
+     * "Interchangeable" has to mean EVERY permanent thing that can make one
+     * copy different from another, not just its level:
+     * <ul>
+     *   <li>level/xp/bonusLevelCap - fought with, or fed candy</li>
+     *   <li>{@link #isShiny()} - a Shiny is a different pet to its owner and
+     *       hits harder; stacking one in with plain copies would show the
+     *       wrong badge and could feed it to a fusion by accident</li>
+     *   <li>forge and enchant bonuses - both can be applied to a bagged,
+     *       never-levelled pet, so a level-1 pet can still be carrying
+     *       permanent, irreplaceable stats</li>
+     * </ul>
+     * The last two were missing, and the consequence was not cosmetic:
+     * bulk-delete-by-rarity and fusion both consume baseline pets, so an
+     * enchanted or forged level-1 pet could be destroyed without warning.
+     */
     public boolean isBaseline() {
-        return level <= 1 && xp == 0 && bonusLevelCap == 0;
+        return level <= 1
+                && xp == 0
+                && bonusLevelCap == 0
+                && !shiny
+                && forgeBonuses.isEmpty()
+                && enchantBonuses.isEmpty()
+                && activeUniqueEnchants.isEmpty();
     }
 }

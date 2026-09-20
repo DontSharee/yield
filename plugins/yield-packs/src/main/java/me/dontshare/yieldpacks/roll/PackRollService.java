@@ -147,12 +147,18 @@ public final class PackRollService {
         return WeightedRandom.pick(candidates, HugeCandidate::probability).huge();
     }
 
-    /** A uniformly-random base-form (non-fused) Exclusive-rarity item, or null if none are configured. */
-    private ItemDefinition rollRandomExclusive() {
-        List<ItemDefinition> exclusives = content.get().items().all().stream()
+    /** Every base-form (non-fused, non-Huge) Exclusive-rarity item - the pool the blocktree find-perk picks uniformly from. */
+    private List<ItemDefinition> baseExclusives() {
+        return content.get().items().all().stream()
                 .filter(item -> item.fusionTier() == FusionTier.NORMAL)
+                .filter(item -> !item.huge())
                 .filter(item -> "exclusive".equals(item.rarityId()))
                 .toList();
+    }
+
+    /** A uniformly-random base-form Exclusive-rarity item, or null if none are configured. */
+    private ItemDefinition rollRandomExclusive() {
+        List<ItemDefinition> exclusives = baseExclusives();
         if (exclusives.isEmpty()) {
             return null;
         }
@@ -303,10 +309,12 @@ public final class PackRollService {
         double luckMultiplier = luckService.totalLuckMultiplier(profile) * pityService.multiplierFor(profile.getRollCount());
         ItemDefinition rolled = rollOne(pack, luckMultiplier);
         double exclusiveChance = totalExclusiveFindChance(profile);
+        boolean fromExclusiveFind = false;
         if (exclusiveChance > 0 && ThreadLocalRandom.current().nextDouble() < exclusiveChance) {
             ItemDefinition exclusiveOverride = rollRandomExclusive();
             if (exclusiveOverride != null) {
                 rolled = exclusiveOverride;
+                fromExclusiveFind = true;
             }
         }
         // Huge replaces whatever came up, and is luck-scaled: investing in
@@ -328,7 +336,7 @@ public final class PackRollService {
         // player's own Best Luck record. A Huge's odds are its own chance
         // times the odds of the pet it landed on, because you had to clear
         // both - which is what makes a Huge secret a genuinely absurd number.
-        long oneIn = oneInFor(pack, luckMultiplier, rolled, huge, variants);
+        long oneIn = oneInFor(pack, luckMultiplier, rolled, huge, fromExclusiveFind, exclusiveChance, variants);
 
         boolean firstTime = !hasCollected(profile, packId, rolled.id());
         var newPet = profile.addOwnedItem(packId, rolled.id());
@@ -391,9 +399,16 @@ public final class PackRollService {
      * than overflowing a leaderboard column.
      */
     private long oneInFor(PackDefinition pack, double luckMultiplier, ItemDefinition rolled,
-                           boolean huge, VariantConfig variants) {
+                           boolean huge, boolean fromExclusiveFind, double exclusiveChance, VariantConfig variants) {
         double probability;
-        if (huge) {
+        if (fromExclusiveFind && !huge) {
+            // An Exclusive handed over by yield-blocktree's find-perk is NOT
+            // in this pack's pool, so looking it up there would find nothing
+            // and report "1 in 1". Its real odds are the perk's own chance
+            // divided by how many Exclusives it picks uniformly between.
+            int exclusives = baseExclusives().size();
+            probability = exclusives > 0 ? exclusiveChance / exclusives : 0.0;
+        } else if (huge) {
             // Two independent gates: the Huge proc itself, then which Huge it
             // landed on among this pack's eligible weights.
             double share = hugeCandidatesFor(pack).stream()
