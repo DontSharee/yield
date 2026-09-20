@@ -1532,6 +1532,29 @@ items:
     track-exists: true
 
 packs:
+  # --- The merchant ladder (the rotating shop, see ShopStockService) ---
+  #
+  # Ten rungs, each drawing from a three-zone window of the zone ladder
+  # below: its commons/uncommons come from the window's first zone, its
+  # rares/epic from the middle one, and its legendary/mythic/secret from
+  # the last - so buying here is buying a pack from roughly two zones
+  # ahead of where the window starts, which is the merchant's whole point.
+  # Each also carries the merchant-only pets (Stray Cat, Cosmic Leviathan,
+  # Eternal Sovereign, ...) that exist in no zone, parked on the rung whose
+  # damage window their own damage actually fits.
+  #
+  # These used to be ten copies of ONE pool - the same twelve pets at the
+  # same weights from the 25-coin Starter Pack to the 20-billion Titan
+  # Pack, which meant a Titan Pack was a 24% chance of a 3-damage Stray Cat
+  # and cost about 10,000x more per point of damage than the zone pack a
+  # player could buy at the same moment.
+  #
+  # Price is 1.5x the middle zone's own pack (starter excepted - it is the
+  # on-ramp). That lands the merchant at roughly 0.9-1.25x the zone pack's
+  # value per coin measured the way it is actually spent, on the best pet
+  # out of a run of opens rather than the average one, which is the right
+  # place for a channel that sells you pets you cannot reach yet and is
+  # rate-limited by stock besides.
   starter_pack:
     display-name: "&fStarter Pack"
     material: CHEST
@@ -1542,231 +1565,240 @@ packs:
     shop-luck-exponent: 0.0
     min-stock: 5
     max-stock: 10
+    # zones 1-2 (meadow -> frostpeak)
     pool:
+      - { item: zone_meadow_field_mouse, weight: 100 }
+      - { item: zone_meadow_meadow_hare, weight: 100 }
+      - { item: zone_meadow_swift_fox, weight: 40 }
+      - { item: zone_meadow_spotted_doe, weight: 40 }
+      - { item: zone_meadow_iron_ram, weight: 15 }
+      - { item: zone_meadow_storm_falcon, weight: 15 }
+      - { item: zone_meadow_meadow_champion, weight: 4 }
+      - { item: zone_frostpeak_sovereign_yeti, weight: 1 }
+      - { item: zone_frostpeak_glacial_wyrm, weight: 0.25 }
+      - { item: zone_frostpeak_primordial_frostking, weight: 0.02 }
       - { item: stray_cat, weight: 100 }
       - { item: puppy, weight: 100 }
       - { item: bunny, weight: 100 }
       - { item: arctic_fox, weight: 40 }
       - { item: tabby_cat, weight: 40 }
-      - { item: golden_retriever, weight: 15 }
-      - { item: emerald_lizard, weight: 15 }
-      - { item: diamond_wolf, weight: 4 }
-      - { item: obsidian_panther, weight: 4 }
-      - { item: star_dragon, weight: 1 }
-      - { item: void_serpent, weight: 0.25 }
-      - { item: wandering_voidling, weight: 0.02 }
   common_pack:
     display-name: "&7Common Pack"
     material: CHEST
-    coin-cost: 150
+    coin-cost: 1000
     diamond-cost: 0
     sort: 1
     shop-weight: 90
     shop-luck-exponent: 0.1
     min-stock: 5
     max-stock: 10
+    # zones 3-5 (iron_foothills -> scorched_wastes)
     pool:
-      - { item: stray_cat, weight: 100 }
-      - { item: puppy, weight: 100 }
-      - { item: bunny, weight: 100 }
-      - { item: arctic_fox, weight: 40 }
-      - { item: tabby_cat, weight: 40 }
+      - { item: zone_iron_foothills_stone_badger, weight: 100 }
+      - { item: zone_iron_foothills_hill_boar, weight: 100 }
+      - { item: zone_iron_foothills_swift_goat, weight: 40 }
+      - { item: zone_iron_foothills_spotted_marmot, weight: 40 }
+      - { item: zone_sulfur_flats_iron_basilisk, weight: 15 }
+      - { item: zone_sulfur_flats_storm_adder, weight: 15 }
+      - { item: zone_sulfur_flats_sulfur_flats_champion, weight: 4 }
+      - { item: zone_scorched_wastes_sovereign_djinn, weight: 1 }
+      - { item: zone_scorched_wastes_blazing_phoenix, weight: 0.25 }
+      - { item: zone_scorched_wastes_primordial_cinderking, weight: 0.02 }
       - { item: golden_retriever, weight: 15 }
       - { item: emerald_lizard, weight: 15 }
-      - { item: diamond_wolf, weight: 4 }
-      - { item: obsidian_panther, weight: 4 }
-      - { item: star_dragon, weight: 1 }
-      - { item: void_serpent, weight: 0.25 }
-      - { item: wandering_voidling, weight: 0.02 }
+      - { item: crimson_falcon, weight: 15 }
   uncommon_pack:
     display-name: "&aUncommon Pack"
     material: TRAPPED_CHEST
-    coin-cost: 1500
+    coin-cost: 15000
     diamond-cost: 0
     sort: 2
     shop-weight: 40
     shop-luck-exponent: 0.3
     min-stock: 3
     max-stock: 6
+    # zones 5-7 (scorched_wastes -> diamond_hollow)
     pool:
-      - { item: stray_cat, weight: 100 }
-      - { item: puppy, weight: 100 }
-      - { item: bunny, weight: 100 }
-      - { item: arctic_fox, weight: 40 }
-      - { item: tabby_cat, weight: 40 }
-      - { item: golden_retriever, weight: 15 }
-      - { item: emerald_lizard, weight: 15 }
+      - { item: zone_scorched_wastes_ash_jackal, weight: 100 }
+      - { item: zone_scorched_wastes_waste_vulture, weight: 100 }
+      - { item: zone_scorched_wastes_swift_salamander, weight: 40 }
+      - { item: zone_scorched_wastes_spotted_cobra, weight: 40 }
+      - { item: zone_crystal_caverns_iron_golem, weight: 15 }
+      - { item: zone_crystal_caverns_storm_wraith, weight: 15 }
+      - { item: zone_crystal_caverns_crystal_caverns_champion, weight: 4 }
+      - { item: zone_diamond_hollow_sovereign_titan, weight: 1 }
+      - { item: zone_diamond_hollow_adamant_colossus, weight: 0.25 }
+      - { item: zone_diamond_hollow_primordial_vaultking, weight: 0.02 }
       - { item: diamond_wolf, weight: 4 }
       - { item: obsidian_panther, weight: 4 }
-      - { item: phoenix_hatchling, weight: 1 }
-      - { item: celestial_griffin, weight: 0.25 }
-      - { item: wandering_voidling, weight: 0.02 }
   value_pack:
     display-name: "&eValue Pack"
     material: BARREL
-    coin-cost: 8000
+    coin-cost: 150000
     diamond-cost: 0
     sort: 3
     shop-weight: 20
     shop-luck-exponent: 0.4
     min-stock: 2
     max-stock: 4
+    # zones 7-9 (diamond_hollow -> obsidian_rift)
     pool:
-      - { item: stray_cat, weight: 100 }
-      - { item: puppy, weight: 100 }
-      - { item: bunny, weight: 100 }
-      - { item: arctic_fox, weight: 40 }
-      - { item: tabby_cat, weight: 40 }
-      - { item: emerald_lizard, weight: 15 }
-      - { item: crimson_falcon, weight: 15 }
-      - { item: diamond_wolf, weight: 4 }
-      - { item: obsidian_panther, weight: 4 }
+      - { item: zone_diamond_hollow_hollow_beetle, weight: 100 }
+      - { item: zone_diamond_hollow_diamond_mole, weight: 100 }
+      - { item: zone_diamond_hollow_swift_wyrm, weight: 40 }
+      - { item: zone_diamond_hollow_spotted_roach, weight: 40 }
+      - { item: zone_emerald_depths_iron_chimera, weight: 15 }
+      - { item: zone_emerald_depths_storm_hydra, weight: 15 }
+      - { item: zone_emerald_depths_emerald_depths_champion, weight: 4 }
+      - { item: zone_obsidian_rift_sovereign_abomination, weight: 1 }
+      - { item: zone_obsidian_rift_shattered_colossus, weight: 0.25 }
+      - { item: zone_obsidian_rift_primordial_riftking, weight: 0.02 }
       - { item: star_dragon, weight: 1 }
+      - { item: phoenix_hatchling, weight: 1 }
       - { item: void_serpent, weight: 0.25 }
-      - { item: ashen_devourer, weight: 0.02 }
+      - { item: celestial_griffin, weight: 0.25 }
   rare_pack:
     display-name: "&9Rare Pack"
     material: ENDER_CHEST
-    coin-cost: 30000
-    diamond-cost: 40
+    coin-cost: 3000000
+    diamond-cost: 100
     sort: 4
     shop-weight: 15
     shop-luck-exponent: 0.6
     min-stock: 1
     max-stock: 3
+    # zones 9-11 (obsidian_rift -> netherite_wastes)
     pool:
-      - { item: stray_cat, weight: 100 }
-      - { item: puppy, weight: 100 }
-      - { item: bunny, weight: 100 }
-      - { item: arctic_fox, weight: 40 }
-      - { item: tabby_cat, weight: 40 }
-      - { item: emerald_lizard, weight: 15 }
-      - { item: crimson_falcon, weight: 15 }
-      - { item: diamond_wolf, weight: 4 }
-      - { item: obsidian_panther, weight: 4 }
-      - { item: star_dragon, weight: 1 }
-      - { item: void_serpent, weight: 0.25 }
-      - { item: ashen_devourer, weight: 0.02 }
+      - { item: zone_obsidian_rift_rift_raven, weight: 100 }
+      - { item: zone_obsidian_rift_obsidian_imp, weight: 100 }
+      - { item: zone_obsidian_rift_swift_gargoyle, weight: 40 }
+      - { item: zone_obsidian_rift_spotted_wraith, weight: 40 }
+      - { item: zone_void_expanse_iron_collapsar, weight: 15 }
+      - { item: zone_void_expanse_storm_wraith, weight: 15 }
+      - { item: zone_void_expanse_void_expanse_champion, weight: 4 }
+      - { item: zone_netherite_wastes_sovereign_overlord, weight: 1 }
+      - { item: zone_netherite_wastes_infernal_juggernaut, weight: 0.25 }
+      - { item: zone_netherite_wastes_primordial_netherking, weight: 0.02 }
+      - { item: cosmic_leviathan, weight: 0.1 }
   jackpot_pack:
     display-name: "&d&lJackpot Pack"
     material: SHULKER_BOX
-    coin-cost: 250000
-    diamond-cost: 0
+    coin-cost: 40000000
+    diamond-cost: 750
     sort: 5
     shop-weight: 3
     shop-luck-exponent: 1.0
     min-stock: 1
     max-stock: 2
+    # zones 11-13 (netherite_wastes -> end_barrens)
     pool:
-      - { item: stray_cat, weight: 100 }
-      - { item: puppy, weight: 100 }
-      - { item: bunny, weight: 100 }
-      - { item: arctic_fox, weight: 40 }
-      - { item: tabby_cat, weight: 40 }
-      - { item: golden_retriever, weight: 15 }
-      - { item: crimson_falcon, weight: 15 }
-      - { item: diamond_wolf, weight: 4 }
-      - { item: obsidian_panther, weight: 4 }
-      - { item: phoenix_hatchling, weight: 1 }
-      - { item: void_serpent, weight: 0.25 }
-      - { item: ashen_devourer, weight: 0.02 }
+      - { item: zone_netherite_wastes_waste_piglet, weight: 100 }
+      - { item: zone_netherite_wastes_netherite_hound, weight: 100 }
+      - { item: zone_netherite_wastes_swift_ghast, weight: 40 }
+      - { item: zone_netherite_wastes_spotted_brute, weight: 40 }
+      - { item: zone_ancient_ruins_iron_guardian, weight: 15 }
+      - { item: zone_ancient_ruins_storm_pharaoh, weight: 15 }
+      - { item: zone_ancient_ruins_ancient_ruins_champion, weight: 4 }
+      - { item: zone_end_barrens_sovereign_warden, weight: 1 }
+      - { item: zone_end_barrens_endless_herald, weight: 0.25 }
+      - { item: zone_end_barrens_primordial_endking, weight: 0.02 }
+      - { item: void_empress, weight: 0.1 }
+      - { item: wandering_voidling, weight: 0.02 }
   epic_pack:
     display-name: "&5Epic Pack"
     material: SHULKER_BOX
-    coin-cost: 1000000
-    diamond-cost: 300
+    coin-cost: 400000000
+    diamond-cost: 4000
     sort: 6
     shop-weight: 6
     shop-luck-exponent: 0.8
     min-stock: 1
     max-stock: 2
+    # zones 13-15 (end_barrens -> celestial_sanctum)
     pool:
-      - { item: stray_cat, weight: 100 }
-      - { item: puppy, weight: 100 }
-      - { item: bunny, weight: 100 }
-      - { item: arctic_fox, weight: 40 }
-      - { item: tabby_cat, weight: 40 }
-      - { item: golden_retriever, weight: 15 }
-      - { item: crimson_falcon, weight: 15 }
-      - { item: diamond_wolf, weight: 4 }
-      - { item: obsidian_panther, weight: 4 }
-      - { item: star_dragon, weight: 1 }
-      - { item: celestial_griffin, weight: 0.25 }
+      - { item: zone_end_barrens_barren_enderling, weight: 100 }
+      - { item: zone_end_barrens_end_shulker, weight: 100 }
+      - { item: zone_end_barrens_swift_wraith, weight: 40 }
+      - { item: zone_end_barrens_spotted_warden, weight: 40 }
+      - { item: zone_purpur_spires_iron_seraph, weight: 15 }
+      - { item: zone_purpur_spires_storm_oracle, weight: 15 }
+      - { item: zone_purpur_spires_purpur_spires_champion, weight: 4 }
+      - { item: zone_celestial_sanctum_sovereign_archangel, weight: 1 }
+      - { item: zone_celestial_sanctum_divine_seraph, weight: 0.25 }
+      - { item: zone_celestial_sanctum_primordial_sanctumking, weight: 0.02 }
       - { item: ashen_devourer, weight: 0.02 }
   legendary_pack:
     display-name: "&6&lLegendary Pack"
     material: YELLOW_SHULKER_BOX
-    coin-cost: 10000000
-    diamond-cost: 2000
+    coin-cost: 4000000000
+    diamond-cost: 25000
     sort: 7
     shop-weight: 2
     shop-luck-exponent: 1.0
     min-stock: 1
     max-stock: 1
+    # zones 15-17 (celestial_sanctum -> cosmic_abyss)
     pool:
-      - { item: stray_cat, weight: 100 }
-      - { item: puppy, weight: 100 }
-      - { item: bunny, weight: 100 }
-      - { item: arctic_fox, weight: 40 }
-      - { item: tabby_cat, weight: 40 }
-      - { item: golden_retriever, weight: 15 }
-      - { item: crimson_falcon, weight: 15 }
-      - { item: diamond_wolf, weight: 4 }
-      - { item: obsidian_panther, weight: 4 }
-      - { item: phoenix_hatchling, weight: 1 }
-      - { item: void_serpent, weight: 0.25 }
+      - { item: zone_celestial_sanctum_sanctum_dove, weight: 100 }
+      - { item: zone_celestial_sanctum_celestial_cherub, weight: 100 }
+      - { item: zone_celestial_sanctum_swift_paladin, weight: 40 }
+      - { item: zone_celestial_sanctum_spotted_seraph, weight: 40 }
+      - { item: zone_starlight_fields_iron_constellation, weight: 15 }
+      - { item: zone_starlight_fields_storm_cosmos, weight: 15 }
+      - { item: zone_starlight_fields_starlight_fields_champion, weight: 4 }
+      - { item: zone_cosmic_abyss_sovereign_eclipse, weight: 1 }
+      - { item: zone_cosmic_abyss_boundless_leviathan, weight: 0.25 }
+      - { item: zone_cosmic_abyss_primordial_cosmicking, weight: 0.02 }
       - { item: eternal_sovereign, weight: 0.02 }
   mythic_pack:
     display-name: "&d&lMythic Pack"
     material: PURPLE_SHULKER_BOX
-    coin-cost: 300000000
-    diamond-cost: 30000
+    coin-cost: 40000000000
+    diamond-cost: 150000
     sort: 8
     shop-weight: 0.5
     shop-luck-exponent: 1.3
     min-stock: 1
     max-stock: 1
+    # zones 17-19 (cosmic_abyss -> astral_peak)
     pool:
-      - { item: stray_cat, weight: 100 }
-      - { item: puppy, weight: 100 }
-      - { item: bunny, weight: 100 }
-      - { item: arctic_fox, weight: 40 }
-      - { item: tabby_cat, weight: 40 }
-      - { item: golden_retriever, weight: 15 }
-      - { item: crimson_falcon, weight: 15 }
-      - { item: diamond_wolf, weight: 4 }
-      - { item: obsidian_panther, weight: 4 }
-      - { item: star_dragon, weight: 1 }
-      - { item: celestial_griffin, weight: 0.25 }
-      - { item: eternal_sovereign, weight: 0.02 }
-  # Renamed from "Exclusive Pack" - Exclusive-rarity pets (Cosmic Leviathan)
-  # no longer drop from any normal pack; they're only obtainable through
-  # yield-blocktree's exclusive-find-chance perk and lootboxes. This slot now
-  # sells Huge pets instead - see the "huge"/"huge-damage-percent" items
-  # above (huge_diamond_wolf/huge_star_dragon/huge_void_serpent).
+      - { item: zone_cosmic_abyss_abyss_nebula, weight: 100 }
+      - { item: zone_cosmic_abyss_cosmic_voidling, weight: 100 }
+      - { item: zone_cosmic_abyss_swift_wraith, weight: 40 }
+      - { item: zone_cosmic_abyss_spotted_leviathan, weight: 40 }
+      - { item: zone_eternal_forge_iron_inferno, weight: 15 }
+      - { item: zone_eternal_forge_storm_creator, weight: 15 }
+      - { item: zone_eternal_forge_eternal_forge_champion, weight: 4 }
+      - { item: zone_astral_peak_sovereign_griffin, weight: 1 }
+      - { item: zone_astral_peak_ascendant_djinn, weight: 0.25 }
+      - { item: zone_astral_peak_primordial_astralking, weight: 0.02 }
+  # The top rung: the last three zones' pets, two of which most buyers will
+  # not have unlocked yet. It used to list three Huges directly in its pool
+  # instead, from back when Huges were hand-authored items; they are rolled
+  # by the flat chase chance now (see "huge" above), on this pack and every
+  # other one alike.
   titan_pack:
     display-name: "&b&lTitan Pack"
     material: CYAN_SHULKER_BOX
-    coin-cost: 20000000000
-    diamond-cost: 500000
+    coin-cost: 150000000000
+    diamond-cost: 400000
     sort: 9
     shop-weight: 0.05
     shop-luck-exponent: 1.6
     min-stock: 1
     max-stock: 1
+    # zones 18-20 (eternal_forge -> genesis_core)
     pool:
-      - { item: stray_cat, weight: 100 }
-      - { item: puppy, weight: 100 }
-      - { item: bunny, weight: 100 }
-      - { item: arctic_fox, weight: 40 }
-      - { item: tabby_cat, weight: 40 }
-      - { item: golden_retriever, weight: 15 }
-      - { item: crimson_falcon, weight: 15 }
-      - { item: diamond_wolf_huge, weight: 4 }
-      - { item: obsidian_panther, weight: 4 }
-      - { item: star_dragon_huge, weight: 1 }
-      - { item: void_serpent_huge, weight: 0.25 }
-      - { item: eternal_sovereign, weight: 0.02 }
+      - { item: zone_eternal_forge_forge_ember, weight: 100 }
+      - { item: zone_eternal_forge_eternal_smith, weight: 100 }
+      - { item: zone_eternal_forge_swift_golem, weight: 40 }
+      - { item: zone_eternal_forge_spotted_forgemaster, weight: 40 }
+      - { item: zone_astral_peak_iron_ascendant, weight: 15 }
+      - { item: zone_astral_peak_storm_zenith, weight: 15 }
+      - { item: zone_astral_peak_astral_peak_champion, weight: 4 }
+      - { item: zone_genesis_core_sovereign_architect, weight: 1 }
+      - { item: zone_genesis_core_absolute_progenitor, weight: 0.25 }
+      - { item: zone_genesis_core_primordial_genesisking, weight: 0.02 }
 
   # --- Zone packs (see plugins/yield-zones/src/main/resources/zones.yml) ---
   # One dedicated pack per zone, sold only at that zone's own physical
@@ -2261,5 +2293,10 @@ packs:
       - { item: zone_genesis_core_sovereign_architect, weight: 15 }
       - { item: zone_genesis_core_absolute_progenitor, weight: 8 }
       - { item: zone_genesis_core_primordial_genesisking, weight: 1 }
-      - { item: cosmic_leviathan, weight: 3 }
-      - { item: void_empress, weight: 3 }
+      # The cache's headline, and the one place a Huge is sold rather than
+      # chased: won from this pool at this weight, so it reports the odds it
+      # actually beat (see PackRollService#rollInPlace). These two slots used
+      # to hold Cosmic Leviathan and Void Empress - 1,200 and 2,500 damage,
+      # in a pack whose weakest pet hits for 1,250,000.
+      - { item: zone_genesis_core_sovereign_architect_huge, weight: 1 }
+      - { item: zone_genesis_core_absolute_progenitor_huge, weight: 1 }

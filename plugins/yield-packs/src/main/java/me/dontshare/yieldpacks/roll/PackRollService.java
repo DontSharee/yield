@@ -368,20 +368,27 @@ public final class PackRollService {
         // whichever lands last is what you get, and Huge is the rarer of the
         // two by orders of magnitude.
         VariantConfig variants = content.get().variants();
-        boolean huge = false;
+        boolean hugeProc = false;
         double hugeChance = variants.hugeChance() * luckMultiplier;
         if (hugeChance > 0 && ThreadLocalRandom.current().nextDouble() < hugeChance) {
             ItemDefinition hugeOverride = rollHuge(pack);
             if (hugeOverride != null) {
                 rolled = hugeOverride;
-                huge = true;
+                hugeProc = true;
             }
         }
         // What this pull was worth beating, for the reveal and for the
         // player's own Best Luck record. A Huge's odds are its own chance
         // times the odds of the pet it landed on, because you had to clear
         // both - which is what makes a Huge secret a genuinely absurd number.
-        long oneIn = oneInFor(pack, luckMultiplier, rolled, huge, fromExclusiveFind, exclusiveChance, variants);
+        long oneIn = oneInFor(pack, luckMultiplier, rolled, hugeProc, fromExclusiveFind, exclusiveChance, variants);
+        // A pack may also list a Huge in its pool outright (the black
+        // market's Genesis Cache does) - that is a Huge to the player and
+        // to the broadcast, but NOT to the odds math above: it was won from
+        // the pool at the pool's own weight, never through the 1-in-2,500
+        // proc, and charging it for a gate it never passed would print a
+        // number ten thousand times rarer than the pull really was.
+        boolean huge = hugeProc || rolled.huge();
 
         boolean firstTime = !hasCollected(profile, packId, rolled.id());
         var newPet = profile.addOwnedItem(packId, rolled.id());

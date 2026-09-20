@@ -141,6 +141,62 @@ station as the thing that closes the gap.
 
 ---
 
+## 2b. The merchant ladder — the rotating shop
+
+Two separate channels sell packs, and they answer different questions.
+
+**Zone packs** (`zone_<id>_pack`) are the ladder. One per zone, sold at that
+zone's own physical station for a fixed price, unlimited supply, ten pets
+scaled to that zone (`×1 / ×1.6 / ×3 / ×6 / ×12 / ×26 / ×100` off the zone's
+baseline damage, at weights `100/100/40/40/15/15/4/1/0.25/0.02`). This is
+what the pacing model in §3 assumes a player buys, and it is the only pack
+channel that matters for time-to-zone.
+
+**Merchant packs** (Starter → Titan) are the rotating shop's ten rungs. Each
+draws from a **three-zone window**: commons and uncommons from the window's
+first zone, rares and the epic from its middle, legendary/mythic/secret from
+its last. So a merchant pack is a pack from roughly two zones ahead, at the
+cost of a worse floor. Each rung also carries the **merchant-only pets** —
+Stray Cat, Golden Retriever, Cosmic Leviathan, Eternal Sovereign and the
+rest, which belong to no zone — parked on the rung whose damage window their
+own damage fits.
+
+| rung | zones | cost | mean dmg | ceiling |
+|---|---|---|---|---|
+| Starter | 1–2 | 25 | 3 | 100 |
+| Common | 3–5 | 1,000 | 5 | 800 |
+| Uncommon | 5–7 | 15,000 | 16 | 3,000 |
+| Value | 7–9 | 150,000 | 63 | 15,000 |
+| Rare | 9–11 | 3,000,000 (+100💎) | 304 | 60,000 |
+| Jackpot | 11–13 | 40,000,000 (+750💎) | 1,362 | 300,000 |
+| Epic | 13–15 | 400,000,000 (+4,000💎) | 7,315 | 2,000,000 |
+| Legendary | 15–17 | 4,000,000,000 (+25,000💎) | 40,478 | 8,000,000 |
+| Mythic | 17–19 | 40,000,000,000 (+150,000💎) | 188,061 | 50,000,000 |
+| Titan | 18–20 | 150,000,000,000 (+400,000💎) | 470,153 | 125,000,000 |
+
+Price is **1.5× the window's middle zone's own pack**, and the diamond side
+-cost is 15% of the coin price converted at that zone's own coin-per-diamond
+income ratio.
+
+The 1.5× was chosen against the metric that actually decides whether a pack
+was worth buying: not the mean pull, but **the best pull out of a run of
+opens**, since a player equips their best pets and fuses the rest. Measured
+as `E[max damage over 50 opens] per coin`, the merchant lands at 0.86–1.26×
+the zone pack of its middle zone — parity, paid for with a worse floor, and
+bought with the upside of pets from zones you have not unlocked yet. Stock
+limits (1–10 per 5-minute cycle, 1 for the top rungs) keep it a treat rather
+than a staple.
+
+**What this replaced.** All ten rungs were literally the same pool: the same
+twelve pets at the same twelve weights, from the 25-coin Starter Pack to the
+20-billion Titan Pack. A Titan Pack was a 24% chance of a 3-damage Stray Cat.
+Measured per point of mean damage it cost `1.78×10⁹` coins against the zone
+pack's `85,000` at the same moment — about **20,900× worse** — and the
+ladder's mean damage never moved off ~6 across four orders of magnitude of
+price.
+
+---
+
 ## 3. The pacing curve
 
 The unlock ladder is a uniform **~4× per zone**, every step a round number.
@@ -208,6 +264,9 @@ Worth recording, because several of these were not "tuning" problems.
   payout was worth more than the first nine zone unlocks combined.
 - **Block-tree goals were unreachable.** 2,500,000 Stone breaks, in a zone a
   player passes through in four minutes (~120 Stone).
+- **The whole merchant ladder was one pool copied ten times.** See §2b —
+  every rung from 25 coins to 20 billion offered the same twelve pets at the
+  same weights.
 - **Zone pack prices had no relationship to zone income.** They were derived
   from the income a *settled* squad earns, but you need the packs in order to
   become settled — so in the middle zones a player could afford about three

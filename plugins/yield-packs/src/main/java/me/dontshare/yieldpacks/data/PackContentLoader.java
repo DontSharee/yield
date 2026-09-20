@@ -167,9 +167,12 @@ public final class PackContentLoader {
      * keeping them in the config by hand would mean a hundred near-identical
      * blocks that drift out of sync with their own base pet.
      * <p>
-     * A Huge is never in a pack's {@code pool:}. It can only arrive by
-     * replacing a normal roll (see {@code PackRollService}), which is what
-     * makes it a surprise rather than a line item in an odds table.
+     * A Huge normally arrives by replacing a normal roll (see {@code
+     * PackRollService}), not as a line in an odds table - that is what makes
+     * it a surprise. A pack may still list one in its {@code pool:} on
+     * purpose, which is how the black market's Genesis Cache sells one; such
+     * a pull is a Huge to the player and to the broadcast, but keeps the
+     * pool's own odds rather than the chase's.
      */
     private void addHugeVariants(Map<String, ItemDefinition> items, VariantConfig variants) {
         for (ItemDefinition base : List.copyOf(items.values())) {

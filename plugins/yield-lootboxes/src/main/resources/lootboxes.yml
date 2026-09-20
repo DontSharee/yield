@@ -38,7 +38,7 @@ boxes:
       - { type: flat-diamonds, weight: 25, amount: 25000 }
       - { type: flat-credits, weight: 15, amount: 50 }
       - { type: pet, weight: 15, pet-item: void_serpent }
-      - { type: pet, weight: 4, pet-item: huge_star_dragon }
+      - { type: pet, weight: 4, pet-item: star_dragon_huge }
       - { type: commands, weight: 1, commands: ["admin potions give %player% COINS 3 1800"] }
 
   exclusive_crate:
@@ -47,5 +47,5 @@ boxes:
     pool:
       - { type: flat-coins, weight: 30, amount: 500000000 }
       - { type: flat-diamonds, weight: 20, amount: 200000 }
-      - { type: pet, weight: 30, pet-item: huge_void_serpent }
+      - { type: pet, weight: 30, pet-item: void_serpent_huge }
       - { type: pet, weight: 20, pet-item: cosmic_leviathan }
