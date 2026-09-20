@@ -49,16 +49,18 @@ public final class PackStorageGui {
     private final OpenPackDialog openPackDialog;
     private final PackShopGui packShopGui;
     private final PackRollService rollService;
+    private final PackOddsLore oddsLore;
 
     public PackStorageGui(Supplier<PackContentLoader.ContentSnapshot> content, PlayerDataStore<PackPlayerProfile> playerStore,
                            GuiManager guiManager, OpenPackDialog openPackDialog, PackShopGui packShopGui,
-                           PackRollService rollService) {
+                           PackRollService rollService, PackOddsLore oddsLore) {
         this.content = content;
         this.playerStore = playerStore;
         this.guiManager = guiManager;
         this.openPackDialog = openPackDialog;
         this.packShopGui = packShopGui;
         this.rollService = rollService;
+        this.oddsLore = oddsLore;
     }
 
     public void open(Player player) {
@@ -84,7 +86,7 @@ public final class PackStorageGui {
                 break;
             }
             int count = profile.getStoredPacks().getOrDefault(pack.id(), 0);
-            builder.item(slot, buildIcon(pack, count), (clicker, event) -> openPackDialog.open(clicker, pack));
+            builder.item(slot, buildIcon(pack, count, player), (clicker, event) -> openPackDialog.open(clicker, pack));
             slot++;
         }
 
@@ -218,7 +220,7 @@ public final class PackStorageGui {
         open(player);
     }
 
-    private ItemStack buildIcon(PackDefinition pack, int count) {
+    private ItemStack buildIcon(PackDefinition pack, int count, Player viewer) {
         ItemBuilder builder = ItemBuilder.of(pack.material()).name(MenuLore.buttonName(ACCENT, pack.displayName()));
         if (pack.customModelData() != null) {
             builder.modelData(pack.customModelData());
@@ -229,6 +231,12 @@ public final class PackStorageGui {
                 ACCENT,
                 "Click to Manage"
         ).forEach(builder::lore);
+        builder.lore("");
+        // The same odds block the shop shows, on the screen where a player
+        // actually decides which of their packs to open - the two used to
+        // disagree, the shop listing raw weights and this showing nothing
+        // at all.
+        oddsLore.lines(pack, viewer).forEach(builder::lore);
         return builder
                 .lore("")
                 .lore("&7Stored: &f" + count)

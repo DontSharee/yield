@@ -10,6 +10,7 @@ import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.data.PackDefinition;
+import me.dontshare.yieldpacks.gui.PackOddsLore;
 import me.dontshare.yieldpacks.gui.PackStorageGui;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import me.dontshare.yieldpacks.roll.PackOpenService;
@@ -52,11 +53,14 @@ public final class OpenPackDialog {
 
     private final PlayerDataStore<PackPlayerProfile> playerStore;
     private final PackOpenService openService;
+    private final PackOddsLore oddsLore;
     private PackStorageGui packStorageGui;
 
-    public OpenPackDialog(PlayerDataStore<PackPlayerProfile> playerStore, PackOpenService openService) {
+    public OpenPackDialog(PlayerDataStore<PackPlayerProfile> playerStore, PackOpenService openService,
+                           PackOddsLore oddsLore) {
         this.playerStore = playerStore;
         this.openService = openService;
+        this.oddsLore = oddsLore;
     }
 
     /** Breaks the constructor cycle with {@link PackStorageGui} (which itself needs this class for its pack-click handlers) - same setter-injection idiom as MilestoneCategoryGui/MilestonesGui. Lets both exit paths (Close, or opening your last stored pack) land back on a freshly-rebuilt storage screen instead of a stale one. */
@@ -118,9 +122,19 @@ public final class OpenPackDialog {
                         ClickCallback.Options.builder().build()))
                 .build());
 
+        // Stored count first, then this player's own luck and the chase
+        // odds it moves - the numbers that decide whether opening now or
+        // buying a luck potion first is the better move, on the screen
+        // where that decision is made.
+        List<DialogBody> body = new ArrayList<>();
+        body.add(DialogBody.plainMessage(Text.parse("&7Stored: &f" + stored)));
+        for (String line : oddsLore.chaseLines(pack, player)) {
+            body.add(DialogBody.plainMessage(Text.parse(line)));
+        }
+
         Dialog dialog = Dialog.create(factory -> factory.empty()
                 .base(DialogBase.builder(Text.parse(pack.displayName()))
-                        .body(List.of(DialogBody.plainMessage(Text.parse("&7Stored: &f" + stored))))
+                        .body(body)
                         .build())
                 .type(DialogType.multiAction(buttons, cancelButton(player), 2)));
         player.showDialog(dialog);

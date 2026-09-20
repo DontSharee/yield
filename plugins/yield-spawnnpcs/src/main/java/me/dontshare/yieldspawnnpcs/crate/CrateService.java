@@ -105,6 +105,11 @@ public final class CrateService {
             return;
         }
         PetInstance pet = profile.addOwnedItem("crate", itemId);
+        // A pet is a pet however it was obtained - the Shiny roll is flat
+        // and source-independent by design (see PackRollService's own
+        // maybeRollShiny), so one granted here is exactly as able to come
+        // out Shiny as one pulled from a pack.
+        packs.getPackRollService().maybeRollShiny(pet);
         if (packs.getEquipmentService().autoEquipOnRoll(profile, pet)) {
             Bukkit.getPluginManager().callEvent(new PetEquippedEvent(player, pet.getInstanceId()));
         }

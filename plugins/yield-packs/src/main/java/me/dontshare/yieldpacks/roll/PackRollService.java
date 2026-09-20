@@ -139,6 +139,51 @@ public final class PackRollService {
         return candidates;
     }
 
+    /**
+     * The three "chase" chances as they apply to ONE player looking at ONE
+     * pack right now - everything the odds display needs that isn't in the
+     * normal pool table (see yield-packs' PackOddsLore, the only caller).
+     * <p>
+     * Each is zero when the mechanic genuinely doesn't apply, so a caller
+     * can simply omit the line: {@code hugeChance} for a pack with no
+     * Huge-eligible pets in its pool, {@code exclusiveFindChance} for a
+     * player who hasn't earned that perk.
+     */
+    public record ChaseOdds(double hugeChance, double shinyChance, double exclusiveFindChance) {
+    }
+
+    /**
+     * The luck multiplier to SHOW this player - their standing luck, without
+     * {@link PityService}'s milestone bonus folded in.
+     * <p>
+     * Pity is left out on purpose: it applies to exactly one roll every
+     * {@code n}, so folding it into a pack's lore would show odds that are
+     * wrong for all but that single open. The pity bar (see
+     * PackActionBarService) is where that bonus is communicated, and it
+     * shows when it's about to land rather than pretending it's always on.
+     */
+    public double displayLuckFor(PackPlayerProfile profile) {
+        return luckService.totalLuckMultiplier(profile);
+    }
+
+    public double displayLuckFor(Player player) {
+        return displayLuckFor(store.getOrCreate(player.getUniqueId()));
+    }
+
+    /** {@link ChaseOdds} for this player and pack - luck-scaled exactly the way {@link #rollInPlace} scales the real rolls. */
+    public ChaseOdds chaseOddsFor(PackDefinition pack, Player player) {
+        PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
+        VariantConfig variants = content.get().variants();
+        double luck = displayLuckFor(profile);
+        double hugeChance = hugeCandidatesFor(pack).isEmpty()
+                ? 0.0
+                : Math.min(1.0, variants.hugeChance() * luck);
+        double exclusiveChance = baseExclusives().isEmpty()
+                ? 0.0
+                : Math.min(1.0, totalExclusiveFindChance(profile));
+        return new ChaseOdds(hugeChance, variants.shinyChance(), exclusiveChance);
+    }
+
     private ItemDefinition rollHuge(PackDefinition pack) {
         List<HugeCandidate> candidates = hugeCandidatesFor(pack);
         if (candidates.isEmpty()) {
@@ -340,10 +385,7 @@ public final class PackRollService {
 
         boolean firstTime = !hasCollected(profile, packId, rolled.id());
         var newPet = profile.addOwnedItem(packId, rolled.id());
-        // Flat, never luck-scaled - see VariantConfig.
-        if (variants.shinyChance() > 0 && ThreadLocalRandom.current().nextDouble() < variants.shinyChance()) {
-            newPet.setShiny(true);
-        }
+        maybeRollShiny(newPet);
         recordBestLuck(profile, rolled, oneIn);
         if (equipmentService.autoEquipOnRoll(profile, newPet)) {
             // A tutorial-tracking auto-equip is exactly as real as a manual
@@ -428,6 +470,26 @@ public final class PackRollService {
             return MAX_DISPLAYED_ONE_IN;
         }
         return (long) Math.min(MAX_DISPLAYED_ONE_IN, Math.round(1.0 / probability));
+    }
+
+    /**
+     * Rolls the flat Shiny chance for a pet that has just been obtained,
+     * and returns whether it landed.
+     * <p>
+     * Public because a pack open is not the only way to get a pet - crates
+     * (yield-spawnnpcs) and lootboxes (yield-lootboxes) grant them too, and
+     * a Shiny that could only ever come from a pack would make a liar of
+     * the thing every odds screen says about it: flat chance, any pet, no
+     * luck scaling (see VariantConfig for why it is deliberately the one
+     * roll luck doesn't touch).
+     */
+    public boolean maybeRollShiny(PetInstance pet) {
+        double chance = content.get().variants().shinyChance();
+        if (chance <= 0 || ThreadLocalRandom.current().nextDouble() >= chance) {
+            return false;
+        }
+        pet.setShiny(true);
+        return true;
     }
 
     /** Never decreases - a player's Best Luck is the rarest thing they have ever landed, not their most recent. */

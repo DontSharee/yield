@@ -7,9 +7,7 @@ import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldcore.text.MenuLore;
 import me.dontshare.yieldcore.text.Text;
-import me.dontshare.yieldpacks.data.ItemRegistry;
 import me.dontshare.yieldpacks.data.PackDefinition;
-import me.dontshare.yieldpacks.data.PackPoolEntry;
 import me.dontshare.yieldpacks.roll.PackRollService;
 import me.dontshare.yieldpacks.shop.ShopSlot;
 import me.dontshare.yieldpacks.shop.ShopStockService;
@@ -21,9 +19,7 @@ import org.bukkit.inventory.ItemStack;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.function.Supplier;
 
 /**
  * The pack shop screen - renders this player's own rotating stock (see
@@ -39,14 +35,14 @@ public final class PackShopGui {
     private final ShopStockService stockService;
     private final GuiManager guiManager;
     private final PackRollService rollService;
-    private final Supplier<ItemRegistry> itemRegistry;
+    private final PackOddsLore oddsLore;
 
     public PackShopGui(ShopStockService stockService, GuiManager guiManager, PackRollService rollService,
-                        Supplier<ItemRegistry> itemRegistry) {
+                        PackOddsLore oddsLore) {
         this.stockService = stockService;
         this.guiManager = guiManager;
         this.rollService = rollService;
-        this.itemRegistry = itemRegistry;
+        this.oddsLore = oddsLore;
     }
 
     private static final int TOTAL_ROWS = 6;
@@ -69,7 +65,7 @@ public final class PackShopGui {
         for (int i = 0; i < count; i++) {
             ShopSlot shopSlot = slots.get(i);
             int remaining = stockService.remainingStock(player, shopSlot.pack().id());
-            builder.item(CONTENT_SLOTS.get(i), buildIcon(shopSlot, remaining), (clicker, event) -> {
+            builder.item(CONTENT_SLOTS.get(i), buildIcon(shopSlot, remaining, player), (clicker, event) -> {
                 if (remaining <= 0) {
                     clicker.sendMessage(Text.parse("<red>That pack is sold out this cycle.</red>"));
                     return;
@@ -109,7 +105,7 @@ public final class PackShopGui {
         for (int i = 0; i < count; i++) {
             ShopSlot shopSlot = slots.get(i);
             int remaining = stockService.remainingStock(player, shopSlot.pack().id());
-            gui.set(CONTENT_SLOTS.get(i), buildIcon(shopSlot, remaining), (clicker, event) -> {
+            gui.set(CONTENT_SLOTS.get(i), buildIcon(shopSlot, remaining, player), (clicker, event) -> {
                 if (remaining <= 0) {
                     clicker.sendMessage(Text.parse("<red>That pack is sold out this cycle.</red>"));
                     return;
@@ -162,7 +158,7 @@ public final class PackShopGui {
     // coded here to match this GUI's own lore style.
     private static final String SEPARATOR_LINE = "&8&m                              ";
 
-    private ItemStack buildIcon(ShopSlot shopSlot, int remaining) {
+    private ItemStack buildIcon(ShopSlot shopSlot, int remaining, Player viewer) {
         PackDefinition pack = shopSlot.pack();
         boolean soldOut = remaining <= 0;
         ItemBuilder builder = ItemBuilder.of(soldOut ? Material.BARRIER : pack.material())
@@ -174,7 +170,7 @@ public final class PackShopGui {
         List<String> lore = new ArrayList<>();
         lore.add("&8" + Formatting.fancyFont("pack"));
         lore.add("");
-        lore.addAll(buildOddsLines(pack));
+        lore.addAll(oddsLore.lines(pack, viewer));
         lore.add("");
         lore.add("&7Cost: &a$" + Formatting.format(pack.coinCost())
                 + (pack.diamondCost() > 0 ? " &8+ &b" + pack.diamondCost() + " diamonds" : ""));
@@ -188,24 +184,6 @@ public final class PackShopGui {
         }
         builder.lore(lore);
         return builder.hideAttributes().build();
-    }
-
-    /** "&lt;item's own colored name&gt; &7(12.3%)" per pool entry, rarest last - the odds disclosure the "Prism Lootbox" reference shows for its own rewards. */
-    private List<String> buildOddsLines(PackDefinition pack) {
-        double total = pack.pool().stream().mapToDouble(PackPoolEntry::weight).sum();
-        if (total <= 0) {
-            return List.of();
-        }
-        ItemRegistry registry = itemRegistry.get();
-        return pack.pool().stream()
-                .sorted(Comparator.comparingDouble(PackPoolEntry::weight).reversed())
-                .flatMap(entry -> registry.find(entry.itemId()).stream()
-                        .map(item -> item.displayName() + " &7(" + formatPercent(entry.weight() / total * 100) + "%)"))
-                .toList();
-    }
-
-    private String formatPercent(double percent) {
-        return percent >= 10 ? String.valueOf(Math.round(percent)) : String.format(java.util.Locale.ROOT, "%.1f", percent);
     }
 
     private String formatDuration(Duration duration) {

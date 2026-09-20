@@ -45,6 +45,7 @@ import me.dontshare.yieldpacks.gui.DeleteByRarityGui;
 import me.dontshare.yieldpacks.gui.FusionGui;
 import me.dontshare.yieldpacks.gui.HugeIndexGui;
 import me.dontshare.yieldpacks.gui.IndexGui;
+import me.dontshare.yieldpacks.gui.PackOddsLore;
 import me.dontshare.yieldpacks.gui.PackMultiOpenResultGui;
 import me.dontshare.yieldpacks.gui.PackShopGui;
 import me.dontshare.yieldpacks.gui.PackStorageGui;
@@ -327,14 +328,15 @@ public final class YieldPacks extends JavaPlugin {
         MasteryGui masteryGui = new MasteryGui(playerStore, masteryService, core.getGuiManager());
         CommandManager.register(this, MasteryCommand.build(masteryGui), "View your mastery progress", List.of());
 
-        PackShopGui packShopGui = new PackShopGui(stockService, core.getGuiManager(), rollService, () -> content.items());
+        PackOddsLore oddsLore = new PackOddsLore(rollService);
+        PackShopGui packShopGui = new PackShopGui(stockService, core.getGuiManager(), rollService, oddsLore);
         PackMultiOpenResultGui multiOpenResultGui = new PackMultiOpenResultGui(core.getGuiManager(), () -> content.rarities(), iconFactory);
-        OpenPackDialog openPackDialog = new OpenPackDialog(playerStore, openService);
+        OpenPackDialog openPackDialog = new OpenPackDialog(playerStore, openService, oddsLore);
         // The bulk reveal lives in the world now; this GUI is the fallback
         // for players who have roll animations turned off (see
         // PackOpenService#tryOpenMany).
         openService.setMultiOpenResultGui(multiOpenResultGui);
-        PackStorageGui packStorageGui = new PackStorageGui(() -> content, playerStore, core.getGuiManager(), openPackDialog, packShopGui, rollService);
+        PackStorageGui packStorageGui = new PackStorageGui(() -> content, playerStore, core.getGuiManager(), openPackDialog, packShopGui, rollService, oddsLore);
         openPackDialog.setPackStorageGui(packStorageGui);
         multiOpenResultGui.setPackStorageGui(packStorageGui);
         FusionService fusionService = new FusionService(() -> content.items());
