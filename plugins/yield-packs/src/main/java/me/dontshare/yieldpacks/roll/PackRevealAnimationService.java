@@ -27,7 +27,6 @@ import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -422,17 +421,17 @@ public final class PackRevealAnimationService {
 
     /** Eggs per row before wrapping - 6 keeps a full 24x hatch to four readable rows rather than one wall. */
     private static final int HATCH_COLUMNS = 6;
-    private static final float HATCH_COL_SPACING = 1.15f;
-    private static final float HATCH_ROW_SPACING = 1.3f;
-    private static final float HATCH_EGG_SCALE = 0.85f;
-    private static final float HATCH_PET_SCALE = 0.62f;
-    /** How long the eggs wobble before the first one cracks. */
+    /** How long the eggs wobble before they crack. */
     private static final int SHAKE_TICKS = 26;
     /** One wobble every this many ticks - each is interpolated across the gap, so the egg is always moving. */
     private static final int WOBBLE_INTERVAL = 4;
     private static final float WOBBLE_DEGREES = 14f;
-    /** The whole staggered run of cracks fits inside this, however many eggs there are. */
-    private static final int MAX_CRACK_STAGGER_TICKS = 12;
+    /** A pull at or past this "1 in N" gets the big treatment, whatever its rarity tier says. */
+    private static final long SPECIAL_ONE_IN = 1000L;
+    /** Rarity sortOrder at or past which a pull gets the big treatment regardless of odds. */
+    private static final int SPECIAL_SORT_ORDER = 4;
+    /** How much larger a special pet ends up than an ordinary one. */
+    private static final float SPECIAL_PET_SCALE_MULTIPLIER = 1.9f;
 
     private record HatchContext(Player player, UUID playerId, int count, int[] itemIds, int[] textIds,
                                  List<PackRollService.RollResult> rolls, BukkitTask[] trackingTaskHolder) {
@@ -459,7 +458,7 @@ public final class PackRevealAnimationService {
 
     /**
      * The reveal: a clutch of eggs drops into the air in front of the
-     * player, shakes, cracks open and leaves the pets behind.
+     * player, shakes, and cracks open together to leave the pets behind.
      * <p>
      * One animation for every hatch, 1x through 24x - a single egg is the
      * same ceremony as twenty-four, just narrower. That replaced a pair of
@@ -467,12 +466,14 @@ public final class PackRevealAnimationService {
      * and is both truer to what the player is doing and simpler: the egg IS
      * the suspense now, so nothing needs to spin to manufacture any.
      * <p>
-     * The cracks are staggered rarest-LAST across at most {@value
-     * #MAX_CRACK_STAGGER_TICKS} ticks. Ordering is the whole trick: with
-     * every egg cracking at once the eye has nowhere to land, and with the
-     * best one first the rest are an anticlimax. The stagger is a fixed
-     * budget rather than a per-egg delay so that a 24x hatch doesn't run
-     * six times longer than a 4x one.
+     * Every egg cracks on the SAME tick. An earlier pass staggered them
+     * rarest-last on the theory that ordering gives the eye somewhere to
+     * land; in game it just read as lag. One clutch, one moment.
+     * <p>
+     * Sound is per HATCH, never per egg. Twenty-four eggs each playing
+     * their own crack is not twenty-four times as exciting, it is noise -
+     * so the batch plays one shell-crack and one fanfare, pitched to the
+     * best thing in it.
      * <p>
      * The egg display and the pet display are the SAME packet entity -
      * hatching swaps the item on it rather than destroying one entity and
@@ -497,20 +498,21 @@ public final class PackRevealAnimationService {
         clearHatch(playerId);
         RevealSuppressionRegistry.begin(playerId);
 
-        ItemStack egg = new ItemStack(Material.DRAGON_EGG);
+        ItemStack egg = iconFactory.headOrFallback(pack.headDatabaseId(), pack.material());
+        float eggScale = eggScaleFor(count);
         Location[] slots = hatchSlotLocations(player, count);
         PacketEntityManager.beginBundle(player);
         for (int i = 0; i < count; i++) {
             ItemDisplayManager.spawn(player, itemIds[i], slots[i]);
             ItemDisplayManager.setItem(player, itemIds[i], egg);
-            ItemDisplayManager.setScale(player, itemIds[i], HATCH_EGG_SCALE, HATCH_EGG_SCALE, HATCH_EGG_SCALE);
+            ItemDisplayManager.setScale(player, itemIds[i], eggScale, eggScale, eggScale);
             ItemDisplayManager.setRotation(player, itemIds[i], 0f, facingYawTowardPlayer(slots[i], player));
             ItemDisplayManager.setInterpolation(player, itemIds[i], 0, TRACK_INTERVAL_TICKS, TRACK_INTERVAL_TICKS);
 
-            // Spawned empty and filled at the moment this egg cracks - the
+            // Spawned empty and filled at the moment the eggs crack - the
             // name is the thing the player is waiting for, so showing it
             // over an unhatched egg would give the whole reveal away.
-            TextDisplayManager.spawn(player, textIds[i], slots[i].clone().add(0, 0.55, 0));
+            TextDisplayManager.spawn(player, textIds[i], slots[i].clone().add(0, labelHeight(eggScale), 0));
             TextDisplayManager.setBillboard(player, textIds[i], TextDisplayManager.Billboard.VERTICAL);
             TextDisplayManager.setBackgroundColor(player, textIds[i], 0x00000000);
             TextDisplayManager.setStyle(player, textIds[i], true, false, false, TextDisplayManager.Alignment.CENTER);
@@ -523,28 +525,12 @@ public final class PackRevealAnimationService {
         activeHatches.put(playerId, ctx);
         trackingTaskHolder[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> trackHatch(ctx), 0L, TRACK_INTERVAL_TICKS);
 
-        player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 0.8f, 0.7f);
+        player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 0.7f, 0.7f);
         scheduleShake(ctx, slots);
-
-        // Rarest last: the eye follows the cracks in order and finishes on
-        // the best thing in the batch.
-        Integer[] order = new Integer[count];
-        for (int i = 0; i < count; i++) {
-            order[i] = i;
-        }
-        Arrays.sort(order, Comparator.comparingLong(i -> rolls.get(i).oneIn()));
-        int stagger = count > 1 ? Math.max(1, MAX_CRACK_STAGGER_TICKS / (count - 1)) : 0;
-
-        long lastCrackTick = SHAKE_TICKS;
-        for (int position = 0; position < count; position++) {
-            int slot = order[position];
-            long at = SHAKE_TICKS + (long) position * stagger;
-            lastCrackTick = Math.max(lastCrackTick, at);
-            Bukkit.getScheduler().runTaskLater(plugin, () -> crack(ctx, slot), at);
-        }
+        Bukkit.getScheduler().runTaskLater(plugin, () -> crackAll(ctx), SHAKE_TICKS);
 
         // Long enough to read a full grid, and longer for a bigger one.
-        long holdTicks = lastCrackTick + 35L + 8L * Math.min(6, count);
+        long holdTicks = SHAKE_TICKS + 35L + 8L * Math.min(6, count);
         Bukkit.getScheduler().runTaskLater(plugin, () -> despawnHatch(ctx), holdTicks);
         // Same layout PackActionBarService and the compact reel both use -
         // only the leftmost segment changes while a hatch plays, so the
@@ -555,10 +541,18 @@ public final class PackRevealAnimationService {
                 Placeholder.unparsed("suffix", pityService.renderProgressSuffix(rollCountBefore))));
     }
 
+    /** Clear of the egg at this scale, so the name doesn't sit inside the shell it came out of. */
+    private double labelHeight(float eggScale) {
+        return 0.35 + eggScale * 0.55;
+    }
+
     /** Wobbles every egg back and forth until the cracks start - each step interpolates across the gap, so they are never still. */
     private void scheduleShake(HatchContext ctx, Location[] slots) {
         for (int tick = 0; tick < SHAKE_TICKS; tick += WOBBLE_INTERVAL) {
             boolean left = (tick / WOBBLE_INTERVAL) % 2 == 0;
+            // One quiet rattle for the whole clutch, and only on every
+            // other wobble - per-egg was a machine-gun at 24x.
+            boolean rattle = (tick / WOBBLE_INTERVAL) % 2 == 0;
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 Player player = ctx.player();
                 if (!isLive(ctx)) {
@@ -571,33 +565,93 @@ public final class PackRevealAnimationService {
                     ItemDisplayManager.setRotation(player, ctx.itemIds()[i], left ? -6f : 6f, yaw);
                 }
                 PacketEntityManager.endBundle(player);
-                player.playSound(player.getLocation(), Sound.BLOCK_STONE_HIT, 0.5f, left ? 1.4f : 1.2f);
+                if (rattle) {
+                    player.playSound(player.getLocation(), Sound.BLOCK_STONE_HIT, 0.35f, 1.3f);
+                }
             }, tick);
         }
     }
 
-    /** One egg breaks open: particles, a sound pitched to how rare it was, and the display swaps from egg to pet. */
-    private void crack(HatchContext ctx, int slot) {
+    /**
+     * The whole clutch breaks open at once: every display swaps from egg to
+     * pet in one packet bundle, with exactly two sounds for the batch -
+     * one shell-crack, and one fanfare pitched to the best pull in it.
+     * <p>
+     * A pet worth shouting about (see {@link #isSpecial}) comes out bigger
+     * than the rest and wearing a glowing outline in its own rarity colour,
+     * so a Legendary in a wall of twenty-four commons is the thing the eye
+     * goes to without anyone having to read a single label.
+     */
+    private void crackAll(HatchContext ctx) {
         Player player = ctx.player();
         if (!isLive(ctx)) {
             return;
         }
-        PackRollService.RollResult roll = ctx.rolls().get(slot);
         Location[] slots = hatchSlotLocations(player, ctx.count());
-        TierConfig cfg = configFor(tierFor(rarityRegistry.get().find(roll.item().rarityId()).orElse(null)));
+        float petScale = eggScaleFor(ctx.count()) * 0.75f;
 
-        player.spawnParticle(Particle.ITEM_SNOWBALL, slots[slot], 12, 0.2, 0.2, 0.2, 0.05);
-        player.spawnParticle(cfg.particle(), slots[slot], Math.max(4, cfg.particleCount() / 3), 0.3, 0.3, 0.3, 0.02);
-        player.playSound(player.getLocation(), Sound.ENTITY_TURTLE_EGG_BREAK, 0.7f, 1.1f);
-        player.playSound(player.getLocation(), cfg.sound(), 0.7f, cfg.pitch());
+        PackRollService.RollResult best = ctx.rolls().stream()
+                .max(Comparator.comparingLong(PackRollService.RollResult::oneIn))
+                .orElse(ctx.rolls().get(0));
+        TierConfig bestCfg = configFor(tierFor(rarityRegistry.get().find(best.item().rarityId()).orElse(null)));
 
         PacketEntityManager.beginBundle(player);
-        ItemDisplayManager.setInterpolation(player, ctx.itemIds()[slot], 0, 3, 3);
-        ItemDisplayManager.setItem(player, ctx.itemIds()[slot], iconFactory.baseIcon(roll.item()).build());
-        ItemDisplayManager.setScale(player, ctx.itemIds()[slot], HATCH_PET_SCALE, HATCH_PET_SCALE, HATCH_PET_SCALE);
-        ItemDisplayManager.setRotation(player, ctx.itemIds()[slot], 0f, facingYawTowardPlayer(slots[slot], player));
-        TextDisplayManager.setText(player, ctx.textIds()[slot], hatchSlotLabel(roll));
+        for (int slot = 0; slot < ctx.count(); slot++) {
+            PackRollService.RollResult roll = ctx.rolls().get(slot);
+            Rarity rarity = rarityRegistry.get().find(roll.item().rarityId()).orElse(null);
+            boolean special = isSpecial(roll, rarity);
+            float scale = special ? petScale * SPECIAL_PET_SCALE_MULTIPLIER : petScale;
+
+            ItemDisplayManager.setInterpolation(player, ctx.itemIds()[slot], 0, 3, 3);
+            ItemDisplayManager.setItem(player, ctx.itemIds()[slot], iconFactory.baseIcon(roll.item()).build());
+            ItemDisplayManager.setScale(player, ctx.itemIds()[slot], scale, scale, scale);
+            ItemDisplayManager.setRotation(player, ctx.itemIds()[slot], 0f, facingYawTowardPlayer(slots[slot], player));
+            if (special) {
+                ItemDisplayManager.setGlowColor(player, ctx.itemIds()[slot], glowColorFor(rarity));
+                ItemDisplayManager.setGlowing(player, ctx.itemIds()[slot], true);
+            }
+            TextDisplayManager.setText(player, ctx.textIds()[slot], hatchSlotLabel(roll));
+        }
         PacketEntityManager.endBundle(player);
+
+        // Particles stay per-egg (they are silent, and a grid of them IS
+        // the confetti), but they thin out as the clutch grows so a 24x
+        // hatch doesn't turn the screen white.
+        int perEgg = Math.max(3, 12 / Math.max(1, ctx.count() / 4));
+        for (int slot = 0; slot < ctx.count(); slot++) {
+            PackRollService.RollResult roll = ctx.rolls().get(slot);
+            boolean special = isSpecial(roll, rarityRegistry.get().find(roll.item().rarityId()).orElse(null));
+            player.spawnParticle(Particle.ITEM_SNOWBALL, slots[slot], perEgg, 0.2, 0.2, 0.2, 0.05);
+            if (special) {
+                player.spawnParticle(Particle.TOTEM_OF_UNDYING, slots[slot], 25, 0.35, 0.35, 0.35, 0.08);
+            }
+        }
+
+        player.playSound(player.getLocation(), Sound.ENTITY_TURTLE_EGG_BREAK, 0.8f, 1.1f);
+        player.playSound(player.getLocation(), bestCfg.sound(), 0.9f, bestCfg.pitch());
+    }
+
+    /**
+     * Whether this pull deserves the big treatment - either its rarity is
+     * high enough on its own, or it beat odds long enough that its rarity
+     * tier undersells it (a Huge of a common pet is a 1-in-millions pull
+     * wearing a common's colour).
+     */
+    private boolean isSpecial(PackRollService.RollResult roll, Rarity rarity) {
+        return roll.oneIn() >= SPECIAL_ONE_IN
+                || (rarity != null && rarity.sortOrder() >= SPECIAL_SORT_ORDER);
+    }
+
+    /** The rarity's own colour as packed RGB, for the glowing outline - white if it has none. */
+    private int glowColorFor(Rarity rarity) {
+        if (rarity == null) {
+            return 0xFFFFFF;
+        }
+        try {
+            return Integer.parseInt(rarity.colorHex().replace("#", ""), 16);
+        } catch (NumberFormatException e) {
+            return 0xFFFFFF;
+        }
     }
 
     private void trackHatch(HatchContext ctx) {
@@ -607,9 +661,10 @@ public final class PackRevealAnimationService {
             return;
         }
         Location[] slots = hatchSlotLocations(player, ctx.count());
+        double labelHeight = labelHeight(eggScaleFor(ctx.count()));
         for (int i = 0; i < ctx.count(); i++) {
             PacketEntityManager.teleportEntity(player, ctx.itemIds()[i], slots[i]);
-            PacketEntityManager.teleportEntity(player, ctx.textIds()[i], slots[i].clone().add(0, 0.55, 0));
+            PacketEntityManager.teleportEntity(player, ctx.textIds()[i], slots[i].clone().add(0, labelHeight, 0));
         }
     }
 
@@ -659,24 +714,54 @@ public final class PackRevealAnimationService {
         return nameLine.append(Component.newline()).append(oddsLine);
     }
 
-    /** A centred grid in front of the player - {@value #HATCH_COLUMNS} per row, wrapping downward, vertically centred on eye level. */
+    /**
+     * The grid in front of the player, sized to how many eggs are in it.
+     * <p>
+     * A fixed layout cannot serve both ends of the range: what reads well
+     * for one egg buries a 24x hatch's bottom row in the floor and fills
+     * the whole screen. So the batch decides its own scale, spacing and
+     * distance, and - the part that actually broke in game - the grid grows
+     * UPWARD from a fixed bottom edge just below eye level rather than
+     * being centred on the eye. Four rows centred on the eye puts the
+     * bottom row nearly two metres down, which is underground.
+     */
     private Location[] hatchSlotLocations(Player player, int count) {
-        Location eye = player.getEyeLocation();
-        Vector forward = eye.getDirection().setY(0).normalize();
-        Vector right = new Vector(-forward.getZ(), 0, forward.getX()).normalize();
-        Location anchor = eye.clone().add(forward.multiply(FORWARD_DISTANCE));
+        float scale = eggScaleFor(count);
+        double spacing = scale * 1.45;
+        double forward = FORWARD_DISTANCE + (count > 12 ? 1.9 : count > 5 ? 0.9 : 0.0);
 
-        int rows = (count + HATCH_COLUMNS - 1) / HATCH_COLUMNS;
+        Location eye = player.getEyeLocation();
+        Vector direction = eye.getDirection().setY(0);
+        Vector forwardUnit = direction.lengthSquared() < 1.0e-6 ? new Vector(0, 0, 1) : direction.normalize();
+        Vector right = new Vector(-forwardUnit.getZ(), 0, forwardUnit.getX()).normalize();
+        Location anchor = eye.clone().add(forwardUnit.clone().multiply(forward));
+
+        int columns = Math.min(HATCH_COLUMNS, Math.max(1, (int) Math.ceil(Math.sqrt(count))));
+        int rows = (count + columns - 1) / columns;
         Location[] slots = new Location[count];
         for (int i = 0; i < count; i++) {
-            int row = i / HATCH_COLUMNS;
-            int col = i % HATCH_COLUMNS;
-            int inThisRow = Math.min(HATCH_COLUMNS, count - row * HATCH_COLUMNS);
-            double xOffset = (col - (inThisRow - 1) / 2.0) * HATCH_COL_SPACING;
-            double yOffset = ((rows - 1) / 2.0 - row) * HATCH_ROW_SPACING;
+            int row = i / columns;
+            int col = i % columns;
+            int inThisRow = Math.min(columns, count - row * columns);
+            double xOffset = (col - (inThisRow - 1) / 2.0) * spacing;
+            // Row 0 sits at the top; the LAST row sits just below eye level,
+            // which is the one thing that keeps the whole grid off the floor
+            // however many rows it has.
+            double yOffset = (rows - 1 - row) * spacing - 0.35;
             slots[i] = anchor.clone().add(right.clone().multiply(xOffset)).add(0, yOffset, 0);
         }
         return slots;
+    }
+
+    /** Smaller eggs for a bigger clutch - 24 at the single-egg size is a wall of shell with the player inside it. */
+    private float eggScaleFor(int count) {
+        if (count <= 3) {
+            return 0.85f;
+        }
+        if (count <= 8) {
+            return 0.7f;
+        }
+        return count <= 15 ? 0.58f : 0.48f;
     }
 
     private Tier tierFor(Rarity rarity) {

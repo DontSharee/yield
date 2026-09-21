@@ -107,13 +107,29 @@ public final class HatchMenuGui {
      * Auto-hatch's only home now that the storage screen is gone - which is
      * where it belonged anyway, since it only does anything while the
      * player is stood at an egg (see {@code PackOpenService#autoHatchTick}).
+     * <p>
+     * Turning it on does NOT start it. The rung buttons do that: with
+     * auto-hatch on, clicking "Hatch 5x" means "keep doing five at a time",
+     * which is one decision made with the same click instead of a toggle
+     * plus a hidden amount the player has to go and find somewhere else.
      */
     private ItemStack buildAutoIcon(Player player) {
-        boolean on = store.getOrCreate(player.getUniqueId()).isAutoOpenEnabled();
+        PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
+        boolean on = profile.isAutoOpenEnabled();
         ItemBuilder builder = ItemBuilder.of(on ? Material.LIME_DYE : Material.GRAY_DYE)
                 .name(MenuLore.buttonName(ACCENT, on ? "Auto-Hatch: ON" : "Auto-Hatch: OFF"));
-        builder.lore("&7Keeps hatching while you stand");
-        builder.lore("&7at an egg and can afford it.");
+        if (on) {
+            builder.lore("&7Hatching &f" + profile.getAutoHatchAmount() + "x&7 at a time while");
+            builder.lore("&7you stand at an egg.");
+            builder.lore("");
+            builder.lore("&7Pick another amount below to");
+            builder.lore("&7change it.");
+        } else {
+            builder.lore("&7Turn this on, then pick an");
+            builder.lore("&7amount below - it will keep");
+            builder.lore("&7hatching that many while you");
+            builder.lore("&7stand at an egg.");
+        }
         builder.lore("");
         builder.lore("&8[CLICK] &fTo " + (on ? "Disable" : "Enable"));
         return builder.hideAttributes().build();
@@ -126,12 +142,27 @@ public final class HatchMenuGui {
         store.save(player.getUniqueId());
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, enabled ? 1.4f : 1f);
         player.sendMessage(Text.parse(enabled
-                ? "<green>Auto-hatch on - stand at an egg and it will keep hatching.</green>"
+                ? "<green>Auto-hatch on - now pick how many to hatch at a time.</green>"
                 : "<gray>Auto-hatch off.</gray>"));
         open(player, packId);
     }
 
+    /**
+     * A rung click means one of two things depending on the toggle: hatch
+     * this many now, or (with auto-hatch on) keep hatching this many. Either
+     * way it hatches immediately, so the click always does something
+     * visible.
+     */
     private void hatch(Player player, PackDefinition egg, int count) {
+        PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
+        if (profile.isAutoOpenEnabled()) {
+            profile.setAutoHatchAmount(count);
+            store.save(player.getUniqueId());
+            player.sendMessage(Text.parse(
+                    "<green>Auto-hatching <amount>x at a time.</green>",
+                    net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed(
+                            "amount", String.valueOf(count))));
+        }
         // The hatch plays out in the world, in front of the player - the
         // menu has to be out of the way to see it.
         player.closeInventory();
@@ -144,7 +175,9 @@ public final class HatchMenuGui {
     private ItemStack buildDropIcon(PackRollService.WeightedOdds drop) {
         ItemDefinition item = drop.item();
         Rarity rarity = content.get().rarities().find(item.rarityId()).orElse(null);
-        ItemBuilder builder = iconFactory.baseIcon(item);
+        // baseIcon only resolves the ICON - a head or a material - and never
+        // names it, so without this every pet in the list read "Player Head".
+        ItemBuilder builder = iconFactory.baseIcon(item).name(item.displayName());
         builder.lore("");
         if (rarity != null) {
             builder.lore(rarity.displayName());
@@ -177,10 +210,13 @@ public final class HatchMenuGui {
         builder.lore("&7Cost: &a$" + Formatting.format(coins)
                 + (diamonds.signum() > 0 ? " &8+ &b" + Formatting.format(diamonds) + " diamonds" : ""));
         builder.lore("");
+        boolean auto = store.getOrCreate(player.getUniqueId()).isAutoOpenEnabled();
         if (!gamepassed) {
             builder.lore("&cNeeds the Multi-Hatch gamepass.");
         } else if (!affordable) {
             builder.lore("&cYou can't afford this yet.");
+        } else if (auto) {
+            builder.lore("&8[CLICK] &fTo Auto-Hatch " + count + "x");
         } else {
             builder.lore("&8[CLICK] &fTo Hatch");
         }

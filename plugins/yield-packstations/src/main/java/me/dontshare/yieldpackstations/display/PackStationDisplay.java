@@ -305,12 +305,19 @@ public final class PackStationDisplay {
         PacketEntityManager.endBundle(viewer);
     }
 
-    /** The egg wears the material its own pack definition names, so a Turtle-Egg zone and a Dragon-Egg zone are different objects to look at rather than the same prop with a different sign over it. */
+    /**
+     * The egg wears its own pack definition's HeadDatabase head, falling
+     * back to that pack's material - so a zone can have its own egg rather
+     * than every station being the same prop with a different sign over it,
+     * and a server without HeadDatabase still shows a real (vanilla) egg.
+     */
     private void spawnEgg(Player viewer, PackStation station) {
         PackDefinition pack = packs.getPackRegistry().find(stationService.currentPackId(station)).orElse(null);
-        Material material = pack != null ? pack.material() : Material.DRAGON_EGG;
+        ItemStack egg = pack != null
+                ? packs.getIconFactory().headOrFallback(pack.headDatabaseId(), pack.material())
+                : new ItemStack(Material.DRAGON_EGG);
         ItemDisplayManager.spawn(viewer, station.buttonEntityId(), eggLocation(station.location()));
-        ItemDisplayManager.setItem(viewer, station.buttonEntityId(), new ItemStack(material));
+        ItemDisplayManager.setItem(viewer, station.buttonEntityId(), egg);
         ItemDisplayManager.setScale(viewer, station.buttonEntityId(), EGG_SCALE, EGG_SCALE, EGG_SCALE);
     }
 

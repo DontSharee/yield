@@ -239,10 +239,11 @@ public final class PackOpenService {
     }
 
     /**
-     * Auto-hatch only runs while a player is actually standing at an egg.
-     * That is the whole shape of the idle loop now: you pick an egg, you
-     * stand there, and it keeps hatching as long as you can afford it -
-     * rather than the old "toggle it on anywhere and drain a stockpile".
+     * Auto-hatch only runs while a player is actually standing at an egg,
+     * and hatches the rung they picked in the hatch menu. That is the whole
+     * shape of the idle loop now: turn it on, pick an amount, stand at an
+     * egg - rather than the old "toggle it on anywhere and drain a
+     * stockpile".
      */
     private void autoHatchTick() {
         for (Player player : Bukkit.getOnlinePlayers()) {
@@ -254,11 +255,13 @@ public final class PackOpenService {
             if (packId == null) {
                 continue;
             }
-            int tier = Math.min(maxTierFor(player), rollService.affordableHatches(player, packId, maxTierFor(player)));
-            if (tier <= 0) {
+            // Exactly the rung they picked - see PackPlayerProfile#getAutoHatchAmount
+            // for why this never quietly settles for fewer.
+            int amount = Math.min(profile.getAutoHatchAmount(), maxTierFor(player));
+            if (rollService.affordableHatches(player, packId, amount) < amount) {
                 continue;
             }
-            tryHatch(player, packId, tier);
+            tryHatch(player, packId, amount);
         }
     }
 }

@@ -25,6 +25,25 @@ public final class ItemIconFactory {
                 : null;
     }
 
+    /**
+     * The HeadDatabase head with this id, or {@code fallback} as a plain
+     * item when HeadDatabase isn't installed or the id doesn't resolve.
+     * <p>
+     * For the things that are rendered in the WORLD rather than in a menu -
+     * the egg on a station, the clutch that hatches in front of a player -
+     * where there is no ItemDefinition to hang the lookup off, just an id
+     * from config.
+     */
+    public ItemStack headOrFallback(String headDatabaseId, org.bukkit.Material fallback) {
+        if (headDatabaseId != null && headDatabaseApi != null) {
+            ItemStack head = headDatabaseApi.getItemHead(headDatabaseId);
+            if (head != null) {
+                return head;
+            }
+        }
+        return new ItemStack(fallback);
+    }
+
     /** An ItemBuilder pre-seeded with the pet's base icon - chain .name()/.lore()/etc on top. */
     public ItemBuilder baseIcon(ItemDefinition item) {
         ItemBuilder builder = null;

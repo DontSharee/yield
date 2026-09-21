@@ -468,7 +468,8 @@ public final class PetDisplayService {
         int count = instances.size();
         Map<Integer, Location> overrides = attackOverrides.get(owner.getUniqueId());
         // Always start from the full bulk formation (one shared facing/right
-        // trig derivation for every slot - see PetFormation#positionsFor),
+        // trig derivation for every slot, and the Huge-aware row packing -
+        // see PetFormation#positionsFor),
         // even when some slots will be overwritten with a ring position
         // below. Combat with only SOME slots ringed (a partial single-send
         // spread, or a squad bigger than the current target's own ring) is
@@ -476,7 +477,7 @@ public final class PetDisplayService {
         // #positionFor fallback loop here used to assume - falling back to
         // that per-slot call for every uncovered slot silently reintroduced
         // the exact per-pet trig cost this class was fixed to eliminate.
-        List<Location> positions = positionsFor(owner, count, hoverOffset);
+        List<Location> positions = positionsFor(owner, instances, hoverOffset);
         if (overrides != null && !overrides.isEmpty()) {
             Map<Location, List<Integer>> slotsByTarget = new LinkedHashMap<>();
             for (Map.Entry<Integer, Location> entry : overrides.entrySet()) {
@@ -492,58 +493,7 @@ public final class PetDisplayService {
                 }
             }
         }
-        return applyHugeSeparation(positions, instances);
-    }
-
-    /**
-     * Pushes every OTHER slot directly away (in the horizontal plane) from
-     * any Huge pet's slot it's currently closer than {@code requiredClearance}
-     * to - Huge pets render {@link PetDisplayConfig#hugeScaleMultiplier()}
-     * times larger (see {@code spawnFor}), so the plain grid spacing (tuned
-     * for normal-sized pets standing shoulder to shoulder) isn't enough room
-     * and both the model and its floating nametag visibly overlap its
-     * neighbors. Normal-to-normal spacing is untouched - this only reacts to
-     * Huge slots specifically, not a blanket grid-wide increase.
-     */
-    private List<Location> applyHugeSeparation(List<Location> positions, List<PetDisplayInstance> instances) {
-        List<Integer> hugeSlots = new ArrayList<>();
-        for (int i = 0; i < instances.size() && i < positions.size(); i++) {
-            if (isHuge(instances.get(i).itemId())) {
-                hugeSlots.add(i);
-            }
-        }
-        if (hugeSlots.isEmpty()) {
-            return positions;
-        }
-        double baseSpacing = (config.columnSpacing() + config.rowSpacing()) / 2.0;
-        double requiredClearance = baseSpacing * (1.0 + config.hugeScaleMultiplier()) / 2.0;
-
-        List<Location> result = new ArrayList<>(positions);
-        for (int hugeIndex : hugeSlots) {
-            Location hugeCenter = result.get(hugeIndex);
-            for (int i = 0; i < result.size(); i++) {
-                if (i == hugeIndex) {
-                    continue;
-                }
-                Location pos = result.get(i);
-                double dx = pos.getX() - hugeCenter.getX();
-                double dz = pos.getZ() - hugeCenter.getZ();
-                double distance = Math.sqrt(dx * dx + dz * dz);
-                if (distance >= requiredClearance) {
-                    continue;
-                }
-                // Degenerate (two slots landing on the exact same point, e.g.
-                // ringed tightly around the same attack target) - push along
-                // an arbitrary fixed direction rather than dividing by zero.
-                double dirX = distance < 1e-6 ? 1.0 : dx / distance;
-                double dirZ = distance < 1e-6 ? 0.0 : dz / distance;
-                Location pushed = pos.clone();
-                pushed.setX(hugeCenter.getX() + dirX * requiredClearance);
-                pushed.setZ(hugeCenter.getZ() + dirZ * requiredClearance);
-                result.set(i, pushed);
-            }
-        }
-        return result;
+        return positions;
     }
 
     private boolean isHuge(String itemId) {
@@ -575,8 +525,13 @@ public final class PetDisplayService {
         return new Location(center.getWorld(), x, center.getY(), z);
     }
 
-    private List<Location> positionsFor(Player owner, int count, double hoverOffset) {
-        List<Location> positions = PetFormation.positionsFor(owner.getLocation(), count, config);
+    private List<Location> positionsFor(Player owner, List<PetDisplayInstance> instances, double hoverOffset) {
+        int count = instances.size();
+        List<Boolean> huge = new ArrayList<>(count);
+        for (PetDisplayInstance instance : instances) {
+            huge.add(isHuge(instance.itemId()));
+        }
+        List<Location> positions = PetFormation.positionsFor(owner.getLocation(), count, huge, config);
         if (hoverOffset != 0.0) {
             for (Location pos : positions) {
                 pos.setY(pos.getY() + hoverOffset);

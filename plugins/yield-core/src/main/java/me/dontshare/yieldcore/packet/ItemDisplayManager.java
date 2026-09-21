@@ -67,6 +67,28 @@ public final class ItemDisplayManager {
         sendMetadata(viewer, entityId, new EntityData<>(24, EntityDataTypes.BYTE, context.value));
     }
 
+    /**
+     * The vanilla glowing outline (the Spectral Arrow effect) - entity flag
+     * bit 0x40 on the shared flags byte at metadata index 0.
+     * <p>
+     * Sent on its own rather than folded into the spawn bundle because it
+     * is a state a caller turns on and off mid-life: the hatch reveal lights
+     * up only the pets worth lighting up, once they have actually hatched.
+     */
+    public static void setGlowing(Player viewer, int entityId, boolean glowing) {
+        sendMetadata(viewer, entityId, new EntityData<>(0, EntityDataTypes.BYTE, (byte) (glowing ? 0x40 : 0x00)));
+    }
+
+    /**
+     * What color that outline is, as packed RGB - Display entities carry
+     * their own {@code glow_color_override} at metadata index 22, which
+     * overrides the team-color the outline would otherwise take. Set it
+     * alongside {@link #setGlowing}; on its own it does nothing.
+     */
+    public static void setGlowColor(Player viewer, int entityId, int rgb) {
+        sendMetadata(viewer, entityId, new EntityData<>(22, EntityDataTypes.INT, rgb));
+    }
+
     public static void setScale(Player viewer, int entityId, float x, float y, float z) {
         sendMetadata(viewer, entityId, new EntityData<>(12, EntityDataTypes.VECTOR3F, new Vector3f(x, y, z)));
     }

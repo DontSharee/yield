@@ -53,6 +53,7 @@ public final class PackPlayerProfile implements PlayerRecord {
     private Map<String, Set<String>> packCollectionProgress = new HashMap<>();
     private Map<String, Long> lastObtainedAt = new HashMap<>();
     private Map<String, Integer> storedPacks = new HashMap<>();
+    private int autoHatchAmount = 1;
     /** Virtual crate-key counts, keyed by crate id (see yield-spawnnpcs' CrateDefinition/CrateService) - found via ore cube kills, spent one at a time by physically smacking that crate's own station. Never a real inventory item. */
     private Map<String, Integer> crateKeys = new HashMap<>();
     private String activePackId;
@@ -173,13 +174,31 @@ public final class PackPlayerProfile implements PlayerRecord {
         this.claimedRank = claimedRank;
     }
 
-    /** Whether PackOpenService should keep auto-opening {@link #getActivePackId()} until its storage runs out. */
+    /** Whether PackOpenService should keep hatching, at {@link #getAutoHatchAmount()} a time, while this player stands at an egg. */
     public boolean isAutoOpenEnabled() {
         return autoOpenEnabled;
     }
 
     public void setAutoOpenEnabled(boolean autoOpenEnabled) {
         this.autoOpenEnabled = autoOpenEnabled;
+    }
+
+    /**
+     * How many eggs each auto-hatch tick hatches - the rung the player
+     * picked in the hatch menu while auto-hatch was on.
+     * <p>
+     * Auto-hatch holds this amount exactly rather than hatching whatever is
+     * affordable: a player who chose 5x wants five at a time, and quietly
+     * dropping to one when they are briefly short would make the loop's
+     * spend rate something they never asked for. A tick it cannot afford is
+     * simply skipped.
+     */
+    public int getAutoHatchAmount() {
+        return Math.max(1, autoHatchAmount);
+    }
+
+    public void setAutoHatchAmount(int autoHatchAmount) {
+        this.autoHatchAmount = Math.max(1, autoHatchAmount);
     }
 
     /** Whether opening a pack shows the Title/sound roll reveal - toggled with /rollanimation. */

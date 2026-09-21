@@ -27,6 +27,14 @@ shop:
 # next, manual or auto-open alike.
 open-cooldown-seconds: 1.0
 
+# What an egg LOOKS like in the world - on its station, and in the clutch
+# that hatches in front of a player. A HeadDatabase id; any pack may
+# override it with its own "head-database-id" if you want a zone's egg to
+# look different. Falls back to that pack's "material" when HeadDatabase
+# isn't installed or the id doesn't resolve, so the world still shows an
+# egg either way.
+egg-head-database-id: "35669"
+
 # ---------------------------------------------------------------------------
 # HUGE PETS - the chase.
 #

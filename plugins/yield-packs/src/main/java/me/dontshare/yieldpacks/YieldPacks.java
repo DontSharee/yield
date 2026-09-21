@@ -131,6 +131,7 @@ public final class YieldPacks extends JavaPlugin {
     private volatile PetLevelingConfig petLevelingConfig;
     private PetLevelingService petLevelingService;
     private PackRollService rollService;
+    private ItemIconFactory iconFactory;
     private EggCatalogGui eggCatalogGui;
     private HatchMenuGui hatchMenuGui;
     private CandyContentLoader candyContentLoader;
@@ -227,7 +228,7 @@ public final class YieldPacks extends JavaPlugin {
         ExistsCounterStore existsCounterStore = new ExistsCounterStore(core.getDatabaseManager(), getLogger());
         existsCounterStore.loadAll();
 
-        ItemIconFactory iconFactory = new ItemIconFactory();
+        iconFactory = new ItemIconFactory();
         petDisplayConfigLoader = new PetDisplayConfigLoader(this);
         PetDisplayConfig displayConfig = petDisplayConfigLoader.load();
         petDisplayService = new PetDisplayService(this, playerStore, () -> content.items(), () -> content.rarities(),
@@ -513,6 +514,11 @@ public final class YieldPacks extends JavaPlugin {
     }
 
     /** Exposed for the same reason as {@link #getPetLevelingService()} - lets e.g. yield-blocktree register its own exclusive-find-chance provider. */
+    /** Resolves an egg's or pet's icon, HeadDatabase head included - see yield-packstations, which renders the egg standing on each station. */
+    public ItemIconFactory getIconFactory() {
+        return iconFactory;
+    }
+
     /** The right-click menu a physical egg station opens - see yield-packstations. */
     public HatchMenuGui getHatchMenuGui() {
         return hatchMenuGui;

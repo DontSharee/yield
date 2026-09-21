@@ -47,7 +47,8 @@ public final class PackContentLoader {
         Map<String, Rarity> rarities = loadRarities(config.getConfigurationSection("rarities"));
         VariantConfig variants = loadVariantConfig(config);
         Map<String, ItemDefinition> items = loadItems(config.getConfigurationSection("items"), rarities, variants);
-        Map<String, PackDefinition> packs = loadPacks(config.getConfigurationSection("packs"), items);
+        Map<String, PackDefinition> packs = loadPacks(config.getConfigurationSection("packs"), items,
+                config.getString("egg-head-database-id", DEFAULT_EGG_HEAD_ID));
         ShopConfig shop = loadShopConfig(config);
         List<PityTier> pityTiers = loadPityTiers(config);
 
@@ -242,7 +243,11 @@ public final class PackContentLoader {
         }
     }
 
-    private Map<String, PackDefinition> loadPacks(ConfigurationSection section, Map<String, ItemDefinition> items) {
+    /** The head every egg wears unless it names its own - see PackDefinition#headDatabaseId. */
+    private static final String DEFAULT_EGG_HEAD_ID = "35669";
+
+    private Map<String, PackDefinition> loadPacks(ConfigurationSection section, Map<String, ItemDefinition> items,
+                                                   String defaultEggHeadId) {
         Map<String, PackDefinition> result = new LinkedHashMap<>();
         if (section == null) {
             return result;
@@ -279,6 +284,7 @@ public final class PackContentLoader {
                     s.getString("display-name", id),
                     material,
                     modelData,
+                    s.getString("head-database-id", defaultEggHeadId),
                     s.getLong("coin-cost", 0L),
                     s.getLong("diamond-cost", 0L),
                     s.contains("sort") ? s.getInt("sort") : autoSort,
