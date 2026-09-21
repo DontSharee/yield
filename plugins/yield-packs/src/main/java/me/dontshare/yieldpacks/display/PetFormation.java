@@ -72,7 +72,8 @@ public final class PetFormation {
                 double centeredCol = col - (inRow - 1) / 2.0;
                 Vector offset = facing.clone().multiply(-backDistance)
                         .add(right.clone().multiply(centeredCol * spacing));
-                results[row.slots().get(col)] = finish(ownerLocation, offset, config);
+                results[row.slots().get(col)] = finish(ownerLocation, offset, row.hasHuge()
+                        && isHuge(huge, row.slots().get(col)), config);
             }
             backDistance += config.rowSpacing() * (row.hasHuge() ? hugeSpread : 1.0);
         }
@@ -125,9 +126,29 @@ public final class PetFormation {
         return huge != null && slot < huge.size() && Boolean.TRUE.equals(huge.get(slot));
     }
 
-    private static Location finish(Location ownerLocation, Vector offset, PetDisplayConfig config) {
+    /**
+     * A Huge sits higher than a normal pet by exactly the amount it is
+     * bigger.
+     * <p>
+     * An item display is centred on its position, so a model rendered at
+     * {@code hugeScaleMultiplier} times the normal size hangs that much
+     * further below the same anchor - at the shipped 0.85 scale and 2.5x
+     * multiplier, a Huge's bottom half was a third of a block underground
+     * before the hover bob even took it lower. Lifting by half the
+     * difference in height puts a Huge's feet exactly where a normal pet's
+     * are, so the whole formation stands on the same floor whatever is in
+     * it.
+     */
+    private static double heightFor(boolean huge, PetDisplayConfig config) {
+        if (!huge) {
+            return config.heightOffset();
+        }
+        return config.heightOffset() + config.scale() * (config.hugeScaleMultiplier() - 1f) / 2.0;
+    }
+
+    private static Location finish(Location ownerLocation, Vector offset, boolean huge, PetDisplayConfig config) {
         Location result = ownerLocation.clone().add(offset);
-        result.setY(ownerLocation.getY() + config.heightOffset());
+        result.setY(ownerLocation.getY() + heightFor(huge, config));
         // The entity's own body yaw/pitch in the spawn/teleport packet don't
         // drive a Display entity's visual orientation (that's controlled
         // entirely by the fixed rotation quaternion PetDisplayService sets
