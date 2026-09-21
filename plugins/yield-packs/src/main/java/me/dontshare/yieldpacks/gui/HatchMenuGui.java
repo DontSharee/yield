@@ -205,10 +205,7 @@ public final class HatchMenuGui {
 
         ItemBuilder builder = ItemBuilder.of(material)
                 .name(MenuLore.buttonName(ACCENT, "Hatch " + count + "x"));
-        BigInteger coins = BigInteger.valueOf(egg.coinCost()).multiply(BigInteger.valueOf(count));
-        BigInteger diamonds = BigInteger.valueOf(egg.diamondCost()).multiply(BigInteger.valueOf(count));
-        builder.lore("&7Cost: &a$" + Formatting.format(coins)
-                + (diamonds.signum() > 0 ? " &8+ &b" + Formatting.format(diamonds) + " diamonds" : ""));
+        builder.lore("&7Cost: " + PackOddsLore.costLine(egg, count));
         builder.lore("");
         boolean auto = store.getOrCreate(player.getUniqueId()).isAutoOpenEnabled();
         if (!gamepassed) {

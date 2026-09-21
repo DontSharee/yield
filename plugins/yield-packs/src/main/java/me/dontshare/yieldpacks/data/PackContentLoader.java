@@ -243,8 +243,8 @@ public final class PackContentLoader {
         }
     }
 
-    /** The head every egg wears unless it names its own - see PackDefinition#headDatabaseId. */
-    private static final String DEFAULT_EGG_HEAD_ID = "35669";
+    /** The head every egg wears unless it names its own - blank means "just use the material", which is what every egg does today (a real Dragon Egg). See PackDefinition#headDatabaseId. */
+    private static final String DEFAULT_EGG_HEAD_ID = "";
 
     private Map<String, PackDefinition> loadPacks(ConfigurationSection section, Map<String, ItemDefinition> items,
                                                    String defaultEggHeadId) {
@@ -287,6 +287,7 @@ public final class PackContentLoader {
                     s.getString("head-database-id", defaultEggHeadId),
                     s.getLong("coin-cost", 0L),
                     s.getLong("diamond-cost", 0L),
+                    s.getLong("credit-cost", 0L),
                     s.contains("sort") ? s.getInt("sort") : autoSort,
                     pool,
                     s.getDouble("shop-weight", 1.0),

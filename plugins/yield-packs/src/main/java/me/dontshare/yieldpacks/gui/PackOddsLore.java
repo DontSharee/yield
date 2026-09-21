@@ -2,6 +2,7 @@ package me.dontshare.yieldpacks.gui;
 
 import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldpacks.data.PackDefinition;
+import java.math.BigInteger;
 import me.dontshare.yieldpacks.roll.PackRollService;
 import org.bukkit.entity.Player;
 
@@ -80,6 +81,29 @@ public final class PackOddsLore {
             lore.add("&d&l✦ Exclusive Find &7(" + formatOdds(chase.exclusiveFindChance()) + ")");
         }
         return lore;
+    }
+
+    /**
+     * An egg's price in words - the one place that decision is made, so the
+     * station sign, the catalog, the merchant and the hatch menu cannot
+     * disagree about what something costs.
+     * <p>
+     * A credit-priced egg shows ONLY its credit price: the black market is
+     * deliberately either/or (see {@link PackDefinition#creditPriced()}), and
+     * printing "$0" beside it would read as a bug.
+     */
+    public static String costLine(PackDefinition egg, int count) {
+        int units = Math.max(1, count);
+        if (egg.creditPriced()) {
+            return "&b" + Formatting.format(BigInteger.valueOf(egg.creditCost()).multiply(BigInteger.valueOf(units)))
+                    + " credits";
+        }
+        String line = "&a$" + Formatting.format(BigInteger.valueOf(egg.coinCost()).multiply(BigInteger.valueOf(units)));
+        if (egg.diamondCost() > 0) {
+            line += " &8+ &b" + Formatting.format(BigInteger.valueOf(egg.diamondCost()).multiply(BigInteger.valueOf(units)))
+                    + " diamonds";
+        }
+        return line;
     }
 
     /**

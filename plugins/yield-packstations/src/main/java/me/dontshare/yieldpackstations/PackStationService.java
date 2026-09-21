@@ -65,7 +65,8 @@ public final class PackStationService {
         }
         PackPlayerProfile profile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
         return profile.getCoins().compareTo(BigInteger.valueOf(pack.coinCost())) >= 0
-                && profile.getDiamonds().compareTo(BigInteger.valueOf(pack.diamondCost())) >= 0;
+                && profile.getDiamonds().compareTo(BigInteger.valueOf(pack.diamondCost())) >= 0
+                && profile.getCredits().compareTo(BigInteger.valueOf(pack.creditCost())) >= 0;
     }
 
     public Purchase attemptHatch(Player player, PackStation station, boolean bulk) {

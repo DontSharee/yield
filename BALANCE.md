@@ -260,6 +260,50 @@ opened, so the timings in §3 are unchanged by this.
 
 ---
 
+## 2d. The black market
+
+One egg, five pets, priced in **Store credits** — the only thing in the
+game bought with a currency you cannot mine.
+
+| pet | chance | damage |
+|---|---|---|
+| Obsidian Warden | 30% | +400% of your best pet |
+| Astral Leviathan | 25% | +500% |
+| Eclipse Tyrant | 20% | +600% |
+| Genesis Sovereign | 15% | +700% |
+| Infinity Wyrm | 10% | +800% |
+
+**They are Huges**, mechanically — damage is a percentage of the owner's
+best *normal* pet rather than a number of their own. That is the whole
+reason they are safe to sell: they multiply whatever progress a player has
+already made instead of handing an early-zone account a late-zone pet.
+Someone who buys one in Meadow gets a big multiplier on a Meadow squad,
+exactly as a buyer in Genesis Core gets one on theirs. A paying player
+climbs their own ladder faster; they do not skip it.
+
+For scale, the best Huge a free player can win in the chase (a Secret) is
++300%, so the black market's floor is above the chase's ceiling and its top
+is roughly double it. Decisively the strongest pets in the game, and
+deliberately not a different order of magnitude from what the game gives
+away.
+
+**Price** is 2,000 credits a hatch — $20 at the Store's 100-credits-to-the-
+dollar rate. Achievements and milestones also pay credits (a few thousand
+across a whole playthrough), so a free player reaches one eventually and a
+paying one has it today. That number is the single dial if it is wrong.
+
+**Placement**: one kiosk every third zone, seven in all, rather than one at
+every entrance. Twenty made the rarest shop in the game the most common
+building in it.
+
+**What it replaced**: three "elite cache" eggs that sold ordinary zone pets
+at a markup on an hourly rotation. Those were a worse version of the zone
+station standing next to them — same pets, more money, and a timer telling
+you to come back later. A shop that sells what you cannot get anywhere else
+is a reason to look; a shop that sells the same thing slower is not.
+
+---
+
 ## 3. The pacing curve
 
 The unlock ladder is a uniform **~4× per zone**, every step a round number.

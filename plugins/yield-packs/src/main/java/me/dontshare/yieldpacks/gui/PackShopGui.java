@@ -182,8 +182,7 @@ public final class PackShopGui {
         lore.add("");
         lore.addAll(oddsLore.lines(pack, viewer));
         lore.add("");
-        lore.add("&7Cost: &a$" + Formatting.format(pack.coinCost())
-                + (pack.diamondCost() > 0 ? " &8+ &b" + pack.diamondCost() + " diamonds" : ""));
+        lore.add("&7Cost: " + PackOddsLore.costLine(pack, 1));
         lore.add("&7Stock: " + (soldOut ? "&c0" : "&a" + remaining + "x"));
         lore.add(SEPARATOR_LINE);
         if (soldOut) {

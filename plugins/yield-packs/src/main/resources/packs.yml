@@ -28,12 +28,12 @@ shop:
 open-cooldown-seconds: 1.0
 
 # What an egg LOOKS like in the world - on its station, and in the clutch
-# that hatches in front of a player. A HeadDatabase id; any pack may
-# override it with its own "head-database-id" if you want a zone's egg to
-# look different. Falls back to that pack's "material" when HeadDatabase
-# isn't installed or the id doesn't resolve, so the world still shows an
-# egg either way.
-egg-head-database-id: "35669"
+# that hatches in front of a player. Blank means "use the pack's own
+# material", which is what every egg does today: a real Dragon Egg. Set a
+# HeadDatabase id here (or per-pack with "head-database-id") if you'd
+# rather they were custom heads; a pack falls back to its material anyway
+# when HeadDatabase isn't installed or the id doesn't resolve.
+egg-head-database-id: ""
 
 # ---------------------------------------------------------------------------
 # HUGE PETS - the chase.
@@ -265,10 +265,11 @@ items:
     rarity: exclusive
     damage: 1200
     track-exists: true
-  # Black-market-only - never appears in any zone station's own pool (see
-  # "elite_genesis_core_pack" below), a deliberate carve-out from the
-  # "Exclusive pets don't drop from any normal pack" rule above: the black
-  # market is explicitly the one place something this rare can show up.
+  # Merchant-only, like Cosmic Leviathan above - both sit on the merchant
+  # ladder's own rungs (see the "merchant ladder" note under packs:) and
+  # appear in no zone station's pool. They used to be the black market's
+  # stock; the black market sells its own pets now, so these two went back
+  # to being what the merchant has that the stations do not.
   void_empress:
     display-name: "&5&lVoid Empress"
     material: PLAYER_HEAD
@@ -1539,6 +1540,59 @@ items:
     damage: 125000000
     track-exists: true
 
+  # --- The black market's own pets (see black_market_egg below) ---
+  # The only pets bought with real money, and the only ones stronger than a
+  # chase Huge. They ARE Huges - damage is a percentage of the owner's best
+  # NORMAL pet rather than a number of their own - which is the whole reason
+  # they are safe to sell: they multiply whatever progress a player has
+  # already made instead of handing an early-zone account a late-zone pet.
+  # Someone who buys one in Meadow gets a big multiplier on a Meadow squad,
+  # exactly as a buyer in Genesis Core gets one on theirs.
+  #
+  # For scale, the best Huge in the chase (a Secret) is +300%. These run
+  # +400% to +800%: decisively the strongest pets in the game, without being
+  # a different order of magnitude from what a free player can win.
+  black_obsidian_warden:
+    display-name: "&8&lObsidian Warden"
+    material: PLAYER_HEAD
+    rarity: exclusive
+    damage: 1
+    huge: true
+    huge-damage-percent: 4.0
+    track-exists: true
+  black_astral_leviathan:
+    display-name: "&b&lAstral Leviathan"
+    material: PLAYER_HEAD
+    rarity: exclusive
+    damage: 1
+    huge: true
+    huge-damage-percent: 5.0
+    track-exists: true
+  black_eclipse_tyrant:
+    display-name: "&5&lEclipse Tyrant"
+    material: PLAYER_HEAD
+    rarity: exclusive
+    damage: 1
+    huge: true
+    huge-damage-percent: 6.0
+    track-exists: true
+  black_genesis_sovereign:
+    display-name: "&6&lGenesis Sovereign"
+    material: PLAYER_HEAD
+    rarity: exclusive
+    damage: 1
+    huge: true
+    huge-damage-percent: 7.0
+    track-exists: true
+  black_infinity_wyrm:
+    display-name: "&d&lInfinity Wyrm"
+    material: PLAYER_HEAD
+    rarity: exclusive
+    damage: 1
+    huge: true
+    huge-damage-percent: 8.0
+    track-exists: true
+
 packs:
   # --- The merchant ladder (the rotating shop, see ShopStockService) ---
   #
@@ -1565,7 +1619,7 @@ packs:
   # rate-limited by stock besides.
   starter_pack:
     display-name: "&fStarter Egg"
-    material: TURTLE_EGG
+    material: DRAGON_EGG
     coin-cost: 25
     diamond-cost: 0
     sort: 0
@@ -1592,7 +1646,7 @@ packs:
       - { item: tabby_cat, weight: 40 }
   common_pack:
     display-name: "&7Common Egg"
-    material: TURTLE_EGG
+    material: DRAGON_EGG
     coin-cost: 1000
     diamond-cost: 0
     sort: 1
@@ -1617,7 +1671,7 @@ packs:
       - { item: crimson_falcon, weight: 15 }
   uncommon_pack:
     display-name: "&aUncommon Egg"
-    material: TURTLE_EGG
+    material: DRAGON_EGG
     coin-cost: 15000
     diamond-cost: 0
     sort: 2
@@ -1641,7 +1695,7 @@ packs:
       - { item: obsidian_panther, weight: 4 }
   value_pack:
     display-name: "&eValue Egg"
-    material: TURTLE_EGG
+    material: DRAGON_EGG
     coin-cost: 150000
     diamond-cost: 0
     sort: 3
@@ -1667,7 +1721,7 @@ packs:
       - { item: celestial_griffin, weight: 0.25 }
   rare_pack:
     display-name: "&9Rare Egg"
-    material: SNIFFER_EGG
+    material: DRAGON_EGG
     coin-cost: 3000000
     diamond-cost: 100
     sort: 4
@@ -1690,7 +1744,7 @@ packs:
       - { item: cosmic_leviathan, weight: 0.1 }
   jackpot_pack:
     display-name: "&d&lJackpot Egg"
-    material: SNIFFER_EGG
+    material: DRAGON_EGG
     coin-cost: 40000000
     diamond-cost: 750
     sort: 5
@@ -1714,7 +1768,7 @@ packs:
       - { item: wandering_voidling, weight: 0.02 }
   epic_pack:
     display-name: "&5Epic Egg"
-    material: SNIFFER_EGG
+    material: DRAGON_EGG
     coin-cost: 400000000
     diamond-cost: 4000
     sort: 6
@@ -1816,7 +1870,7 @@ packs:
   # never appears there" - no schema change needed).
   zone_meadow_pack:
     display-name: "&aMeadow Egg"
-    material: TURTLE_EGG
+    material: DRAGON_EGG
     coin-cost: 50
     diamond-cost: 0
     sort: 100
@@ -1837,7 +1891,7 @@ packs:
       - { item: zone_meadow_primordial_meadowking, weight: 0.02 }
   zone_frostpeak_pack:
     display-name: "&bFrostpeak Egg"
-    material: TURTLE_EGG
+    material: DRAGON_EGG
     coin-cost: 100
     diamond-cost: 0
     sort: 101
@@ -1858,7 +1912,7 @@ packs:
       - { item: zone_frostpeak_primordial_frostking, weight: 0.02 }
   zone_iron_foothills_pack:
     display-name: "&7Iron Foothills Egg"
-    material: TURTLE_EGG
+    material: DRAGON_EGG
     coin-cost: 300
     diamond-cost: 0
     sort: 102
@@ -1879,7 +1933,7 @@ packs:
       - { item: zone_iron_foothills_primordial_foundryking, weight: 0.02 }
   zone_sulfur_flats_pack:
     display-name: "&eSulfur Flats Egg"
-    material: TURTLE_EGG
+    material: DRAGON_EGG
     coin-cost: 700
     diamond-cost: 0
     sort: 103
@@ -1900,7 +1954,7 @@ packs:
       - { item: zone_sulfur_flats_primordial_miasmaking, weight: 0.02 }
   zone_scorched_wastes_pack:
     display-name: "&cScorched Wastes Egg"
-    material: TURTLE_EGG
+    material: DRAGON_EGG
     coin-cost: 2000
     diamond-cost: 0
     sort: 104
@@ -1921,7 +1975,7 @@ packs:
       - { item: zone_scorched_wastes_primordial_cinderking, weight: 0.02 }
   zone_crystal_caverns_pack:
     display-name: "&dCrystal Caverns Egg"
-    material: TURTLE_EGG
+    material: DRAGON_EGG
     coin-cost: 9000
     diamond-cost: 0
     sort: 105
@@ -1942,7 +1996,7 @@ packs:
       - { item: zone_crystal_caverns_primordial_gemking, weight: 0.02 }
   zone_diamond_hollow_pack:
     display-name: "&bDiamond Hollow Egg"
-    material: TURTLE_EGG
+    material: DRAGON_EGG
     coin-cost: 30000
     diamond-cost: 0
     sort: 106
@@ -1963,7 +2017,7 @@ packs:
       - { item: zone_diamond_hollow_primordial_vaultking, weight: 0.02 }
   zone_emerald_depths_pack:
     display-name: "&2Emerald Depths Egg"
-    material: SNIFFER_EGG
+    material: DRAGON_EGG
     coin-cost: 100000
     diamond-cost: 0
     sort: 107
@@ -1984,7 +2038,7 @@ packs:
       - { item: zone_emerald_depths_primordial_depthking, weight: 0.02 }
   zone_obsidian_rift_pack:
     display-name: "&8Obsidian Rift Egg"
-    material: SNIFFER_EGG
+    material: DRAGON_EGG
     coin-cost: 450000
     diamond-cost: 0
     sort: 108
@@ -2005,7 +2059,7 @@ packs:
       - { item: zone_obsidian_rift_primordial_riftking, weight: 0.02 }
   zone_void_expanse_pack:
     display-name: "&5Void Expanse Egg"
-    material: SNIFFER_EGG
+    material: DRAGON_EGG
     coin-cost: 2000000
     diamond-cost: 0
     sort: 109
@@ -2026,7 +2080,7 @@ packs:
       - { item: zone_void_expanse_primordial_voidking, weight: 0.02 }
   zone_netherite_wastes_pack:
     display-name: "&4Netherite Wastes Egg"
-    material: SNIFFER_EGG
+    material: DRAGON_EGG
     coin-cost: 8000000
     diamond-cost: 0
     sort: 110
@@ -2047,7 +2101,7 @@ packs:
       - { item: zone_netherite_wastes_primordial_netherking, weight: 0.02 }
   zone_ancient_ruins_pack:
     display-name: "&8Ancient Ruins Egg"
-    material: SNIFFER_EGG
+    material: DRAGON_EGG
     coin-cost: 30000000
     diamond-cost: 0
     sort: 111
@@ -2068,7 +2122,7 @@ packs:
       - { item: zone_ancient_ruins_primordial_ruinking, weight: 0.02 }
   zone_end_barrens_pack:
     display-name: "&eEnd Barrens Egg"
-    material: SNIFFER_EGG
+    material: DRAGON_EGG
     coin-cost: 100000000
     diamond-cost: 0
     sort: 112
@@ -2089,7 +2143,7 @@ packs:
       - { item: zone_end_barrens_primordial_endking, weight: 0.02 }
   zone_purpur_spires_pack:
     display-name: "&dPurpur Spires Egg"
-    material: SNIFFER_EGG
+    material: DRAGON_EGG
     coin-cost: 300000000
     diamond-cost: 0
     sort: 113
@@ -2235,76 +2289,35 @@ packs:
       - { item: zone_genesis_core_absolute_progenitor, weight: 0.25 }
       - { item: zone_genesis_core_primordial_genesisking, weight: 0.02 }
 
-  # --- Black market packs (see yield-packstations pack-stations.yml) ---
-  # Only ever sold through the black market's hourly rotation - rarer
-  # floor, higher cost than the equivalent zone pack.
-  elite_frostpeak_pack:
-    display-name: "&bFrostbound Cache"
+  # --- The black market (see yield-packstations' pack-stations.yml) ---
+  # One egg, five pets, bought with STORE CREDITS rather than with anything
+  # earned in a zone - the only thing in the game priced that way.
+  #
+  # It replaced three "elite cache" eggs that sold ordinary zone pets at a
+  # markup on an hourly rotation. Those were a worse version of the zone
+  # station next to them: same pets, more money, and a timer telling you to
+  # come back later. A shop that sells what you cannot get anywhere else is
+  # a reason to look; a shop that sells the same thing slower is not.
+  #
+  # Credits come from the Store (real money, 100 per dollar - see
+  # yield-achievements' DonationGoalStore) and in small amounts from
+  # achievements and milestones, so a free player can reach one of these
+  # eventually and a paying one can have it today. 2,000 credits is $20 a
+  # hatch; it is the single number to turn if that is the wrong price.
+  black_market_egg:
+    display-name: "&8&lBlack Market Egg"
     material: DRAGON_EGG
-    coin-cost: 2500
-    diamond-cost: 30
+    coin-cost: 0
+    diamond-cost: 0
+    credit-cost: 2000
     sort: 200
     shop-weight: 0
     shop-luck-exponent: 0.0
     min-stock: 1
     max-stock: 1
     pool:
-      - { item: zone_frostpeak_snow_vole, weight: 2 }
-      - { item: zone_frostpeak_frost_hare, weight: 2 }
-      - { item: zone_frostpeak_swift_owl, weight: 4 }
-      - { item: zone_frostpeak_spotted_lynx, weight: 4 }
-      - { item: zone_frostpeak_iron_wolf, weight: 10 }
-      - { item: zone_frostpeak_storm_hawk, weight: 10 }
-      - { item: zone_frostpeak_frostpeak_champion, weight: 20 }
-      - { item: zone_frostpeak_sovereign_yeti, weight: 15 }
-      - { item: zone_frostpeak_glacial_wyrm, weight: 8 }
-      - { item: zone_frostpeak_primordial_frostking, weight: 1 }
-  elite_crystal_caverns_pack:
-    display-name: "&dCrystalline Cache"
-    material: DRAGON_EGG
-    coin-cost: 400000
-    diamond-cost: 3000
-    sort: 201
-    shop-weight: 0
-    shop-luck-exponent: 0.0
-    min-stock: 1
-    max-stock: 1
-    pool:
-      - { item: zone_crystal_caverns_cave_bat, weight: 2 }
-      - { item: zone_crystal_caverns_crystal_mole, weight: 2 }
-      - { item: zone_crystal_caverns_swift_spider, weight: 4 }
-      - { item: zone_crystal_caverns_spotted_gecko, weight: 4 }
-      - { item: zone_crystal_caverns_iron_golem, weight: 10 }
-      - { item: zone_crystal_caverns_storm_wraith, weight: 10 }
-      - { item: zone_crystal_caverns_crystal_caverns_champion, weight: 20 }
-      - { item: zone_crystal_caverns_sovereign_behemoth, weight: 15 }
-      - { item: zone_crystal_caverns_prismatic_elemental, weight: 8 }
-      - { item: zone_crystal_caverns_primordial_gemking, weight: 1 }
-  elite_genesis_core_pack:
-    display-name: "&eGenesis Cache"
-    material: DRAGON_EGG
-    coin-cost: 5000000000000
-    diamond-cost: 100000000
-    sort: 202
-    shop-weight: 0
-    shop-luck-exponent: 0.0
-    min-stock: 1
-    max-stock: 1
-    pool:
-      - { item: zone_genesis_core_core_sprout, weight: 2 }
-      - { item: zone_genesis_core_genesis_seedling, weight: 2 }
-      - { item: zone_genesis_core_swift_progenitor, weight: 4 }
-      - { item: zone_genesis_core_spotted_architect, weight: 4 }
-      - { item: zone_genesis_core_iron_creator, weight: 10 }
-      - { item: zone_genesis_core_storm_primordial, weight: 10 }
-      - { item: zone_genesis_core_genesis_core_champion, weight: 20 }
-      - { item: zone_genesis_core_sovereign_architect, weight: 15 }
-      - { item: zone_genesis_core_absolute_progenitor, weight: 8 }
-      - { item: zone_genesis_core_primordial_genesisking, weight: 1 }
-      # The cache's headline, and the one place a Huge is sold rather than
-      # chased: won from this pool at this weight, so it reports the odds it
-      # actually beat (see PackRollService#rollInPlace). These two slots used
-      # to hold Cosmic Leviathan and Void Empress - 1,200 and 2,500 damage,
-      # in a pack whose weakest pet hits for 1,250,000.
-      - { item: zone_genesis_core_sovereign_architect_huge, weight: 1 }
-      - { item: zone_genesis_core_absolute_progenitor_huge, weight: 1 }
+      - { item: black_obsidian_warden, weight: 30 }
+      - { item: black_astral_leviathan, weight: 25 }
+      - { item: black_eclipse_tyrant, weight: 20 }
+      - { item: black_genesis_sovereign, weight: 15 }
+      - { item: black_infinity_wyrm, weight: 10 }

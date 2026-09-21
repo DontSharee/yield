@@ -276,12 +276,16 @@ public final class PackRollService {
         if (charge) {
             BigInteger coinCost = BigInteger.valueOf(pack.coinCost()).multiply(BigInteger.valueOf(actual));
             BigInteger diamondCost = BigInteger.valueOf(pack.diamondCost()).multiply(BigInteger.valueOf(actual));
-            if (profile.getCoins().compareTo(coinCost) < 0 || profile.getDiamonds().compareTo(diamondCost) < 0) {
+            BigInteger creditCost = BigInteger.valueOf(pack.creditCost()).multiply(BigInteger.valueOf(actual));
+            if (profile.getCoins().compareTo(coinCost) < 0
+                    || profile.getDiamonds().compareTo(diamondCost) < 0
+                    || profile.getCredits().compareTo(creditCost) < 0) {
                 return PurchaseResult.failure("You can't afford " + actual + "x "
                         + Formatting.stripLeadingColorCodes(pack.displayName()) + ".");
             }
             profile.setCoins(profile.getCoins().subtract(coinCost));
             profile.setDiamonds(profile.getDiamonds().subtract(diamondCost));
+            profile.setCredits(profile.getCredits().subtract(creditCost));
         }
         profile.setActivePackId(packId);
 
@@ -309,7 +313,8 @@ public final class PackRollService {
         int limit = Math.min(cap, MULTI_OPEN_CAP);
         int byCoins = pack.coinCost() <= 0 ? limit : affordableUnits(profile.getCoins(), pack.coinCost(), limit);
         int byDiamonds = pack.diamondCost() <= 0 ? limit : affordableUnits(profile.getDiamonds(), pack.diamondCost(), limit);
-        return Math.max(0, Math.min(byCoins, byDiamonds));
+        int byCredits = pack.creditCost() <= 0 ? limit : affordableUnits(profile.getCredits(), pack.creditCost(), limit);
+        return Math.max(0, Math.min(Math.min(byCoins, byDiamonds), byCredits));
     }
 
     /** One internal roll result and the luck multiplier that produced it - private since a caller only ever needs the public {@link RollResult} half; the multiplier is just plumbing for {@link PurchaseResult}. */

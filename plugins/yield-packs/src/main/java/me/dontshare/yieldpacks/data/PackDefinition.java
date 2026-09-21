@@ -15,6 +15,13 @@ import java.util.List;
  * {@code minStock}/{@code maxStock} bound how many units of it a given
  * roll makes available.
  * <p>
+ * An egg is priced in coins and diamonds, or in {@code creditCost} - the
+ * Store currency, which is bought with real money (and handed out in small
+ * amounts by achievements and milestones). The black market is the only
+ * thing that uses it, and it is deliberately either/or: an egg that took
+ * both would be asking a player to spend real money AND grind for the same
+ * pull.
+ * <p>
  * {@code headDatabaseId} is what the egg actually LOOKS like wherever it is
  * rendered in the world - the station it sits on and the clutch that hatches
  * in front of the player. It falls back to {@code material} when HeadDatabase
@@ -23,7 +30,12 @@ import java.util.List;
  * own {@code egg-head-database-id} when a pack doesn't name its own.
  */
 public record PackDefinition(String id, String displayName, Material material, Integer customModelData,
-                              String headDatabaseId, long coinCost, long diamondCost, int sortOrder,
-                              List<PackPoolEntry> pool, double shopWeight, double shopLuckExponent,
+                              String headDatabaseId, long coinCost, long diamondCost, long creditCost,
+                              int sortOrder, List<PackPoolEntry> pool, double shopWeight, double shopLuckExponent,
                               int minStock, int maxStock) {
+
+    /** Whether this egg is bought with Store credits rather than with coins earned in game - see the black market in packs.yml. */
+    public boolean creditPriced() {
+        return creditCost > 0;
+    }
 }

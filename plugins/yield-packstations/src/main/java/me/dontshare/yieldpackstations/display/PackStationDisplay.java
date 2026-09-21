@@ -11,6 +11,7 @@ import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldpacks.data.PackDefinition;
+import me.dontshare.yieldpacks.gui.PackOddsLore;
 import me.dontshare.yieldpackstations.PackStationService;
 import me.dontshare.yieldpackstations.data.PackStation;
 import net.kyori.adventure.text.Component;
@@ -33,9 +34,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * The packet-visual layer for physical egg stations - an invisible
  * clickable hitbox, a floating text readout and, where yield-upgrades'
  * {@code UpgradeStationDisplay} puts a little concrete button, a large
- * slowly-turning dragon egg. The egg IS the station: it is the thing you
- * walk up to, the thing you smack, and the thing that vanishes when a
- * hatch begins.
+ * dragon egg. The egg IS the station: it is the thing you walk up to, the
+ * thing you smack, and the thing that vanishes when a hatch begins.
+ * <p>
+ * It does not turn. An earlier pass span it slowly for ambience, which
+ * fought the squash-on-smack animation for the same rotation channel and
+ * made a fixed landmark read as something that had just spawned. A big
+ * still egg looks placed; a turning one looks dropped.
  * <p>
  * Both click types are registered, and they are not the same action:
  * left-click ({@link EntityClickRegistry#register} - the "smack") hatches
@@ -50,9 +55,7 @@ public final class PackStationDisplay {
     private static final double VIEW_DISTANCE_SQUARED = 48.0 * 48.0;
     private static final long TICK_INTERVAL = 20L; // 1 second
     /** Big enough to read as a landmark from across the zone entrance rather than as a decoration on the wall. */
-    private static final float EGG_SCALE = 1.6f;
-    /** A full turn every this many seconds - slow enough to be ambient, fast enough that the station never looks frozen. */
-    private static final int EGG_SPIN_SECONDS = 8;
+    private static final float EGG_SCALE = 2.4f;
     /** How long the egg stays gone once a hatch starts, covering the shake-and-crack before it fades back in. */
     private static final long EGG_HIDE_TICKS = 70L;
     // Widened from 0.8 with the egg: the clickable box should cover what a
@@ -60,7 +63,7 @@ public final class PackStationDisplay {
     // of the little concrete button this replaced. The INSETS below stay at
     // their empirically-tuned values - the anchor did not move, only the
     // box around it - but both want a look in game.
-    private static final float HITBOX_SIZE = 1.6f;
+    private static final float HITBOX_SIZE = 2.4f;
     /** How close a player must stand for the auto-hatch loop to count them as being AT this station. */
     private static final double HATCH_SITE_RANGE_SQUARED = 6.0 * 6.0;
     // Decoupled from HITBOX_SIZE's own (1-size)/2 corner-inset formula -
@@ -87,8 +90,6 @@ public final class PackStationDisplay {
     private final PackStationService stationService;
 
     private volatile List<PackStation> stations = List.of();
-    /** Drives the ambient spin - seconds since start, since the display tick is one per second. */
-    private int tickCount;
     private final Map<PackStation, Set<UUID>> viewersByStation = new ConcurrentHashMap<>();
     /** What each viewer was last actually shown per station, so an unchanged sign costs nothing - see {@link #refreshFor}. */
     private final Map<UUID, Map<PackStation, String>> lastRenderState = new ConcurrentHashMap<>();
@@ -132,7 +133,6 @@ public final class PackStationDisplay {
     }
 
     private void tick() {
-        int ticksElapsed = tickCount++;
         for (Player viewer : Bukkit.getOnlinePlayers()) {
             for (PackStation station : stations) {
                 Set<UUID> viewers = viewersByStation.get(station);
@@ -154,9 +154,7 @@ public final class PackStationDisplay {
                     // mid-view the instant its rotation flips, and a coin
                     // balance can change from something unrelated too.
                     refreshFor(viewer, station);
-                    if (updateEgg(viewer, station)) {
-                        spinEgg(viewer, station, ticksElapsed);
-                    }
+                    updateEgg(viewer, station);
                 }
             }
         }
@@ -295,20 +293,6 @@ public final class PackStationDisplay {
         return true;
     }
 
-    /**
-     * Turns every visible egg a little further round, interpolated across
-     * the whole second until the next step, so a station is always gently
-     * moving. Runs off the same once-a-second tick everything else here
-     * does - a genuinely smooth spin would need a packet per tick per
-     * viewer per station, which is twenty times the traffic for an effect
-     * nobody is staring at.
-     */
-    private void spinEgg(Player viewer, PackStation station, int secondsElapsed) {
-        float yaw = (secondsElapsed % EGG_SPIN_SECONDS) * (360f / EGG_SPIN_SECONDS);
-        ItemDisplayManager.setInterpolation(viewer, station.buttonEntityId(), 0, (int) TICK_INTERVAL, (int) TICK_INTERVAL);
-        ItemDisplayManager.setRotation(viewer, station.buttonEntityId(), 0f, yaw);
-    }
-
     /** The egg squashes when smacked and springs back - the whole feedback a hold-down player gets, since the refusals are silent. */
     private void playPushAnimation(Player viewer, PackStation station) {
         ItemDisplayManager.setInterpolation(viewer, station.buttonEntityId(), 0, PUSH_TICKS, PUSH_TICKS);
@@ -356,6 +340,9 @@ public final class PackStationDisplay {
         ItemDisplayManager.spawn(viewer, station.buttonEntityId(), eggLocation(station.location()));
         ItemDisplayManager.setItem(viewer, station.buttonEntityId(), eggItem(station));
         ItemDisplayManager.setScale(viewer, station.buttonEntityId(), EGG_SCALE, EGG_SCALE, EGG_SCALE);
+        // Square-on to whoever is looking at the station's front, set once
+        // and never touched again - see this class's note on not spinning.
+        ItemDisplayManager.setRotation(viewer, station.buttonEntityId(), 0f, station.location().getYaw());
         String packId = stationService.currentPackId(station);
         if (packId != null) {
             shownEggPackId.computeIfAbsent(viewer.getUniqueId(), id -> new ConcurrentHashMap<>()).put(station, packId);
@@ -371,7 +358,7 @@ public final class PackStationDisplay {
 
     /** Floats the egg off the pedestal so it reads as an object on display rather than a block stuck to the wall. */
     private Location eggLocation(Location stationCorner) {
-        return stationCorner.clone().add(0.5, 0.75, 0.5);
+        return stationCorner.clone().add(0.5, 1.0, 0.5);
     }
 
     /** See HITBOX_INSET's own comment - same corner-anchored Interaction quirk as UpgradeStationDisplay#hitboxLocation, tuned independently. */
@@ -388,7 +375,7 @@ public final class PackStationDisplay {
      * readout buried inside it.
      */
     private Location textLocation(Location stationCorner) {
-        return stationCorner.clone().add(0.2, 2.0, 0.5);
+        return stationCorner.clone().add(0.2, 2.7, 0.5);
     }
 
     private void despawnFor(Player viewer, PackStation station) {
@@ -428,13 +415,11 @@ public final class PackStationDisplay {
             return Text.parse(label + "&7Nothing in stock right now");
         }
 
-        String costLine = "&7Cost: &a$<coins>" + (pack.diamondCost() > 0 ? " &8+ &b<diamonds> diamonds" : "");
+        String costLine = "&7Cost: " + PackOddsLore.costLine(pack, 1);
         String template = label + pack.displayName() + "\n" + costLine
                 + "\n&7Smack to hatch &8| &7Sneak-smack for many"
                 + "\n&7Right-click for drops";
 
-        return Text.parse(template,
-                Placeholder.unparsed("coins", Formatting.format((double) pack.coinCost())),
-                Placeholder.unparsed("diamonds", Formatting.format((double) pack.diamondCost())));
+        return Text.parse(template);
     }
 }

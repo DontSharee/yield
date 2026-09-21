@@ -86,29 +86,27 @@ stations:
 # location - all of them read the exact same live rotation, so a player
 # never has to travel back to one specific spot to check the black market.
 black-market:
+  # One egg, five pets, bought with Store credits - see packs.yml's own
+  # black_market_egg for what it sells and why it is priced in a currency
+  # you cannot mine.
+  #
+  # "pool" is still a list because the rotation machinery can serve several,
+  # but there is deliberately only one now: a shop whose whole point is
+  # selling what nothing else sells has nothing to rotate BETWEEN, and the
+  # hourly timer it used to run was telling players to come back later to
+  # buy the same zone pets they could already buy next door.
   reset-interval-minutes: 60
   pool:
-    - elite_frostpeak_pack
-    - elite_crystal_caverns_pack
-    - elite_genesis_core_pack
+    - black_market_egg
+  # One kiosk every third zone rather than one at every entrance. Twenty of
+  # them made the rarest shop in the game the most common building in it;
+  # seven keeps it somewhere you go looking for, and still never more than a
+  # zone or two away from wherever a player is.
   stations:
-    - location: [world, -19.5, 99, 77.5, 90, 0]
-    - location: [world, -19.5, 99, 172.5, 90, 0]
-    - location: [world, -19.5, 99, 267.5, 90, 0]
-    - location: [world, -19.5, 99, 362.5, 90, 0]
-    - location: [world, -19.5, 99, 457.5, 90, 0]
-    - location: [world, -19.5, 99, 552.5, 90, 0]
-    - location: [world, -19.5, 99, 647.5, 90, 0]
-    - location: [world, -19.5, 99, 742.5, 90, 0]
-    - location: [world, -19.5, 99, 837.5, 90, 0]
-    - location: [world, -19.5, 99, 932.5, 90, 0]
-    - location: [world, -19.5, 99, 1027.5, 90, 0]
-    - location: [world, -19.5, 99, 1122.5, 90, 0]
-    - location: [world, -19.5, 99, 1217.5, 90, 0]
-    - location: [world, -19.5, 99, 1312.5, 90, 0]
-    - location: [world, -19.5, 99, 1407.5, 90, 0]
-    - location: [world, -19.5, 99, 1502.5, 90, 0]
-    - location: [world, -19.5, 99, 1597.5, 90, 0]
-    - location: [world, -19.5, 99, 1692.5, 90, 0]
-    - location: [world, -19.5, 99, 1787.5, 90, 0]
-    - location: [world, -19.5, 99, 1882.5, 90, 0]
+    - location: [world, -19.5, 99, 77.5, 90, 0] # meadow
+    - location: [world, -19.5, 99, 362.5, 90, 0] # sulfur_flats
+    - location: [world, -19.5, 99, 647.5, 90, 0] # diamond_hollow
+    - location: [world, -19.5, 99, 932.5, 90, 0] # void_expanse
+    - location: [world, -19.5, 99, 1217.5, 90, 0] # end_barrens
+    - location: [world, -19.5, 99, 1502.5, 90, 0] # starlight_fields
+    - location: [world, -19.5, 99, 1787.5, 90, 0] # astral_peak

@@ -94,8 +94,7 @@ public final class EggCatalogGui {
         lore.add("");
         lore.addAll(oddsLore.lines(egg, viewer));
         lore.add("");
-        lore.add("&7Cost: &a$" + Formatting.format((double) egg.coinCost())
-                + (egg.diamondCost() > 0 ? " &8+ &b" + Formatting.format((double) egg.diamondCost()) + " diamonds" : ""));
+        lore.add("&7Cost: " + PackOddsLore.costLine(egg, 1));
         lore.forEach(builder::lore);
         return builder.hideAttributes().build();
     }
@@ -104,7 +103,7 @@ public final class EggCatalogGui {
      * Where this egg physically is. Derived from the id rather than from a
      * zone lookup because yield-packs deliberately knows nothing about
      * yield-zones - the id convention ({@code zone_<zone>_pack},
-     * {@code elite_<zone>_pack}) is the only coupling either side has, and
+     * {@code black_market_egg}) is the only coupling either side has, and
      * it is one the pack stations file already relies on.
      */
     private String whereToHatch(PackDefinition egg) {
@@ -112,7 +111,7 @@ public final class EggCatalogGui {
         if (id.startsWith("zone_") && id.endsWith("_pack")) {
             return prettify(id.substring("zone_".length(), id.length() - "_pack".length())) + " station";
         }
-        if (id.startsWith("elite_") && id.endsWith("_pack")) {
+        if (id.startsWith("black_")) {
             return "black market";
         }
         return egg.shopWeight() > 0 ? "merchant" : "special";

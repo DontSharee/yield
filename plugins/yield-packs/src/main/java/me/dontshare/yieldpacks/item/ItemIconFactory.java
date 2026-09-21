@@ -35,7 +35,7 @@ public final class ItemIconFactory {
      * from config.
      */
     public ItemStack headOrFallback(String headDatabaseId, org.bukkit.Material fallback) {
-        if (headDatabaseId != null && headDatabaseApi != null) {
+        if (headDatabaseId != null && !headDatabaseId.isBlank() && headDatabaseApi != null) {
             ItemStack head = headDatabaseApi.getItemHead(headDatabaseId);
             if (head != null) {
                 return head;
