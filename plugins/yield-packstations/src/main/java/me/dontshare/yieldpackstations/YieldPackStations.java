@@ -5,6 +5,7 @@ import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldpackstations.command.PackStationsAdminCommand;
 import me.dontshare.yieldpackstations.data.BlackMarketConfig;
 import me.dontshare.yieldpackstations.data.PackStation;
+import me.dontshare.yieldpackstations.data.PackStationContentLoader;
 import me.dontshare.yieldpackstations.data.PackStationContentLoader.PackStationContent;
 import me.dontshare.yieldpackstations.data.PackStationContentLoader;
 import me.dontshare.yieldpackstations.display.PackStationDisplay;
@@ -39,10 +40,13 @@ public final class YieldPackStations extends JavaPlugin {
         // deferred loads have run, and validating our own "zone:"/"pack:"
         // references synchronously here would check them against still-
         // empty placeholder data on every fresh boot.
-        content = new PackStationContent(List.of(), List.of(), new BlackMarketConfig(60 * 60 * 1000L, List.of()));
+        content = new PackStationContent(List.of(), List.of(), List.of(),
+                new BlackMarketConfig(60 * 60 * 1000L, List.of()));
 
         blackMarket = new BlackMarketRotationService(() -> content);
-        stationService = new PackStationService(packs, zones::getZones, zones.getZoneLockService(), blackMarket);
+        stationService = new PackStationService(packs, zones::getZones, zones.getZoneLockService());
+        stationService.registerDynamicPack(PackStationContentLoader.BLACK_MARKET_KEY,
+                blackMarket::currentPackId, () -> "<#4BD9FF><bold>Black Market</bold></#4BD9FF>");
         display = new PackStationDisplay(this, packs, stationService);
         display.start();
         // Auto-hatch only runs while a player is stood at an egg, and only
@@ -60,11 +64,17 @@ public final class YieldPackStations extends JavaPlugin {
         Bukkit.getScheduler().runTask(this, this::reloadContent);
     }
 
+    /** The station registry other plugins hand their own station contents to - see PackStationService#registerDynamicPack. */
+    public PackStationService getStationService() {
+        return stationService;
+    }
+
     /** Re-reads pack-stations.yml and re-syncs every physical station's spawned entities/click handlers to the new content - see PackStationDisplay#reload. */
     public void reloadContent() {
         content = contentLoader.load();
         List<PackStation> all = new ArrayList<>(content.zoneStations());
         all.addAll(content.blackMarketStations());
+        all.addAll(content.eventStations());
         display.reload(all);
     }
 }

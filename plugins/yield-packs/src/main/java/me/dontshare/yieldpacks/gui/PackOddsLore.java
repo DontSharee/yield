@@ -98,6 +98,12 @@ public final class PackOddsLore {
             return "&b" + Formatting.format(BigInteger.valueOf(egg.creditCost()).multiply(BigInteger.valueOf(units)))
                     + " credits";
         }
+        if (egg.coinCost() <= 0 && egg.diamondCost() <= 0) {
+            // Nothing here prices it, so something else does - a seasonal
+            // event charges its own currency at its own station (see
+            // yield-events). "$0" would read as free, which it is not.
+            return "&7paid at its station";
+        }
         String line = "&a$" + Formatting.format(BigInteger.valueOf(egg.coinCost()).multiply(BigInteger.valueOf(units)));
         if (egg.diamondCost() > 0) {
             line += " &8+ &b" + Formatting.format(BigInteger.valueOf(egg.diamondCost()).multiply(BigInteger.valueOf(units)))

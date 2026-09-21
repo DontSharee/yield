@@ -60,6 +60,9 @@ project(":yield-upgrades").projectDir = file("plugins/yield-upgrades")
 include("yield-packstations")
 project(":yield-packstations").projectDir = file("plugins/yield-packstations")
 
+include("yield-events")
+project(":yield-events").projectDir = file("plugins/yield-events")
+
 include("yield-zonemachines")
 project(":yield-zonemachines").projectDir = file("plugins/yield-zonemachines")
 

@@ -1,0 +1,54 @@
+# Seasonal events: a window of dates in which an extra currency drops from
+# cubes and an extra egg stands at spawn selling pets that exist nowhere
+# else and are gone when it ends.
+#
+# Almost nothing about an event lives here. Its PETS are ordinary pets in
+# yield-packs' packs.yml, its EGG is an ordinary pack there too (so it gets
+# the hatch animation, the odds screens, the Index and the Huge chase for
+# free), and its STATION is an ordinary station in yield-packstations'
+# pack-stations.yml under "event-stations" (so it gets the big dragon egg,
+# smack-to-hatch, the bulk rungs and auto-hatch for free). This file is
+# only the three things that are genuinely seasonal: WHEN it runs, what its
+# currency is, and what that currency buys.
+#
+# Dates are the server's own local date, inclusive at both ends, and are
+# re-read live - nothing needs restarting or toggling. A server that is up
+# at midnight on the start date begins the event by itself, and one that
+# boots mid-event is already in it. Run /admin events reload after editing.
+#
+# To add next year's dates, change start/end. To add a NEW event: write its
+# pets and its egg into packs.yml, then add a block here pointing at that
+# egg. No code changes.
+events:
+  halloween:
+    display-name: "Halloween"
+    color: "#FF8C3B"
+    start: "2026-10-20"
+    end: "2026-11-03"
+    currency:
+      name: "Candy"
+      # Per cube killed. Flat, NOT a share of the payout: coins scale by a
+      # factor of a million across the zone ladder, so a proportional drop
+      # would make an early player's Candy worthless and a late player's
+      # free. An hour of play should be worth an hour of play wherever it
+      # is spent.
+      drop-chance: 0.08
+      drop-min: 1
+      drop-max: 3
+    egg: event_halloween_egg
+    # At ~0.16 Candy per cube and a couple of cubes a second, this is about
+    # twenty minutes of play per hatch - a fortnight's event gives a casual
+    # player a handful and a dedicated one the whole set.
+    egg-price: 400
+  winter:
+    display-name: "Winter Festival"
+    color: "#7CD8FF"
+    start: "2026-12-15"
+    end: "2027-01-05"
+    currency:
+      name: "Snowflakes"
+      drop-chance: 0.08
+      drop-min: 1
+      drop-max: 3
+    egg: event_winter_egg
+    egg-price: 400

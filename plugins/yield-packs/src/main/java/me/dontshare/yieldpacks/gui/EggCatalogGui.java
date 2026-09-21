@@ -103,7 +103,8 @@ public final class EggCatalogGui {
      * Where this egg physically is. Derived from the id rather than from a
      * zone lookup because yield-packs deliberately knows nothing about
      * yield-zones - the id convention ({@code zone_<zone>_pack},
-     * {@code black_market_egg}) is the only coupling either side has, and
+     * {@code black_market_egg}, {@code event_*}) is the only coupling either
+     * side has, and
      * it is one the pack stations file already relies on.
      */
     private String whereToHatch(PackDefinition egg) {
@@ -113,6 +114,9 @@ public final class EggCatalogGui {
         }
         if (id.startsWith("black_")) {
             return "black market";
+        }
+        if (id.startsWith("event_")) {
+            return "seasonal event";
         }
         return egg.shopWeight() > 0 ? "merchant" : "special";
     }

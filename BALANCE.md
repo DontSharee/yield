@@ -328,6 +328,44 @@ is a reason to look; a shop that sells the same thing slower is not.
 
 ---
 
+## 2e. Seasonal events
+
+A window of dates in which an extra currency drops from cubes and an extra
+egg stands at spawn, selling pets that exist nowhere else and leave with it.
+
+Two ship configured: **Halloween** (Oct 20 – Nov 3, Candy) and the **Winter
+Festival** (Dec 15 – Jan 5, Snowflakes). Each sells a five-pet egg:
+
+| rarity | damage | chance |
+|---|---|---|
+| Rare | 25,000 | 62% |
+| Epic | 150,000 | 25% |
+| Legendary | 800,000 | 9% |
+| Mythic | 4,000,000 | 2.5% |
+| Secret | 20,000,000 | 0.6% |
+
+The top of each set lands around what the 18th zone drops — a real prize
+for a mid-game player, and still short of both the black market's best
+(60M) and the Genesis Core Secret (125M). A fortnight should be worth
+showing up for without ending anyone's progression.
+
+**The currency is a flat drop** — 8% of cubes pay 1–3 Candy — and
+deliberately *not* a share of the payout. Coins scale by a factor of a
+million across the zone ladder, so a proportional drop would make an early
+player's Candy worthless and a late player's free. A flat rate means an
+hour of play is worth an hour of play wherever it is spent, which is what a
+seasonal currency has to be if the event is for everyone.
+
+At ~0.16 Candy a cube and a couple of cubes a second, the 400-Candy egg is
+about **twenty minutes of play per hatch**: a casual player gets a handful
+over a fortnight, a dedicated one gets the set.
+
+**Leftover currency is never wiped.** Candy is worth nothing until next
+October, which is the point — nobody has to be told their currency expired,
+and a player who grinds the last day has something waiting a year later.
+
+---
+
 ## 3. The pacing curve
 
 The unlock ladder is a uniform **~4× per zone**, every step a round number.
