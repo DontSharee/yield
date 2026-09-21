@@ -35,8 +35,8 @@ import java.util.function.Supplier;
  * of a minute's income in that zone, so a settled player can afford roughly
  * two and a half per second. Bulk tiers are what keep the loop bound by
  * income (which scales with the player) instead of by the clock (which does
- * not); that is why 1x/3x/5x are ungated and only the top 24x rung sits
- * behind {@link #MULTI_OPEN_PERMISSION}.
+ * not); that is why everything up to {@link #UNGATED_TIER_CAP} is free and
+ * only the top 24x rung sits behind {@link #MULTI_OPEN_PERMISSION}.
  */
 public final class PackOpenService {
 

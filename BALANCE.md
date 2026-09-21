@@ -291,9 +291,30 @@ out to be too much — pulling the top down to the 1–5M range would make
 them best-in-slot for the middle of the run rather than for all of it.
 
 **Price** is 2,000 credits a hatch — $20 at the Store's 100-credits-to-the-
-dollar rate. Achievements and milestones also pay credits (a few thousand
-across a whole playthrough), so a free player reaches one eventually and a
-paying one has it today. That number is the single dial if it is wrong.
+dollar rate. That number is the single dial if it is wrong.
+
+### The credit budget
+
+Credits are the Store currency and the only way to buy a gamepass, a rank
+or a black market egg, so what the game hands out for free sets what real
+money is worth. The whole game now gives away about **1,650** across a full
+playthrough:
+
+| source | credits |
+|---|---|
+| Achievements (10) | 860 |
+| Milestones (17 tiers) | 685 |
+| Quests | 80 |
+| Lootboxes | 50 |
+
+That is one cheaper gamepass *or* most of one black market hatch: enough
+for a free player to taste the premium shelf, not enough to clear it.
+
+It used to be **18,985**, against a store that costs **15,073** for one of
+everything — every gamepass, both ranks and a black market egg were free to
+anyone who simply played for a while, which made the Multi-Hatch pass's
+careful balancing in §2c meaningless and the black market's "real money
+pets" a misnomer.
 
 **Placement**: one kiosk every third zone, seven in all, rather than one at
 every entrance. Twenty made the rarest shop in the game the most common
