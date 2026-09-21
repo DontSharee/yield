@@ -27,13 +27,15 @@ steps:
     label: "Hatch an egg"
     dialogue:
       - "Welcome to Yield!"
-      - "Let's get you started - go hatch your first egg."
+      - "Let's get you started - find the floating egg at the zone entrance."
+      - "Smack it to hatch one, or right-click to see what's inside first."
     completes-on: OPEN_PACK
     goal: 1
   - id: equip
     label: "Equip a pet"
     dialogue:
       - "Nice pull! Now equip that pet from your Bag (/bag)."
+      - "Sneak-smack the egg to hatch a whole batch at once."
     completes-on: EQUIP_PET
     goal: 1
   - id: enter_zone

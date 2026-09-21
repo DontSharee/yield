@@ -220,15 +220,29 @@ nothing to spend them on, and the gap widens with every multiplier a player
 buys. So:
 
 - The cooldown is charged **once per action**, not once per egg.
-- The rungs are 1x / 3x / 5x / 24x, and **1x, 3x and 5x are ungated**. Only
-  24x needs the Multi-Hatch gamepass.
-- 5x against a 1s cooldown is 5 eggs/second, comfortably above the ~2.5 a
-  free player can afford. The loop stays bound by income, which scales with
-  the player, rather than by the clock, which does not.
+- The rungs are 1x / 5x / 10x / 24x, and **everything up to 10x is
+  ungated**. Only 24x needs the Multi-Hatch gamepass.
+- 10x against a 1s cooldown is 10 eggs/second, well above the ~2.5 a free
+  player can afford. The loop stays bound by income, which scales with the
+  player, rather than by the clock, which does not.
 
-Gating bulk entirely behind the gamepass would have made the pass a
-progression item rather than a convenience one, which is the line this
-server's monetization otherwise stays on the right side of.
+**Why the ungated cap is 10 and not 5.** Hatching is something you do
+standing at a station, so unlike the old buy-in-bulk-and-open-while-mining
+model it does not overlap with earning. A minute of mining funds ~150
+hatches, and one action per second turns that into time spent at the egg
+instead of at the cubes:
+
+| rung | actions per minute mined | time at the egg |
+|---|---|---|
+| 5x | 30 | 50% of the mining time |
+| 10x | 15 | 25% |
+| 24x | 6 | 10% |
+
+At a cap of 5 the gamepass was worth roughly a quarter of a player's whole
+progression rate - a gate, not a convenience, and the line this server's
+monetization otherwise stays on the right side of. At 10 it saves about a
+tenth: real, worth buying, and not the difference between keeping up and
+falling behind.
 
 **A hatch in flight never blocks the next one.** The reveal runs ~3.5s for a
 single egg, so refusing while it plays would have capped the game at one

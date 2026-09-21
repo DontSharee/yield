@@ -87,6 +87,10 @@ public final class PacksAdminCommand {
         profile.clearPets();
         profile.getEquippedPetIds().clear();
         profile.getPackCollectionProgress().clear();
+        // Legacy, and only still read by StoredEggRefundListener - clearing
+        // it here stops a reset player being handed a refund on their next
+        // join for eggs the reset just took away.
+        profile.getStoredPacks().clear();
         profile.getLastObtainedAt().clear();
         plugin.getPlayerStore().save(target.getUniqueId());
         plugin.getPetDisplayService().refresh(target);

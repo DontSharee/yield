@@ -92,6 +92,10 @@ public final class PackStationDisplay {
     private final Map<PackStation, Set<UUID>> viewersByStation = new ConcurrentHashMap<>();
     /** What each viewer was last actually shown per station, so an unchanged sign costs nothing - see {@link #refreshFor}. */
     private final Map<UUID, Map<PackStation, String>> lastRenderState = new ConcurrentHashMap<>();
+    /** Which egg is currently ON each viewer's screen per station, so a rotation swaps the item instead of respawning the entity. */
+    private final Map<UUID, Map<PackStation, String>> shownEggPackId = new ConcurrentHashMap<>();
+    /** When each viewer's hidden egg is due back, per station - see {@link #hideEggDuringHatch}. */
+    private final Map<UUID, Map<PackStation, Long>> eggHiddenUntil = new ConcurrentHashMap<>();
 
     public PackStationDisplay(JavaPlugin plugin, YieldPacks packs, PackStationService stationService) {
         this.plugin = plugin;
@@ -150,7 +154,9 @@ public final class PackStationDisplay {
                     // mid-view the instant its rotation flips, and a coin
                     // balance can change from something unrelated too.
                     refreshFor(viewer, station);
-                    spinEgg(viewer, station, ticksElapsed);
+                    if (updateEgg(viewer, station)) {
+                        spinEgg(viewer, station, ticksElapsed);
+                    }
                 }
             }
         }
@@ -200,20 +206,17 @@ public final class PackStationDisplay {
     /**
      * The station's own egg vanishes for the length of the hatch, so the
      * only eggs on screen are the ones actually cracking open in front of
-     * the player - then fades back, ready for the next one.
+     * the player - then comes back, ready for the next one.
+     * <p>
+     * Recorded as a due-time the display tick honours rather than scheduling
+     * its own respawn, because a player holding down the smack hides it
+     * several times a second: one task per hide would race a pile of
+     * respawns against each other, while a due-time just moves further out.
      */
     private void hideEggDuringHatch(Player player, PackStation station) {
+        eggHiddenUntil.computeIfAbsent(player.getUniqueId(), id -> new ConcurrentHashMap<>())
+                .put(station, System.currentTimeMillis() + EGG_HIDE_TICKS * 50L);
         PacketEntityManager.destroyEntity(player, station.buttonEntityId());
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            if (!player.isOnline()) {
-                return;
-            }
-            Set<UUID> viewers = viewersByStation.get(station);
-            if (viewers == null || !viewers.contains(player.getUniqueId())) {
-                return;
-            }
-            spawnEgg(player, station);
-        }, EGG_HIDE_TICKS);
     }
 
     /** Whichever station this player is standing at, or null - the answer PackOpenService's auto-hatch loop asks for. */
@@ -249,9 +252,47 @@ public final class PackStationDisplay {
         perStation.put(station, state);
 
         TextDisplayManager.setText(viewer, station.textEntityId(), buildText(viewer, station));
-        // A black-market station's egg changes with its rotation, so the
-        // display has to follow it, not just the sign above it.
-        spawnEgg(viewer, station);
+    }
+
+    /**
+     * The egg's own once-a-second upkeep, kept out of {@link #refreshFor}
+     * because the two react to different things. The sign redraws whenever
+     * the price or this viewer's ability to pay it changes; the egg only
+     * cares WHICH egg it is.
+     * <p>
+     * Folding it into the sign's refresh was a bug: affordability flips
+     * every time a player hatches and earns it back, which was respawning
+     * the whole display entity several times a second - resetting its spin,
+     * stepping on the squash animation, and resurrecting an egg that was
+     * deliberately hidden for the length of a hatch.
+     *
+     * @return whether the egg is on screen and worth spinning.
+     */
+    private boolean updateEgg(Player viewer, PackStation station) {
+        Map<PackStation, Long> hiddenPerStation = eggHiddenUntil.get(viewer.getUniqueId());
+        Long hiddenUntil = hiddenPerStation != null ? hiddenPerStation.get(station) : null;
+        if (hiddenUntil != null) {
+            if (System.currentTimeMillis() < hiddenUntil) {
+                return false;
+            }
+            // The hatch is over. A timer per hide would have stacked one
+            // respawn per smack; the tick that was already running brings it
+            // back exactly once however many times it was hidden.
+            hiddenPerStation.remove(station);
+            spawnEgg(viewer, station);
+            return true;
+        }
+
+        String packId = stationService.currentPackId(station);
+        Map<PackStation, String> shown = shownEggPackId.computeIfAbsent(viewer.getUniqueId(), id -> new ConcurrentHashMap<>());
+        String current = shown.get(station);
+        if (packId != null && !packId.equals(current)) {
+            // A black market rotation. The entity is already there, so this
+            // is one metadata packet rather than a despawn/respawn pair.
+            shown.put(station, packId);
+            ItemDisplayManager.setItem(viewer, station.buttonEntityId(), eggItem(station));
+        }
+        return true;
     }
 
     /**
@@ -312,13 +353,20 @@ public final class PackStationDisplay {
      * and a server without HeadDatabase still shows a real (vanilla) egg.
      */
     private void spawnEgg(Player viewer, PackStation station) {
+        ItemDisplayManager.spawn(viewer, station.buttonEntityId(), eggLocation(station.location()));
+        ItemDisplayManager.setItem(viewer, station.buttonEntityId(), eggItem(station));
+        ItemDisplayManager.setScale(viewer, station.buttonEntityId(), EGG_SCALE, EGG_SCALE, EGG_SCALE);
+        String packId = stationService.currentPackId(station);
+        if (packId != null) {
+            shownEggPackId.computeIfAbsent(viewer.getUniqueId(), id -> new ConcurrentHashMap<>()).put(station, packId);
+        }
+    }
+
+    private ItemStack eggItem(PackStation station) {
         PackDefinition pack = packs.getPackRegistry().find(stationService.currentPackId(station)).orElse(null);
-        ItemStack egg = pack != null
+        return pack != null
                 ? packs.getIconFactory().headOrFallback(pack.headDatabaseId(), pack.material())
                 : new ItemStack(Material.DRAGON_EGG);
-        ItemDisplayManager.spawn(viewer, station.buttonEntityId(), eggLocation(station.location()));
-        ItemDisplayManager.setItem(viewer, station.buttonEntityId(), egg);
-        ItemDisplayManager.setScale(viewer, station.buttonEntityId(), EGG_SCALE, EGG_SCALE, EGG_SCALE);
     }
 
     /** Floats the egg off the pedestal so it reads as an object on display rather than a block stuck to the wall. */
@@ -349,6 +397,14 @@ public final class PackStationDisplay {
         Map<PackStation, String> perStation = lastRenderState.get(viewer.getUniqueId());
         if (perStation != null) {
             perStation.remove(station);
+        }
+        Map<PackStation, String> shown = shownEggPackId.get(viewer.getUniqueId());
+        if (shown != null) {
+            shown.remove(station);
+        }
+        Map<PackStation, Long> hidden = eggHiddenUntil.get(viewer.getUniqueId());
+        if (hidden != null) {
+            hidden.remove(station);
         }
         PacketEntityManager.destroyEntity(viewer, station.hitboxEntityId());
         PacketEntityManager.destroyEntity(viewer, station.buttonEntityId());

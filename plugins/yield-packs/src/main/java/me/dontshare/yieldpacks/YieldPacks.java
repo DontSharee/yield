@@ -396,7 +396,7 @@ public final class YieldPacks extends JavaPlugin {
         // are one feature, not two overlapping ones.
         PackSelectorService selectorService = new PackSelectorService(selectorItem, playerStore, () -> content, eggCatalogGui);
         core.getListenerManager().register(new PackSelectorListener(selectorService, selectorItem));
-        PackActionBarService actionBarService = new PackActionBarService(this, playerStore, () -> content, pityService, selectorService);
+        PackActionBarService actionBarService = new PackActionBarService(this, playerStore, () -> content, pityService, selectorService, openService);
         actionBarService.start();
 
         BagSelectorItem bagSelectorItem = new BagSelectorItem(this);

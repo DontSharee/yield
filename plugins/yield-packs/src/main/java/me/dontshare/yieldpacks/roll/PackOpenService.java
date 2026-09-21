@@ -44,10 +44,23 @@ public final class PackOpenService {
     public static final String MULTI_OPEN_PERMISSION = "yieldpacks.multiopen";
 
     /** The rungs the hatch menu offers, in order. Everything up to {@link #UNGATED_TIER_CAP} is free to everyone. */
-    public static final int[] HATCH_TIERS = {1, 3, 5, PackRollService.MULTI_OPEN_CAP};
+    public static final int[] HATCH_TIERS = {1, 5, 10, PackRollService.MULTI_OPEN_CAP};
 
-    /** The largest hatch a player without the gamepass may perform in one action. */
-    public static final int UNGATED_TIER_CAP = 5;
+    /**
+     * The largest hatch a player without the gamepass may perform in one
+     * action.
+     * <p>
+     * Raised from 5 once hatching became something you do standing still.
+     * A zone's eggs cost about 1/150th of a minute's income there, so a
+     * minute of mining funds ~150 hatches, and one action per second of
+     * cooldown turns that into time spent AT the egg rather than earning:
+     * 50% of the mining time at 5x, 25% at 10x, 10% at the gamepass's 24x.
+     * At a cap of 5 the pass was worth roughly a quarter of a player's
+     * progression rate, which is a gate rather than a convenience. At 10 it
+     * saves about a tenth - real, worth buying, and not the difference
+     * between keeping up and not.
+     */
+    public static final int UNGATED_TIER_CAP = 10;
 
     private final JavaPlugin plugin;
     private final Supplier<PackContentLoader.ContentSnapshot> content;
