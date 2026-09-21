@@ -92,7 +92,7 @@ public final class IndexGui {
                 "collection",
                 List.of(" &7Track which pets", " &7you've collected", " &7from &fthis pack&7!"),
                 ACCENT,
-                "Click to Open Pack"
+                "Click to Hatch"
         ).forEach(builder::lore);
         return builder
                 .lore("")

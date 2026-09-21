@@ -67,20 +67,20 @@ categories:
     display-name: "&6Economy"
     icon: GOLD_INGOT
     easy:
-      display-name: "&aPack Opener I"
+      display-name: "&aEgg Hatcher I"
       action: OPEN_PACK
       goal: 5
       reward-coins: 25000
       reward-diamonds: 10
     medium:
-      display-name: "&6Pack Opener II"
+      display-name: "&6Egg Hatcher II"
       action: OPEN_PACK
       goal: 15
       reward-coins: 120000
       reward-diamonds: 40
       reward-credits: 5
     hard:
-      display-name: "&cPack Opener III"
+      display-name: "&cEgg Hatcher III"
       action: OPEN_PACK
       goal: 40
       reward-coins: 400000

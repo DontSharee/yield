@@ -414,7 +414,7 @@ public final class YieldPacks extends JavaPlugin {
         // registered - it's the old pre-Store-hub Pack Shop system. Kept
         // (packShopGui itself, PacksCommand.java) rather than deleted, in
         // case it's wanted back later - just not reachable by command for now.
-        CommandManager.register(this, PackStorageCommand.build(eggCatalogGui), "Browse every egg and what hatches from it", List.of());
+        CommandManager.register(this, PackStorageCommand.build(eggCatalogGui), "Browse every egg and what hatches from it", List.of("packs"));
 
         // The Store hub is the Buycraft/Tebex-style real-money storefront -
         // its own tabs (Ranks/Gamepasses/Bundles/Exclusive Crates) are

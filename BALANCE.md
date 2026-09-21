@@ -174,6 +174,10 @@ own damage fits.
 | Mythic | 17–19 | 40,000,000,000 (+150,000💎) | 188,061 | 50,000,000 |
 | Titan | 18–20 | 150,000,000,000 (+400,000💎) | 470,153 | 125,000,000 |
 
+Merchant eggs hatch on the spot like any other - the rotation and the
+per-cycle stock are what make the merchant a treat rather than a substitute
+for a zone's own station.
+
 Price is **1.5× the window's middle zone's own pack**, and the diamond side
 -cost is 15% of the coin price converted at that zone's own coin-per-diamond
 income ratio.
@@ -194,6 +198,51 @@ Measured per point of mean damage it cost `1.78×10⁹` coins against the zone
 pack's `85,000` at the same moment — about **20,900× worse** — and the
 ladder's mean damage never moved off ~6 across four orders of magnitude of
 price.
+
+---
+
+## 2c. The hatch loop
+
+Eggs are paid for at the moment they hatch, at a station, with nothing
+stored in between. That single change moves where the loop's ceiling comes
+from, so it is worth writing down.
+
+**Paying and hatching used to be separate.** A player could buy a hundred
+packs in one click and open them at leisure, which meant the open cooldown
+(1s by default, `open-cooldown-seconds`) limited only how fast the *reveals*
+played, never how fast income turned into pets. Now it limits both.
+
+**The arithmetic that forces bulk tiers.** A zone's egg costs about 1/150th
+of a minute's income in that zone (§2), so a settled player earns roughly
+**2.5 eggs per second** and a 1/second cooldown would cap them at **1**.
+Everything past that first egg per second would be coins piling up with
+nothing to spend them on, and the gap widens with every multiplier a player
+buys. So:
+
+- The cooldown is charged **once per action**, not once per egg.
+- The rungs are 1x / 3x / 5x / 24x, and **1x, 3x and 5x are ungated**. Only
+  24x needs the Multi-Hatch gamepass.
+- 5x against a 1s cooldown is 5 eggs/second, comfortably above the ~2.5 a
+  free player can afford. The loop stays bound by income, which scales with
+  the player, rather than by the clock, which does not.
+
+Gating bulk entirely behind the gamepass would have made the pass a
+progression item rather than a convenience one, which is the line this
+server's monetization otherwise stays on the right side of.
+
+**A hatch in flight never blocks the next one.** The reveal runs ~3.5s for a
+single egg, so refusing while it plays would have capped the game at one
+batch per animation - slower than the cooldown that is supposed to be the
+limit. A new hatch takes the screen from the old one instead.
+
+**Auto-hatch** runs only while the player is stood at a station, on the same
+cooldown, at the largest rung they can afford. It is the idle loop, and it
+is deliberately a *place* now: you pick an egg and stand at it.
+
+**Treasure chests** hatch their eggs on the spot rather than granting a
+stockpile - the one hatch that happens away from a station. The pacing
+model already counted those eggs as free pets at the moment the chest
+opened, so the timings in §3 are unchanged by this.
 
 ---
 

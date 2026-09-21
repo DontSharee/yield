@@ -7,13 +7,13 @@
 # changes needed (/quests reload picks this back up).
 pool:
   open_packs_small:
-    display-name: "Open 5 Packs"
+    display-name: "Hatch 5 Eggs"
     icon: CHEST
     action: OPEN_PACK
     goal: 5
     reward-stars: 2
   open_packs_big:
-    display-name: "Open 20 Packs"
+    display-name: "Hatch 20 Eggs"
     icon: ENDER_CHEST
     action: OPEN_PACK
     goal: 20

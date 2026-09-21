@@ -63,7 +63,7 @@ public final class PackShopGui {
         List<ShopSlot> slots = stockService.currentStock(player);
 
         Duration untilReset = stockService.timeUntilNextReset();
-        var builder = Gui.builder(TOTAL_ROWS, "Packs (resets in " + formatDuration(untilReset) + ")");
+        var builder = Gui.builder(TOTAL_ROWS, "Merchant (resets in " + formatDuration(untilReset) + ")");
         int count = Math.min(slots.size(), CONTENT_SLOTS.size());
         for (int i = 0; i < count; i++) {
             ShopSlot shopSlot = slots.get(i);

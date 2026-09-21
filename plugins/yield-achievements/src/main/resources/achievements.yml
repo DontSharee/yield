@@ -20,15 +20,15 @@ achievements:
     display-name: "&fCrack It Open"
     icon: CHEST
     description:
-      - "Open your very first pack."
+      - "Hatch your very first egg."
     trigger: OPEN_PACK
     goal: 1
     reward-credits: 50
   pack_addict:
-    display-name: "&ePack Addict"
+    display-name: "&eEgg Addict"
     icon: CHEST
     description:
-      - "Open 1,000 packs."
+      - "Hatch 1,000 eggs."
     trigger: OPEN_PACK
     goal: 1000
     reward-credits: 500

@@ -134,11 +134,11 @@ products:
       - "lp user %player% permission set yieldpacks.automode true"
       - "lp user %player% permission set yieldpacks.automode.premium true"
   multi_open_pass:
-    display-name: "&bMulti-Open Pass"
-    icon: ENDER_CHEST
+    display-name: "&bMulti-Hatch Pass"
+    icon: DRAGON_EGG
     description:
-      - "Unlocks the Open 24 button"
-      - "in the pack-opening dialog,"
+      - "Unlocks the Hatch 24x button"
+      - "in the hatch menu at any egg,"
       - "permanently."
     cost-credits: 1500
     category: gamepass

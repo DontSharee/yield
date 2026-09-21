@@ -1,4 +1,4 @@
-version = "0.3.2"
+version = "0.3.3"
 
 dependencies {
     // Text/CommandManager/Gui - and every other module's own cross-plugin

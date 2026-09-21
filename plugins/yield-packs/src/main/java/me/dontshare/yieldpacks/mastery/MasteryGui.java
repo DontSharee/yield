@@ -164,7 +164,7 @@ public final class MasteryGui {
 
     private String prettyName(MasteryType type) {
         return switch (type) {
-            case PACKS -> "Packs";
+            case PACKS -> "Eggs";
             case REFINERY -> "Pet Refinery";
             case MINING -> "Mining";
             case COMBAT -> "Combat";
@@ -173,7 +173,7 @@ public final class MasteryGui {
 
     private String descriptionFor(MasteryType type) {
         return switch (type) {
-            case PACKS -> "Earned by opening packs.";
+            case PACKS -> "Earned by hatching eggs.";
             case REFINERY -> "Earned by rolling on the Pet Enchanting Table.";
             case MINING -> "Earned by mining ore.";
             case COMBAT -> "Earned by destroying ore cubes.";

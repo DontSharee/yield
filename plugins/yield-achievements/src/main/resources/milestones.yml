@@ -42,7 +42,7 @@ categories:
       - { goal: 10000000000000, reward-coins: 1000000000000, reward-diamonds: 2000000, reward-credits: 1000 }
 
   packs_opened:
-    display-name: "&fPacks Opened"
+    display-name: "&fEggs Hatched"
     icon: CHEST
     trigger: OPEN_PACK
     tiers:

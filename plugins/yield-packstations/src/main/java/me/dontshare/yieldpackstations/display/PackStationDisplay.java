@@ -249,6 +249,9 @@ public final class PackStationDisplay {
         perStation.put(station, state);
 
         TextDisplayManager.setText(viewer, station.textEntityId(), buildText(viewer, station));
+        // A black-market station's egg changes with its rotation, so the
+        // display has to follow it, not just the sign above it.
+        spawnEgg(viewer, station);
     }
 
     /**
@@ -302,9 +305,12 @@ public final class PackStationDisplay {
         PacketEntityManager.endBundle(viewer);
     }
 
+    /** The egg wears the material its own pack definition names, so a Turtle-Egg zone and a Dragon-Egg zone are different objects to look at rather than the same prop with a different sign over it. */
     private void spawnEgg(Player viewer, PackStation station) {
+        PackDefinition pack = packs.getPackRegistry().find(stationService.currentPackId(station)).orElse(null);
+        Material material = pack != null ? pack.material() : Material.DRAGON_EGG;
         ItemDisplayManager.spawn(viewer, station.buttonEntityId(), eggLocation(station.location()));
-        ItemDisplayManager.setItem(viewer, station.buttonEntityId(), new ItemStack(Material.DRAGON_EGG));
+        ItemDisplayManager.setItem(viewer, station.buttonEntityId(), new ItemStack(material));
         ItemDisplayManager.setScale(viewer, station.buttonEntityId(), EGG_SCALE, EGG_SCALE, EGG_SCALE);
     }
 

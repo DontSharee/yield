@@ -1,4 +1,4 @@
-# The guide NPC that walks a brand-new player through opening a pack,
+# The guide NPC that walks a brand-new player through hatching an egg,
 # equipping a pet, entering a zone, and sending that pet at a cube. Run
 # /tutorialadmin reload after editing this file - a player already mid-step
 # just sees the new dialogue/reward the next time their current step is
@@ -24,10 +24,10 @@ npc:
 # step completes, on top of whatever the action itself already earned.
 steps:
   - id: welcome
-    label: "Open a pack"
+    label: "Hatch an egg"
     dialogue:
       - "Welcome to Yield!"
-      - "Let's get you started - open your first pack."
+      - "Let's get you started - go hatch your first egg."
     completes-on: OPEN_PACK
     goal: 1
   - id: equip
