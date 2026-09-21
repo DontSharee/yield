@@ -706,3 +706,40 @@ zones:
       - { material: WHITE_STAINED_GLASS, corner-one: [21, 98, 1819.5], corner-two: [-21, 133, 1819.5] }
     teleport: [0, 99, 1837, 0, 0]
 
+  # --- The Halloween zone (see yield-events) ---
+  # Not part of the ladder. No unlock cost, so anyone can walk in from day
+  # one, and cube HP is set near the bottom of the ladder so a brand-new
+  # player can actually break them - the event is for everyone, and a zone
+  # only the endgame can farm would be the opposite of that.
+  #
+  # Its coins are deliberately poor: about what the third zone pays, which
+  # is pocket change to anyone past it. Coming here means giving up your
+  # normal income for a while, and what you get for that is Candy (see
+  # yield-events' events.yml) - not a better place to earn.
+  #
+  # Its chests hand out the event egg itself, which is the one free source
+  # of one.
+  halloween:
+    display-name: "&6Haunted Hollow"
+    world: world
+    corner-one: [10.5, 98, 1932.5]
+    corner-two: [-10.5, 150, 1990.5]
+    respawn-delay-seconds: 3
+    max-concurrent-cubes: 12
+    cube-tiers:
+      - { material: CARVED_PUMPKIN, max-hp: 40, coin-value: 150, diamond-value: 1, xp-value: 60, weight: 100 }
+      - { material: JACK_O_LANTERN, max-hp: 120, coin-value: 600, diamond-value: 3, xp-value: 180, weight: 25 }
+      - { material: SOUL_LANTERN, max-hp: 280, coin-value: 1800, diamond-value: 8, xp-value: 480, weight: 5 }
+    treasure:
+      material: CHEST
+      weight: 0.6
+      max-hp: 400
+      coin-value: 9000
+      diamond-value: 25
+      xp-value: 900
+      reward-pack: event_halloween_egg
+      reward-pack-amount: 3
+    cube-bonuses:
+      - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
+      - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+    teleport: [0, 99, 1932, 0, 0]

@@ -4,6 +4,7 @@ import me.dontshare.yieldcore.YieldCore;
 import me.dontshare.yieldcore.command.CommandManager;
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.database.PlayerStores;
+import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldevents.command.EventCommand;
 import me.dontshare.yieldevents.command.EventsAdminCommand;
@@ -11,6 +12,9 @@ import me.dontshare.yieldevents.data.EventContentLoader;
 import me.dontshare.yieldevents.data.EventProfile;
 import me.dontshare.yieldevents.data.SeasonalEvent;
 import me.dontshare.yieldevents.listener.EventCurrencyListener;
+import me.dontshare.yieldevents.listener.EventHatchListener;
+import me.dontshare.yieldpacks.YieldPacks;
+import me.dontshare.yieldzones.YieldZones;
 import me.dontshare.yieldpackstations.YieldPackStations;
 import me.dontshare.yieldpackstations.data.PackStationContentLoader;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -43,21 +47,24 @@ public final class YieldEvents extends JavaPlugin {
 
     private List<SeasonalEvent> events = List.of();
     private EventService eventService;
+    private EventQuestGui questGui;
     private String announcedEventId;
 
     @Override
     public void onEnable() {
         YieldCore core = (YieldCore) Bukkit.getPluginManager().getPlugin("yield-core");
         YieldPackStations stations = (YieldPackStations) Bukkit.getPluginManager().getPlugin("yield-packstations");
-        if (core == null || stations == null) {
-            getLogger().severe("yield-core/yield-packstations missing - disabling.");
+        YieldPacks packs = (YieldPacks) Bukkit.getPluginManager().getPlugin("yield-packs");
+        YieldZones zones = (YieldZones) Bukkit.getPluginManager().getPlugin("yield-zones");
+        if (core == null || stations == null || packs == null || zones == null) {
+            getLogger().severe("a hard dependency is missing - disabling.");
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
 
         PlayerDataStore<EventProfile> store = PlayerStores.register(this, core.getListenerManager(),
                 core.getDatabaseManager(), "events", EventProfile.class, EventProfile::new, "event data");
-        eventService = new EventService(() -> events, store);
+        eventService = new EventService(() -> events, store, zones::getZones);
         reloadContent();
 
         // The station's contents ARE the active event's egg, asked for live -
@@ -69,9 +76,16 @@ public final class YieldEvents extends JavaPlugin {
             stations.getStationService().registerAlternateCharge(event.eggId(), new EventStationCharge(eventService));
         }
 
-        core.getListenerManager().register(new EventCurrencyListener(eventService));
+        core.getListenerManager().register(new EventCurrencyListener(eventService, packs));
+        core.getListenerManager().register(new EventHatchListener(eventService));
+        questGui = new EventQuestGui(core.getGuiManager(), eventService);
+        // While a player stands in the event zone, the wallet's Credits line
+        // becomes their Candy: the sidebar has a fixed number of lines, and
+        // the number that matters where the event is happening is not the
+        // one they spend at the Store.
+        core.getScoreboardDisplay().addLineTransformer(this::swapCurrencyLine);
         new EventBossBarService(this, eventService).start();
-        CommandManager.register(this, EventCommand.build(eventService), "See what event is running", List.of());
+        CommandManager.register(this, EventCommand.build(eventService, questGui), "See what event is running", List.of());
         core.getAdminCommandRegistry().register(EventsAdminCommand.build(this));
         Bukkit.getScheduler().runTaskTimer(this, this::watchForChange, WATCH_INTERVAL_TICKS, WATCH_INTERVAL_TICKS);
     }
@@ -79,6 +93,34 @@ public final class YieldEvents extends JavaPlugin {
     /** Re-reads events.yml. Registered charges are per egg id and survive it, since the eggs themselves are config in another plugin. */
     public void reloadContent() {
         events = new EventContentLoader(this, getLogger()).load();
+    }
+
+    /**
+     * Swaps the wallet's Credits line for this event's own currency while
+     * the player is standing in the event zone.
+     * <p>
+     * Matched on the same {@code Formatting#fancyFont} label yield-packs
+     * builds its line from, which is the one piece of coupling here: both
+     * sides derive the text from the same helper, so it cannot drift the
+     * way a hardcoded copy of the rendered string would. A line that no
+     * longer matches simply leaves the sidebar as it was.
+     */
+    private List<String> swapCurrencyLine(org.bukkit.entity.Player player, List<String> lines) {
+        SeasonalEvent event = eventService.active();
+        if (event == null || !eventService.inEventZone(player, event)) {
+            return lines;
+        }
+        String creditsLabel = Formatting.fancyFont("credits: ");
+        String replacement = " <#8CD5EC>&l| &f" + Formatting.fancyFont(event.currencyName().toLowerCase(java.util.Locale.ROOT) + ": ")
+                + "<" + event.color() + ">" + Formatting.format((double) eventService.balance(player, event));
+        List<String> swapped = new java.util.ArrayList<>(lines);
+        for (int i = 0; i < swapped.size(); i++) {
+            if (swapped.get(i).contains(creditsLabel)) {
+                swapped.set(i, replacement);
+                break;
+            }
+        }
+        return swapped;
     }
 
     private String stationLabel() {

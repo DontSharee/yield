@@ -36,10 +36,89 @@ events:
       drop-min: 1
       drop-max: 3
     egg: event_halloween_egg
-    # At ~0.16 Candy per cube and a couple of cubes a second, this is about
-    # twenty minutes of play per hatch - a fortnight's event gives a casual
-    # player a handful and a dedicated one the whole set.
+    # Every cube in the event zone pays Candy; outside it, the drop-chance
+    # above applies instead, so the event is visible wherever you are and
+    # far faster where it is happening.
+    zone: halloween
+    # At 1-3 Candy a cube and a couple of cubes a second, this is roughly
+    # ten minutes in the zone per hatch before pets - a fortnight gives a
+    # casual player a handful and a dedicated one the whole set.
     egg-price: 400
+    # The event's own pets earn extra Candy while equipped, and boost
+    # nothing else. That is what makes them worth using DURING the event
+    # rather than a trophy that has to out-scale a zone pet to matter - an
+    # event is not the place to renegotiate the damage ladder. Six of the
+    # best equipped is +150% Candy.
+    pet-candy-bonus:
+      event_candy_imp: 0.05
+      event_pumpkin_prowler: 0.10
+      event_grave_warden: 0.15
+      event_hollow_reaper: 0.20
+      event_pumpkin_king: 0.25
+    # Goals: CANDY_EARNED (all sources), CUBES_BROKEN (in the event zone),
+    # EGGS_HATCHED (this event's egg). Each pays once, ever.
+    #
+    # reward-commands runs as console with %player% substituted, which is
+    # how a quest hands out a potion, an exclusive pet or anything else that
+    # already has an admin command - a seasonal reward table changes every
+    # year and should not need code to.
+    quests:
+      welcome:
+        display-name: "&6Trick or Treat"
+        description:
+          - "&7Break 50 cubes in the"
+          - "&7Haunted Hollow."
+        goal: CUBES_BROKEN
+        target: 50
+        reward-candy: 150
+      sweet_tooth:
+        display-name: "&6Sweet Tooth"
+        description:
+          - "&7Collect 1,000 Candy."
+        goal: CANDY_EARNED
+        target: 1000
+        reward-candy: 250
+        reward-commands:
+          - "admin potions give %player% LUCK 2 1800"
+      hollow_dweller:
+        display-name: "&6Hollow Dweller"
+        description:
+          - "&7Break 1,000 cubes in the"
+          - "&7Haunted Hollow."
+        goal: CUBES_BROKEN
+        target: 1000
+        reward-candy: 500
+        reward-commands:
+          - "admin potions give %player% COINS 3 1800"
+      hatcher:
+        display-name: "&6Pumpkin Hatcher"
+        description:
+          - "&7Hatch 10 Pumpkin Eggs."
+        goal: EGGS_HATCHED
+        target: 10
+        reward-candy: 400
+        reward-commands:
+          - "admin potions give %player% DAMAGE 3 1800"
+      candy_hoarder:
+        display-name: "&6Candy Hoarder"
+        description:
+          - "&7Collect 10,000 Candy."
+          - "&7The Hollow Reaper is yours."
+        goal: CANDY_EARNED
+        target: 10000
+        reward-candy: 1000
+        reward-commands:
+          - "admin pets give %player% event_hollow_reaper NORMAL 1"
+      king_of_the_hollow:
+        display-name: "&6&lKing of the Hollow"
+        description:
+          - "&7Hatch 100 Pumpkin Eggs."
+          - "&7Nobody does this by accident."
+        goal: EGGS_HATCHED
+        target: 100
+        reward-candy: 2500
+        reward-commands:
+          - "admin pets give %player% event_pumpkin_king NORMAL 1"
   winter:
     display-name: "Winter Festival"
     color: "#7CD8FF"
@@ -52,3 +131,12 @@ events:
       drop-max: 3
     egg: event_winter_egg
     egg-price: 400
+    # No zone of its own yet - Snowflakes drop at the flat chance above,
+    # anywhere. Give it a zone in zones.yml and name it here to make it work
+    # like Halloween does.
+    pet-candy-bonus:
+      event_frost_sprite: 0.05
+      event_snowclad_yeti: 0.10
+      event_aurora_stag: 0.15
+      event_glacier_wyrm: 0.20
+      event_winter_monarch: 0.25

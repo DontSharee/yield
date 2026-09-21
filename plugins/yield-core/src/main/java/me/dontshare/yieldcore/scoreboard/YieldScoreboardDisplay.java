@@ -11,6 +11,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -34,6 +35,7 @@ public final class YieldScoreboardDisplay implements Listener {
     private final JavaPlugin plugin;
     private final ScoreboardManager scoreboardManager;
     private final List<Function<Player, List<String>>> extraLineProviders = new CopyOnWriteArrayList<>();
+    private final List<BiFunction<Player, List<String>, List<String>>> lineTransformers = new CopyOnWriteArrayList<>();
     // Lets exactly one feature (the tutorial checklist, today) take over a
     // player's WHOLE sidebar instead of just contributing a line - a
     // scoreboard only has one sidebar slot, so "swap the whole thing" and
@@ -49,6 +51,22 @@ public final class YieldScoreboardDisplay implements Listener {
     /** Appends this provider's lines (in registration order) below the base template on every refresh. */
     public void addLineProvider(Function<Player, List<String>> provider) {
         extraLineProviders.add(provider);
+    }
+
+    /**
+     * Rewrites the assembled lines before they are drawn - for a feature
+     * that needs to CHANGE what another plugin already put there rather
+     * than add to it.
+     * <p>
+     * A seasonal event swapping the wallet's Credits line for its own Candy
+     * while a player stands in the event zone is the case this exists for.
+     * Appending a line instead would grow the sidebar for two weeks and
+     * leave a number on screen that is irrelevant exactly where the event
+     * is relevant. Transformers run in registration order, after every
+     * provider, and are handed a mutable copy.
+     */
+    public void addLineTransformer(BiFunction<Player, List<String>, List<String>> transformer) {
+        lineTransformers.add(transformer);
     }
 
     /** A whole title+lines sidebar to substitute in place of the normal template, e.g. the tutorial checklist. */
@@ -97,6 +115,9 @@ public final class YieldScoreboardDisplay implements Listener {
         lines.add("&8Season I");
         for (Function<Player, List<String>> provider : extraLineProviders) {
             lines.addAll(provider.apply(player));
+        }
+        for (BiFunction<Player, List<String>, List<String>> transformer : lineTransformers) {
+            lines = new ArrayList<>(transformer.apply(player, lines));
         }
         scoreboardManager.setLines(player, lines);
     }

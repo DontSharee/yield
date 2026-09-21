@@ -6,6 +6,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldcore.text.Text;
+import me.dontshare.yieldevents.EventQuestGui;
 import me.dontshare.yieldevents.EventService;
 import me.dontshare.yieldevents.data.SeasonalEvent;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -19,7 +20,7 @@ public final class EventCommand {
     private EventCommand() {
     }
 
-    public static LiteralCommandNode<CommandSourceStack> build(EventService eventService) {
+    public static LiteralCommandNode<CommandSourceStack> build(EventService eventService, EventQuestGui questGui) {
         return Commands.literal("event")
                 .executes(ctx -> {
                     if (!(ctx.getSource().getSender() instanceof Player player)) {
@@ -31,6 +32,9 @@ public final class EventCommand {
                         player.sendMessage(Text.parse("<gray>No event is running right now. Check back soon.</gray>"));
                         return Command.SINGLE_SUCCESS;
                     }
+                    // The quest screen says everything the chat summary did
+                    // and shows the quests too, so the command just opens it.
+                    questGui.open(player);
                     long days = event.daysRemaining(LocalDate.now());
                     player.sendMessage(Text.parse(
                             "<" + event.color() + "><bold><name></bold></" + event.color() + ">"

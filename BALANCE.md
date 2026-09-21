@@ -364,6 +364,51 @@ over a fortnight, a dedicated one gets the set.
 October, which is the point — nobody has to be told their currency expired,
 and a player who grinds the last day has something waiting a year later.
 
+### Halloween, in full
+
+Halloween is the worked example; Winter shares the machinery and can be
+fleshed out the same way.
+
+**A zone of its own — the Haunted Hollow.** Not part of the ladder: no
+unlock cost, no zone egg, no pack station, no upgrade stations, and cube HP
+near the bottom of the ladder so a brand-new player can break them. Its
+coins are deliberately poor — about what the third zone pays — because
+coming here means giving up your normal income, and what you get for that
+is Candy, not a better place to earn. Its chests hand out the event egg
+itself, which is the only free source of one.
+
+**Every cube in the zone pays Candy**, 1–3 of it, rather than a lucky few:
+a player who has already given up their income should not also be paid at a
+trickle. Outside the zone the flat 8% chance still applies, so the event is
+visible wherever you are and far faster where it is happening.
+
+**The event's pets boost Candy and nothing else** — +5% to +25% each, so
+six of the best is +150%. That is what makes them worth equipping *during*
+the event rather than a trophy that would have to out-scale a zone pet to
+matter. An event is not the place to renegotiate the damage ladder.
+
+**While you stand in the zone, the sidebar's Credits line becomes Candy.**
+The sidebar has a fixed number of lines, and the number that matters where
+the event is happening is not the one you spend at the Store.
+
+**Six quests**, each paying once:
+
+| quest | goal | reward |
+|---|---|---|
+| Trick or Treat | 50 cubes in the Hollow | 150 Candy |
+| Sweet Tooth | 1,000 Candy | 250 Candy + 2× Luck potion |
+| Hollow Dweller | 1,000 cubes in the Hollow | 500 Candy + 3× Coins potion |
+| Pumpkin Hatcher | 10 Pumpkin Eggs | 400 Candy + 3× Damage potion |
+| Candy Hoarder | 10,000 Candy | 1,000 Candy + **Hollow Reaper** |
+| King of the Hollow | 100 Pumpkin Eggs | 2,500 Candy + **Pumpkin King** |
+
+The last two hand over the event's two rarest pets outright, which is the
+point of a quest board: the egg is luck, the quests are a guarantee for
+anyone who actually turns up. Rewards are console commands with
+`%player%` substituted, so a quest can pay a potion, a pet, credits or a
+rank without this plugin knowing how any of those work — a seasonal reward
+table changes every year and should not need code to.
+
 ---
 
 ## 3. The pacing curve
@@ -552,6 +597,10 @@ wall or gets skipped.
 ---
 
 ## 9. Re-deriving the numbers
+
+> The pacing model walks the **ladder** zones only — it skips any zone with
+> no `zone_<id>_pack`, which is how an event zone like the Haunted Hollow
+> stays out of a model that is about progression.
 
 The model is reproducible. Given the combat maths in §1, for each zone:
 

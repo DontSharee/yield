@@ -4,14 +4,18 @@ import me.dontshare.yieldcore.database.PlayerRecord;
 import org.bson.codecs.pojo.annotations.BsonId;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
  * This plugin's own slice of a player's data - how much of each event's
  * currency they are holding.
  * <p>
- * Keyed by event id and kept forever rather than wiped when an event ends.
+ * Holds three things per event: the currency balance, quest progress, and
+ * which quests have already paid out. All keyed by event id and kept
+ * forever rather than wiped when an event ends.
  * Leftover Candy is worth nothing until next October, which is the point: a
  * player who grinds the last day of an event and cannot spend it all has
  * something waiting for them a year later, and nobody has to be told their
@@ -23,6 +27,10 @@ public final class EventProfile implements PlayerRecord {
     @BsonId
     private UUID playerId;
     private Map<String, Long> balances = new HashMap<>();
+    /** Quest progress, keyed "<eventId>:<GOAL>" so one event's counters never read another's. */
+    private Map<String, Long> questProgress = new HashMap<>();
+    /** Quests already paid out, keyed "<eventId>:<questId>" - a quest pays once, however many times it is re-completed. */
+    private Set<String> claimedQuests = new HashSet<>();
 
     public EventProfile() {
     }
@@ -57,6 +65,38 @@ public final class EventProfile implements PlayerRecord {
     }
 
     /** Takes {@code amount} if it is there, and reports whether it was. */
+    public Map<String, Long> getQuestProgress() {
+        return questProgress;
+    }
+
+    public void setQuestProgress(Map<String, Long> questProgress) {
+        this.questProgress = questProgress;
+    }
+
+    public Set<String> getClaimedQuests() {
+        return claimedQuests;
+    }
+
+    public void setClaimedQuests(Set<String> claimedQuests) {
+        this.claimedQuests = claimedQuests;
+    }
+
+    public long progress(String eventId, EventQuest.Goal goal) {
+        return questProgress.getOrDefault(eventId + ":" + goal.name(), 0L);
+    }
+
+    public void addProgress(String eventId, EventQuest.Goal goal, long amount) {
+        questProgress.merge(eventId + ":" + goal.name(), amount, Long::sum);
+    }
+
+    public boolean hasClaimed(String eventId, String questId) {
+        return claimedQuests.contains(eventId + ":" + questId);
+    }
+
+    public void markClaimed(String eventId, String questId) {
+        claimedQuests.add(eventId + ":" + questId);
+    }
+
     public boolean take(String eventId, long amount) {
         long held = balance(eventId);
         if (held < amount) {

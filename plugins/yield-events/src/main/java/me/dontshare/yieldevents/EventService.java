@@ -2,11 +2,14 @@ package me.dontshare.yieldevents;
 
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldevents.data.EventProfile;
+import me.dontshare.yieldevents.data.EventQuest;
 import me.dontshare.yieldevents.data.SeasonalEvent;
+import me.dontshare.yieldzones.data.ZoneDefinition;
 import org.bukkit.entity.Player;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -25,10 +28,13 @@ public final class EventService {
 
     private final Supplier<List<SeasonalEvent>> events;
     private final PlayerDataStore<EventProfile> store;
+    private final Supplier<Map<String, ZoneDefinition>> zones;
 
-    public EventService(Supplier<List<SeasonalEvent>> events, PlayerDataStore<EventProfile> store) {
+    public EventService(Supplier<List<SeasonalEvent>> events, PlayerDataStore<EventProfile> store,
+                         Supplier<Map<String, ZoneDefinition>> zones) {
         this.events = events;
         this.store = store;
+        this.zones = zones;
     }
 
     /** The event running right now, or null. */
@@ -59,6 +65,54 @@ public final class EventService {
         EventProfile profile = store.getOrCreate(player.getUniqueId());
         if (!profile.take(event.id(), amount)) {
             return false;
+        }
+        store.save(player.getUniqueId());
+        return true;
+    }
+
+    /** Whether this player is standing in the event's own zone - false when the event names no zone, in which case everywhere counts. */
+    public boolean inEventZone(Player player, SeasonalEvent event) {
+        if (event.zoneId() == null) {
+            return true;
+        }
+        ZoneDefinition zone = zones.get().get(event.zoneId());
+        return zone != null && zone.region().contains(player.getLocation());
+    }
+
+    public long progress(Player player, SeasonalEvent event, EventQuest.Goal goal) {
+        return store.getOrCreate(player.getUniqueId()).progress(event.id(), goal);
+    }
+
+    /** Counts progress toward every quest watching {@code goal}. Saving is left to the caller's own batch - this is called several times a second. */
+    public void addProgress(Player player, SeasonalEvent event, EventQuest.Goal goal, long amount) {
+        store.getOrCreate(player.getUniqueId()).addProgress(event.id(), goal, amount);
+    }
+
+    public boolean isComplete(Player player, SeasonalEvent event, EventQuest quest) {
+        return progress(player, event, quest.goal()) >= quest.target();
+    }
+
+    public boolean hasClaimed(Player player, SeasonalEvent event, EventQuest quest) {
+        return store.getOrCreate(player.getUniqueId()).hasClaimed(event.id(), quest.id());
+    }
+
+    /**
+     * Pays a completed quest out, once. Returns false if it was not
+     * finished or was already claimed, so the caller can say which.
+     * <p>
+     * The claim is recorded and SAVED before any reward command runs - a
+     * command that fails or a server that dies mid-payout must not leave a
+     * quest claimable again, because the alternative is a reward anyone can
+     * farm by timing a disconnect.
+     */
+    public boolean claim(Player player, SeasonalEvent event, EventQuest quest) {
+        EventProfile profile = store.getOrCreate(player.getUniqueId());
+        if (profile.hasClaimed(event.id(), quest.id()) || !isComplete(player, event, quest)) {
+            return false;
+        }
+        profile.markClaimed(event.id(), quest.id());
+        if (quest.rewardCandy() > 0) {
+            profile.add(event.id(), quest.rewardCandy());
         }
         store.save(player.getUniqueId());
         return true;
