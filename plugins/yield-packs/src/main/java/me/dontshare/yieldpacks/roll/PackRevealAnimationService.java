@@ -516,6 +516,7 @@ public final class PackRevealAnimationService {
             TextDisplayManager.setBillboard(player, textIds[i], TextDisplayManager.Billboard.VERTICAL);
             TextDisplayManager.setBackgroundColor(player, textIds[i], 0x00000000);
             TextDisplayManager.setStyle(player, textIds[i], true, false, false, TextDisplayManager.Alignment.CENTER);
+            TextDisplayManager.setScale(player, textIds[i], labelScale(eggScale), labelScale(eggScale), labelScale(eggScale));
             TextDisplayManager.setInterpolation(player, textIds[i], 0, TRACK_INTERVAL_TICKS, TRACK_INTERVAL_TICKS);
         }
         PacketEntityManager.endBundle(player);
@@ -541,9 +542,25 @@ public final class PackRevealAnimationService {
                 Placeholder.unparsed("suffix", pityService.renderProgressSuffix(rollCountBefore))));
     }
 
-    /** Clear of the egg at this scale, so the name doesn't sit inside the shell it came out of. */
+    /**
+     * Just clear of the egg at this scale, so the name sits on top of the
+     * shell rather than inside it. Scales with the egg for the same reason
+     * {@link #labelScale} does - a fixed height leaves a gap over a small
+     * egg and swallows the label on a big one.
+     */
     private double labelHeight(float eggScale) {
-        return 0.35 + eggScale * 0.55;
+        return eggScale * 0.85 + 0.12;
+    }
+
+    /**
+     * Text displays render at a fixed pixel size regardless of how big the
+     * thing they label is, so a 24x hatch had nametags nearly as wide as
+     * the eggs under them, overlapping each other into an unreadable band.
+     * Scaling them with the egg keeps the label the same size RELATIVE to
+     * its own egg at every count.
+     */
+    private float labelScale(float eggScale) {
+        return Math.max(0.45f, eggScale * 0.95f);
     }
 
     /** Wobbles every egg back and forth until the cracks start - each step interpolates across the gap, so they are never still. */
@@ -728,7 +745,17 @@ public final class PackRevealAnimationService {
     private Location[] hatchSlotLocations(Player player, int count) {
         float scale = eggScaleFor(count);
         double spacing = scale * 1.45;
-        double forward = FORWARD_DISTANCE + (count > 12 ? 1.9 : count > 5 ? 0.9 : 0.0);
+        int columns = columnsFor(count);
+        int rows = (count + columns - 1) / columns;
+
+        // Only as far back as the widest row actually needs. Roughly 1.4
+        // blocks of width fit per block of distance at a default FOV, so
+        // that is the distance at which the grid exactly fills the screen -
+        // any further and it is just smaller for no reason. A single egg
+        // falls back to the close-up distance rather than being shoved out
+        // to arm's length by a formula meant for a wall of them.
+        double gridWidth = (columns - 1) * spacing + scale;
+        double forward = Math.max(FORWARD_DISTANCE, gridWidth / 1.4);
 
         Location eye = player.getEyeLocation();
         Vector direction = eye.getDirection().setY(0);
@@ -736,8 +763,6 @@ public final class PackRevealAnimationService {
         Vector right = new Vector(-forwardUnit.getZ(), 0, forwardUnit.getX()).normalize();
         Location anchor = eye.clone().add(forwardUnit.clone().multiply(forward));
 
-        int columns = Math.min(HATCH_COLUMNS, Math.max(1, (int) Math.ceil(Math.sqrt(count))));
-        int rows = (count + columns - 1) / columns;
         Location[] slots = new Location[count];
         for (int i = 0; i < count; i++) {
             int row = i / columns;
@@ -753,15 +778,26 @@ public final class PackRevealAnimationService {
         return slots;
     }
 
-    /** Smaller eggs for a bigger clutch - 24 at the single-egg size is a wall of shell with the player inside it. */
+    /**
+     * Wider than tall, deliberately. A square grid (the obvious
+     * {@code ceil(sqrt(n))}) is the worst shape for a 16:9 screen: 24 eggs
+     * five-by-five stands taller than the vertical field of view even
+     * though there is width to spare either side. Biasing toward columns
+     * spends the screen's real estate where the screen actually has it.
+     */
+    private int columnsFor(int count) {
+        return Math.min(HATCH_COLUMNS, Math.max(1, (int) Math.ceil(Math.sqrt(count * 1.6))));
+    }
+
+    /** Smaller eggs for a bigger clutch - 24 at the single-egg size is a wall of shell with the player inside it - but only as small as the row width actually demands. */
     private float eggScaleFor(int count) {
         if (count <= 3) {
             return 0.85f;
         }
         if (count <= 8) {
-            return 0.7f;
+            return 0.78f;
         }
-        return count <= 15 ? 0.58f : 0.48f;
+        return count <= 15 ? 0.7f : 0.62f;
     }
 
     private Tier tierFor(Rarity rarity) {

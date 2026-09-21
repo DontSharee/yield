@@ -372,7 +372,7 @@ public final class YieldPacks extends JavaPlugin {
         BagGui bagGui = new BagGui(playerStore, () -> content.items(), () -> content.rarities(), equipmentService,
                 core.getGuiManager(), iconFactory, petDisplayService, deleteByRarityGui, petLevelingService,
                 withdrawItem, existsCounterStore, this::applyPetItemHandlers, () -> petEnchantContent);
-        IndexGui indexGui = new IndexGui(() -> content, playerStore, luckService, core.getGuiManager(), packShopGui);
+        IndexGui indexGui = new IndexGui(() -> content, playerStore, luckService, core.getGuiManager(), iconFactory);
         HugeIndexGui hugeIndexGui = new HugeIndexGui(() -> content, playerStore, iconFactory, core.getGuiManager());
         indexGui.setHugeIndexGui(hugeIndexGui);
 
