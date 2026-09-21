@@ -45,6 +45,10 @@ public final class YieldPackStations extends JavaPlugin {
         stationService = new PackStationService(packs, zones::getZones, zones.getZoneLockService(), blackMarket);
         display = new PackStationDisplay(this, packs, stationService);
         display.start();
+        // Auto-hatch only runs while a player is stood at an egg, and only
+        // this plugin knows where the eggs physically are - yield-packs
+        // asks rather than looks, since the dependency runs the other way.
+        packs.getPackOpenService().registerHatchSiteProvider("pack_stations", display::hatchSiteFor);
 
         core.getAdminCommandRegistry().register(PackStationsAdminCommand.build(this));
 

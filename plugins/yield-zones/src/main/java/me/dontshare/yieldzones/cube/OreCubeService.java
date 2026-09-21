@@ -974,29 +974,36 @@ public final class OreCubeService implements Listener {
 
     /**
      * A chest's own reward on top of the coins/diamonds every cube pays -
-     * a stack of that zone's packs, dropped straight into pack storage.
+     * a clutch of that zone's own eggs, hatched free, right where the player
+     * is standing.
      * <p>
-     * Deliberately packs rather than more coins: coins are already what the
+     * Deliberately eggs rather than more coins: coins are already what the
      * chest's inflated coin-value pays, and a second pile of them would just
-     * be a bigger number. Packs are the thing a player turns into power, so
-     * a chest reads as "your squad just got better" rather than "the counter
-     * moved", and it feeds the pack-opening loop the rest of the game is
-     * built around.
+     * be a bigger number. Pets are the thing a player turns into power, so a
+     * chest reads as "your squad just got better" rather than "the counter
+     * moved".
+     * <p>
+     * They hatch on the spot rather than going into a stockpile, because
+     * there is no stockpile any more - and a chest that cracks open eight
+     * eggs in front of you is a better moment than one that increments a
+     * number you have to walk somewhere to spend. This is the one hatch that
+     * happens away from a station, which is exactly what makes a chest feel
+     * like a chest.
      */
     private void grantTreasurePacks(Player player, PackPlayerProfile profile, CubeTier tier) {
         String packId = tier.rewardPackId();
         if (packId == null || tier.rewardPackAmount() <= 0) {
             return;
         }
-        profile.getStoredPacks().merge(packId, tier.rewardPackAmount(), Integer::sum);
         String packName = packs.getPackRegistry().find(packId)
                 .map(pack -> Formatting.stripLeadingColorCodes(pack.displayName()))
-                .orElse("Pack");
+                .orElse("Egg");
         player.sendMessage(Text.parse("<#FFD700><bold>TREASURE!</bold></#FFD700> <gray>+<amount>x</gray> <white><pack></white>",
                 Placeholder.unparsed("amount", String.valueOf(tier.rewardPackAmount())),
                 Placeholder.unparsed("pack", packName)));
         player.playSound(player.getLocation(), Sound.BLOCK_CHEST_OPEN, 1f, 1.1f);
         player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.7f, 1.6f);
+        packs.getPackOpenService().grantHatch(player, packId, tier.rewardPackAmount());
     }
 
     /** "+<coins> coins" (and "+<diamonds> diamonds" only if any were earned), floating up from the cube on a kill - a combo of 2+ gets its own line, right where the player is already looking. */

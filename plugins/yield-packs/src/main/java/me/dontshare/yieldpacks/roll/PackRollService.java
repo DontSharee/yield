@@ -34,14 +34,16 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * The heart of the game loop, split into two independent steps per the
- * pack-storage redesign: {@link #buyIntoStorage} only ever moves currency
- * into unopened-pack inventory (no rolling at all), and
- * {@link #openOneFromStorage}/{@link #openManyFromStorage} are the only
- * things that actually roll a pet (see
- * {@code me.dontshare.yieldpacks.roll.PackOpenService}, the only caller,
- * which layers the open cooldown/auto-open loop/gamepass gate on top of
- * these).
+ * The heart of the game loop. {@link #hatch} is the only thing that ever
+ * rolls a pet: it charges an egg's cost and hatches it on the spot, in one
+ * step, because an egg is a place you stand at rather than an item you
+ * accumulate. Everything that used to sit between paying and rolling -
+ * unopened-pack storage, the active-pack cascade, buying in bulk to open
+ * later - is gone with it.
+ * <p>
+ * {@code me.dontshare.yieldpacks.roll.PackOpenService} is the only caller
+ * worth having: it layers the hatch cooldown, the auto-hatch loop and the
+ * reveal on top.
  */
 public final class PackRollService {
 
@@ -239,99 +241,49 @@ public final class PackRollService {
         return units.min(BigInteger.valueOf(hardCap)).max(BigInteger.ZERO).intValue();
     }
 
-    /** Buys {@code quantity} of {@code packId} into unopened storage - deducts currency and shop stock, rolls nothing. */
-    public PurchaseResult buyIntoStorage(Player player, String packId, int quantity) {
-        return buyIntoStorage(player, packId, quantity, true);
-    }
-
-    /** Same as {@link #buyIntoStorage(Player, String, int)} but never consults {@link ShopStockService} - for a physical pack station's own unlimited-supply, cost-only purchase (see yield-packstations), where the pack's own coin/diamond cost is the sole gate. */
-    public PurchaseResult buyStationPack(Player player, String packId, int quantity) {
-        return buyIntoStorage(player, packId, quantity, false);
-    }
-
-    private PurchaseResult buyIntoStorage(Player player, String packId, int quantity, boolean checkStock) {
-        if (quantity <= 0) {
-            return PurchaseResult.failure("Nothing to buy.");
-        }
-        PackDefinition pack;
-        try {
-            pack = content.get().packs().getOrThrow(packId);
-        } catch (IllegalArgumentException e) {
-            return PurchaseResult.failure("That pack no longer exists.");
-        }
-
-        PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
-        BigInteger totalCoinCost = BigInteger.valueOf(pack.coinCost()).multiply(BigInteger.valueOf(quantity));
-        BigInteger totalDiamondCost = BigInteger.valueOf(pack.diamondCost()).multiply(BigInteger.valueOf(quantity));
-        if (profile.getCoins().compareTo(totalCoinCost) < 0 || profile.getDiamonds().compareTo(totalDiamondCost) < 0) {
-            return PurchaseResult.failure("You can't afford " + quantity + "x " + Formatting.stripLeadingColorCodes(pack.displayName()) + ".");
-        }
-        if (checkStock && shopStockService.remainingStock(player, packId) < quantity) {
-            return PurchaseResult.failure("Not enough " + Formatting.stripLeadingColorCodes(pack.displayName()) + " left in stock this cycle.");
-        }
-
-        profile.setCoins(profile.getCoins().subtract(totalCoinCost));
-        profile.setDiamonds(profile.getDiamonds().subtract(totalDiamondCost));
-        profile.getStoredPacks().merge(packId, quantity, Integer::sum);
-        store.save(player.getUniqueId());
-        if (checkStock) {
-            shopStockService.recordPurchase(player, packId, quantity);
-        }
-        return PurchaseResult.success(List.of(), 1.0);
-    }
-
-    /** The most packs {@link #openManyFromStorage} will ever open in one call, regardless of how many are requested or stored. */
+    /** The most eggs {@link #hatch} will ever hatch in one action, regardless of how many are asked for - and the top rung of the hatch menu. */
     public static final int MULTI_OPEN_CAP = 24;
 
-    /** Opens exactly one stored, already-paid-for pack - the only thing that ever rolls a pet. */
-    public PurchaseResult openOneFromStorage(Player player, String packId) {
-        PackDefinition pack;
-        try {
-            pack = content.get().packs().getOrThrow(packId);
-        } catch (IllegalArgumentException e) {
-            return PurchaseResult.failure("That pack no longer exists.");
-        }
-
-        PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
-        int stored = profile.getStoredPacks().getOrDefault(packId, 0);
-        if (stored <= 0) {
-            return PurchaseResult.failure("You don't have any " + Formatting.stripLeadingColorCodes(pack.displayName()) + " to open.");
-        }
-        profile.getStoredPacks().put(packId, stored - 1);
-        advanceActivePackIfExhausted(profile, packId);
-
-        RollOutcome outcome = rollInPlace(player, pack, profile, packId);
-        store.save(player.getUniqueId());
-        petDisplayService.refresh(player);
-        return PurchaseResult.success(List.of(outcome.result()), outcome.luckMultiplier());
-    }
-
     /**
-     * Opens up to {@code min(count, stored, MULTI_OPEN_CAP)} stored packs at
-     * once - same per-roll logic {@link #openOneFromStorage} uses (luck/
-     * pity, exclusive override, first-time tracking, auto-equip, exists
-     * counter), repeated in memory against the SAME profile instance, with
-     * storage decremented once up front and only ONE {@code store.save}/
-     * {@code petDisplayService.refresh} at the end - same "batch the
-     * persistence" shape {@code FusionService#cascade} already established
-     * for looping a per-unit action N times.
+     * Hatches {@code count} eggs on the spot - charges the egg's own cost
+     * per egg and rolls them immediately, with no storage step in between.
+     * <p>
+     * This replaced the old buy-into-storage/open-from-storage pair. An egg
+     * is a place you stand at now, not an item you accumulate: you walk to a
+     * station, pay, and the pets come out in front of you. Cost is
+     * all-or-nothing for the whole batch - a caller that wants "as many as I
+     * can afford" resolves that first (see {@link #affordableHatches}),
+     * because charging for 24 and delivering 7 is the one outcome nobody
+     * would accept.
+     *
+     * @param charge false for a hatch that has already been paid for in
+     *               another currency entirely - a treasure chest's free
+     *               burst, or an admin grant.
      */
-    public PurchaseResult openManyFromStorage(Player player, String packId, int count) {
+    public PurchaseResult hatch(Player player, String packId, int count, boolean charge) {
         PackDefinition pack;
         try {
             pack = content.get().packs().getOrThrow(packId);
         } catch (IllegalArgumentException e) {
-            return PurchaseResult.failure("That pack no longer exists.");
+            return PurchaseResult.failure("That egg no longer exists.");
+        }
+        int actual = Math.min(Math.max(count, 0), MULTI_OPEN_CAP);
+        if (actual <= 0) {
+            return PurchaseResult.failure("Nothing to hatch.");
         }
 
         PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
-        int stored = profile.getStoredPacks().getOrDefault(packId, 0);
-        int actual = Math.min(Math.min(count, stored), MULTI_OPEN_CAP);
-        if (actual <= 0) {
-            return PurchaseResult.failure("You don't have any " + Formatting.stripLeadingColorCodes(pack.displayName()) + " to open.");
+        if (charge) {
+            BigInteger coinCost = BigInteger.valueOf(pack.coinCost()).multiply(BigInteger.valueOf(actual));
+            BigInteger diamondCost = BigInteger.valueOf(pack.diamondCost()).multiply(BigInteger.valueOf(actual));
+            if (profile.getCoins().compareTo(coinCost) < 0 || profile.getDiamonds().compareTo(diamondCost) < 0) {
+                return PurchaseResult.failure("You can't afford " + actual + "x "
+                        + Formatting.stripLeadingColorCodes(pack.displayName()) + ".");
+            }
+            profile.setCoins(profile.getCoins().subtract(coinCost));
+            profile.setDiamonds(profile.getDiamonds().subtract(diamondCost));
         }
-        profile.getStoredPacks().put(packId, stored - actual);
-        advanceActivePackIfExhausted(profile, packId);
+        profile.setActivePackId(packId);
 
         List<RollResult> rolls = new ArrayList<>(actual);
         double lastLuckMultiplier = 1.0;
@@ -340,16 +292,31 @@ public final class PackRollService {
             rolls.add(outcome.result());
             lastLuckMultiplier = outcome.luckMultiplier();
         }
+        // One save and one display refresh for the whole batch, same "batch
+        // the persistence" shape FusionService#cascade established.
         store.save(player.getUniqueId());
         petDisplayService.refresh(player);
         return PurchaseResult.success(rolls, lastLuckMultiplier);
+    }
+
+    /** How many of {@code packId} this player could hatch right now, capped at {@code cap} - what a "hatch as many as I can" action resolves before calling {@link #hatch}. */
+    public int affordableHatches(Player player, String packId, int cap) {
+        PackDefinition pack = content.get().packs().find(packId).orElse(null);
+        if (pack == null) {
+            return 0;
+        }
+        PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
+        int limit = Math.min(cap, MULTI_OPEN_CAP);
+        int byCoins = pack.coinCost() <= 0 ? limit : affordableUnits(profile.getCoins(), pack.coinCost(), limit);
+        int byDiamonds = pack.diamondCost() <= 0 ? limit : affordableUnits(profile.getDiamonds(), pack.diamondCost(), limit);
+        return Math.max(0, Math.min(byCoins, byDiamonds));
     }
 
     /** One internal roll result and the luck multiplier that produced it - private since a caller only ever needs the public {@link RollResult} half; the multiplier is just plumbing for {@link PurchaseResult}. */
     private record RollOutcome(RollResult result, double luckMultiplier) {
     }
 
-    /** The actual roll + side effects shared by {@link #openOneFromStorage} and {@link #openManyFromStorage} - assumes storage has ALREADY been decremented by the caller; mutates {@code profile} in place (rollCount, exists counter, auto-equip) but never saves/refreshes - callers own that. */
+    /** The actual roll + side effects, repeated once per egg by {@link #hatch} - assumes the batch has ALREADY been paid for; mutates {@code profile} in place (rollCount, exists counter, auto-equip) but never saves/refreshes - {@link #hatch} owns that for the whole batch. */
     private RollOutcome rollInPlace(Player player, PackDefinition pack, PackPlayerProfile profile, String packId) {
         double luckMultiplier = luckService.totalLuckMultiplier(profile) * pityService.multiplierFor(profile.getRollCount());
         ItemDefinition rolled = rollOne(pack, luckMultiplier);
@@ -406,31 +373,6 @@ public final class PackRollService {
         }
         profile.setRollCount(profile.getRollCount() + 1);
         return new RollOutcome(new RollResult(rolled, firstTime, newPet, oneIn, huge), luckMultiplier);
-    }
-
-    /**
-     * Once the just-opened pack (if it was the active one) hits zero in
-     * storage, silently switches the active pack to whichever OTHER pack
-     * this player still has the most of stored, ranked best-to-worst by
-     * {@link PackDefinition#sortOrder}, falling back to no selection if
-     * nothing's left - so opening never dead-ends on "you don't have any of
-     * that to open" while a lesser pack sits unused in storage.
-     */
-    private void advanceActivePackIfExhausted(PackPlayerProfile profile, String justOpenedPackId) {
-        if (!justOpenedPackId.equals(profile.getActivePackId())
-                || profile.getStoredPacks().getOrDefault(justOpenedPackId, 0) > 0) {
-            return;
-        }
-        profile.setActivePackId(bestStoredPackId(profile));
-    }
-
-    /** Whichever pack this player currently has the most VALUE of stored (ranked by {@link PackDefinition#sortOrder}, not quantity) - null if storage is empty. Used both by the auto-advance above and by a top-level "start auto-opening" action that doesn't require picking a pack first (see yield-packs' PackStorageGui). */
-    public String bestStoredPackId(PackPlayerProfile profile) {
-        return content.get().packs().all().stream()
-                .filter(p -> profile.getStoredPacks().getOrDefault(p.id(), 0) > 0)
-                .max(Comparator.comparingInt(PackDefinition::sortOrder))
-                .map(PackDefinition::id)
-                .orElse(null);
     }
 
     private boolean hasCollected(PackPlayerProfile profile, String packId, String itemId) {

@@ -8,6 +8,7 @@ import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldcore.text.MenuLore;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.data.PackDefinition;
+import me.dontshare.yieldpacks.roll.PackOpenService;
 import me.dontshare.yieldpacks.roll.PackRollService;
 import me.dontshare.yieldpacks.shop.ShopSlot;
 import me.dontshare.yieldpacks.shop.ShopStockService;
@@ -22,13 +23,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The pack shop screen - renders this player's own rotating stock (see
- * ShopStockService) instead of the full pack catalog. Buying only ever
- * moves packs into storage (see PackStorageGui); opening them is a
- * separate action. Left-click buys 1, right-click buys as many as
- * currency/stock allow - no intermediate dialog, matching the reference
- * "Merchant" GUI style the user pointed to (icon-prefixed stat lines,
- * simple left/right-click actions).
+ * The merchant screen - this player's own rotating stock of eggs (see
+ * ShopStockService) rather than the full catalog. Left-click hatches one,
+ * right-click hatches as many as currency and stock allow, and both happen
+ * on the spot: there is no storage to buy into any more, so a merchant egg
+ * is hatched the same moment it is paid for, exactly like one at a station.
+ * Stock is still per-cycle, which is what keeps the merchant a treat rather
+ * than a substitute for the zone's own station.
  */
 public final class PackShopGui {
 
@@ -36,13 +37,15 @@ public final class PackShopGui {
     private final GuiManager guiManager;
     private final PackRollService rollService;
     private final PackOddsLore oddsLore;
+    private final PackOpenService openService;
 
     public PackShopGui(ShopStockService stockService, GuiManager guiManager, PackRollService rollService,
-                        PackOddsLore oddsLore) {
+                        PackOddsLore oddsLore, PackOpenService openService) {
         this.stockService = stockService;
         this.guiManager = guiManager;
         this.rollService = rollService;
         this.oddsLore = oddsLore;
+        this.openService = openService;
     }
 
     private static final int TOTAL_ROWS = 6;
@@ -111,9 +114,9 @@ public final class PackShopGui {
                     return;
                 }
                 if (event.isRightClick()) {
-                    buyMax(clicker, shopSlot.pack(), () -> hub.refreshContent(clicker));
+                    buyMax(clicker, shopSlot.pack());
                 } else {
-                    buyQuantity(clicker, shopSlot.pack(), 1, () -> hub.refreshContent(clicker));
+                    buyQuantity(clicker, shopSlot.pack(), 1);
                 }
             });
         }
@@ -124,33 +127,40 @@ public final class PackShopGui {
     }
 
     private void buyMax(Player player, PackDefinition pack) {
-        buyMax(player, pack, () -> open(player));
-    }
-
-    private void buyMax(Player player, PackDefinition pack, Runnable onDone) {
-        int max = rollService.maxAffordable(player, pack.id(), 999);
+        int max = rollService.maxAffordable(player, pack.id(), openService.maxTierFor(player));
         if (max <= 0) {
             player.sendMessage(Text.parse("<red>You can't afford any of that right now.</red>"));
             return;
         }
-        buyQuantity(player, pack, max, onDone);
+        buyQuantity(player, pack, max);
     }
 
+    /**
+     * Never re-opens the shop afterwards, unlike the buy-into-storage flow
+     * it replaced: the eggs are cracking open in the world right now, and
+     * putting a chest screen back over them is the one thing that would
+     * waste the reveal.
+     */
     private void buyQuantity(Player player, PackDefinition pack, int quantity) {
-        buyQuantity(player, pack, quantity, () -> open(player));
-    }
-
-    private void buyQuantity(Player player, PackDefinition pack, int quantity, Runnable onDone) {
-        PackRollService.PurchaseResult result = rollService.buyIntoStorage(player, pack.id(), quantity);
-        if (!result.success()) {
-            player.sendMessage(Text.parse("<red><reason></red>", Placeholder.unparsed("reason", result.failureReason())));
+        int remaining = stockService.remainingStock(player, pack.id());
+        if (remaining < quantity) {
+            player.sendMessage(Text.parse("<red>Not enough left in stock this cycle.</red>"));
             return;
         }
-        player.sendMessage(Text.parse(
-                "<#4BD9FF><bold>Packs</bold></#4BD9FF> <dark_gray>»</dark_gray> <gray>Bought <count>x <pack> - check /packs to open.</gray>",
-                Placeholder.unparsed("count", String.valueOf(quantity)),
-                Placeholder.unparsed("pack", Formatting.stripLeadingColorCodes(pack.displayName()))));
-        onDone.run();
+        // The hatch plays out in the world - the shop screen has to be out
+        // of the way for the player to see their own eggs crack.
+        player.closeInventory();
+        PackRollService.PurchaseResult result = openService.tryHatch(player, pack.id(), quantity);
+        if (!result.success()) {
+            if (result.failureReason() != null) {
+                player.sendMessage(Text.parse("<red><reason></red>", Placeholder.unparsed("reason", result.failureReason())));
+            }
+            return;
+        }
+        // Only now, once the eggs are genuinely hatched and paid for -
+        // recording the stock first would burn a cycle's supply on a hatch
+        // the cooldown had already refused.
+        stockService.recordPurchase(player, pack.id(), result.rolls().size());
     }
 
     // A plain strikethrough run of spaces draws as a solid horizontal rule
@@ -179,8 +189,8 @@ public final class PackShopGui {
         if (soldOut) {
             lore.add("&c&l✗ Out of Stock!");
         } else {
-            lore.add("&8[LEFT-CLICK] &fTo Buy");
-            lore.add("&8[RIGHT-CLICK] &fTo Auto Buy");
+            lore.add("&8[LEFT-CLICK] &fTo Hatch 1");
+            lore.add("&8[RIGHT-CLICK] &fTo Hatch Max");
         }
         builder.lore(lore);
         return builder.hideAttributes().build();

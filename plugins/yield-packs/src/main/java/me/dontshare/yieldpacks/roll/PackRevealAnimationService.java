@@ -27,10 +27,12 @@ import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
@@ -109,26 +111,14 @@ public final class PackRevealAnimationService {
         this.rarityRegistry = rarityRegistry;
     }
 
-    public void playReel(Player player, PackDefinition pack, ItemDefinition finalItem, double luckMultiplier,
-                          long rollCountBeforeThisRoll) {
-        // 1.0 = the default pace below (~2s for a common/uncommon/rare
-        // result). Not yet wired to a real upgrade - threaded through now so
-        // a future "faster reveal" upgrade just has to pass a smaller value
-        // here (as low as ~0.05 for a near-instant 0.1s reveal) rather than
-        // needing this whole class touched again.
-        playReel(player, pack, finalItem, luckMultiplier, rollCountBeforeThisRoll, 1.0);
-    }
-
-    public void playReel(Player player, PackDefinition pack, ItemDefinition finalItem, double luckMultiplier,
-                          long rollCountBeforeThisRoll, double speedMultiplier) {
-        start(player, pack, finalItem, luckMultiplier, rollCountBeforeThisRoll, speedMultiplier, true);
-    }
-
     /**
-     * Same cycling odds/pity-bar/sounds as {@link #playReel} but with NO
-     * in-world item/text strip - for a player with the roll animation
-     * setting disabled, who still wants the action-bar reveal itself (just
-     * not the heavy entities in front of them).
+     * The action-bar-only reveal - cycling odds, pity bar and sounds, with
+     * no in-world entities at all. For a player who has turned the roll
+     * animation off but should still never be told nothing happened.
+     * <p>
+     * All that survives of the old spinning reel, which the hatch replaced:
+     * the reel existed to manufacture suspense around a single unknown, and
+     * an egg that shakes before it cracks does that better and means it.
      */
     public void playCompactReel(Player player, PackDefinition pack, ItemDefinition finalItem, double luckMultiplier,
                                  long rollCountBeforeThisRoll) {
@@ -427,32 +417,70 @@ public final class PackRevealAnimationService {
     }
 
     // ------------------------------------------------------------------
-    // Multi-open reveal
+    // The hatch
     // ------------------------------------------------------------------
 
-    /** Results per row before wrapping - 5 keeps a 15x open to three readable rows rather than one wall of items. */
-    private static final int MULTI_COLUMNS = 5;
-    private static final float MULTI_COL_SPACING = 1.2f;
-    private static final float MULTI_ROW_SPACING = 1.25f;
-    private static final float MULTI_ITEM_SCALE = 0.62f;
+    /** Eggs per row before wrapping - 6 keeps a full 24x hatch to four readable rows rather than one wall. */
+    private static final int HATCH_COLUMNS = 6;
+    private static final float HATCH_COL_SPACING = 1.15f;
+    private static final float HATCH_ROW_SPACING = 1.3f;
+    private static final float HATCH_EGG_SCALE = 0.85f;
+    private static final float HATCH_PET_SCALE = 0.62f;
+    /** How long the eggs wobble before the first one cracks. */
+    private static final int SHAKE_TICKS = 26;
+    /** One wobble every this many ticks - each is interpolated across the gap, so the egg is always moving. */
+    private static final int WOBBLE_INTERVAL = 4;
+    private static final float WOBBLE_DEGREES = 14f;
+    /** The whole staggered run of cracks fits inside this, however many eggs there are. */
+    private static final int MAX_CRACK_STAGGER_TICKS = 12;
 
-    private record MultiContext(Player player, UUID playerId, int count, int[] itemIds, int[] textIds,
+    private record HatchContext(Player player, UUID playerId, int count, int[] itemIds, int[] textIds,
                                  List<PackRollService.RollResult> rolls, BukkitTask[] trackingTaskHolder) {
     }
 
     /**
-     * The bulk counterpart to {@link #playReel} - every result from one
-     * multi-open shown at once, in a grid in front of the player.
+     * The hatch currently on screen for each player, so the next one can
+     * replace it.
      * <p>
-     * Deliberately NO reel. The single-open reveal earns its spin because
-     * there is one unknown and the suspense IS the moment; a bulk open has
-     * already happened and what the player wants is to see the haul. Fifteen
-     * sequential reels would run for the better part of a minute, and even
-     * one shared spin only delays the part anyone cares about. The grid
-     * simply appears, holds long enough to read, and goes away.
+     * Hatching is a hold-down action: a player leans on the station and
+     * expects eggs to keep popping. Refusing a hatch while the last one is
+     * still fading would cap the whole game at one batch per animation -
+     * slower than the cooldown that is supposed to be the limit - so a new
+     * hatch clears the old one off the screen instead. Every scheduled step
+     * below re-checks that its own context is still the live one before it
+     * touches a packet, which is what makes a replaced hatch stop dead
+     * rather than despawning entities the new one is using.
      */
-    public void playMultiReveal(Player player, PackDefinition pack, List<PackRollService.RollResult> rolls,
-                                 double luckMultiplier) {
+    private final Map<UUID, HatchContext> activeHatches = new ConcurrentHashMap<>();
+
+    private boolean isLive(HatchContext ctx) {
+        return ctx.player().isOnline() && activeHatches.get(ctx.playerId()) == ctx;
+    }
+
+    /**
+     * The reveal: a clutch of eggs drops into the air in front of the
+     * player, shakes, cracks open and leaves the pets behind.
+     * <p>
+     * One animation for every hatch, 1x through 24x - a single egg is the
+     * same ceremony as twenty-four, just narrower. That replaced a pair of
+     * reveals (a spinning reel for one, a straight-to-prize grid for many)
+     * and is both truer to what the player is doing and simpler: the egg IS
+     * the suspense now, so nothing needs to spin to manufacture any.
+     * <p>
+     * The cracks are staggered rarest-LAST across at most {@value
+     * #MAX_CRACK_STAGGER_TICKS} ticks. Ordering is the whole trick: with
+     * every egg cracking at once the eye has nowhere to land, and with the
+     * best one first the rest are an anticlimax. The stagger is a fixed
+     * budget rather than a per-egg delay so that a 24x hatch doesn't run
+     * six times longer than a 4x one.
+     * <p>
+     * The egg display and the pet display are the SAME packet entity -
+     * hatching swaps the item on it rather than destroying one entity and
+     * spawning another, which keeps a 24x hatch at 24 entities instead of
+     * 48 and makes the swap land on exactly the tick the crack does.
+     */
+    public void playHatch(Player player, PackDefinition pack, List<PackRollService.RollResult> rolls,
+                           double luckMultiplier, long rollCountBefore) {
         if (rolls.isEmpty()) {
             return;
         }
@@ -465,66 +493,140 @@ public final class PackRevealAnimationService {
         }
 
         UUID playerId = player.getUniqueId();
+        // Whatever was still on screen goes now, entities and all.
+        clearHatch(playerId);
         RevealSuppressionRegistry.begin(playerId);
 
-        Location[] slots = multiSlotLocations(player, count);
+        ItemStack egg = new ItemStack(Material.DRAGON_EGG);
+        Location[] slots = hatchSlotLocations(player, count);
         PacketEntityManager.beginBundle(player);
         for (int i = 0; i < count; i++) {
-            PackRollService.RollResult roll = rolls.get(i);
             ItemDisplayManager.spawn(player, itemIds[i], slots[i]);
-            ItemDisplayManager.setItem(player, itemIds[i], iconFactory.baseIcon(roll.item()).build());
-            ItemDisplayManager.setScale(player, itemIds[i], MULTI_ITEM_SCALE, MULTI_ITEM_SCALE, MULTI_ITEM_SCALE);
+            ItemDisplayManager.setItem(player, itemIds[i], egg);
+            ItemDisplayManager.setScale(player, itemIds[i], HATCH_EGG_SCALE, HATCH_EGG_SCALE, HATCH_EGG_SCALE);
             ItemDisplayManager.setRotation(player, itemIds[i], 0f, facingYawTowardPlayer(slots[i], player));
             ItemDisplayManager.setInterpolation(player, itemIds[i], 0, TRACK_INTERVAL_TICKS, TRACK_INTERVAL_TICKS);
 
-            TextDisplayManager.spawn(player, textIds[i], slots[i].clone().add(0, 0.45, 0));
+            // Spawned empty and filled at the moment this egg cracks - the
+            // name is the thing the player is waiting for, so showing it
+            // over an unhatched egg would give the whole reveal away.
+            TextDisplayManager.spawn(player, textIds[i], slots[i].clone().add(0, 0.55, 0));
             TextDisplayManager.setBillboard(player, textIds[i], TextDisplayManager.Billboard.VERTICAL);
             TextDisplayManager.setBackgroundColor(player, textIds[i], 0x00000000);
             TextDisplayManager.setStyle(player, textIds[i], true, false, false, TextDisplayManager.Alignment.CENTER);
-            TextDisplayManager.setText(player, textIds[i], multiSlotLabel(roll));
             TextDisplayManager.setInterpolation(player, textIds[i], 0, TRACK_INTERVAL_TICKS, TRACK_INTERVAL_TICKS);
         }
         PacketEntityManager.endBundle(player);
 
         BukkitTask[] trackingTaskHolder = new BukkitTask[1];
-        MultiContext ctx = new MultiContext(player, playerId, count, itemIds, textIds, rolls, trackingTaskHolder);
-        trackingTaskHolder[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> trackMulti(ctx), 0L, TRACK_INTERVAL_TICKS);
+        HatchContext ctx = new HatchContext(player, playerId, count, itemIds, textIds, rolls, trackingTaskHolder);
+        activeHatches.put(playerId, ctx);
+        trackingTaskHolder[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> trackHatch(ctx), 0L, TRACK_INTERVAL_TICKS);
 
-        // Fanfare keyed to the best pull of the batch, ranked by what it
-        // actually BEAT - so a Huge of a lesser pet still takes the moment
-        // over an ordinary high-rarity one.
-        PackRollService.RollResult best = rolls.stream()
-                .max(Comparator.comparingLong(PackRollService.RollResult::oneIn))
-                .orElse(rolls.get(0));
-        TierConfig cfg = configFor(tierFor(rarityRegistry.get().find(best.item().rarityId()).orElse(null)));
-        for (Location slot : slots) {
-            player.spawnParticle(cfg.particle(), slot, Math.max(4, cfg.particleCount() / count), 0.25, 0.25, 0.25, 0.02);
+        player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 0.8f, 0.7f);
+        scheduleShake(ctx, slots);
+
+        // Rarest last: the eye follows the cracks in order and finishes on
+        // the best thing in the batch.
+        Integer[] order = new Integer[count];
+        for (int i = 0; i < count; i++) {
+            order[i] = i;
         }
-        player.playSound(player.getLocation(), cfg.sound(), 1f, cfg.pitch());
+        Arrays.sort(order, Comparator.comparingLong(i -> rolls.get(i).oneIn()));
+        int stagger = count > 1 ? Math.max(1, MAX_CRACK_STAGGER_TICKS / (count - 1)) : 0;
 
-        // Held longer for a bigger haul - fifteen results need more time to
-        // read than three do.
-        long holdTicks = cfg.holdTicks() + 10L * Math.min(6, count);
-        Bukkit.getScheduler().runTaskLater(plugin, () -> despawnMulti(ctx), holdTicks);
+        long lastCrackTick = SHAKE_TICKS;
+        for (int position = 0; position < count; position++) {
+            int slot = order[position];
+            long at = SHAKE_TICKS + (long) position * stagger;
+            lastCrackTick = Math.max(lastCrackTick, at);
+            Bukkit.getScheduler().runTaskLater(plugin, () -> crack(ctx, slot), at);
+        }
+
+        // Long enough to read a full grid, and longer for a bigger one.
+        long holdTicks = lastCrackTick + 35L + 8L * Math.min(6, count);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> despawnHatch(ctx), holdTicks);
+        // Same layout PackActionBarService and the compact reel both use -
+        // only the leftmost segment changes while a hatch plays, so the
+        // pity bar stays exactly where the player expects to find it.
+        player.sendActionBar(Text.parse(
+                "<#4BD9FF>Hatching..</#4BD9FF> <gray>|</gray> <#4BD9FF>Pity: <bar> <gray><suffix></gray>",
+                Placeholder.parsed("bar", pityService.renderBar(rollCountBefore)),
+                Placeholder.unparsed("suffix", pityService.renderProgressSuffix(rollCountBefore))));
     }
 
-    private void trackMulti(MultiContext ctx) {
+    /** Wobbles every egg back and forth until the cracks start - each step interpolates across the gap, so they are never still. */
+    private void scheduleShake(HatchContext ctx, Location[] slots) {
+        for (int tick = 0; tick < SHAKE_TICKS; tick += WOBBLE_INTERVAL) {
+            boolean left = (tick / WOBBLE_INTERVAL) % 2 == 0;
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                Player player = ctx.player();
+                if (!isLive(ctx)) {
+                    return;
+                }
+                PacketEntityManager.beginBundle(player);
+                for (int i = 0; i < ctx.count(); i++) {
+                    float yaw = facingYawTowardPlayer(slots[i], player) + (left ? -WOBBLE_DEGREES : WOBBLE_DEGREES);
+                    ItemDisplayManager.setInterpolation(player, ctx.itemIds()[i], 0, WOBBLE_INTERVAL, WOBBLE_INTERVAL);
+                    ItemDisplayManager.setRotation(player, ctx.itemIds()[i], left ? -6f : 6f, yaw);
+                }
+                PacketEntityManager.endBundle(player);
+                player.playSound(player.getLocation(), Sound.BLOCK_STONE_HIT, 0.5f, left ? 1.4f : 1.2f);
+            }, tick);
+        }
+    }
+
+    /** One egg breaks open: particles, a sound pitched to how rare it was, and the display swaps from egg to pet. */
+    private void crack(HatchContext ctx, int slot) {
         Player player = ctx.player();
-        if (!player.isOnline()) {
+        if (!isLive(ctx)) {
+            return;
+        }
+        PackRollService.RollResult roll = ctx.rolls().get(slot);
+        Location[] slots = hatchSlotLocations(player, ctx.count());
+        TierConfig cfg = configFor(tierFor(rarityRegistry.get().find(roll.item().rarityId()).orElse(null)));
+
+        player.spawnParticle(Particle.ITEM_SNOWBALL, slots[slot], 12, 0.2, 0.2, 0.2, 0.05);
+        player.spawnParticle(cfg.particle(), slots[slot], Math.max(4, cfg.particleCount() / 3), 0.3, 0.3, 0.3, 0.02);
+        player.playSound(player.getLocation(), Sound.ENTITY_TURTLE_EGG_BREAK, 0.7f, 1.1f);
+        player.playSound(player.getLocation(), cfg.sound(), 0.7f, cfg.pitch());
+
+        PacketEntityManager.beginBundle(player);
+        ItemDisplayManager.setInterpolation(player, ctx.itemIds()[slot], 0, 3, 3);
+        ItemDisplayManager.setItem(player, ctx.itemIds()[slot], iconFactory.baseIcon(roll.item()).build());
+        ItemDisplayManager.setScale(player, ctx.itemIds()[slot], HATCH_PET_SCALE, HATCH_PET_SCALE, HATCH_PET_SCALE);
+        ItemDisplayManager.setRotation(player, ctx.itemIds()[slot], 0f, facingYawTowardPlayer(slots[slot], player));
+        TextDisplayManager.setText(player, ctx.textIds()[slot], hatchSlotLabel(roll));
+        PacketEntityManager.endBundle(player);
+    }
+
+    private void trackHatch(HatchContext ctx) {
+        Player player = ctx.player();
+        if (!isLive(ctx)) {
             ctx.trackingTaskHolder()[0].cancel();
             return;
         }
-        Location[] slots = multiSlotLocations(player, ctx.count());
+        Location[] slots = hatchSlotLocations(player, ctx.count());
         for (int i = 0; i < ctx.count(); i++) {
             PacketEntityManager.teleportEntity(player, ctx.itemIds()[i], slots[i]);
-            ItemDisplayManager.setRotation(player, ctx.itemIds()[i], 0f, facingYawTowardPlayer(slots[i], player));
-            PacketEntityManager.teleportEntity(player, ctx.textIds()[i], slots[i].clone().add(0, 0.45, 0));
+            PacketEntityManager.teleportEntity(player, ctx.textIds()[i], slots[i].clone().add(0, 0.55, 0));
         }
     }
 
+    /** The scheduled end of a hatch - a no-op if a newer one already replaced it. */
+    private void despawnHatch(HatchContext ctx) {
+        if (activeHatches.get(ctx.playerId()) != ctx) {
+            return;
+        }
+        clearHatch(ctx.playerId());
+    }
 
-
-    private void despawnMulti(MultiContext ctx) {
+    /** Takes whatever hatch is on screen for this player off it, immediately. */
+    private void clearHatch(UUID playerId) {
+        HatchContext ctx = activeHatches.remove(playerId);
+        if (ctx == null) {
+            return;
+        }
         BukkitTask tracking = ctx.trackingTaskHolder()[0];
         if (tracking != null) {
             tracking.cancel();
@@ -538,15 +640,15 @@ public final class PackRevealAnimationService {
             }
             PacketEntityManager.endBundle(player);
         }
-        RevealSuppressionRegistry.end(ctx.playerId());
+        RevealSuppressionRegistry.end(playerId);
     }
 
     /**
-     * Two lines rather than the single reel's three - a grid packs rows
+     * Two lines rather than the single reveal's three - a grid packs rows
      * close enough together that a third line visibly collides with the row
      * below it.
      */
-    private Component multiSlotLabel(PackRollService.RollResult roll) {
+    private Component hatchSlotLabel(PackRollService.RollResult roll) {
         ItemDefinition item = roll.item();
         Rarity rarity = rarityRegistry.get().find(item.rarityId()).orElse(null);
         String colorHex = rarity != null ? rarity.colorHex() : "#FFFFFF";
@@ -557,21 +659,21 @@ public final class PackRevealAnimationService {
         return nameLine.append(Component.newline()).append(oddsLine);
     }
 
-    /** A centred grid in front of the player - {@value #MULTI_COLUMNS} per row, wrapping downward, vertically centred on eye level. */
-    private Location[] multiSlotLocations(Player player, int count) {
+    /** A centred grid in front of the player - {@value #HATCH_COLUMNS} per row, wrapping downward, vertically centred on eye level. */
+    private Location[] hatchSlotLocations(Player player, int count) {
         Location eye = player.getEyeLocation();
         Vector forward = eye.getDirection().setY(0).normalize();
         Vector right = new Vector(-forward.getZ(), 0, forward.getX()).normalize();
         Location anchor = eye.clone().add(forward.multiply(FORWARD_DISTANCE));
 
-        int rows = (count + MULTI_COLUMNS - 1) / MULTI_COLUMNS;
+        int rows = (count + HATCH_COLUMNS - 1) / HATCH_COLUMNS;
         Location[] slots = new Location[count];
         for (int i = 0; i < count; i++) {
-            int row = i / MULTI_COLUMNS;
-            int col = i % MULTI_COLUMNS;
-            int inThisRow = Math.min(MULTI_COLUMNS, count - row * MULTI_COLUMNS);
-            double xOffset = (col - (inThisRow - 1) / 2.0) * MULTI_COL_SPACING;
-            double yOffset = ((rows - 1) / 2.0 - row) * MULTI_ROW_SPACING;
+            int row = i / HATCH_COLUMNS;
+            int col = i % HATCH_COLUMNS;
+            int inThisRow = Math.min(HATCH_COLUMNS, count - row * HATCH_COLUMNS);
+            double xOffset = (col - (inThisRow - 1) / 2.0) * HATCH_COL_SPACING;
+            double yOffset = ((rows - 1) / 2.0 - row) * HATCH_ROW_SPACING;
             slots[i] = anchor.clone().add(right.clone().multiply(xOffset)).add(0, yOffset, 0);
         }
         return slots;

@@ -2,6 +2,7 @@ package me.dontshare.yieldpackstations.display;
 
 import com.github.retrooper.packetevents.util.Vector3f;
 import me.dontshare.yieldcore.packet.BlockDisplayManager;
+import me.dontshare.yieldcore.packet.ItemDisplayManager;
 import me.dontshare.yieldcore.packet.EntityClickRegistry;
 import me.dontshare.yieldcore.packet.InteractionEntityManager;
 import me.dontshare.yieldcore.packet.PacketEntityManager;
@@ -19,6 +20,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
@@ -28,22 +30,39 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * The packet-visual layer for physical pack stations - near-identical to
- * yield-upgrades' own {@code UpgradeStationDisplay} (invisible clickable
- * hitbox + visible button + floating text readout, spawned per-viewer
- * purely by distance), with one deliberate structural difference: this
- * registers via {@link EntityClickRegistry#register} (left-click/attack -
- * the "smack") rather than {@code registerInteract} (right-click), per the
- * user's explicit request that buying a pack is something you smack, not
- * right-click.
+ * The packet-visual layer for physical egg stations - an invisible
+ * clickable hitbox, a floating text readout and, where yield-upgrades'
+ * {@code UpgradeStationDisplay} puts a little concrete button, a large
+ * slowly-turning dragon egg. The egg IS the station: it is the thing you
+ * walk up to, the thing you smack, and the thing that vanishes when a
+ * hatch begins.
+ * <p>
+ * Both click types are registered, and they are not the same action:
+ * left-click ({@link EntityClickRegistry#register} - the "smack") hatches
+ * immediately, holding it down to keep hatching, while right-click
+ * ({@link EntityClickRegistry#registerInteract}) opens the hatch menu with
+ * the egg's full drop list and the 1x/3x/5x/24x rungs. Smacking stays the
+ * fast path on purpose: it is the one a player spends minutes at a time
+ * doing.
  */
 public final class PackStationDisplay {
 
     private static final double VIEW_DISTANCE_SQUARED = 48.0 * 48.0;
     private static final long TICK_INTERVAL = 20L; // 1 second
-    private static final float BUTTON_SCALE = 0.35f;
-    private static final float BUTTON_TRANSLATE = (1f - BUTTON_SCALE) / 2f;
-    private static final float HITBOX_SIZE = 0.8f;
+    /** Big enough to read as a landmark from across the zone entrance rather than as a decoration on the wall. */
+    private static final float EGG_SCALE = 1.6f;
+    /** A full turn every this many seconds - slow enough to be ambient, fast enough that the station never looks frozen. */
+    private static final int EGG_SPIN_SECONDS = 8;
+    /** How long the egg stays gone once a hatch starts, covering the shake-and-crack before it fades back in. */
+    private static final long EGG_HIDE_TICKS = 70L;
+    // Widened from 0.8 with the egg: the clickable box should cover what a
+    // player is actually aiming at, and a 1.6-scale egg is twice the size
+    // of the little concrete button this replaced. The INSETS below stay at
+    // their empirically-tuned values - the anchor did not move, only the
+    // box around it - but both want a look in game.
+    private static final float HITBOX_SIZE = 1.6f;
+    /** How close a player must stand for the auto-hatch loop to count them as being AT this station. */
+    private static final double HATCH_SITE_RANGE_SQUARED = 6.0 * 6.0;
     // Decoupled from HITBOX_SIZE's own (1-size)/2 corner-inset formula -
     // UpgradeStationDisplay#hitboxLocation's own javadoc documents this same
     // shared Interaction-anchor quirk empirically: inset 0.5 (centered)
@@ -56,8 +75,7 @@ public final class PackStationDisplay {
     private static final float HITBOX_INSET_X = 0.0f;
     private static final float HITBOX_INSET_Y = 0.1f;
     private static final float HITBOX_INSET_Z = 0.4f;
-    private static final float PUSH_SCALE = BUTTON_SCALE * 0.6f;
-    private static final float PUSH_TRANSLATE = (1f - PUSH_SCALE) / 2f;
+    private static final float PUSH_SCALE = EGG_SCALE * 0.82f;
     private static final int PUSH_TICKS = 3;
     private static final float WALL_FACE_SCALE = 0.9f;
     private static final float WALL_DEPTH_SCALE = 0.15f;
@@ -69,6 +87,8 @@ public final class PackStationDisplay {
     private final PackStationService stationService;
 
     private volatile List<PackStation> stations = List.of();
+    /** Drives the ambient spin - seconds since start, since the display tick is one per second. */
+    private int tickCount;
     private final Map<PackStation, Set<UUID>> viewersByStation = new ConcurrentHashMap<>();
     /** What each viewer was last actually shown per station, so an unchanged sign costs nothing - see {@link #refreshFor}. */
     private final Map<UUID, Map<PackStation, String>> lastRenderState = new ConcurrentHashMap<>();
@@ -87,6 +107,7 @@ public final class PackStationDisplay {
     public void reload(List<PackStation> newStations) {
         for (PackStation station : stations) {
             EntityClickRegistry.unregister(station.hitboxEntityId());
+            EntityClickRegistry.unregisterInteract(station.hitboxEntityId());
             Set<UUID> viewers = viewersByStation.remove(station);
             if (viewers == null) {
                 continue;
@@ -101,11 +122,13 @@ public final class PackStationDisplay {
         stations = newStations;
         for (PackStation station : newStations) {
             viewersByStation.put(station, ConcurrentHashMap.newKeySet());
-            EntityClickRegistry.register(station.hitboxEntityId(), player -> handleClick(player, station));
+            EntityClickRegistry.register(station.hitboxEntityId(), player -> handleSmack(player, station));
+            EntityClickRegistry.registerInteract(station.hitboxEntityId(), player -> handleRightClick(player, station));
         }
     }
 
     private void tick() {
+        int ticksElapsed = tickCount++;
         for (Player viewer : Bukkit.getOnlinePlayers()) {
             for (PackStation station : stations) {
                 Set<UUID> viewers = viewersByStation.get(station);
@@ -122,28 +145,31 @@ public final class PackStationDisplay {
                     despawnFor(viewer, station);
                     viewers.remove(viewer.getUniqueId());
                 } else if (inRange) {
-                    // Re-render every tick, not just after a purchase - a
+                    // Re-render every tick, not just after a hatch - a
                     // black-market station's live pack/cost can change
                     // mid-view the instant its rotation flips, and a coin
                     // balance can change from something unrelated too.
                     refreshFor(viewer, station);
+                    spinEgg(viewer, station, ticksElapsed);
                 }
             }
         }
     }
 
-    private void handleClick(Player player, PackStation station) {
+    /**
+     * Left-click: hatch now. Sneak to hatch as many as this player's tier
+     * allows and can afford.
+     * <p>
+     * A BUSY result is silent on purpose. Smacking is a hold-down action, so
+     * the cooldown refuses several times a second while a player leans on
+     * the button, and saying so each time would be a wall of red text.
+     */
+    private void handleSmack(Player player, PackStation station) {
         playPushAnimation(player, station);
-        // Sneak to buy a stack at once - see PackStationService#BULK_PURCHASE_AMOUNT.
-        PackStationService.Purchase purchase = stationService.attemptPurchase(player, station, player.isSneaking());
+        PackStationService.Purchase purchase = stationService.attemptHatch(player, station, player.isSneaking());
         switch (purchase.result()) {
-            case SUCCESS -> {
-                player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.6f, 1.4f);
-                PackDefinition pack = packs.getPackRegistry().find(stationService.currentPackId(station)).orElse(null);
-                player.sendMessage(Text.parse("<green>Bought <count>x <name>!</green>",
-                        Placeholder.unparsed("count", String.valueOf(purchase.quantity())),
-                        Placeholder.unparsed("name", pack != null ? Formatting.stripLeadingColorCodes(pack.displayName()) : "pack")));
-                refreshFor(player, station);
+            case SUCCESS -> hideEggDuringHatch(player, station);
+            case BUSY -> {
             }
             case ZONE_LOCKED -> {
                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
@@ -151,13 +177,56 @@ public final class PackStationDisplay {
             }
             case CANT_AFFORD -> {
                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
-                player.sendMessage(Text.parse("<red>You can't afford this pack yet.</red>"));
+                player.sendMessage(Text.parse("<red>You can't afford this egg yet.</red>"));
             }
             case NO_STOCK_CONFIGURED -> {
                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
-                player.sendMessage(Text.parse("<red>This station has nothing to sell right now.</red>"));
+                player.sendMessage(Text.parse("<red>This station has nothing in it right now.</red>"));
             }
         }
+    }
+
+    /** Right-click: the hatch menu - every pet this egg can drop, at this player's own odds, and the 1x/3x/5x/24x rungs. */
+    private void handleRightClick(Player player, PackStation station) {
+        String packId = stationService.currentPackId(station);
+        if (packId == null) {
+            player.sendMessage(Text.parse("<red>This station has nothing in it right now.</red>"));
+            return;
+        }
+        player.playSound(player.getLocation(), Sound.BLOCK_CHEST_OPEN, 0.5f, 1.6f);
+        packs.getHatchMenuGui().open(player, packId);
+    }
+
+    /**
+     * The station's own egg vanishes for the length of the hatch, so the
+     * only eggs on screen are the ones actually cracking open in front of
+     * the player - then fades back, ready for the next one.
+     */
+    private void hideEggDuringHatch(Player player, PackStation station) {
+        PacketEntityManager.destroyEntity(player, station.buttonEntityId());
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!player.isOnline()) {
+                return;
+            }
+            Set<UUID> viewers = viewersByStation.get(station);
+            if (viewers == null || !viewers.contains(player.getUniqueId())) {
+                return;
+            }
+            spawnEgg(player, station);
+        }, EGG_HIDE_TICKS);
+    }
+
+    /** Whichever station this player is standing at, or null - the answer PackOpenService's auto-hatch loop asks for. */
+    public String hatchSiteFor(Player player) {
+        for (PackStation station : stations) {
+            if (!player.getWorld().equals(station.location().getWorld())) {
+                continue;
+            }
+            if (station.location().distanceSquared(player.getLocation()) <= HATCH_SITE_RANGE_SQUARED) {
+                return stationService.currentPackId(station);
+            }
+        }
+        return null;
     }
 
     private void refreshFor(Player viewer, PackStation station) {
@@ -180,19 +249,32 @@ public final class PackStationDisplay {
         perStation.put(station, state);
 
         TextDisplayManager.setText(viewer, station.textEntityId(), buildText(viewer, station));
-        BlockDisplayManager.setBlockState(viewer, station.buttonEntityId(),
-                canAfford ? Material.LIME_CONCRETE : Material.RED_CONCRETE);
     }
 
+    /**
+     * Turns every visible egg a little further round, interpolated across
+     * the whole second until the next step, so a station is always gently
+     * moving. Runs off the same once-a-second tick everything else here
+     * does - a genuinely smooth spin would need a packet per tick per
+     * viewer per station, which is twenty times the traffic for an effect
+     * nobody is staring at.
+     */
+    private void spinEgg(Player viewer, PackStation station, int secondsElapsed) {
+        float yaw = (secondsElapsed % EGG_SPIN_SECONDS) * (360f / EGG_SPIN_SECONDS);
+        ItemDisplayManager.setInterpolation(viewer, station.buttonEntityId(), 0, (int) TICK_INTERVAL, (int) TICK_INTERVAL);
+        ItemDisplayManager.setRotation(viewer, station.buttonEntityId(), 0f, yaw);
+    }
+
+    /** The egg squashes when smacked and springs back - the whole feedback a hold-down player gets, since the refusals are silent. */
     private void playPushAnimation(Player viewer, PackStation station) {
-        BlockDisplayManager.setInterpolation(viewer, station.buttonEntityId(), 0, PUSH_TICKS, PUSH_TICKS);
-        BlockDisplayManager.setTransformation(viewer, station.buttonEntityId(), PUSH_TRANSLATE, PUSH_SCALE);
+        ItemDisplayManager.setInterpolation(viewer, station.buttonEntityId(), 0, PUSH_TICKS, PUSH_TICKS);
+        ItemDisplayManager.setScale(viewer, station.buttonEntityId(), PUSH_SCALE, PUSH_SCALE, PUSH_SCALE);
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (!viewer.isOnline()) {
                 return;
             }
-            BlockDisplayManager.setInterpolation(viewer, station.buttonEntityId(), 0, PUSH_TICKS, PUSH_TICKS);
-            BlockDisplayManager.setTransformation(viewer, station.buttonEntityId(), BUTTON_TRANSLATE, BUTTON_SCALE);
+            ItemDisplayManager.setInterpolation(viewer, station.buttonEntityId(), 0, PUSH_TICKS, PUSH_TICKS);
+            ItemDisplayManager.setScale(viewer, station.buttonEntityId(), EGG_SCALE, EGG_SCALE, EGG_SCALE);
         }, PUSH_TICKS);
     }
 
@@ -210,10 +292,7 @@ public final class PackStationDisplay {
                 new Vector3f(WALL_FACE_TRANSLATE, WALL_FACE_TRANSLATE, WALL_DEPTH_TRANSLATE),
                 new Vector3f(WALL_FACE_SCALE, WALL_FACE_SCALE, WALL_DEPTH_SCALE));
 
-        BlockDisplayManager.spawn(viewer, station.buttonEntityId(), loc);
-        BlockDisplayManager.setBlockState(viewer, station.buttonEntityId(),
-                stationService.canAfford(viewer, station) ? Material.LIME_CONCRETE : Material.RED_CONCRETE);
-        BlockDisplayManager.setTransformation(viewer, station.buttonEntityId(), BUTTON_TRANSLATE, BUTTON_SCALE);
+        spawnEgg(viewer, station);
 
         TextDisplayManager.spawn(viewer, station.textEntityId(), textLocation(loc));
         TextDisplayManager.setBillboard(viewer, station.textEntityId(), TextDisplayManager.Billboard.VERTICAL);
@@ -223,14 +302,32 @@ public final class PackStationDisplay {
         PacketEntityManager.endBundle(viewer);
     }
 
+    private void spawnEgg(Player viewer, PackStation station) {
+        ItemDisplayManager.spawn(viewer, station.buttonEntityId(), eggLocation(station.location()));
+        ItemDisplayManager.setItem(viewer, station.buttonEntityId(), new ItemStack(Material.DRAGON_EGG));
+        ItemDisplayManager.setScale(viewer, station.buttonEntityId(), EGG_SCALE, EGG_SCALE, EGG_SCALE);
+    }
+
+    /** Floats the egg off the pedestal so it reads as an object on display rather than a block stuck to the wall. */
+    private Location eggLocation(Location stationCorner) {
+        return stationCorner.clone().add(0.5, 0.75, 0.5);
+    }
+
     /** See HITBOX_INSET's own comment - same corner-anchored Interaction quirk as UpgradeStationDisplay#hitboxLocation, tuned independently. */
     private Location hitboxLocation(Location stationCorner) {
         return stationCorner.clone().add(HITBOX_INSET_X, HITBOX_INSET_Y, HITBOX_INSET_Z);
     }
 
-    /** X pulled back from the cell-center 0.5 - in-game feedback was that the text floated above the raw hitbox corner rather than above the button itself, so it needed pushing toward -X to sit over the button. */
+    /**
+     * X pulled back from the cell-center 0.5 - in-game feedback was that the
+     * text floated above the raw hitbox corner rather than above the button
+     * itself, so it needed pushing toward -X. Y raised from 1.1 to clear the
+     * egg, which at {@value #EGG_SCALE} scale stands about a block and a
+     * half tall from its own centre at 0.75 and would otherwise have the
+     * readout buried inside it.
+     */
     private Location textLocation(Location stationCorner) {
-        return stationCorner.clone().add(0.2, 1.1, 0.5);
+        return stationCorner.clone().add(0.2, 2.0, 0.5);
     }
 
     private void despawnFor(Player viewer, PackStation station) {
@@ -263,7 +360,9 @@ public final class PackStationDisplay {
         }
 
         String costLine = "&7Cost: &a$<coins>" + (pack.diamondCost() > 0 ? " &8+ &b<diamonds> diamonds" : "");
-        String template = label + pack.displayName() + "\n" + costLine + "\n&7Smack to buy!";
+        String template = label + pack.displayName() + "\n" + costLine
+                + "\n&7Smack to hatch &8| &7Sneak-smack for many"
+                + "\n&7Right-click for drops";
 
         return Text.parse(template,
                 Placeholder.unparsed("coins", Formatting.format((double) pack.coinCost())),

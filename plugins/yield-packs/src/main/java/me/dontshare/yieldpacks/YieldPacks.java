@@ -24,7 +24,6 @@ import me.dontshare.yieldpacks.data.ItemRegistry;
 import me.dontshare.yieldpacks.data.PackContentLoader;
 import me.dontshare.yieldpacks.data.PackRegistry;
 import me.dontshare.yieldpacks.data.RarityRegistry;
-import me.dontshare.yieldpacks.dialog.OpenPackDialog;
 import me.dontshare.yieldpacks.display.PetDisplayConfig;
 import me.dontshare.yieldpacks.display.PetDisplayConfigLoader;
 import me.dontshare.yieldpacks.display.PetDisplayListener;
@@ -46,9 +45,9 @@ import me.dontshare.yieldpacks.gui.FusionGui;
 import me.dontshare.yieldpacks.gui.HugeIndexGui;
 import me.dontshare.yieldpacks.gui.IndexGui;
 import me.dontshare.yieldpacks.gui.PackOddsLore;
-import me.dontshare.yieldpacks.gui.PackMultiOpenResultGui;
 import me.dontshare.yieldpacks.gui.PackShopGui;
-import me.dontshare.yieldpacks.gui.PackStorageGui;
+import me.dontshare.yieldpacks.gui.EggCatalogGui;
+import me.dontshare.yieldpacks.gui.HatchMenuGui;
 import me.dontshare.yieldpacks.gui.RankupGui;
 import me.dontshare.yieldpacks.gui.SettingsGui;
 import me.dontshare.yieldpacks.item.ItemIconFactory;
@@ -79,6 +78,7 @@ import me.dontshare.yieldpacks.petenchant.PetEnchantTableDisplay;
 import me.dontshare.yieldpacks.petenchant.PetEnchantTableGui;
 import me.dontshare.yieldpacks.pity.PityService;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
+import me.dontshare.yieldpacks.player.StoredEggRefundListener;
 import me.dontshare.yieldpacks.player.PackPlayerProfileManager;
 import me.dontshare.yieldpacks.rank.RankService;
 import me.dontshare.yieldpacks.roll.ExistsCounterStore;
@@ -131,6 +131,8 @@ public final class YieldPacks extends JavaPlugin {
     private volatile PetLevelingConfig petLevelingConfig;
     private PetLevelingService petLevelingService;
     private PackRollService rollService;
+    private EggCatalogGui eggCatalogGui;
+    private HatchMenuGui hatchMenuGui;
     private CandyContentLoader candyContentLoader;
     private volatile Map<String, Candy> candyConfig;
     private CandyItem candyItem;
@@ -237,6 +239,7 @@ public final class YieldPacks extends JavaPlugin {
         StarterPetService starterPetService = new StarterPetService(playerStore, equipmentService, petDisplayService);
         StarterPetGui starterPetGui = new StarterPetGui(core.getGuiManager(), iconFactory, () -> content.items(), starterPetService);
         core.getListenerManager().register(new StarterPetJoinListener(starterPetService, starterPetGui, this));
+        core.getListenerManager().register(new StoredEggRefundListener(this, playerStore, () -> content));
 
         ShopStockService stockService = new ShopStockService(() -> content, playerStore, luckService);
         PityService pityService = new PityService(() -> content);
@@ -329,16 +332,9 @@ public final class YieldPacks extends JavaPlugin {
         CommandManager.register(this, MasteryCommand.build(masteryGui), "View your mastery progress", List.of());
 
         PackOddsLore oddsLore = new PackOddsLore(rollService);
-        PackShopGui packShopGui = new PackShopGui(stockService, core.getGuiManager(), rollService, oddsLore);
-        PackMultiOpenResultGui multiOpenResultGui = new PackMultiOpenResultGui(core.getGuiManager(), () -> content.rarities(), iconFactory);
-        OpenPackDialog openPackDialog = new OpenPackDialog(playerStore, openService, oddsLore);
-        // The bulk reveal lives in the world now; this GUI is the fallback
-        // for players who have roll animations turned off (see
-        // PackOpenService#tryOpenMany).
-        openService.setMultiOpenResultGui(multiOpenResultGui);
-        PackStorageGui packStorageGui = new PackStorageGui(() -> content, playerStore, core.getGuiManager(), openPackDialog, packShopGui, rollService, oddsLore);
-        openPackDialog.setPackStorageGui(packStorageGui);
-        multiOpenResultGui.setPackStorageGui(packStorageGui);
+        PackShopGui packShopGui = new PackShopGui(stockService, core.getGuiManager(), rollService, oddsLore, openService);
+        eggCatalogGui = new EggCatalogGui(() -> content, core.getGuiManager(), oddsLore);
+        hatchMenuGui = new HatchMenuGui(() -> content, core.getGuiManager(), oddsLore, openService, rollService, iconFactory, playerStore);
         FusionService fusionService = new FusionService(() -> content.items());
         fusionGui = new FusionGui(playerStore, () -> content.items(), () -> content.rarities(),
                 fusionService, core.getGuiManager(), iconFactory);
@@ -397,7 +393,7 @@ public final class YieldPacks extends JavaPlugin {
         // built above, just before this block) - merged from what used to
         // be a separate, simpler pack-picker GUI, so /packs and the compass
         // are one feature, not two overlapping ones.
-        PackSelectorService selectorService = new PackSelectorService(selectorItem, playerStore, () -> content, openService, packStorageGui);
+        PackSelectorService selectorService = new PackSelectorService(selectorItem, playerStore, () -> content, eggCatalogGui);
         core.getListenerManager().register(new PackSelectorListener(selectorService, selectorItem));
         PackActionBarService actionBarService = new PackActionBarService(this, playerStore, () -> content, pityService, selectorService);
         actionBarService.start();
@@ -418,7 +414,7 @@ public final class YieldPacks extends JavaPlugin {
         // registered - it's the old pre-Store-hub Pack Shop system. Kept
         // (packShopGui itself, PacksCommand.java) rather than deleted, in
         // case it's wanted back later - just not reachable by command for now.
-        CommandManager.register(this, PackStorageCommand.build(packStorageGui), "Open your unopened pack storage", List.of());
+        CommandManager.register(this, PackStorageCommand.build(eggCatalogGui), "Browse every egg and what hatches from it", List.of());
 
         // The Store hub is the Buycraft/Tebex-style real-money storefront -
         // its own tabs (Ranks/Gamepasses/Bundles/Exclusive Crates) are
@@ -517,6 +513,11 @@ public final class YieldPacks extends JavaPlugin {
     }
 
     /** Exposed for the same reason as {@link #getPetLevelingService()} - lets e.g. yield-blocktree register its own exclusive-find-chance provider. */
+    /** The right-click menu a physical egg station opens - see yield-packstations. */
+    public HatchMenuGui getHatchMenuGui() {
+        return hatchMenuGui;
+    }
+
     public PackRollService getPackRollService() {
         return rollService;
     }

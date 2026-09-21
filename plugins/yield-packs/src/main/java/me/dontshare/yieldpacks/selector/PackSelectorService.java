@@ -5,40 +5,39 @@ import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.data.PackContentLoader;
 import me.dontshare.yieldpacks.data.PackDefinition;
-import me.dontshare.yieldpacks.gui.PackStorageGui;
+import me.dontshare.yieldpacks.gui.EggCatalogGui;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
-import me.dontshare.yieldpacks.roll.PackOpenService;
-import me.dontshare.yieldpacks.roll.RevealSuppressionRegistry;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
-import org.bukkit.Material;
-import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 
 import java.util.function.Supplier;
 
 /**
- * The logic behind the physical Pack Selector item - kept separate from
+ * The logic behind the physical Egg Book item - kept separate from
  * PackSelectorListener so the Bukkit event plumbing doesn't get tangled up
- * with the actual cycle/open/give behavior.
+ * with the actual behavior.
+ * <p>
+ * It used to be a Pack Selector: it picked which pack was "active" and
+ * right-clicking it opened one on the spot, anywhere in the world. Eggs are
+ * hatched at their own stations now, so both halves of that job are gone -
+ * what is left, and what it still earns its hotbar slot for, is being the
+ * fastest way to look up which egg drops what (see {@link EggCatalogGui}).
  */
 public final class PackSelectorService {
 
     private final PackSelectorItem item;
     private final PlayerDataStore<PackPlayerProfile> store;
     private final Supplier<PackContentLoader.ContentSnapshot> content;
-    private final PackOpenService openService;
-    private final PackStorageGui packStorageGui;
+    private final EggCatalogGui eggCatalogGui;
     /** Pack name last written into slot 4 per player - see {@link #refreshItem}. */
     private final java.util.Map<java.util.UUID, String> lastRenderedPackName = new java.util.concurrent.ConcurrentHashMap<>();
 
     public PackSelectorService(PackSelectorItem item, PlayerDataStore<PackPlayerProfile> store,
-                                Supplier<PackContentLoader.ContentSnapshot> content, PackOpenService openService,
-                                PackStorageGui packStorageGui) {
+                                Supplier<PackContentLoader.ContentSnapshot> content, EggCatalogGui eggCatalogGui) {
         this.item = item;
         this.store = store;
         this.content = content;
-        this.openService = openService;
-        this.packStorageGui = packStorageGui;
+        this.eggCatalogGui = eggCatalogGui;
     }
 
     /** Makes sure slot 4 holds the selector - self-healing, so a lost/misplaced item just reappears next join. */
@@ -77,55 +76,14 @@ public final class PackSelectorService {
         player.getInventory().setItem(4, item.create(packName));
     }
 
-    /**
-     * Left-click behavior: opens the SAME storage screen {@code /packs}
-     * does - previously a separate, simpler pack-picker GUI, merged into
-     * one so the compass and the command are the exact same feature rather
-     * than two overlapping ones.
-     */
+    /** Both clicks open the egg catalog - see this class's own note on why there is nothing else left for it to do. */
     public void openSelectMenu(Player player) {
-        packStorageGui.open(player);
+        eggCatalogGui.open(player);
     }
 
-    /**
-     * Right-click behavior: opens the selected pack, unless auto-open is
-     * already handling it. Uses Minecraft's own item-cooldown overlay
-     * (rather than a chat message) to communicate the open cooldown - while
-     * the compass is visibly on cooldown, this does nothing at all.
-     */
+    /** Right-click is the same as left-click. Kept as its own method so PackSelectorListener doesn't have to care. */
     public void attemptOpen(Player player) {
-        if (player.hasCooldown(Material.COMPASS)) {
-            return;
-        }
-        if (RevealSuppressionRegistry.isActive(player.getUniqueId())) {
-            // A reel (see PackRevealAnimationService) is still mid-flight for
-            // this player - the compass's own item-cooldown is only ~1s
-            // (open-cooldown-seconds) while a reel can run several seconds
-            // longer, so without this a second open could fire while the
-            // first reel's entities are still on screen, spawning two full
-            // sets of slots on top of each other.
-            return;
-        }
-        PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
-        String packId = profile.getActivePackId();
-        if (packId == null) {
-            player.sendMessage(Text.parse("<red>You don't have a pack selected - left-click to pick one.</red>"));
-            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
-            return;
-        }
-        if (profile.isAutoOpenEnabled()) {
-            player.sendMessage(Text.parse("<gray>Auto-open is already handling <white><pack></white>.</gray>",
-                    Placeholder.unparsed("pack", packName(packId))));
-            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
-            return;
-        }
-        if (openService.tryOpen(player, packId, PackOpenService.OpenTrigger.MANUAL_COMPASS)) {
-            player.setCooldown(Material.COMPASS, cooldownTicks());
-        }
-    }
-
-    private int cooldownTicks() {
-        return (int) Math.max(1L, content.get().shop().openCooldownMillis() / 50L);
+        eggCatalogGui.open(player);
     }
 
     private String selectedPackName(PackPlayerProfile profile) {
