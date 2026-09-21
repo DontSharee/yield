@@ -267,25 +267,28 @@ game bought with a currency you cannot mine.
 
 | pet | chance | damage |
 |---|---|---|
-| Obsidian Warden | 30% | +400% of your best pet |
-| Astral Leviathan | 25% | +500% |
-| Eclipse Tyrant | 20% | +600% |
-| Genesis Sovereign | 15% | +700% |
-| Infinity Wyrm | 10% | +800% |
+| Obsidian Warden | 30% | 250,000 |
+| Astral Leviathan | 25% | 1,000,000 |
+| Eclipse Tyrant | 20% | 4,000,000 |
+| Genesis Sovereign | 15% | 15,000,000 |
+| Infinity Wyrm | 10% | 60,000,000 |
 
-**They are Huges**, mechanically — damage is a percentage of the owner's
-best *normal* pet rather than a number of their own. That is the whole
-reason they are safe to sell: they multiply whatever progress a player has
-already made instead of handing an early-zone account a late-zone pet.
-Someone who buys one in Meadow gets a big multiplier on a Meadow squad,
-exactly as a buyer in Genesis Core gets one on theirs. A paying player
-climbs their own ladder faster; they do not skip it.
+They are plain **Exclusives with their own damage**, like every other pet —
+the percentage-of-your-best-pet mechanic belongs to Huges and stays theirs
+alone.
 
-For scale, the best Huge a free player can win in the chase (a Secret) is
-+300%, so the black market's floor is above the chase's ceiling and its top
-is roughly double it. Decisively the strongest pets in the game, and
-deliberately not a different order of magnitude from what the game gives
-away.
+The ladder is set against what the game gives away. The strongest pet a
+free player can win is the Genesis Core Secret at **125,000,000**, and the
+top of this list stops below it on purpose: money buys the best pet most
+players will ever hold, and a lucky free player can still beat it.
+
+What that means in practice, and it is worth being plain about it: bought
+early, these end the game for a while. The cheapest of them is 2,500× the
+best pet Meadow can drop and 83× Diamond Hollow's; the Infinity Wyrm
+outguns every zone's own best pet until Astral Peak, the 19th of 20. That
+is what is being sold. The damage numbers above are the dial if it turns
+out to be too much — pulling the top down to the 1–5M range would make
+them best-in-slot for the middle of the run rather than for all of it.
 
 **Price** is 2,000 credits a hatch — $20 at the Store's 100-credits-to-the-
 dollar rate. Achievements and milestones also pay credits (a few thousand

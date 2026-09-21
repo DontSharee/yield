@@ -1541,56 +1541,46 @@ items:
     track-exists: true
 
   # --- The black market's own pets (see black_market_egg below) ---
-  # The only pets bought with real money, and the only ones stronger than a
-  # chase Huge. They ARE Huges - damage is a percentage of the owner's best
-  # NORMAL pet rather than a number of their own - which is the whole reason
-  # they are safe to sell: they multiply whatever progress a player has
-  # already made instead of handing an early-zone account a late-zone pet.
-  # Someone who buys one in Meadow gets a big multiplier on a Meadow squad,
-  # exactly as a buyer in Genesis Core gets one on theirs.
+  # The only pets bought with real money. Plain Exclusives with their own
+  # damage, like every other pet - the percentage-of-your-best-pet mechanic
+  # belongs to Huges and stays theirs alone.
   #
-  # For scale, the best Huge in the chase (a Secret) is +300%. These run
-  # +400% to +800%: decisively the strongest pets in the game, without being
-  # a different order of magnitude from what a free player can win.
+  # The ladder is set against the pets the game gives away. The strongest
+  # thing a free player can win is the Genesis Core Secret at 125,000,000,
+  # and the top of this list stops below it on purpose: money buys the best
+  # pet most players will ever hold, and a lucky free player can still beat
+  # it. Bought early they are enormously ahead of the zone they are used in
+  # - that is what is being sold - so the numbers below are the dial if
+  # that turns out to be too much.
   black_obsidian_warden:
     display-name: "&8&lObsidian Warden"
     material: PLAYER_HEAD
     rarity: exclusive
-    damage: 1
-    huge: true
-    huge-damage-percent: 4.0
+    damage: 250000
     track-exists: true
   black_astral_leviathan:
     display-name: "&b&lAstral Leviathan"
     material: PLAYER_HEAD
     rarity: exclusive
-    damage: 1
-    huge: true
-    huge-damage-percent: 5.0
+    damage: 1000000
     track-exists: true
   black_eclipse_tyrant:
     display-name: "&5&lEclipse Tyrant"
     material: PLAYER_HEAD
     rarity: exclusive
-    damage: 1
-    huge: true
-    huge-damage-percent: 6.0
+    damage: 4000000
     track-exists: true
   black_genesis_sovereign:
     display-name: "&6&lGenesis Sovereign"
     material: PLAYER_HEAD
     rarity: exclusive
-    damage: 1
-    huge: true
-    huge-damage-percent: 7.0
+    damage: 15000000
     track-exists: true
   black_infinity_wyrm:
     display-name: "&d&lInfinity Wyrm"
     material: PLAYER_HEAD
     rarity: exclusive
-    damage: 1
-    huge: true
-    huge-damage-percent: 8.0
+    damage: 60000000
     track-exists: true
 
 packs:
@@ -2290,8 +2280,8 @@ packs:
       - { item: zone_genesis_core_primordial_genesisking, weight: 0.02 }
 
   # --- The black market (see yield-packstations' pack-stations.yml) ---
-  # One egg, five pets, bought with STORE CREDITS rather than with anything
-  # earned in a zone - the only thing in the game priced that way.
+  # One egg, five Exclusive pets, bought with STORE CREDITS rather than with
+  # anything earned in a zone - the only thing in the game priced that way.
   #
   # It replaced three "elite cache" eggs that sold ordinary zone pets at a
   # markup on an hourly rotation. Those were a worse version of the zone
