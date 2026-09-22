@@ -64,8 +64,17 @@ public final class FastTravelGui {
                 break;
             }
             boolean unlocked = lockService.isUnlocked(player, zone);
-            builder.item(slot, zoneIcon(zone, unlocked), (clicker, event) -> {
-                if (unlocked) {
+            // A zone can be shut for reasons that have nothing to do with
+            // paying for it - the Haunted Hollow only exists while its event
+            // runs. Fast travel is a door into the zone just as much as
+            // walking is, so it asks the same gate the move handler does
+            // rather than dropping players past it.
+            String closed = lockService.accessDenialReason(player, zone);
+            builder.item(slot, zoneIcon(zone, unlocked, closed), (clicker, event) -> {
+                if (closed != null) {
+                    clicker.sendMessage(Text.parse(closed));
+                    clicker.playSound(clicker.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
+                } else if (unlocked) {
                     travel(clicker, zone);
                 } else {
                     clicker.closeInventory();
@@ -78,8 +87,18 @@ public final class FastTravelGui {
         guiManager.open(player, builder.build());
     }
 
-    private ItemStack zoneIcon(ZoneDefinition zone, boolean unlocked) {
+    private ItemStack zoneIcon(ZoneDefinition zone, boolean unlocked, String closed) {
         String name = Formatting.stripLeadingColorCodes(zone.displayName());
+        if (closed != null) {
+            // Shown rather than hidden: a zone nobody can name is a zone
+            // nobody comes back for, and "closed" is the whole appeal of a
+            // seasonal one.
+            return ItemBuilder.of(Material.BARRIER)
+                    .name("&8&l" + name + " &7[CLOSED]")
+                    .lore(MenuLore.info("zone", List.of(), "&8", List.of(closed)))
+                    .hideAttributes()
+                    .build();
+        }
         List<String> lore = unlocked
                 ? MenuLore.button("zone", List.of(), ACCENT, "Click to Travel")
                 : MenuLore.purchase("zone", List.of(" &7This zone is locked."), "<red>", List.of(), "Click to View Unlock Cost");

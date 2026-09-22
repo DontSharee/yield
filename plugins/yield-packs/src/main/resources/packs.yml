@@ -1583,6 +1583,74 @@ items:
     damage: 60000000
     track-exists: true
 
+  # --- Seasonal event pets (see yield-events' events.yml) ---
+  # Only obtainable while their event is running, and gone with it. That is
+  # the whole appeal, so they are deliberately strong: the top of each set
+  # sits around what the 18th zone drops, which is a real prize for a
+  # mid-game player and still short of both the black market's best and the
+  # Genesis Core Secret. An event is a fortnight; it should be worth
+  # showing up for and it should not end anyone's progression.
+  event_candy_imp:
+    display-name: "&6Candy Imp"
+    material: PLAYER_HEAD
+    rarity: rare
+    damage: 25000
+    track-exists: true
+  event_pumpkin_prowler:
+    display-name: "&6Pumpkin Prowler"
+    material: PLAYER_HEAD
+    rarity: epic
+    damage: 150000
+    track-exists: true
+  event_grave_warden:
+    display-name: "&8Grave Warden"
+    material: PLAYER_HEAD
+    rarity: legendary
+    damage: 800000
+    track-exists: true
+  event_hollow_reaper:
+    display-name: "&5Hollow Reaper"
+    material: PLAYER_HEAD
+    rarity: mythic
+    damage: 4000000
+    track-exists: true
+  event_pumpkin_king:
+    display-name: "&6&lPumpkin King"
+    material: PLAYER_HEAD
+    rarity: secret
+    damage: 20000000
+    track-exists: true
+  event_frost_sprite:
+    display-name: "&bFrost Sprite"
+    material: PLAYER_HEAD
+    rarity: rare
+    damage: 25000
+    track-exists: true
+  event_snowclad_yeti:
+    display-name: "&fSnowclad Yeti"
+    material: PLAYER_HEAD
+    rarity: epic
+    damage: 150000
+    track-exists: true
+  event_aurora_stag:
+    display-name: "&dAurora Stag"
+    material: PLAYER_HEAD
+    rarity: legendary
+    damage: 800000
+    track-exists: true
+  event_glacier_wyrm:
+    display-name: "&3Glacier Wyrm"
+    material: PLAYER_HEAD
+    rarity: mythic
+    damage: 4000000
+    track-exists: true
+  event_winter_monarch:
+    display-name: "&b&lWinter Monarch"
+    material: PLAYER_HEAD
+    rarity: secret
+    damage: 20000000
+    track-exists: true
+
 packs:
   # --- The merchant ladder (the rotating shop, see ShopStockService) ---
   #
@@ -2311,3 +2379,44 @@ packs:
       - { item: black_eclipse_tyrant, weight: 20 }
       - { item: black_genesis_sovereign, weight: 15 }
       - { item: black_infinity_wyrm, weight: 10 }
+
+  # --- Seasonal event eggs (see yield-events' events.yml) ---
+  # Priced in the event's own currency, not in anything here: the costs
+  # below are all zero because yield-events charges Candy (or Snowflakes,
+  # or whatever the next one pays out) through the station's alternate
+  # charge. They sit at the event station by spawn, and only while their
+  # event is running - the rest of the year that station is empty.
+  event_halloween_egg:
+    display-name: "&6&lPumpkin Egg"
+    material: DRAGON_EGG
+    coin-cost: 0
+    diamond-cost: 0
+    credit-cost: 0
+    sort: 300
+    shop-weight: 0
+    shop-luck-exponent: 0.0
+    min-stock: 1
+    max-stock: 1
+    pool:
+      - { item: event_candy_imp, weight: 100 }
+      - { item: event_pumpkin_prowler, weight: 40 }
+      - { item: event_grave_warden, weight: 15 }
+      - { item: event_hollow_reaper, weight: 4 }
+      - { item: event_pumpkin_king, weight: 1 }
+  event_winter_egg:
+    display-name: "&b&lFrostbound Egg"
+    material: DRAGON_EGG
+    coin-cost: 0
+    diamond-cost: 0
+    credit-cost: 0
+    sort: 301
+    shop-weight: 0
+    shop-luck-exponent: 0.0
+    min-stock: 1
+    max-stock: 1
+    pool:
+      - { item: event_frost_sprite, weight: 100 }
+      - { item: event_snowclad_yeti, weight: 40 }
+      - { item: event_aurora_stag, weight: 15 }
+      - { item: event_glacier_wyrm, weight: 4 }
+      - { item: event_winter_monarch, weight: 1 }

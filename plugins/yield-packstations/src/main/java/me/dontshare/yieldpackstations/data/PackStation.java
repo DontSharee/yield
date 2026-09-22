@@ -3,19 +3,32 @@ package me.dontshare.yieldpackstations.data;
 import org.bukkit.Location;
 
 /**
- * One physical pack-selling station, "smacked" (left-click/attack) to buy
- * one unit of its pack into storage - see {@code PackStationService}. Either
- * a zone station ({@code zoneId}/{@code fixedPackId} both set, gated by that
- * zone's own unlock state, {@code isBlackMarket} false) or the black
- * market's station (the opposite - {@code isBlackMarket} true,
- * {@code zoneId}/{@code fixedPackId} null, whichever pack is currently live
- * comes from {@code BlackMarketRotationService}, re-resolved live every
- * render).
+ * One physical egg station, "smacked" (left-click/attack) to hatch what it
+ * holds - see {@code PackStationService}. Either:
+ * <ul>
+ *   <li>a <b>zone station</b>: {@code zoneId}/{@code fixedPackId} both set,
+ *       gated by that zone's own unlock state, {@code dynamicPackKey}
+ *       null;</li>
+ *   <li>a <b>dynamic station</b>: the opposite - {@code zoneId}/{@code
+ *       fixedPackId} null and a {@code dynamicPackKey} naming whoever owns
+ *       its contents, re-resolved live on every render.</li>
+ * </ul>
+ * The black market is a dynamic station ({@code "black_market"}, its egg
+ * fixed by config) and so is a seasonal event's own station ({@code
+ * "event"}, its egg whichever event is running today, and nothing at all
+ * when none is). Making that a KEY rather than a boolean is what lets a
+ * plugin yield-packstations has never heard of own a station: see
+ * {@code PackStationService#registerDynamicPack}.
  * <p>
  * The four entity ids are reserved once, at content-load time, and reused
  * for this station's whole server lifetime - same convention as
  * yield-upgrades' own {@code UpgradeStation}.
  */
-public record PackStation(String zoneId, String fixedPackId, boolean isBlackMarket, Location location,
+public record PackStation(String zoneId, String fixedPackId, String dynamicPackKey, Location location,
                            int hitboxEntityId, int buttonEntityId, int wallEntityId, int textEntityId) {
+
+    /** Whether someone else owns what this station holds - true for the black market and for an event station. */
+    public boolean isDynamic() {
+        return dynamicPackKey != null;
+    }
 }

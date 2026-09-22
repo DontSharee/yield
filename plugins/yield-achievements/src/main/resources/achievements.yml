@@ -1,3 +1,16 @@
+# CREDIT BUDGET. Credits are the Store currency - real money buys them at
+# 100 to the dollar (see yield-achievements' DonationGoalStore), and they
+# are the ONLY way to buy a gamepass, a rank, or a black market egg. What
+# this file hands out therefore sets what real money is worth.
+#
+# The whole game gives away about 1,650 credits across a full playthrough
+# (~850 here, ~650 in milestones.yml, the rest from quests and lootboxes),
+# which is one cheaper gamepass OR most of one black market hatch: enough
+# that a free player gets a taste of the premium shelf, not enough to clear
+# it. It used to be 18,985 - more than the entire store costs (15,073), so
+# every gamepass, both ranks and a black market egg were free to anyone who
+# just played for a while.
+
 # Specific, hand-authored one-off tasks - unlike milestones.yml's ladders,
 # each of these is its own unique moment. Reward is Credits, spent in
 # /buy on ranks/gamepasses. Credits are granted the instant an achievement
@@ -23,7 +36,7 @@ achievements:
       - "Hatch your very first egg."
     trigger: OPEN_PACK
     goal: 1
-    reward-credits: 50
+    reward-credits: 10
   pack_addict:
     display-name: "&eEgg Addict"
     icon: CHEST
@@ -31,7 +44,7 @@ achievements:
       - "Hatch 1,000 eggs."
     trigger: OPEN_PACK
     goal: 1000
-    reward-credits: 500
+    reward-credits: 50
   first_fusion:
     display-name: "&dFuse Together"
     icon: ANVIL
@@ -39,7 +52,7 @@ achievements:
       - "Fuse your first pet."
     trigger: FUSE_PET
     goal: 1
-    reward-credits: 75
+    reward-credits: 10
   fusion_master:
     display-name: "&5&lFusion Master"
     icon: ANVIL
@@ -47,7 +60,7 @@ achievements:
       - "Fuse 100 pets."
     trigger: FUSE_PET
     goal: 100
-    reward-credits: 750
+    reward-credits: 75
   cube_crusher:
     display-name: "&cCube Crusher"
     icon: IRON_PICKAXE
@@ -55,7 +68,7 @@ achievements:
       - "Kill 10,000 ore cubes."
     trigger: KILL_CUBE
     goal: 10000
-    reward-credits: 400
+    reward-credits: 40
   zone_explorer:
     display-name: "&aZone Explorer"
     icon: ENDER_PEARL
@@ -64,7 +77,7 @@ achievements:
     trigger: UNLOCK_ZONE_5
     description:
       - "Unlock your 5th zone."
-    reward-credits: 1000
+    reward-credits: 100
   first_rebirth:
     display-name: "&bReborn"
     icon: NETHER_STAR
@@ -72,7 +85,7 @@ achievements:
       - "Rebirth for the first time."
     trigger: REBIRTH
     goal: 1
-    reward-credits: 100
+    reward-credits: 10
   centurion:
     display-name: "&6&lCenturion"
     icon: BEACON
@@ -80,7 +93,7 @@ achievements:
     trigger: PRESTIGE_100
     description:
       - "Reach your 100th prestige."
-    reward-credits: 5000
+    reward-credits: 400
   first_team:
     display-name: "&9Team Player"
     icon: WHITE_BANNER
@@ -88,7 +101,7 @@ achievements:
       - "Create a team."
     trigger: CREATE_TEAM
     goal: 1
-    reward-credits: 150
+    reward-credits: 15
   boss_slayer:
     display-name: "&4&lBoss Slayer"
     icon: NETHERITE_SWORD
@@ -96,4 +109,4 @@ achievements:
       - "Land the final blow's worth of damage on 10 world bosses."
     trigger: KILL_WORLD_BOSS
     goal: 10
-    reward-credits: 2000
+    reward-credits: 150

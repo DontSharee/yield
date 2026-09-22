@@ -35,8 +35,8 @@ import java.util.function.Supplier;
  * of a minute's income in that zone, so a settled player can afford roughly
  * two and a half per second. Bulk tiers are what keep the loop bound by
  * income (which scales with the player) instead of by the clock (which does
- * not); that is why 1x/3x/5x are ungated and only the top 24x rung sits
- * behind {@link #MULTI_OPEN_PERMISSION}.
+ * not); that is why everything up to {@link #UNGATED_TIER_CAP} is free and
+ * only the top 24x rung sits behind {@link #MULTI_OPEN_PERMISSION}.
  */
 public final class PackOpenService {
 
@@ -167,6 +167,27 @@ public final class PackOpenService {
      * assumes.
      */
     public PackRollService.PurchaseResult tryHatch(Player player, String packId, int count) {
+        return tryHatch(player, packId, count, true);
+    }
+
+    /**
+     * Whether a hatch asked for right now would actually happen - i.e. the
+     * cooldown has elapsed.
+     * <p>
+     * For a caller that takes payment in its own currency (a seasonal
+     * event's Candy, say): it has to know the hatch will go through BEFORE
+     * charging, because the cooldown refuses silently and often, and
+     * charging for a hatch that then does not occur is the one failure mode
+     * a currency must never have.
+     */
+    public boolean readyToHatch(Player player) {
+        PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
+        long cooldownMillis = Math.round(content.get().shop().openCooldownMillis() / cooldownMultiplier(profile));
+        return System.currentTimeMillis() - lastHatchAtMillis.getOrDefault(player.getUniqueId(), 0L) >= cooldownMillis;
+    }
+
+    /** @param charge false when the caller has already taken payment in a currency this service knows nothing about - see {@code PackStationService.AlternateCharge}. */
+    public PackRollService.PurchaseResult tryHatch(Player player, String packId, int count, boolean charge) {
         int tier = Math.min(count, maxTierFor(player));
         if (tier < count) {
             return PackRollService.PurchaseResult.failure("You need the Multi-Hatch gamepass to hatch "
@@ -179,7 +200,7 @@ public final class PackOpenService {
             return PackRollService.PurchaseResult.failure(null);
         }
 
-        PackRollService.PurchaseResult result = rollService.hatch(player, packId, tier, true);
+        PackRollService.PurchaseResult result = rollService.hatch(player, packId, tier, charge);
         if (!result.success()) {
             player.sendMessage(Text.parse("<red><reason></red>", Placeholder.unparsed("reason", result.failureReason())));
             return result;

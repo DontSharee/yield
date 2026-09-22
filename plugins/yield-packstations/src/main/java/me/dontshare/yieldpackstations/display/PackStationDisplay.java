@@ -315,7 +315,7 @@ public final class PackStationDisplay {
 
         BlockDisplayManager.spawn(viewer, station.wallEntityId(), loc);
         BlockDisplayManager.setBlockState(viewer, station.wallEntityId(),
-                station.isBlackMarket() ? Material.BLACK_CONCRETE : Material.GRAY_CONCRETE);
+                station.isDynamic() ? Material.BLACK_CONCRETE : Material.GRAY_CONCRETE);
         BlockDisplayManager.setTransformation(viewer, station.wallEntityId(),
                 new Vector3f(WALL_FACE_TRANSLATE, WALL_FACE_TRANSLATE, WALL_DEPTH_TRANSLATE),
                 new Vector3f(WALL_FACE_SCALE, WALL_FACE_SCALE, WALL_DEPTH_SCALE));
@@ -409,13 +409,14 @@ public final class PackStationDisplay {
     private Component buildText(Player viewer, PackStation station) {
         String packId = stationService.currentPackId(station);
         PackDefinition pack = packId != null ? packs.getPackRegistry().find(packId).orElse(null) : null;
-        String label = station.isBlackMarket() ? "<#4BD9FF><bold>Black Market</bold></#4BD9FF>\n" : "";
+        String dynamicLabel = stationService.dynamicLabel(station);
+        String label = dynamicLabel.isEmpty() ? "" : dynamicLabel + "\n";
 
         if (pack == null) {
             return Text.parse(label + "&7Nothing in stock right now");
         }
 
-        String costLine = "&7Cost: " + PackOddsLore.costLine(pack, 1);
+        String costLine = "&7Cost: " + stationService.priceLabel(station);
         String template = label + pack.displayName() + "\n" + costLine
                 + "\n&7Smack to hatch &8| &7Sneak-smack for many"
                 + "\n&7Right-click for drops";

@@ -1,0 +1,274 @@
+# Seasonal events: a window of dates in which an extra currency drops from
+# cubes and an extra egg stands at spawn selling pets that exist nowhere
+# else and are gone when it ends.
+#
+# Almost nothing about an event lives here. Its PETS are ordinary pets in
+# yield-packs' packs.yml, its EGG is an ordinary pack there too (so it gets
+# the hatch animation, the odds screens, the Index and the Huge chase for
+# free), and its STATION is an ordinary station in yield-packstations'
+# pack-stations.yml under "event-stations" (so it gets the big dragon egg,
+# smack-to-hatch, the bulk rungs and auto-hatch for free). This file is
+# only the things that are genuinely seasonal: WHEN it runs, what its
+# currency is, and what that currency buys - the egg, the quest rewards and
+# the shop shelf.
+#
+# Dates are the server's own local date, inclusive at both ends, and are
+# re-read live - nothing needs restarting or toggling. A server that is up
+# at midnight on the start date begins the event by itself, and one that
+# boots mid-event is already in it. Run /admin events reload after editing.
+#
+# To add next year's dates, change start/end. To add a NEW event: write its
+# pets and its egg into packs.yml, then add a block here pointing at that
+# egg. No code changes.
+#
+# NAMING: an event currency must not share a name with anything already in
+# the game. "Candy" was the first draft here and collided head-on with Pet
+# Candy (yield-packs' candy.yml), which also drops from cubes and is also
+# spent on pets - two unrelated things, both called Candy, both falling out
+# of the same block. Candy Corn is the same joke without the collision.
+events:
+  halloween:
+    display-name: "Halloween"
+    color: "#FF8C3B"
+    start: "2026-10-20"
+    end: "2026-11-03"
+    currency:
+      # NOT "Candy" - see the naming note at the top of this file.
+      name: "Candy Corn"
+      # Per cube killed. Flat, NOT a share of the payout: coins scale by a
+      # factor of a million across the zone ladder, so a proportional drop
+      # would make an early player's Candy Corn worthless and a late
+      # player's free. An hour of play should be worth an hour of play
+      # wherever it is spent.
+      drop-chance: 0.08
+      drop-min: 1
+      drop-max: 3
+    egg: event_halloween_egg
+    # Every cube in the event zone pays Candy Corn; outside it, the
+    # drop-chance above applies instead, so the event is visible wherever
+    # you are and far faster where it is happening.
+    zone: halloween
+    # Every cube in the Hollow pays, and a cube takes about a second, so
+    # the zone pays roughly 7,200 Candy Corn an hour before pets and about
+    # 12,600 with a full set of the event's own. Over a fortnight that is
+    # ~69k for half an hour a day, ~208k for an hour and a half, ~416k for
+    # three.
+    #
+    # At 2,500 that is 28 hatches for the casual player and 166 for the
+    # dedicated one - and the rarest pet in the egg is 1 in 160, so the
+    # whole set is exactly the dedicated player's fortnight and nobody
+    # else's. This was 400, which paid the CASUAL player 173 hatches: the
+    # entire event was over in a weekend and the chase pet was not a chase.
+    egg-price: 2500
+    # The event's own pets earn extra Candy Corn while equipped, and boost
+    # nothing else. That is what makes them worth using DURING the event
+    # rather than a trophy that has to out-scale a zone pet to matter - an
+    # event is not the place to renegotiate the damage ladder.
+    #
+    # These stack per equipped PET, not per kind, so one of each is +75%
+    # and six of the best is +150% - which is the reward for actually
+    # finishing the chase.
+    pet-candy-bonus:
+      event_candy_imp: 0.05
+      event_pumpkin_prowler: 0.10
+      event_grave_warden: 0.15
+      event_hollow_reaper: 0.20
+      event_pumpkin_king: 0.25
+    # The shelf next to the egg: what Candy Corn buys when a player would
+    # rather decide than roll. Consumables are unlimited, so leftover
+    # currency always has somewhere to go; pets are stocked once (or three
+    # times - exactly enough to fuse), so buying one is a pity mechanic
+    # rather than a second, better egg.
+    #
+    # Prices are set against what the EGG costs for the same pet. A pet at
+    # 1-in-N is N x 2,500 Candy Corn of expected hatching, and its
+    # guaranteed version is deliberately more than that - you are paying a
+    # premium to stop gambling:
+    #
+    #   Pumpkin Prowler  1 in 4     ~10,000 hatched    12,000 here
+    #   Grave Warden     1 in 10.7  ~27,000 hatched    40,000 here
+    #   Hollow Reaper    1 in 40   ~100,000 hatched   120,000 here
+    #   Pumpkin King     1 in 160  ~400,000 hatched   NOT SOLD
+    #
+    # The King is not on the shelf on purpose. An event shop that sells the
+    # top prize is an event shop that makes the egg pointless, and the
+    # whole point of the chase pet is that it is chased. It has its own
+    # quest instead.
+    #
+    # Clearing the entire shelf costs ~276,000, which is most - but not
+    # all - of a dedicated player's fortnight. That gap is the decision:
+    # guarantee the pets you want, or keep hatching for the one nobody can
+    # buy.
+    #
+    # "commands" runs as console with %player% substituted, exactly like a
+    # quest's reward-commands, so a shelf item can be anything that already
+    # has an admin command. The lore is generated FROM the command, so it
+    # can never advertise one thing and hand over another.
+    shop:
+      haunted_luck:
+        display-name: "&6Haunted Luck"
+        description:
+          - "&7Double luck for half an hour."
+          - "&7Stacks with everything else."
+        material: GLOWSTONE_DUST
+        price: 4000
+        commands:
+          - "admin potions give %player% LUCK 2 1800"
+      cursed_fortune:
+        display-name: "&6Cursed Fortune"
+        description:
+          - "&7Triple coins for half an hour."
+          - "&7Best spent somewhere that"
+          - "&7isn't the Hollow."
+        material: GOLD_INGOT
+        price: 5000
+        commands:
+          - "admin potions give %player% COINS 3 1800"
+      grave_might:
+        display-name: "&6Grave Might"
+        description:
+          - "&7Triple damage for half an"
+          - "&7hour - and triple the cubes"
+          - "&7broken while it lasts."
+        material: NETHERITE_SCRAP
+        price: 5000
+        commands:
+          - "admin potions give %player% DAMAGE 3 1800"
+      witching_hour:
+        display-name: "&6&lWitching Hour"
+        description:
+          - "&7Double roll speed for half"
+          - "&7an hour. The Hollow pays per"
+          - "&7cube, so this is the one"
+          - "&7that pays for itself."
+        material: CLOCK
+        price: 8000
+        commands:
+          - "admin potions give %player% ROLL_SPEED 2 1800"
+      prowler_pact:
+        display-name: "&6Prowler Pact"
+        description:
+          - "&7One Pumpkin Prowler,"
+          - "&7guaranteed. Three of them"
+          - "&7fuse into something better."
+        material: CARVED_PUMPKIN
+        price: 12000
+        limit: 3
+        commands:
+          - "admin pets give %player% event_pumpkin_prowler NORMAL 1"
+      warden_pact:
+        display-name: "&6Warden Pact"
+        description:
+          - "&7One Grave Warden,"
+          - "&7guaranteed. The egg gives"
+          - "&7one in eleven."
+        material: SOUL_LANTERN
+        price: 40000
+        limit: 3
+        commands:
+          - "admin pets give %player% event_grave_warden NORMAL 1"
+      reapers_bargain:
+        display-name: "&6&lReaper's Bargain"
+        description:
+          - "&7One Hollow Reaper,"
+          - "&7guaranteed. Once, ever."
+          - "&7The egg gives one in forty."
+        material: WITHER_SKELETON_SKULL
+        price: 120000
+        limit: 1
+        commands:
+          - "admin pets give %player% event_hollow_reaper NORMAL 1"
+    # Goals: CANDY_EARNED (all sources), CUBES_BROKEN (in the event zone),
+    # EGGS_HATCHED (this event's egg). Each pays once, ever.
+    #
+    # Targets are set against the earn rates above: ~3,600 cubes and ~7,200
+    # Candy Corn an hour. So 10,000 cubes is about three hours and 150,000
+    # Candy Corn is most of a fortnight's casual play.
+    #
+    # reward-commands runs as console with %player% substituted, which is
+    # how a quest hands out a potion, an exclusive pet or anything else that
+    # already has an admin command - a seasonal reward table changes every
+    # year and should not need code to.
+    quests:
+      welcome:
+        display-name: "&6Trick or Treat"
+        description:
+          - "&7Break 50 cubes in the"
+          - "&7Haunted Hollow."
+        goal: CUBES_BROKEN
+        target: 50
+        reward-candy: 1000
+      sweet_tooth:
+        display-name: "&6Sweet Tooth"
+        description:
+          - "&7Collect 10,000 Candy Corn."
+        goal: CANDY_EARNED
+        target: 10000
+        reward-candy: 1500
+        reward-commands:
+          - "admin potions give %player% LUCK 2 1800"
+      hollow_dweller:
+        display-name: "&6Hollow Dweller"
+        description:
+          - "&7Break 10,000 cubes in the"
+          - "&7Haunted Hollow."
+        goal: CUBES_BROKEN
+        target: 10000
+        reward-candy: 3000
+        reward-commands:
+          - "admin potions give %player% COINS 3 1800"
+      hatcher:
+        display-name: "&6Pumpkin Hatcher"
+        description:
+          - "&7Hatch 10 Pumpkin Eggs."
+        goal: EGGS_HATCHED
+        target: 10
+        reward-candy: 2500
+        reward-commands:
+          - "admin potions give %player% DAMAGE 3 1800"
+      candy_hoarder:
+        display-name: "&6Candy Hoarder"
+        description:
+          - "&7Collect 150,000 Candy Corn."
+          - "&7The Hollow Reaper is yours."
+        goal: CANDY_EARNED
+        target: 150000
+        reward-candy: 6000
+        reward-commands:
+          - "admin pets give %player% event_hollow_reaper NORMAL 1"
+      king_of_the_hollow:
+        display-name: "&6&lKing of the Hollow"
+        description:
+          - "&7Hatch 50 Pumpkin Eggs."
+          - "&7Nobody does this by accident."
+        goal: EGGS_HATCHED
+        target: 50
+        reward-candy: 15000
+        reward-commands:
+          - "admin pets give %player% event_pumpkin_king NORMAL 1"
+  winter:
+    display-name: "Winter Festival"
+    color: "#7CD8FF"
+    start: "2026-12-15"
+    end: "2027-01-05"
+    currency:
+      name: "Snowflakes"
+      drop-chance: 0.08
+      drop-min: 1
+      drop-max: 3
+    egg: event_winter_egg
+    # Same reasoning as Halloween's - see the note there. Winter has no
+    # zone of its own yet, so Snowflakes come in at the flat drop-chance
+    # and far slower; this will want lowering when it gets one.
+    egg-price: 2500
+    # No shop shelf yet. The quest screen hides the button when an event
+    # sells nothing, so an event without one is a valid event.
+    # No zone of its own yet - Snowflakes drop at the flat chance above,
+    # anywhere. Give it a zone in zones.yml and name it here to make it work
+    # like Halloween does.
+    pet-candy-bonus:
+      event_frost_sprite: 0.05
+      event_snowclad_yeti: 0.10
+      event_aurora_stag: 0.15
+      event_glacier_wyrm: 0.20
+      event_winter_monarch: 0.25

@@ -1,0 +1,5 @@
+name: yield-events
+version: '${version}'
+main: me.dontshare.yieldevents.YieldEvents
+api-version: '26.2'
+depend: [yield-core, yield-packs, yield-zones, yield-packstations]

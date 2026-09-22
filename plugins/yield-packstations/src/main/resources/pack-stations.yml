@@ -110,3 +110,13 @@ black-market:
     - location: [spawn, -19.5, 99, 1217.5, 90, 0] # end_barrens
     - location: [spawn, -19.5, 99, 1502.5, 90, 0] # starlight_fields
     - location: [spawn, -19.5, 99, 1787.5, 90, 0] # astral_peak
+
+# Where a seasonal event's egg stands (see yield-events' events.yml for what
+# it holds and when). Placed here with every other station so all placement
+# lives in one file; empty of content whenever no event is running, which is
+# what a station with nothing in it already knows how to say.
+#
+# One at spawn: an event is a thing everyone should walk past on their way
+# in, not something you have to know the location of.
+event-stations:
+  - location: [spawn, -19.5, 99, 68.5, 90, 0]

@@ -21,10 +21,21 @@ import java.util.logging.Logger;
 public final class PackStationContentLoader {
 
     public record PackStationContent(List<PackStation> zoneStations, List<PackStation> blackMarketStations,
-                                      BlackMarketConfig blackMarketConfig) {
+                                      List<PackStation> eventStations, BlackMarketConfig blackMarketConfig) {
     }
 
     private static final long DEFAULT_RESET_INTERVAL_MILLIS = 60 * 60 * 1000L;
+
+    /** The dynamic-pack key the black market's own kiosks carry - see PackStation. */
+    public static final String BLACK_MARKET_KEY = "black_market";
+
+    /**
+     * The key an EVENT station carries. Its stations are declared here like
+     * any other so a server owner places them in one file, but what they
+     * hold (and whether they hold anything at all) belongs to yield-events,
+     * which registers itself under this key.
+     */
+    public static final String EVENT_KEY = "event";
 
     private final JavaPlugin plugin;
     private final Logger logger;
@@ -47,7 +58,8 @@ public final class PackStationContentLoader {
         List<PackStation> zoneStations = loadZoneStations(config);
         BlackMarketConfig blackMarketConfig = loadBlackMarketConfig(config);
         List<PackStation> blackMarketStations = loadBlackMarketStations(config);
-        return new PackStationContent(zoneStations, blackMarketStations, blackMarketConfig);
+        List<PackStation> eventStations = loadEventStations(config);
+        return new PackStationContent(zoneStations, blackMarketStations, eventStations, blackMarketConfig);
     }
 
     private List<PackStation> loadZoneStations(YamlConfiguration config) {
@@ -71,7 +83,7 @@ public final class PackStationContentLoader {
             if (location == null) {
                 continue;
             }
-            stations.add(new PackStation(zoneId, packId, false, location,
+            stations.add(new PackStation(zoneId, packId, null, location,
                     PacketEntityManager.nextEntityId(), PacketEntityManager.nextEntityId(),
                     PacketEntityManager.nextEntityId(), PacketEntityManager.nextEntityId()));
         }
@@ -119,7 +131,7 @@ public final class PackStationContentLoader {
                 if (location == null) {
                     continue;
                 }
-                stations.add(new PackStation(null, null, true, location,
+                stations.add(new PackStation(null, null, BLACK_MARKET_KEY, location,
                         PacketEntityManager.nextEntityId(), PacketEntityManager.nextEntityId(),
                         PacketEntityManager.nextEntityId(), PacketEntityManager.nextEntityId()));
             }
@@ -127,7 +139,26 @@ public final class PackStationContentLoader {
         }
         Location legacyLocation = parseLocation("the black market", section.get("station.location"));
         if (legacyLocation != null) {
-            stations.add(new PackStation(null, null, true, legacyLocation,
+            stations.add(new PackStation(null, null, BLACK_MARKET_KEY, legacyLocation,
+                    PacketEntityManager.nextEntityId(), PacketEntityManager.nextEntityId(),
+                    PacketEntityManager.nextEntityId(), PacketEntityManager.nextEntityId()));
+        }
+        return stations;
+    }
+
+    /**
+     * Where a seasonal event's egg stands. Declared here with every other
+     * station so placement lives in one file, but empty of content whenever
+     * no event is running - see yield-events, which owns what they hold.
+     */
+    private List<PackStation> loadEventStations(YamlConfiguration config) {
+        List<PackStation> stations = new ArrayList<>();
+        for (Map<?, ?> entry : config.getMapList("event-stations")) {
+            Location location = parseLocation("an event station", entry.get("location"));
+            if (location == null) {
+                continue;
+            }
+            stations.add(new PackStation(null, null, EVENT_KEY, location,
                     PacketEntityManager.nextEntityId(), PacketEntityManager.nextEntityId(),
                     PacketEntityManager.nextEntityId(), PacketEntityManager.nextEntityId()));
         }
