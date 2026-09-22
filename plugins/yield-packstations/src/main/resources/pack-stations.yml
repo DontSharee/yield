@@ -14,64 +14,64 @@
 stations:
   - zone: meadow
     pack: zone_meadow_pack
-    location: [world, -19.5, 99, 81.5, 90, 0]
+    location: [spawn, -19.5, 99, 81.5, 90, 0]
   - zone: frostpeak
     pack: zone_frostpeak_pack
-    location: [world, -19.5, 99, 176.5, 90, 0]
+    location: [spawn, -19.5, 99, 176.5, 90, 0]
   - zone: iron_foothills
     pack: zone_iron_foothills_pack
-    location: [world, -19.5, 99, 271.5, 90, 0]
+    location: [spawn, -19.5, 99, 271.5, 90, 0]
   - zone: sulfur_flats
     pack: zone_sulfur_flats_pack
-    location: [world, -19.5, 99, 366.5, 90, 0]
+    location: [spawn, -19.5, 99, 366.5, 90, 0]
   - zone: scorched_wastes
     pack: zone_scorched_wastes_pack
-    location: [world, -19.5, 99, 461.5, 90, 0]
+    location: [spawn, -19.5, 99, 461.5, 90, 0]
   - zone: crystal_caverns
     pack: zone_crystal_caverns_pack
-    location: [world, -19.5, 99, 556.5, 90, 0]
+    location: [spawn, -19.5, 99, 556.5, 90, 0]
   - zone: diamond_hollow
     pack: zone_diamond_hollow_pack
-    location: [world, -19.5, 99, 651.5, 90, 0]
+    location: [spawn, -19.5, 99, 651.5, 90, 0]
   - zone: emerald_depths
     pack: zone_emerald_depths_pack
-    location: [world, -19.5, 99, 746.5, 90, 0]
+    location: [spawn, -19.5, 99, 746.5, 90, 0]
   - zone: obsidian_rift
     pack: zone_obsidian_rift_pack
-    location: [world, -19.5, 99, 841.5, 90, 0]
+    location: [spawn, -19.5, 99, 841.5, 90, 0]
   - zone: void_expanse
     pack: zone_void_expanse_pack
-    location: [world, -19.5, 99, 936.5, 90, 0]
+    location: [spawn, -19.5, 99, 936.5, 90, 0]
   - zone: netherite_wastes
     pack: zone_netherite_wastes_pack
-    location: [world, -19.5, 99, 1031.5, 90, 0]
+    location: [spawn, -19.5, 99, 1031.5, 90, 0]
   - zone: ancient_ruins
     pack: zone_ancient_ruins_pack
-    location: [world, -19.5, 99, 1126.5, 90, 0]
+    location: [spawn, -19.5, 99, 1126.5, 90, 0]
   - zone: end_barrens
     pack: zone_end_barrens_pack
-    location: [world, -19.5, 99, 1221.5, 90, 0]
+    location: [spawn, -19.5, 99, 1221.5, 90, 0]
   - zone: purpur_spires
     pack: zone_purpur_spires_pack
-    location: [world, -19.5, 99, 1316.5, 90, 0]
+    location: [spawn, -19.5, 99, 1316.5, 90, 0]
   - zone: celestial_sanctum
     pack: zone_celestial_sanctum_pack
-    location: [world, -19.5, 99, 1411.5, 90, 0]
+    location: [spawn, -19.5, 99, 1411.5, 90, 0]
   - zone: starlight_fields
     pack: zone_starlight_fields_pack
-    location: [world, -19.5, 99, 1506.5, 90, 0]
+    location: [spawn, -19.5, 99, 1506.5, 90, 0]
   - zone: cosmic_abyss
     pack: zone_cosmic_abyss_pack
-    location: [world, -19.5, 99, 1601.5, 90, 0]
+    location: [spawn, -19.5, 99, 1601.5, 90, 0]
   - zone: eternal_forge
     pack: zone_eternal_forge_pack
-    location: [world, -19.5, 99, 1696.5, 90, 0]
+    location: [spawn, -19.5, 99, 1696.5, 90, 0]
   - zone: astral_peak
     pack: zone_astral_peak_pack
-    location: [world, -19.5, 99, 1791.5, 90, 0]
+    location: [spawn, -19.5, 99, 1791.5, 90, 0]
   - zone: genesis_core
     pack: zone_genesis_core_pack
-    location: [world, -19.5, 99, 1886.5, 90, 0]
+    location: [spawn, -19.5, 99, 1886.5, 90, 0]
 
 # The black market: one global rotation shared by every player (NOT
 # per-player like the flat shop's own ShopStockService) - every
@@ -103,10 +103,10 @@ black-market:
   # seven keeps it somewhere you go looking for, and still never more than a
   # zone or two away from wherever a player is.
   stations:
-    - location: [world, -19.5, 99, 77.5, 90, 0] # meadow
-    - location: [world, -19.5, 99, 362.5, 90, 0] # sulfur_flats
-    - location: [world, -19.5, 99, 647.5, 90, 0] # diamond_hollow
-    - location: [world, -19.5, 99, 932.5, 90, 0] # void_expanse
-    - location: [world, -19.5, 99, 1217.5, 90, 0] # end_barrens
-    - location: [world, -19.5, 99, 1502.5, 90, 0] # starlight_fields
-    - location: [world, -19.5, 99, 1787.5, 90, 0] # astral_peak
+    - location: [spawn, -19.5, 99, 77.5, 90, 0] # meadow
+    - location: [spawn, -19.5, 99, 362.5, 90, 0] # sulfur_flats
+    - location: [spawn, -19.5, 99, 647.5, 90, 0] # diamond_hollow
+    - location: [spawn, -19.5, 99, 932.5, 90, 0] # void_expanse
+    - location: [spawn, -19.5, 99, 1217.5, 90, 0] # end_barrens
+    - location: [spawn, -19.5, 99, 1502.5, 90, 0] # starlight_fields
+    - location: [spawn, -19.5, 99, 1787.5, 90, 0] # astral_peak

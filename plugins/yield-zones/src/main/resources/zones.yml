@@ -79,7 +79,7 @@
 zones:
   meadow:
     display-name: "&aMeadow"
-    world: world
+    world: spawn
     corner-one: [10.5, 98, 51.5]
     corner-two: [-10.5, 150, 109.5]
     respawn-delay-seconds: 3
@@ -131,7 +131,7 @@ zones:
 
   frostpeak:
     display-name: "&bFrostpeak"
-    world: world
+    world: spawn
     corner-one: [10.5, 98, 145.5]
     corner-two: [-10.5, 150, 203.5]
     respawn-delay-seconds: 3
@@ -168,7 +168,7 @@ zones:
 
   iron_foothills:
     display-name: "&7Iron Foothills"
-    world: world
+    world: spawn
     corner-one: [10.5, 98, 239.5]
     corner-two: [-10.5, 150, 297.5]
     respawn-delay-seconds: 3
@@ -198,7 +198,7 @@ zones:
 
   sulfur_flats:
     display-name: "&eSulfur Flats"
-    world: world
+    world: spawn
     corner-one: [10.5, 98, 333.5]
     corner-two: [-10.5, 150, 391.5]
     respawn-delay-seconds: 3
@@ -228,7 +228,7 @@ zones:
 
   scorched_wastes:
     display-name: "&cScorched Wastes"
-    world: world
+    world: spawn
     corner-one: [10.5, 98, 427.5]
     corner-two: [-10.5, 150, 485.5]
     respawn-delay-seconds: 3
@@ -258,7 +258,7 @@ zones:
 
   crystal_caverns:
     display-name: "&dCrystal Caverns"
-    world: world
+    world: spawn
     corner-one: [10.5, 98, 521.5]
     corner-two: [-10.5, 150, 579.5]
     respawn-delay-seconds: 3
@@ -288,7 +288,7 @@ zones:
 
   diamond_hollow:
     display-name: "&bDiamond Hollow"
-    world: world
+    world: spawn
     corner-one: [10.5, 98, 615.5]
     corner-two: [-10.5, 150, 673.5]
     respawn-delay-seconds: 3
@@ -318,7 +318,7 @@ zones:
 
   emerald_depths:
     display-name: "&2Emerald Depths"
-    world: world
+    world: spawn
     corner-one: [10.5, 98, 709.5]
     corner-two: [-10.5, 150, 767.5]
     respawn-delay-seconds: 3
@@ -348,7 +348,7 @@ zones:
 
   obsidian_rift:
     display-name: "&8Obsidian Rift"
-    world: world
+    world: spawn
     corner-one: [10.5, 98, 803.5]
     corner-two: [-10.5, 150, 861.5]
     respawn-delay-seconds: 3
@@ -378,7 +378,7 @@ zones:
 
   void_expanse:
     display-name: "&5Void Expanse"
-    world: world
+    world: spawn
     corner-one: [10.5, 98, 897.5]
     corner-two: [-10.5, 150, 955.5]
     respawn-delay-seconds: 3
@@ -408,7 +408,7 @@ zones:
 
   netherite_wastes:
     display-name: "&4Netherite Wastes"
-    world: world
+    world: spawn
     corner-one: [10.5, 98, 991.5]
     corner-two: [-10.5, 150, 1049.5]
     respawn-delay-seconds: 3
@@ -438,7 +438,7 @@ zones:
 
   ancient_ruins:
     display-name: "&8Ancient Ruins"
-    world: world
+    world: spawn
     corner-one: [10.5, 98, 1085.5]
     corner-two: [-10.5, 150, 1143.5]
     respawn-delay-seconds: 3
@@ -468,7 +468,7 @@ zones:
 
   end_barrens:
     display-name: "&eEnd Barrens"
-    world: world
+    world: spawn
     corner-one: [10.5, 98, 1179.5]
     corner-two: [-10.5, 150, 1237.5]
     respawn-delay-seconds: 3
@@ -498,7 +498,7 @@ zones:
 
   purpur_spires:
     display-name: "&dPurpur Spires"
-    world: world
+    world: spawn
     corner-one: [10.5, 98, 1273.5]
     corner-two: [-10.5, 150, 1331.5]
     respawn-delay-seconds: 3
@@ -528,7 +528,7 @@ zones:
 
   celestial_sanctum:
     display-name: "&e&lCelestial Sanctum"
-    world: world
+    world: spawn
     corner-one: [10.5, 98, 1367.5]
     corner-two: [-10.5, 150, 1425.5]
     respawn-delay-seconds: 3
@@ -558,7 +558,7 @@ zones:
 
   starlight_fields:
     display-name: "&bStarlight Fields"
-    world: world
+    world: spawn
     corner-one: [10.5, 98, 1461.5]
     corner-two: [-10.5, 150, 1519.5]
     respawn-delay-seconds: 3
@@ -588,7 +588,7 @@ zones:
 
   cosmic_abyss:
     display-name: "&5Cosmic Abyss"
-    world: world
+    world: spawn
     corner-one: [10.5, 98, 1555.5]
     corner-two: [-10.5, 150, 1613.5]
     respawn-delay-seconds: 3
@@ -618,7 +618,7 @@ zones:
 
   eternal_forge:
     display-name: "&6Eternal Forge"
-    world: world
+    world: spawn
     corner-one: [10.5, 98, 1649.5]
     corner-two: [-10.5, 150, 1707.5]
     respawn-delay-seconds: 3
@@ -648,7 +648,7 @@ zones:
 
   astral_peak:
     display-name: "&dAstral Peak"
-    world: world
+    world: spawn
     corner-one: [10.5, 98, 1743.5]
     corner-two: [-10.5, 150, 1801.5]
     respawn-delay-seconds: 3
@@ -678,7 +678,7 @@ zones:
 
   genesis_core:
     display-name: "&e&lGenesis Core"
-    world: world
+    world: spawn
     corner-one: [10.5, 98, 1837.5]
     corner-two: [-10.5, 150, 1895.5]
     respawn-delay-seconds: 3

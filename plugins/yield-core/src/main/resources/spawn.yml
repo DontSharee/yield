@@ -1,7 +1,7 @@
-# Where /spawn sends a player. Edit directly, or stand where you want it
+w# Where /spawn sends a player. Edit directly, or stand where you want it
 # and run /setspawn (yield.admin.setspawn) - that overwrites this file and
 # takes effect immediately, no reload/restart needed.
-world: world
+world: spawn
 x: 0.5
 y: 65.0
 z: 0.5
