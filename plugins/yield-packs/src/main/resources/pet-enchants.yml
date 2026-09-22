@@ -72,7 +72,7 @@ uniques:
     stat-bonuses:
       luck: 0.40
 
-# One entry per clickable Enchanting Table button (same [world, x, y, z,
+# One entry per clickable Enchanting Table button (same [spawn, x, y, z,
 # yaw, pitch] shape as yield-zonemachines' zone-machines.yml).
 tables:
-  - location: [world, -19.5, 98, 244.5, 90, 0]
+  - location: [spawn, -19.5, 98, 244.5, 90, 0]

@@ -9,7 +9,7 @@
 # by editing x/y/z/yaw here, there's no in-game placement command for it yet.
 npc:
   name: "Guide"
-  world: world
+  world: spawn
   x: 0.5
   y: 65.0
   z: 0.5

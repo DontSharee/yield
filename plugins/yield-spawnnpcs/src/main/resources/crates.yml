@@ -18,7 +18,7 @@
 #   pet - "pet-item" is any item id from yield-packs' own packs.yml catalog.
 #   commands - runs each of "commands" as CONSOLE, "%player%" substituted.
 #
-# "location": [world, x, y, z, yaw, pitch] - PLACEHOLDER coordinates below,
+# "location": [spawn, x, y, z, yaw, pitch] - PLACEHOLDER coordinates below,
 # near yield-packstations' own row of pack stations. Adjust to wherever you
 # actually want each crate to stand, then /admin spawnnpcs reload.
 crates:
@@ -26,7 +26,7 @@ crates:
     display-name: "&7&lCommon Crate"
     icon: CHEST
     key-drop-chance: 0.05
-    location: [world, -22, 99, 100, 90, 0]
+    location: [spawn, -22, 99, 100, 90, 0]
     pool:
       - { type: flat-coins, weight: 60, amount: 5000 }
       - { type: flat-diamonds, weight: 25, amount: 3 }
@@ -37,7 +37,7 @@ crates:
     display-name: "&9&lRare Crate"
     icon: TRAPPED_CHEST
     key-drop-chance: 0.015
-    location: [world, -19.5, 99, 100, 90, 0]
+    location: [spawn, -19.5, 99, 100, 90, 0]
     pool:
       - { type: flat-coins, weight: 55, amount: 20000 }
       - { type: flat-diamonds, weight: 30, amount: 8 }
@@ -48,7 +48,7 @@ crates:
     display-name: "&5&lEpic Crate"
     icon: ENDER_CHEST
     key-drop-chance: 0.004
-    location: [world, -17, 99, 100, 90, 0]
+    location: [spawn, -17, 99, 100, 90, 0]
     pool:
       - { type: flat-coins, weight: 45, amount: 75000 }
       - { type: flat-diamonds, weight: 35, amount: 20 }
