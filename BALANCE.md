@@ -128,6 +128,53 @@ would buy. Measured end to end that only compresses the whole game by **12%
 1-second kill floor caps what the extra damage can buy. If that is too much,
 `reward-pack-amount` in each zone's `treasure:` block is the dial.
 
+### Giant cubes and the big safe
+
+Two kinds of oversized cube fall in every zone, defined once under
+`giant-cubes:` at the top of zones.yml and derived per zone at load, priced
+off that zone's own cubes — the same trick Huge pets use — so they track the
+ladder with no per-zone numbers to maintain.
+
+| | size | how often | HP | coins | diamonds |
+|---|---|---|---|---|---|
+| **Giant** (any of the zone's own blocks) | 1.3 | 2.5% of each tier | 3× that tier | 3× | 2× |
+| **Big safe** (a vault, green glow) | 1.5 | 0.4% of spawns (1 in 250) | 5× the zone's toughest | 6× | 2× |
+
+Meadow, for scale: stone 12 HP / 10 coins, giant iron 252 / 360, the
+treasure chest 120 / 600 plus eggs, the big safe 420 / 720.
+
+**The pecking order is the design.** normal < giant < chest < safe. A giant
+keeps its original's pay per hit, so it is a bigger version of the same cube
+rather than a better one. The safe pays more coins than anything else in its
+zone, twice a giant tier 3, and that is why it is the rare one. The first
+draft had it at 3× coins and 0.75%, which paid exactly what a giant tier 3
+did for more HP: the rarest thing on screen was the worst deal on it.
+
+**What it costs the curve: about 13% (13.1 h → 11.5 h)**, evenly across the
+ladder, every zone arriving 9–13% sooner. Giants are ~4% of that and the safe
+~10%. It is a budget, not an accident: spawns are capped per player and a
+settled player one-shots most cubes, so any rarer, richer cube is extra income
+more than extra time — the same reason tier 3 and bonus cubes are worth
+stopping for. Every variation tried that paid enough to feel like a jackpot
+cost at least this much; the only cheap safes were ones that paid less than
+the chest. If the ladder needs its time back, the safe's `chance` is the dial.
+
+**Diamonds are held at 2×**, well below coins, because they gate ranks and
+pet enchants, which this model doesn't cover. A safe paying diamonds at its
+coin rate would add roughly half again to diamond income by itself.
+
+**Everything about a cube reads its size**: the fall, the landed body, the
+bonus glow, the white look-at outline, the click and highlight hitboxes (one
+shared ray-box test in yield-core, so what lights up is exactly what a click
+hits), the hit squish, the HP label height, where pets aim, and spawn
+spacing (a giant keeps the columns around it clear, so it never lands
+overlapping another cube). The invisible barrier underneath stays 1×1. It is
+only there for the hover outline and the owner's collision, and the model
+hides it, but it does mean a player can step about a quarter-block into a
+big safe's edge.
+
+Treasure chests never come giant: they are already their zone's event.
+
 ### Why a new zone feels like a power spike
 
 You walk into a new zone carrying the **previous** zone's pets, which are

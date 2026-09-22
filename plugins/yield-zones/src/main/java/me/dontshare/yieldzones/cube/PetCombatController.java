@@ -331,7 +331,7 @@ public final class PetCombatController implements Listener {
             }
         }
 
-        Location centered = target.location().clone().add(0.5, 0.5, 0.5);
+        Location centered = target.center();
         Map<Integer, Location> slotTargets = new HashMap<>();
         for (int slot = 0; slot < equipped.size(); slot++) {
             slotTargets.put(slot, centered);
@@ -400,7 +400,7 @@ public final class PetCombatController implements Listener {
         for (int slot = 0; slot < equipped.size(); slot++) {
             OreCube target = effectiveTargets.get(equipped.get(slot));
             if (target != null) {
-                slotTargets.put(slot, target.location().clone().add(0.5, 0.5, 0.5));
+                slotTargets.put(slot, target.center());
             }
         }
         if (slotTargets.isEmpty()) {
@@ -475,7 +475,7 @@ public final class PetCombatController implements Listener {
         for (int slot = 0; slot < equipped.size(); slot++) {
             OreCube target = effectiveTargets.get(equipped.get(slot));
             if (target != null) {
-                slotTargets.put(slot, target.location().clone().add(0.5, 0.5, 0.5));
+                slotTargets.put(slot, target.center());
             }
         }
         if (slotTargets.isEmpty()) {

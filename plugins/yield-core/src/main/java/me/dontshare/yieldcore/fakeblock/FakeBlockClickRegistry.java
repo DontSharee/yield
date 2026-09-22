@@ -78,7 +78,15 @@ public final class FakeBlockClickRegistry {
      * the codebase, and it grew with the square of the player count: a zone
      * wall alone registers one entry per block of its volume, per player.
      */
-    private static final Map<UUID, Map<Key, Consumer<Player>>> handlers = new ConcurrentHashMap<>();
+    /**
+     * A click handler and the size of the box it answers for - 1 for an
+     * ordinary block, more for a giant cube, whose visible body hangs past
+     * its own block on every side and has to be clickable there too.
+     */
+    private record Registration(Consumer<Player> onClick, double size) {
+    }
+
+    private static final Map<UUID, Map<Key, Registration>> handlers = new ConcurrentHashMap<>();
 
     private FakeBlockClickRegistry() {
     }
@@ -116,7 +124,7 @@ public final class FakeBlockClickRegistry {
                 if (!(event.getPlayer() instanceof Player player)) {
                     return;
                 }
-                Map<Key, Consumer<Player>> own = handlers.get(player.getUniqueId());
+                Map<Key, Registration> own = handlers.get(player.getUniqueId());
                 if (own == null) {
                     return;
                 }
@@ -139,7 +147,7 @@ public final class FakeBlockClickRegistry {
     }
 
     private static void handleSwing(Player player) {
-        Map<Key, Consumer<Player>> own = handlers.get(player.getUniqueId());
+        Map<Key, Registration> own = handlers.get(player.getUniqueId());
         if (own == null || own.isEmpty()) {
             return;
         }
@@ -147,25 +155,27 @@ public final class FakeBlockClickRegistry {
         if (hit == null) {
             return;
         }
-        Consumer<Player> handler = own.get(hit);
-        if (handler != null) {
-            handler.accept(player);
+        Registration registration = own.get(hit);
+        if (registration != null) {
+            registration.onClick().accept(player);
         }
     }
 
     /** The closest fake block registered to {@code player} that their current look direction intersects within {@link #RAYCAST_RANGE}, or null. */
-    private static Key raycast(Player player, Map<Key, Consumer<Player>> own) {
+    private static Key raycast(Player player, Map<Key, Registration> own) {
         Location eye = player.getEyeLocation();
         Vector direction = eye.getDirection();
         String worldName = eye.getWorld().getName();
 
         Key closest = null;
         double closestDistance = Double.MAX_VALUE;
-        for (Key key : own.keySet()) {
+        for (Map.Entry<Key, Registration> entry : own.entrySet()) {
+            Key key = entry.getKey();
             if (!key.world().equals(worldName)) {
                 continue;
             }
-            Double distance = intersectDistance(eye, direction, key);
+            Double distance = intersectDistance(eye, direction, key.x(), key.y(), key.z(),
+                    entry.getValue().size(), RAYCAST_RANGE);
             if (distance != null && distance < closestDistance) {
                 closestDistance = distance;
                 closest = key;
@@ -175,19 +185,28 @@ public final class FakeBlockClickRegistry {
     }
 
     /**
-     * Standard slab-method ray/axis-aligned-bounding-box test against the
-     * unit cube occupying {@code key}'s block position - returns the ray's
-     * entry distance if it hits within {@link #RAYCAST_RANGE}, or null if
-     * it misses or the box is further away than that.
+     * Standard slab-method ray/axis-aligned-bounding-box test against a
+     * {@code size}-block cube standing on block {@code (x, y, z)}'s floor
+     * and centred on its column - the same footprint
+     * {@link me.dontshare.yieldcore.packet.BlockDisplayManager#setBlockSize}
+     * renders, so what you can click is exactly what you can see. At size 1
+     * that is just the block itself. Returns the ray's entry distance if it
+     * hits within {@code range}, or null if it misses.
+     * <p>
+     * Public so anything else that needs "which of these cubes am I looking
+     * at" (the ore-cube highlight) asks the same question the same way
+     * rather than keeping a second copy of the maths.
      */
-    private static Double intersectDistance(Location eye, Vector direction, Key key) {
+    public static Double intersectDistance(Location eye, Vector direction, int x, int y, int z,
+                                           double size, double range) {
         double tMin = 0.0;
-        double tMax = RAYCAST_RANGE;
+        double tMax = range;
 
         double[] origin = {eye.getX(), eye.getY(), eye.getZ()};
         double[] dir = {direction.getX(), direction.getY(), direction.getZ()};
-        double[] boxMin = {key.x(), key.y(), key.z()};
-        double[] boxMax = {key.x() + 1.0, key.y() + 1.0, key.z() + 1.0};
+        double inset = 0.5 - size / 2.0;
+        double[] boxMin = {x + inset, y, z + inset};
+        double[] boxMax = {boxMin[0] + size, y + size, boxMin[2] + size};
 
         for (int axis = 0; axis < 3; axis++) {
             if (Math.abs(dir[axis]) < 1e-9) {
@@ -214,8 +233,13 @@ public final class FakeBlockClickRegistry {
 
     /** Registers a callback for {@code player} left-clicking the fake block at {@code location} - call {@link #unregister} once it's gone. */
     public static void register(Player player, Location location, Consumer<Player> onClick) {
+        register(player, location, 1.0, onClick);
+    }
+
+    /** {@link #register(Player, Location, Consumer)} for a cube {@code size} blocks big, clickable across its whole visible body. */
+    public static void register(Player player, Location location, double size, Consumer<Player> onClick) {
         handlers.computeIfAbsent(player.getUniqueId(), ignored -> new ConcurrentHashMap<>())
-                .put(keyFor(location), onClick);
+                .put(keyFor(location), new Registration(onClick, size));
     }
 
     public static void unregister(Player player, Location location) {

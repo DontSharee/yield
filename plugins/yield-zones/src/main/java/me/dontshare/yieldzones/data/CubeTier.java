@@ -1,5 +1,6 @@
 package me.dontshare.yieldzones.data;
 
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
 
 /**
@@ -25,12 +26,33 @@ import org.bukkit.Material;
  * entity type is deliberate: everything that already works for a cube -
  * targeting, combo, block-tree credit, the damage pipeline - works for a
  * chest for free, and there is no second system to keep in sync.
+ * <p>
+ * A GIANT tier (see {@code giant-cubes:} in zones.yml) is ordinary in the
+ * same way, just bigger: {@code size} is its edge length in blocks, and
+ * every piece of a cube that assumed 1x1x1 - the falling and landed body,
+ * the bonus glow, the look-at outline, the click and highlight hitboxes,
+ * the hit squish, the HP label, where pets aim - reads it instead.
+ * {@code label} is the name shown above it ("BIG SAFE"), or null for a
+ * cube that is only its material.
  */
 public record CubeTier(Material material, long maxHp, long coinValue, long diamondValue, long xpValue, double weight,
-                        boolean treasure, String rewardPackId, int rewardPackAmount) {
+                        boolean treasure, String rewardPackId, int rewardPackAmount,
+                        float size, String label, NamedTextColor glow) {
 
     /** An ordinary, non-treasure tier - the shape every cube-tiers entry loads as. */
     public CubeTier(Material material, long maxHp, long coinValue, long diamondValue, long xpValue, double weight) {
-        this(material, maxHp, coinValue, diamondValue, xpValue, weight, false, null, 0);
+        this(material, maxHp, coinValue, diamondValue, xpValue, weight, false, null, 0, 1f, null, null);
+    }
+
+    /** A treasure tier - normal size, no label of its own. */
+    public CubeTier(Material material, long maxHp, long coinValue, long diamondValue, long xpValue, double weight,
+                    boolean treasure, String rewardPackId, int rewardPackAmount) {
+        this(material, maxHp, coinValue, diamondValue, xpValue, weight, treasure, rewardPackId, rewardPackAmount,
+                1f, null, null);
+    }
+
+    /** Bigger than a block - everything size-dependent branches on this rather than on which config section a tier came from. */
+    public boolean giant() {
+        return size > 1f;
     }
 }

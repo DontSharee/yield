@@ -76,6 +76,88 @@
 # Z pitch is therefore 59 (zone length) + 35 (gap, fencepost-corrected to 36
 # between center coordinates) = 94.
 
+# ---------------------------------------------------------------------------
+# GIANT CUBES - bigger versions of what falls, in every zone.
+#
+# Written once here and derived per zone at load, priced off that zone's own
+# cubes - the same way Huge pets are derived from normal ones - so nothing
+# below needs touching when the ladder does. Two shapes:
+#
+#   material: ZONE   a giant copy of EACH of the zone's ordinary cubes. A
+#                    giant stone cube is a stone cube with more HP and more
+#                    pay, not a different thing. "chance" is how often any
+#                    given cube comes giant.
+#   material: <X>    one extra cube of that block, priced off the zone's
+#                    TOUGHEST ordinary cube. "chance" is its share of all
+#                    spawns. This is the jackpot - the big safe.
+#
+#   size          edge length in blocks, 1.0 - 2.0. Everything about the
+#                 cube scales with it: the fall, the body, the bonus glow,
+#                 the look-at outline, the click hitbox, the hit squish, the
+#                 HP label, where pets aim. Capped at 2 because giants keep
+#                 one column clear around them and a 2-block cube reaches
+#                 exactly to its edge.
+#   label         shown above the HP bar and on the boss bar. & codes work.
+#   glow          optional, one of vanilla's 16 named colors - a see-through-
+#                 walls outline so it can be spotted across the zone, the
+#                 same one bonus cubes and treasure chests already use. A
+#                 giant that ALSO rolls a golden/diamond bonus keeps the
+#                 bonus's glow and its multiplier.
+#   *-multiplier  times the base cube's own hp / coins / diamonds / xp.
+#
+# Treasure chests never come giant - they are already their zone's event.
+#
+# BALANCE: this is a deliberate budget, not free. Spawns are capped per
+# player, and a settled player one-shots most cubes, so a rarer, richer
+# cube is extra income more than it is extra time - the same reason tier 3
+# and golden cubes are worth stopping for. Measured against the pacing
+# model at the numbers below (three seeds, free player), a full run to the
+# Genesis Core is about 13% faster than without giants - 13.1 h to 11.5 h,
+# spread evenly across the ladder (every zone arrives ~9-13% sooner). Of
+# that, the giants are about 4% and the big safe about 10%: the safe is
+# the jackpot, so it is the expensive part. Turn its chance down first if
+# the ladder needs its time back.
+#
+# The giant copies keep the same pay per hit as the cube they copy, so a
+# player fighting at the edge of their power (just walked into a zone)
+# gains almost nothing from them - it is the overpowered player breezing
+# through a zone who comes out ahead, which is the right person to reward.
+#
+# The safe has to top the zone's pecking order or it is a disappointment
+# with a label on: normal < giant < treasure chest < BIG SAFE. It pays 6x
+# the zone's best ordinary cube - more coins than the chest, twice a giant
+# tier 3 - for 5x its HP. That richness is why it is rare: 0.4%, about one
+# in every 250 spawns, a handful an hour of steady play. (At 3x and 0.75%
+# it paid exactly what a giant tier 3 did, for more HP - the rarest thing
+# on screen was the worst deal on it.)
+#
+# Diamonds are held lower than coins on purpose. They gate ranks and pet
+# enchants, which the pacing model does not cover, and a safe that paid
+# diamonds at its coin rate would add roughly half again to diamond income
+# on its own.
+giant-cubes:
+  giant:
+    label: "&e&lGIANT"
+    material: ZONE
+    size: 1.3
+    chance: 0.025
+    hp-multiplier: 3
+    coin-multiplier: 3
+    diamond-multiplier: 2
+    xp-multiplier: 3
+  big_safe:
+    label: "&a&lBIG SAFE"
+    # A vault - the trial-chamber block - is the closest thing vanilla has
+    # to a safe, and reads as one at 1.5x.
+    material: VAULT
+    size: 1.5
+    chance: 0.004
+    glow: green
+    hp-multiplier: 5
+    coin-multiplier: 6
+    diamond-multiplier: 2
+    xp-multiplier: 3
+
 zones:
   meadow:
     display-name: "&aMeadow"

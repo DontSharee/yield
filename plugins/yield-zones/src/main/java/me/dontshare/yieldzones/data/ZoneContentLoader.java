@@ -39,12 +39,13 @@ public final class ZoneContentLoader {
         if (section == null) {
             return zones;
         }
+        List<GiantCube> giants = loadGiants(config.getConfigurationSection("giant-cubes"));
         for (String id : section.getKeys(false)) {
             ConfigurationSection zoneSection = section.getConfigurationSection(id);
             if (zoneSection == null) {
                 continue;
             }
-            ZoneDefinition zone = loadZone(id, zoneSection);
+            ZoneDefinition zone = loadZone(id, zoneSection, giants);
             if (zone != null) {
                 zones.put(id, zone);
             }
@@ -52,7 +53,7 @@ public final class ZoneContentLoader {
         return zones;
     }
 
-    private ZoneDefinition loadZone(String id, ConfigurationSection section) {
+    private ZoneDefinition loadZone(String id, ConfigurationSection section, List<GiantCube> giants) {
         String worldName = section.getString("world", "world");
         World world = Bukkit.getWorld(worldName);
         if (world == null) {
@@ -104,6 +105,7 @@ public final class ZoneContentLoader {
             logger.warning("Zone '" + id + "' has no valid cube tiers - skipping zone.");
             return null;
         }
+        tiers.addAll(deriveGiants(tiers, giants));
 
         List<CubeBonus> bonuses = new ArrayList<>();
         for (Map<?, ?> entry : section.getMapList("cube-bonuses")) {
@@ -135,6 +137,124 @@ public final class ZoneContentLoader {
     }
 
     /** Absent "unlock:" section = {@link ZoneUnlockCost#FREE} - the zone is open to everyone, no wall/purchase gate at all. */
+    /**
+     * One {@code giant-cubes:} entry - a recipe, not a tier. It becomes a
+     * real {@link CubeTier} separately in every zone (see
+     * {@link #deriveGiants}), priced off that zone's own toughest cube.
+     *
+     * @param material null for {@code ZONE} - a giant copy of each of the zone's own cubes
+     */
+    private record GiantCube(String id, String label, Material material, float size, double chance,
+                             NamedTextColor glow, double hpMultiplier, double coinMultiplier,
+                             double diamondMultiplier, double xpMultiplier) {
+    }
+
+    private List<GiantCube> loadGiants(ConfigurationSection section) {
+        List<GiantCube> giants = new ArrayList<>();
+        if (section == null) {
+            return giants;
+        }
+        for (String id : section.getKeys(false)) {
+            ConfigurationSection s = section.getConfigurationSection(id);
+            if (s == null) {
+                continue;
+            }
+            String rawMaterial = s.getString("material", "ZONE");
+            Material material = null;
+            if (!rawMaterial.equalsIgnoreCase("ZONE")) {
+                material = Material.matchMaterial(rawMaterial);
+                if (material == null || !material.isBlock()) {
+                    logger.warning("Giant cube '" + id + "' has an invalid block material '" + rawMaterial + "' - skipping.");
+                    continue;
+                }
+            }
+            NamedTextColor glow = null;
+            String rawGlow = s.getString("glow");
+            if (rawGlow != null) {
+                glow = NamedTextColor.NAMES.value(rawGlow.toLowerCase(Locale.ROOT));
+                if (glow == null) {
+                    logger.warning("Giant cube '" + id + "' has an invalid 'glow' '" + rawGlow
+                            + "' (must be one of vanilla's 16 named colors) - it will not glow.");
+                }
+            }
+            // Capped at 2 blocks. OreCubeService keeps one column clear on
+            // every side of a giant, and a 2-block cube reaches exactly to
+            // the edge of that column - any bigger and it would render into
+            // its neighbours. Pets also ring a target at 1.3 blocks from
+            // its centre, which a cube past 2 blocks would swallow.
+            float size = (float) Math.max(1.0, Math.min(2.0, s.getDouble("size", 1.5)));
+            double chance = Math.max(0.0, Math.min(0.5, s.getDouble("chance", 0.02)));
+            giants.add(new GiantCube(id, s.getString("label"), material, size, chance, glow,
+                    Math.max(1.0, s.getDouble("hp-multiplier", 1.0)),
+                    Math.max(0.0, s.getDouble("coin-multiplier", 1.0)),
+                    Math.max(0.0, s.getDouble("diamond-multiplier", 1.0)),
+                    Math.max(0.0, s.getDouble("xp-multiplier", 1.0))));
+        }
+        return giants;
+    }
+
+    /**
+     * Turns each giant recipe into real tiers for one zone. Two shapes:
+     * <ul>
+     *   <li><b>{@code material: ZONE}</b> - a giant copy of EVERY ordinary
+     *       tier the zone has, each priced off its own original, weighted so
+     *       that each of them comes giant {@code chance} of the time. A
+     *       giant stone cube is a stone cube with more HP and more pay, not
+     *       a different thing - that is the "variation" half.</li>
+     *   <li><b>A fixed material</b> (the big safe) - one tier, priced off
+     *       the zone's toughest ordinary cube, {@code chance} of all spawns.
+     *       That is the jackpot half.</li>
+     * </ul>
+     * Priced off the zone's own cubes either way, so a big safe in the
+     * Meadow and one in the Genesis Core are both "a lot more than the best
+     * thing here" without 21 hand-written entries to keep in step with the
+     * ladder - the same idea as Huge pets being derived from normal ones.
+     * <p>
+     * Treasure chests never come giant: they are already the event of their
+     * zone, and a giant one would pay out its egg stack at giant odds.
+     */
+    private List<CubeTier> deriveGiants(List<CubeTier> tiers, List<GiantCube> giants) {
+        if (giants.isEmpty()) {
+            return List.of();
+        }
+        List<CubeTier> ordinary = tiers.stream().filter(tier -> !tier.treasure()).toList();
+        if (ordinary.isEmpty()) {
+            return List.of();
+        }
+        CubeTier toughest = ordinary.stream().max((a, b) -> Long.compare(a.maxHp(), b.maxHp())).orElseThrow();
+        double existingWeight = tiers.stream().mapToDouble(CubeTier::weight).sum();
+        double totalChance = giants.stream().mapToDouble(GiantCube::chance).sum();
+        // Dividing by (1 - total) is what makes a 3% giant come out at 3% of
+        // ALL spawns once every giant's own weight has been added in too.
+        double scale = 1.0 / Math.max(0.01, 1.0 - totalChance);
+
+        List<CubeTier> derived = new ArrayList<>();
+        for (GiantCube giant : giants) {
+            if (giant.chance() <= 0) {
+                continue;
+            }
+            if (giant.material() == null) {
+                for (CubeTier tier : ordinary) {
+                    derived.add(giantOf(giant, tier, tier.material(), tier.weight() * giant.chance() * scale));
+                }
+            } else {
+                derived.add(giantOf(giant, toughest, giant.material(), existingWeight * giant.chance() * scale));
+            }
+        }
+        return derived;
+    }
+
+    private CubeTier giantOf(GiantCube giant, CubeTier base, Material material, double weight) {
+        return new CubeTier(material,
+                Math.max(1L, Math.round(base.maxHp() * giant.hpMultiplier())),
+                Math.round(base.coinValue() * giant.coinMultiplier()),
+                Math.max(1L, Math.round(base.diamondValue() * giant.diamondMultiplier())),
+                Math.round(base.xpValue() * giant.xpMultiplier()),
+                weight,
+                false, null, 0,
+                giant.size(), giant.label(), giant.glow());
+    }
+
     /** A zone's optional treasure chest - null when the zone has no {@code treasure:} section. */
     private CubeTier loadTreasure(ConfigurationSection section, String zoneId) {
         if (section == null) {

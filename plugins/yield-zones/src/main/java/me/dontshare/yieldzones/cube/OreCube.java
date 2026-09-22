@@ -47,6 +47,22 @@ public final class OreCube {
         return tier;
     }
 
+    /** Edge length in blocks - 1 for an ordinary cube, more for a giant one (see {@link CubeTier#size}). */
+    public float size() {
+        return tier.size();
+    }
+
+    /**
+     * The middle of the cube as it actually renders: centred on its block
+     * column horizontally and standing on the floor, so a 1.5-block safe's
+     * middle is 0.75 up, not 0.5. Where pets aim, where hit sparks and
+     * damage numbers appear, and where the death burst goes all come from
+     * here, so a giant cube gets hit in the middle rather than the shins.
+     */
+    public Location center() {
+        return location.clone().add(0.5, size() / 2.0, 0.5);
+    }
+
     /** The packet-only block_display entity that's this cube's entire visible body - see FakeFallingBlock. Animated on hit, destroyed when the cube goes away. */
     public int blockEntityId() {
         return blockEntityId;

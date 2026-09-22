@@ -87,6 +87,22 @@ public final class BlockDisplayManager {
                 new EntityData<>(12, EntityDataTypes.VECTOR3F, scale));
     }
 
+    /**
+     * Scales a block model to {@code size} blocks on every axis while
+     * keeping it centred on its own block column and standing on that
+     * block's floor - the entity's position being the block's corner, as
+     * everything here spawns it.
+     * <p>
+     * A plain uniform scale would grow the model out from that corner, so a
+     * 1.5-block cube would hang half a block off one side of its column;
+     * this shifts it back by half the growth horizontally and not at all
+     * vertically. At {@code size} 1 it is exactly the identity transform.
+     */
+    public static void setBlockSize(Player viewer, int entityId, float size) {
+        float shift = 0.5f - size / 2f;
+        setTransformation(viewer, entityId, new Vector3f(shift, 0f, shift), new Vector3f(size, size, size));
+    }
+
     /** Angle in radians, rotating around the Y axis (a "spin in place") - identical field/formula to {@link ItemDisplayManager#setYRotation}, the Display base class shares this metadata index across every display type. */
     public static void setYRotation(Player viewer, int entityId, double radians) {
         float halfAngle = (float) (radians / 2.0);

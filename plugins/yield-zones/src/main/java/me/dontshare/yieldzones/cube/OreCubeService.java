@@ -134,7 +134,11 @@ public final class OreCubeService implements Listener {
     // occupies (see the collision note on spawnCubeFor itself). Cleared
     // per-fallId once that fall lands (the column is then covered by the
     // live cube itself), or wholesale in cancelPendingFalls.
-    private final Map<UUID, Map<UUID, Long>> pendingColumnsByFallId = new ConcurrentHashMap<>();
+    private final Map<UUID, Map<UUID, PendingColumn>> pendingColumnsByFallId = new ConcurrentHashMap<>();
+
+    /** Where a still-falling cube will land, and whether it is a giant one that needs room around it - see {@link #isColumnOccupied}. */
+    private record PendingColumn(int x, int z, boolean giant) {
+    }
     // A cube already scheduled to respawn (see killCube) counts as "live" too -
     // otherwise the periodic top-up in tick() sees the freed-up slot before the
     // scheduled respawn fires and spawns an extra cube to fill it, doubling up.
@@ -333,51 +337,28 @@ public final class OreCubeService implements Listener {
         }
     }
 
-    /** The closest live cube (by unit-cube AABB) the player's eye direction actually intersects within {@link #HIGHLIGHT_RANGE} - null if none. Same slab-method test {@code FakeBlockClickRegistry} uses for click detection, standalone here since this only ever needs "closest cube", not per-block handler dispatch. */
+    /**
+     * The closest live cube the player's eye direction actually intersects
+     * within {@link #HIGHLIGHT_RANGE} - null if none. Asks
+     * {@link FakeBlockClickRegistry#intersectDistance} with the cube's own
+     * size, so what lights up when you look at it is exactly what a click
+     * would hit - a big safe included.
+     */
     private OreCube raycastClosest(Player player, List<OreCube> live) {
         Location eye = player.getEyeLocation();
         org.bukkit.util.Vector direction = eye.getDirection();
         OreCube closest = null;
         double closestDistance = HIGHLIGHT_RANGE;
         for (OreCube cube : live) {
-            Double distance = intersectDistance(eye, direction, cube.location());
+            Location at = cube.location();
+            Double distance = FakeBlockClickRegistry.intersectDistance(eye, direction,
+                    at.getBlockX(), at.getBlockY(), at.getBlockZ(), cube.size(), HIGHLIGHT_RANGE);
             if (distance != null && distance < closestDistance) {
                 closestDistance = distance;
                 closest = cube;
             }
         }
         return closest;
-    }
-
-    private Double intersectDistance(Location eye, org.bukkit.util.Vector direction, Location blockLoc) {
-        double tMin = 0.0;
-        double tMax = HIGHLIGHT_RANGE;
-        double[] origin = {eye.getX(), eye.getY(), eye.getZ()};
-        double[] dir = {direction.getX(), direction.getY(), direction.getZ()};
-        double[] boxMin = {blockLoc.getBlockX(), blockLoc.getBlockY(), blockLoc.getBlockZ()};
-        double[] boxMax = {boxMin[0] + 1.0, boxMin[1] + 1.0, boxMin[2] + 1.0};
-
-        for (int axis = 0; axis < 3; axis++) {
-            if (Math.abs(dir[axis]) < 1e-9) {
-                if (origin[axis] < boxMin[axis] || origin[axis] > boxMax[axis]) {
-                    return null;
-                }
-                continue;
-            }
-            double t1 = (boxMin[axis] - origin[axis]) / dir[axis];
-            double t2 = (boxMax[axis] - origin[axis]) / dir[axis];
-            if (t1 > t2) {
-                double swap = t1;
-                t1 = t2;
-                t2 = swap;
-            }
-            tMin = Math.max(tMin, t1);
-            tMax = Math.min(tMax, t2);
-            if (tMin > tMax) {
-                return null;
-            }
-        }
-        return tMin;
     }
 
     private static final String HIGHLIGHT_TEAM_NAME = "cube_highlight_white";
@@ -624,7 +605,7 @@ public final class OreCubeService implements Listener {
         for (int attempt = 0; attempt < SPAWN_COLUMN_RETRY_ATTEMPTS; attempt++) {
             x = ThreadLocalRandom.current().nextInt(region.minX(), region.maxX() + 1);
             z = ThreadLocalRandom.current().nextInt(region.minZ(), region.maxZ() + 1);
-            if (!isColumnOccupied(playerId, x, z)) {
+            if (!isColumnOccupied(playerId, x, z, tier.giant())) {
                 break;
             }
         }
@@ -647,15 +628,21 @@ public final class OreCubeService implements Listener {
             // bonus keeps that one instead, and keeps its multiplier.
             rolledBonus = TREASURE_GLOW;
         }
+        if (tier.glow() != null && rolledBonus == null) {
+            // Same reasoning as the chest above: a giant is the thing worth
+            // walking across the zone for, so it carries a light of its
+            // own. A giant that ALSO rolls a real bonus keeps that one.
+            rolledBonus = new CubeBonus(GIANT_GLOW_ID, 0.0, 1.0, tier.glow());
+        }
         final CubeBonus bonus = rolledBonus;
         pendingByPlayer.computeIfAbsent(playerId, k -> new AtomicInteger()).incrementAndGet();
-        long column = packColumn(x, z);
+        PendingColumn column = new PendingColumn(x, z, tier.giant());
         var blockData = tier.material().createBlockData();
         UUID[] fallId = new UUID[1];
-        fallId[0] = core().getFakeFallingBlock().spawn(player, spawnAt, groundY, blockData, blockData,
+        fallId[0] = core().getFakeFallingBlock().spawn(player, spawnAt, groundY, blockData, blockData, tier.size(),
                 (owner, landedAt, blockEntityId, blockEntityUuid) -> {
                     pendingFallIdsByPlayer.getOrDefault(playerId, Set.of()).remove(fallId[0]);
-                    Map<UUID, Long> columns = pendingColumnsByFallId.get(playerId);
+                    Map<UUID, PendingColumn> columns = pendingColumnsByFallId.get(playerId);
                     if (columns != null) {
                         columns.remove(fallId[0]);
                     }
@@ -665,22 +652,52 @@ public final class OreCubeService implements Listener {
         pendingColumnsByFallId.computeIfAbsent(playerId, k -> new ConcurrentHashMap<>()).put(fallId[0], column);
     }
 
-    private boolean isColumnOccupied(UUID playerId, int x, int z) {
+    /**
+     * Whether a cube landing at {@code (x, z)} would share space with one of
+     * this player's cubes, landed or still falling.
+     * <p>
+     * An ordinary cube fills exactly its own column, so two only collide on
+     * the same one. A giant cube's body hangs past its column on every side,
+     * so when either cube is giant the neighbouring columns count as
+     * occupied too - otherwise a big safe could land flush against a normal
+     * cube and the two models would render through each other.
+     */
+    private boolean isColumnOccupied(UUID playerId, int x, int z, boolean giant) {
         for (OreCube cube : cubesByPlayer.getOrDefault(playerId, List.of())) {
-            if (cube.location().getBlockX() == x && cube.location().getBlockZ() == z) {
+            int reach = giant || cube.tier().giant() ? 1 : 0;
+            if (Math.abs(cube.location().getBlockX() - x) <= reach
+                    && Math.abs(cube.location().getBlockZ() - z) <= reach) {
                 return true;
             }
         }
-        Map<UUID, Long> columns = pendingColumnsByFallId.get(playerId);
-        return columns != null && columns.containsValue(packColumn(x, z));
-    }
-
-    private static long packColumn(int x, int z) {
-        return (((long) x) << 32) | (z & 0xFFFFFFFFL);
+        Map<UUID, PendingColumn> columns = pendingColumnsByFallId.get(playerId);
+        if (columns == null) {
+            return false;
+        }
+        for (PendingColumn column : columns.values()) {
+            int reach = giant || column.giant() ? 1 : 0;
+            if (Math.abs(column.x() - x) <= reach && Math.abs(column.z() - z) <= reach) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** The neutral, purely-cosmetic glow a treasure chest falls back to when it didn't roll a real bonus of its own - see spawnCubeFor. */
     private static final CubeBonus TREASURE_GLOW = new CubeBonus("treasure", 0.0, 1.0, NamedTextColor.GOLD);
+    /** The id a giant cube's cosmetic-only glow carries - its label is the tier's own, not this. */
+    private static final String GIANT_GLOW_ID = "giant";
+    /**
+     * Each tier label parsed once. The HP label and boss bar are rebuilt on
+     * every damage flush of every cube several times a second - the same
+     * reason the HP bars themselves are prebuilt (see {@link #HP_BARS}) - and
+     * there are only ever a couple of distinct labels in a whole config.
+     */
+    private static final Map<String, Component> PARSED_LABELS = new ConcurrentHashMap<>();
+
+    private static Component tierLabel(CubeTier tier) {
+        return PARSED_LABELS.computeIfAbsent(tier.label(), Text::parse);
+    }
 
     /** Independent of tier - every spawn also rolls each configured bonus's own chance (boosted by any registered CUBE_BONUS_CHANCE upgrades, clamped to 100%); the highest-multiplier one that hits (if any) wins. Null for a plain cube. */
     private CubeBonus rollBonus(ZoneDefinition zone, PackPlayerProfile profile) {
@@ -720,8 +737,11 @@ public final class OreCubeService implements Listener {
         // also silently prevent the cube from becoming targetable/
         // attackable - that failure mode is far worse than a missing nametag.
         cubesByPlayer.computeIfAbsent(owner.getUniqueId(), k -> new ArrayList<>()).add(cube);
-        FakeBlockClickRegistry.register(owner, landedAt, clicker -> onCubeClicked.accept(clicker, cube));
+        FakeBlockClickRegistry.register(owner, landedAt, cube.size(), clicker -> onCubeClicked.accept(clicker, cube));
         spawnHealthBar(owner, cube);
+        if (tier.giant()) {
+            announceGiantLanding(owner, cube);
+        }
     }
 
     /**
@@ -738,7 +758,7 @@ public final class OreCubeService implements Listener {
     private void spawnGlow(Player owner, CubeTier tier, CubeBonus bonus, Location landedAt, int glowEntityId, UUID glowEntityUuid) {
         BlockDisplayManager.spawn(owner, glowEntityId, glowEntityUuid, landedAt);
         BlockDisplayManager.setBlockState(owner, glowEntityId, tier.material());
-        BlockDisplayManager.setTransformation(owner, glowEntityId, GLOW_OVERLAY_TRANSLATE, GLOW_OVERLAY_SCALE);
+        setGlowOverlaySize(owner, glowEntityId, tier.size());
         PacketEntityManager.setGlowing(owner, glowEntityId, true);
 
         Scoreboard board = core().getScoreboardManager().scoreboardFor(owner);
@@ -749,6 +769,39 @@ public final class OreCubeService implements Listener {
             team.color(bonus.color());
         }
         team.addEntry(glowEntityUuid.toString());
+    }
+
+    /**
+     * The glow overlay's transform for a cube {@code size} blocks big:
+     * {@link #GLOW_OVERLAY_SCALE} times bigger than the body and centred on
+     * it on every axis, so it keeps the same small depth gap that stops it
+     * z-fighting the body whatever the size. At size 1 this is exactly the
+     * old fixed {@link #GLOW_OVERLAY_TRANSLATE} / {@link #GLOW_OVERLAY_SCALE}.
+     */
+    private static void setGlowOverlaySize(Player viewer, int glowEntityId, float size) {
+        float scale = size * GLOW_OVERLAY_SCALE;
+        float horizontal = 0.5f - scale / 2f;
+        float vertical = size * GLOW_OVERLAY_TRANSLATE;
+        BlockDisplayManager.setTransformation(viewer, glowEntityId,
+                new Vector3f(horizontal, vertical, horizontal), new Vector3f(scale, scale, scale));
+    }
+
+    /**
+     * A giant cube lands like it weighs something: a low thud, a ring of its
+     * own material kicked up off the floor, and its name in the action bar
+     * so the player looks round for it. Owner-only like everything else
+     * about a cube.
+     */
+    private void announceGiantLanding(Player owner, OreCube cube) {
+        Location floor = cube.location().clone().add(0.5, 0.05, 0.5);
+        owner.playSound(floor, Sound.BLOCK_ANVIL_LAND, 0.45f, 0.6f);
+        owner.playSound(floor, Sound.ENTITY_IRON_GOLEM_STEP, 1f, 0.5f);
+        owner.spawnParticle(Particle.BLOCK, floor, 30, cube.size() * 0.5, 0.05, cube.size() * 0.5, 0.1,
+                cube.tier().material().createBlockData());
+        owner.spawnParticle(Particle.CLOUD, floor, 12, cube.size() * 0.5, 0.05, cube.size() * 0.5, 0.02);
+        if (cube.tier().label() != null) {
+            owner.sendActionBar(Text.parse(cube.tier().label() + " <gray>landed nearby!</gray>"));
+        }
     }
 
     /** Every cube currently live for this player - the pool {@code PetCombatController} picks a target from. */
@@ -781,7 +834,7 @@ public final class OreCubeService implements Listener {
 
     /** A floating, transparent-background text label above the cube showing its HP - same styling as pet nametags. */
     private void spawnHealthBar(Player viewer, OreCube cube) {
-        Location labelPos = cube.location().clone().add(0.5, 1.4, 0.5);
+        Location labelPos = cube.location().clone().add(0.5, cube.size() + 0.4, 0.5);
         PacketEntityManager.beginBundle(viewer);
         TextDisplayManager.spawn(viewer, cube.textEntityId(), labelPos);
         TextDisplayManager.setBillboard(viewer, cube.textEntityId(), TextDisplayManager.Billboard.VERTICAL);
@@ -875,7 +928,7 @@ public final class OreCubeService implements Listener {
             for (Map.Entry<OreCube, PendingDamage> entry : queued.entrySet()) {
                 OreCube cube = entry.getKey();
                 long amount = entry.getValue().amount();
-                Location center = cube.location().clone().add(0.5, 0.5, 0.5);
+                Location center = cube.center();
                 showDamageIndicator(player, center, amount);
                 showHitImpact(player, center);
                 boolean dead = cube.damage(amount);
@@ -919,10 +972,15 @@ public final class OreCubeService implements Listener {
 
     private void playHitSquish(Player viewer, OreCube cube) {
         int entityId = cube.blockEntityId();
-        float t = 0.5f - HIT_SHRINK_SCALE / 2f;
+        float size = cube.size();
+        // Shrinks toward the cube's own centre, whatever its size - the
+        // same squish a normal cube does, just around a bigger middle.
+        float shrunk = size * HIT_SHRINK_SCALE;
+        float horizontal = 0.5f - shrunk / 2f;
+        float vertical = (size - shrunk) / 2f;
         BlockDisplayManager.setInterpolation(viewer, entityId, 0, HIT_SHRINK_TICKS, HIT_SHRINK_TICKS);
         BlockDisplayManager.setTransformation(viewer, entityId,
-                new Vector3f(t, t, t), new Vector3f(HIT_SHRINK_SCALE, HIT_SHRINK_SCALE, HIT_SHRINK_SCALE));
+                new Vector3f(horizontal, vertical, horizontal), new Vector3f(shrunk, shrunk, shrunk));
         UUID viewerId = viewer.getUniqueId();
         defer(HIT_SHRINK_TICKS, () -> {
             Player stillOnline = Bukkit.getPlayer(viewerId);
@@ -930,7 +988,7 @@ public final class OreCubeService implements Listener {
                 return;
             }
             BlockDisplayManager.setInterpolation(stillOnline, entityId, 0, HIT_GROW_TICKS, HIT_GROW_TICKS);
-            BlockDisplayManager.setTransformation(stillOnline, entityId, 0f, 1f);
+            BlockDisplayManager.setBlockSize(stillOnline, entityId, size);
         });
     }
 
@@ -959,7 +1017,7 @@ public final class OreCubeService implements Listener {
      * into a slightly-larger regular number.
      */
     public void playCritFlourish(Player player, OreCube target) {
-        Location center = target.location().clone().add(0.5, 0.5, 0.5);
+        Location center = target.center();
         Component text = Text.parse("<gradient:#FF5555:#FFAA00><bold>CRIT!</bold></gradient>");
         spawnFloatingText(player, center, text, 10, 16);
         player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 0.5f, 1f);
@@ -1130,9 +1188,17 @@ public final class OreCubeService implements Listener {
             return;
         }
         Location at = cube.location();
-        Location center = at.clone().add(0.5, 0.5, 0.5);
-        player.spawnParticle(Particle.BLOCK, center, 40, 0.35, 0.35, 0.35, 0.15, cube.tier().material().createBlockData());
+        Location center = cube.center();
+        // Spread and count grow with the cube, so a big safe bursts like a
+        // big safe instead of a normal cube's puff coming out of its middle.
+        double spread = 0.35 * cube.size();
+        int count = Math.round(40 * cube.size() * cube.size());
+        player.spawnParticle(Particle.BLOCK, center, count, spread, spread, spread, 0.15, cube.tier().material().createBlockData());
         player.playSound(at, Sound.BLOCK_STONE_BREAK, 1f, 1f);
+        if (cube.tier().giant()) {
+            player.playSound(at, Sound.ENTITY_GENERIC_EXPLODE, 0.5f, 1.4f);
+            player.spawnParticle(Particle.TOTEM_OF_UNDYING, center, 30, spread, spread, spread, 0.35);
+        }
         despawnCube(player, cube);
         // Single-send mode can have several cubes alive for this player at
         // once, and this kill isn't necessarily their current target - only
@@ -1142,7 +1208,7 @@ public final class OreCubeService implements Listener {
             hideBossBar(player);
         }
 
-        payOut(player, cube.tier(), cube.bonus(), at.clone().add(0.5, 0.5, 0.5), contributingInstanceIds);
+        payOut(player, cube.tier(), cube.bonus(), center, contributingInstanceIds);
         // Deliberately doesn't touch the pet-display attack override here -
         // in single-send mode other pets may still be fighting different,
         // still-live cubes. PetCombatController's own next tick (a few
@@ -1261,7 +1327,13 @@ public final class OreCubeService implements Listener {
         // The boss bar HUD is single-line - the bonus label (if any) only
         // goes on the floating nametag (see healthBarText), which text_display
         // actually renders as separate lines.
-        Component title = cube.bonus() == null ? hpBarLine(cube) : bonusLabel(cube).append(Component.text(" ")).append(hpBarLine(cube));
+        Component title = hpBarLine(cube);
+        if (cube.bonus() != null && !GIANT_GLOW_ID.equals(cube.bonus().id())) {
+            title = bonusLabel(cube).append(Component.text(" ")).append(title);
+        }
+        if (cube.tier().label() != null) {
+            title = tierLabel(cube.tier()).append(Component.text(" ")).append(title);
+        }
         BossBar bar = bossBarByPlayer.get(player.getUniqueId());
         if (bar == null) {
             bar = BossBar.bossBar(title, progress, BossBar.Color.YELLOW, BossBar.Overlay.PROGRESS);
@@ -1283,8 +1355,17 @@ public final class OreCubeService implements Listener {
      * current health).
      */
     private Component healthBarText(OreCube cube) {
-        Component hpLines = hpBar(cube).append(Component.newline()).append(heartLine(cube));
-        return cube.bonus() == null ? hpLines : bonusLabel(cube).append(Component.newline()).append(hpLines);
+        Component text = hpBar(cube).append(Component.newline()).append(heartLine(cube));
+        if (cube.bonus() != null && !GIANT_GLOW_ID.equals(cube.bonus().id())) {
+            text = bonusLabel(cube).append(Component.newline()).append(text);
+        }
+        // The tier's own name sits on top: "BIG SAFE" above "GOLDEN x2"
+        // above the bar. A giant's cosmetic glow has no line of its own -
+        // the name already says what it is.
+        if (cube.tier().label() != null) {
+            text = tierLabel(cube.tier()).append(Component.newline()).append(text);
+        }
+        return text;
     }
 
     /**

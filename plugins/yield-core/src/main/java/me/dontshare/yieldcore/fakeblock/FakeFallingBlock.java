@@ -93,6 +93,19 @@ public final class FakeFallingBlock {
      */
     public UUID spawn(Player owner, Location spawnAt, double landedY, BlockData fallingAppearance,
                        BlockData landedAppearance, LandedCallback onLanded) {
+        return spawn(owner, spawnAt, landedY, fallingAppearance, landedAppearance, 1f, onLanded);
+    }
+
+    /**
+     * {@link #spawn(Player, Location, double, BlockData, BlockData, LandedCallback)}
+     * for a block {@code size} blocks big - it falls and lands at that size,
+     * centred on its column (see {@link BlockDisplayManager#setBlockSize}).
+     * The fake barrier underneath stays a single block: it is only there
+     * for vanilla's hover outline and the owner's collision, and a 1x1
+     * barrier inside a 1.5-block model is hidden by the model around it.
+     */
+    public UUID spawn(Player owner, Location spawnAt, double landedY, BlockData fallingAppearance,
+                       BlockData landedAppearance, float size, LandedCallback onLanded) {
         Location landedAt = new Location(spawnAt.getWorld(), spawnAt.getBlockX(), landedY, spawnAt.getBlockZ());
 
         // Hide whatever real block already sits at the landing spot the
@@ -113,7 +126,7 @@ public final class FakeFallingBlock {
         // OreCubeService, which always set this explicitly even for a
         // near-1:1 overlay. Skipping it here rendered the falling cube as a
         // flattened slab instead of a normal block.
-        BlockDisplayManager.setTransformation(owner, entityId, 0f, 1f);
+        BlockDisplayManager.setBlockSize(owner, entityId, size);
 
         double distance = Math.max(0, spawnAt.getY() - landedAt.getY());
         int fallTicks = Math.max(2, (int) Math.round(distance * TICKS_PER_BLOCK));
@@ -125,11 +138,11 @@ public final class FakeFallingBlock {
             falls.remove(fallId);
             BlockDisplayManager.setBlockState(owner, entityId, landedAppearance.getMaterial());
             // Re-affirmed here, not just at spawn - guarantees the display is
-            // pixel-exact vanilla-block size/position (matching the fake
-            // barrier's own hitbox) at the exact moment it becomes the
+            // pixel-exact at its intended size/position (a normal cube exactly
+            // matching the fake barrier's own hitbox) at the moment it becomes the
             // permanent, clickable cube, regardless of anything that could
             // have nudged its transform mid-fall.
-            BlockDisplayManager.setTransformation(owner, entityId, 0f, 1f);
+            BlockDisplayManager.setBlockSize(owner, entityId, size);
             // Bundled so the client applies both in the same frame - sent
             // separately, a one-frame gap between the two showed up as a
             // visible flicker.
