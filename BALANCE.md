@@ -418,7 +418,7 @@ Candy Corn.**
 The sidebar has a fixed number of lines, and the number that matters where
 the event is happening is not the one you spend at the Store.
 
-**Six quests**, each paying once:
+**Six quests**, each paying once per season:
 
 | quest | goal | reward |
 |---|---|---|
@@ -477,6 +477,20 @@ shop that makes the egg pointless. It has its own quest instead.
 Clearing the whole limited shelf costs ~276,000 — most, but not all, of a
 dedicated player's fortnight. That gap is the decision: guarantee the pets
 you want, or keep hatching for the one nobody can buy.
+
+**Everything but the balance restarts each year.** An event's id is
+reused — next October is set up by changing its dates — so quest progress,
+quest claims and shop stock are keyed by *season* (`halloween_2026`), not by
+event. Keyed by id, a returning player would arrive at year two with every
+quest already claimed and the pity stock already spent: an event with
+nothing in it for the people most likely to come back. Leftover currency
+still carries over, as above.
+
+**A Candy Corn leaderboard** ranks what each player has *earned* this
+season, not what they hold — a balance falls every time someone hatches or
+shops, and would rank whoever spends least rather than whoever played most.
+It is a stats.yml entry like every other board; its field names the season,
+so the year is the one thing to bump alongside the dates.
 
 Both the charge and the stock count are written and saved *before* the
 reward commands run, for the same reason quest claims are: a double-click,

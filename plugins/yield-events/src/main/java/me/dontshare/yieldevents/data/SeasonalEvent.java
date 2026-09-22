@@ -53,6 +53,25 @@ public record SeasonalEvent(String id, String displayName, String color, LocalDa
         return 1.0 + bonus;
     }
 
+    /**
+     * This year's run of the event - {@code halloween_2026} - which is what
+     * quest progress, quest claims and shop stock are keyed by.
+     * <p>
+     * The id alone is not enough, because the id is reused: next October is
+     * set up by changing this event's dates, not by writing a new one. Keyed
+     * by id, a returning player would arrive at Halloween 2027 with every
+     * quest already claimed, last year's hatches already counted and the
+     * shop's pity stock already spent - an event with nothing in it for the
+     * people most likely to come back. Anchored on the START year so an
+     * event that runs across New Year is still one season.
+     * <p>
+     * The currency balance deliberately stays keyed by {@link #id()}: that
+     * one is meant to carry over (see EventProfile).
+     */
+    public String seasonId() {
+        return id + "_" + start.getYear();
+    }
+
     /** Whether this event is running on {@code today} - both ends inclusive, so a one-day event is possible. */
     public boolean isActiveOn(LocalDate today) {
         return !today.isBefore(start) && !today.isAfter(end);

@@ -17,7 +17,13 @@
 # at midnight on the start date begins the event by itself, and one that
 # boots mid-event is already in it. Run /admin events reload after editing.
 #
-# To add next year's dates, change start/end. To add a NEW event: write its
+# To add next year's dates, change start/end. Quests, quest claims and shop
+# stock all restart with the new year on their own (they are kept per
+# SEASON - "halloween_2026" - not per event), while the currency balance
+# carries over. The one thing to change by hand is the year in the event's
+# leaderboard stat, in yield-leaderboards' stats.yml.
+#
+# To add a NEW event: write its
 # pets and its egg into packs.yml, then add a block here pointing at that
 # egg. No code changes.
 #
@@ -179,7 +185,8 @@ events:
         commands:
           - "admin pets give %player% event_hollow_reaper NORMAL 1"
     # Goals: CANDY_EARNED (all sources), CUBES_BROKEN (in the event zone),
-    # EGGS_HATCHED (this event's egg). Each pays once, ever.
+    # EGGS_HATCHED (this event's egg). Each pays once per season - next
+    # year's run starts every quest from zero again.
     #
     # Targets are set against the earn rates above: ~3,600 cubes and ~7,200
     # Candy Corn an hour. So 10,000 cubes is about three hours and 150,000

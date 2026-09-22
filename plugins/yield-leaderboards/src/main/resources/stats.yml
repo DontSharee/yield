@@ -42,3 +42,15 @@ stats:
     # rather than an accumulation, so a brand-new account can top it.
     field: "packs.bestLuckOneIn"
     type: LONG
+  halloween_candy_corn:
+    # Candy Corn EARNED this Halloween (yield-events), not held - a balance
+    # falls every time someone hatches or shops, which would rank the
+    # players who spend least rather than the ones who played most.
+    #
+    # Keyed by SEASON ("halloween_2026"), because an event's id is reused
+    # every year and its quest counters restart with each run (see
+    # SeasonalEvent#seasonId). When next year's dates go into events.yml,
+    # change the year here too - the board is this year's race, not an
+    # all-time one.
+    field: "events.questProgress.halloween_2026:CANDY_EARNED"
+    type: LONG

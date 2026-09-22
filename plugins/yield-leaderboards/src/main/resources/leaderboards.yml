@@ -30,3 +30,13 @@ leaderboards:
     title: "BEST LUCK Leaderboard"
     color: "#B15CFF"
     stat: best_luck
+  halloween_leaderboard:
+    # Create it in the Haunted Hollow or next to the event station at spawn:
+    #   /hologram create halloween_leaderboard
+    # Outside the event it simply stops moving - everyone's count is frozen
+    # at what they earned - so it can be left up as last year's result or
+    # removed, whichever you prefer.
+    hologram: halloween_leaderboard
+    title: "CANDY CORN Leaderboard"
+    color: "#FF8C3B"
+    stat: halloween_candy_corn

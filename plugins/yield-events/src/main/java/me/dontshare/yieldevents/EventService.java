@@ -99,12 +99,12 @@ public final class EventService {
     }
 
     public long progress(Player player, SeasonalEvent event, EventQuest.Goal goal) {
-        return store.getOrCreate(player.getUniqueId()).progress(event.id(), goal);
+        return store.getOrCreate(player.getUniqueId()).progress(event.seasonId(), goal);
     }
 
     /** Counts progress toward every quest watching {@code goal}. Saving is left to the caller's own batch - this is called several times a second. */
     public void addProgress(Player player, SeasonalEvent event, EventQuest.Goal goal, long amount) {
-        store.getOrCreate(player.getUniqueId()).addProgress(event.id(), goal, amount);
+        store.getOrCreate(player.getUniqueId()).addProgress(event.seasonId(), goal, amount);
     }
 
     public boolean isComplete(Player player, SeasonalEvent event, EventQuest quest) {
@@ -112,7 +112,7 @@ public final class EventService {
     }
 
     public boolean hasClaimed(Player player, SeasonalEvent event, EventQuest quest) {
-        return store.getOrCreate(player.getUniqueId()).hasClaimed(event.id(), quest.id());
+        return store.getOrCreate(player.getUniqueId()).hasClaimed(event.seasonId(), quest.id());
     }
 
     /**
@@ -126,10 +126,10 @@ public final class EventService {
      */
     public boolean claim(Player player, SeasonalEvent event, EventQuest quest) {
         EventProfile profile = store.getOrCreate(player.getUniqueId());
-        if (profile.hasClaimed(event.id(), quest.id()) || !isComplete(player, event, quest)) {
+        if (profile.hasClaimed(event.seasonId(), quest.id()) || !isComplete(player, event, quest)) {
             return false;
         }
-        profile.markClaimed(event.id(), quest.id());
+        profile.markClaimed(event.seasonId(), quest.id());
         if (quest.rewardCandy() > 0) {
             profile.add(event.id(), quest.rewardCandy());
         }
@@ -139,7 +139,7 @@ public final class EventService {
 
     /** What this event's shop has already sold this player, for a limited entry. */
     public int bought(Player player, SeasonalEvent event, EventShopEntry entry) {
-        return store.getOrCreate(player.getUniqueId()).bought(event.id(), entry.id());
+        return store.getOrCreate(player.getUniqueId()).bought(event.seasonId(), entry.id());
     }
 
     /** Why a buy cannot happen, or null when it can. */
@@ -158,13 +158,13 @@ public final class EventService {
      */
     public BuyResult buy(Player player, SeasonalEvent event, EventShopEntry entry) {
         EventProfile profile = store.getOrCreate(player.getUniqueId());
-        if (entry.remaining(profile.bought(event.id(), entry.id())) <= 0) {
+        if (entry.remaining(profile.bought(event.seasonId(), entry.id())) <= 0) {
             return BuyResult.OUT_OF_STOCK;
         }
         if (!profile.take(event.id(), entry.price())) {
             return BuyResult.TOO_POOR;
         }
-        profile.recordPurchase(event.id(), entry.id(), 1);
+        profile.recordPurchase(event.seasonId(), entry.id(), 1);
         store.save(player.getUniqueId());
         return BuyResult.SUCCESS;
     }

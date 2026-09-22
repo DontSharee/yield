@@ -13,10 +13,10 @@ import java.util.UUID;
  * This plugin's own slice of a player's data - how much of each event's
  * currency they are holding.
  * <p>
- * Holds four things per event: the currency balance, quest progress,
- * which quests have already paid out, and what has been bought from the
- * shop. All keyed by event id and kept
- * forever rather than wiped when an event ends.
+ * Holds four things: the currency balance, keyed by event id, and - keyed
+ * by season, one per year's run - quest progress, which quests have paid
+ * out, and what has been bought from the shop. Nothing is wiped when an
+ * event ends.
  * Leftover currency is worth nothing until next October, which is the point: a
  * player who grinds the last day of an event and cannot spend it all has
  * something waiting for them a year later, and nobody has to be told their
@@ -28,17 +28,19 @@ public final class EventProfile implements PlayerRecord {
     @BsonId
     private UUID playerId;
     private Map<String, Long> balances = new HashMap<>();
-    /** Quest progress, keyed "<eventId>:<GOAL>" so one event's counters never read another's. */
+    /**
+     * Quest progress, keyed "&lt;seasonId&gt;:&lt;GOAL&gt;" - see
+     * {@link SeasonalEvent#seasonId()}: per year's run, so next October's
+     * quests start from zero instead of from last year's totals.
+     */
     private Map<String, Long> questProgress = new HashMap<>();
-    /** Quests already paid out, keyed "<eventId>:<questId>" - a quest pays once, however many times it is re-completed. */
+    /** Quests already paid out, keyed "&lt;seasonId&gt;:&lt;questId&gt;" - once per season, however many times it is re-completed. */
     private Set<String> claimedQuests = new HashSet<>();
     /**
      * How many of each limited shop entry has been bought, keyed
-     * "&lt;eventId&gt;:&lt;entryId&gt;".
-     * <p>
-     * Kept forever like everything else here, which is what a limit of 1
-     * has to mean: a pity buy a player could take again next October would
-     * not be one.
+     * "&lt;seasonId&gt;:&lt;entryId&gt;" - so the stock is per season. A
+     * limit of 1 means once THIS year: next October is a new shelf with
+     * new stock, for the same reason its quests start fresh.
      */
     private Map<String, Integer> shopPurchases = new HashMap<>();
 
