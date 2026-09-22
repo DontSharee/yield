@@ -38,12 +38,15 @@ public final class EnchantGui {
     private static final int[] SLOT_POSITIONS = {0, 1, 2, 3, 4, 5, 6, 7, 8};
     private static final int INFO_SLOT = 22;
     private static final int CLOSE_SLOT = 31;
+    private static final int MARKET_SLOT = 29;
 
     private final PlayerDataStore<PackPlayerProfile> store;
     private final EnchantService service;
     private final EnchantItem enchantItem;
     private final Supplier<RarityRegistry> rarities;
     private final GuiManager guiManager;
+    /** Set after construction - the market screen and this one point at each other. */
+    private EnchantMarketGui marketGui;
 
     public EnchantGui(PlayerDataStore<PackPlayerProfile> store, EnchantService service, EnchantItem enchantItem,
                        Supplier<RarityRegistry> rarities, GuiManager guiManager) {
@@ -52,6 +55,10 @@ public final class EnchantGui {
         this.enchantItem = enchantItem;
         this.rarities = rarities;
         this.guiManager = guiManager;
+    }
+
+    public void setMarketGui(EnchantMarketGui marketGui) {
+        this.marketGui = marketGui;
     }
 
     public void open(Player player) {
@@ -97,6 +104,11 @@ public final class EnchantGui {
 
         builder.item(INFO_SLOT, buildSummaryIcon(profile));
         builder.item(CLOSE_SLOT, GuiIcons.closeButton(), (clicker, e) -> clicker.closeInventory());
+        // Leaving for the market goes through the close handler below like
+        // any other exit, so whatever is in the slots is saved first.
+        if (marketGui != null) {
+            builder.item(MARKET_SLOT, marketIcon(), (clicker, e) -> marketGui.open(clicker));
+        }
 
         Gui gui = builder.build();
         self[0] = gui;
@@ -171,6 +183,14 @@ public final class EnchantGui {
         return builder.hideAttributes().build();
     }
 
+    private ItemStack marketIcon() {
+        long minutes = Math.max(1, (EnchantMarketService.millisUntilRestock() + 59_999) / 60_000);
+        ItemBuilder builder = ItemBuilder.of(Material.CLOCK).name(MenuLore.buttonName(ACCENT, "ENCHANT MARKET"));
+        MenuLore.button("market", List.of(" &7New books every hour.", " &7Restocks in &f" + minutes + "m&7."),
+                ACCENT, "Click to Open").forEach(builder::lore);
+        return builder.hideAttributes().build();
+    }
+
     private ItemStack buildSummaryIcon(PackPlayerProfile profile) {
         ItemBuilder builder = ItemBuilder.of(Material.ENCHANTED_BOOK).name(MenuLore.infoName(ACCENT, "ACTIVE BONUSES"));
         List<String> data = new ArrayList<>();
@@ -181,7 +201,8 @@ public final class EnchantGui {
                     : service.multiplierFor(type).apply(profile) - 1.0;
             data.add(type.displayName() + ": &a+" + String.format(Locale.ROOT, "%.1f", total * 100) + "%");
         }
-        MenuLore.info("enchants", List.of(" &7Drag books from your inventory", " &7into an open slot below."), ACCENT, data)
+        MenuLore.info("enchants", List.of(" &7Drag books from your inventory", " &7into an open slot above.",
+                        " &7Books drop rarely from cubes,", " &7or buy them at the market."), ACCENT, data)
                 .forEach(builder::lore);
         return builder.hideAttributes().build();
     }

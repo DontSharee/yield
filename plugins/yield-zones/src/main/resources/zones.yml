@@ -104,19 +104,30 @@
 #                 giant that ALSO rolls a golden/diamond bonus keeps the
 #                 bonus's glow and its multiplier.
 #   *-multiplier  times the base cube's own hp / coins / diamonds / xp.
+#   enchant-book-chance
+#                 optional - this cube's chance to drop an Enchant Book,
+#                 overriding the global one below.
+#   landing-title optional - a full-screen title when it lands, for the
+#                 cubes whose arrival should be an event.
 #
 # Treasure chests never come giant - they are already their zone's event.
+#
+# The BOSS BLOCK is the 2x2x2 at the top of the pecking order: roughly one
+# an hour of steady play, a title card when it lands, a red glow, a real
+# fight (15x the zone's toughest cube - pets ring it wider so they stand
+# clear of it), and a GUARANTEED Enchant Book. The book is its prize; its
+# coins are held to 10x so it costs the ladder under 1% on its own.
 #
 # BALANCE: this is a deliberate budget, not free. Spawns are capped per
 # player, and a settled player one-shots most cubes, so a rarer, richer
 # cube is extra income more than it is extra time - the same reason tier 3
 # and golden cubes are worth stopping for. Measured against the pacing
 # model at the numbers below (three seeds, free player), a full run to the
-# Genesis Core is about 13% faster than without giants - 13.1 h to 11.5 h,
-# spread evenly across the ladder (every zone arrives ~9-13% sooner). Of
-# that, the giants are about 4% and the big safe about 10%: the safe is
-# the jackpot, so it is the expensive part. Turn its chance down first if
-# the ladder needs its time back.
+# Genesis Core is about 14% faster than without giants - 13.1 h to 11.4 h,
+# spread evenly across the ladder. Of that, the giants are about 4%, the
+# big safe about 10% and the boss block under 1%: the safe is the coin
+# jackpot, so it is the expensive part. Turn its chance down first if the
+# ladder needs its time back.
 #
 # The giant copies keep the same pay per hit as the cube they copy, so a
 # player fighting at the edge of their power (just walked into a zone)
@@ -157,6 +168,35 @@ giant-cubes:
     coin-multiplier: 6
     diamond-multiplier: 2
     xp-multiplier: 3
+    # A book in one safe in twenty, against one cube in 2,500 normally.
+    enchant-book-chance: 0.05
+  boss_block:
+    label: "&c&lBOSS BLOCK"
+    landing-title: "&c&lBOSS BLOCK!"
+    material: REINFORCED_DEEPSLATE
+    size: 2.0
+    # About one in every 3,300 spawns - roughly once an hour of play.
+    chance: 0.0003
+    glow: red
+    hp-multiplier: 15
+    coin-multiplier: 10
+    diamond-multiplier: 3
+    xp-multiplier: 10
+    enchant-book-chance: 1.0
+
+# ---------------------------------------------------------------------------
+# ENCHANT BOOKS - every cube's chance to drop one when it dies, before luck.
+#
+# Very rare on purpose. Books used to drop from one hatch in twenty, which
+# the pacing model puts at about 68 books an hour - one every 53 seconds -
+# so every book was junk and nobody read what they got. At 1 in 2,500 a
+# steady player finds about 1.4 an hour from ordinary cubes, plus the odd
+# one from a safe and one a boss block always carries: three or so an hour
+# in all, with the hourly Enchant Market (yield-packs' enchant-market.yml)
+# as the steady, choosable source alongside.
+#
+# A giant's own "enchant-book-chance" above overrides this for that cube.
+enchant-book-chance: 0.0004
 
 zones:
   meadow:

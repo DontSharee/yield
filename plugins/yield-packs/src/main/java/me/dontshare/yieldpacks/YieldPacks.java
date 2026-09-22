@@ -34,6 +34,9 @@ import me.dontshare.yieldpacks.economy.LuckService;
 import me.dontshare.yieldpacks.enchant.EnchantCommand;
 import me.dontshare.yieldpacks.enchant.EnchantGui;
 import me.dontshare.yieldpacks.enchant.EnchantItem;
+import me.dontshare.yieldpacks.enchant.EnchantMarketCommand;
+import me.dontshare.yieldpacks.enchant.EnchantMarketGui;
+import me.dontshare.yieldpacks.enchant.EnchantMarketService;
 import me.dontshare.yieldpacks.enchant.EnchantService;
 import me.dontshare.yieldpacks.enchant.EnchantType;
 import me.dontshare.yieldpacks.event.PetCandyFedEvent;
@@ -144,6 +147,7 @@ public final class YieldPacks extends JavaPlugin {
     private ShardItem shardItem;
     private EnchantService enchantService;
     private EnchantGui enchantGui;
+    private EnchantMarketService enchantMarketService;
     private MasteryContentLoader masteryContentLoader;
     private volatile MasteryConfig masteryConfig;
     private MasteryService masteryService;
@@ -322,13 +326,20 @@ public final class YieldPacks extends JavaPlugin {
         PackRevealAnimationService reelAnimationService = new PackRevealAnimationService(this, () -> content,
                 rollService, pityService, () -> content.rarities());
         openService = new PackOpenService(this, () -> content, playerStore, rollService, reelAnimationService,
-                enchantService, masteryService);
+                masteryService);
         openService.registerCooldownMultiplierProvider("mastery_packs",
                 profile -> 1.0 - masteryService.sumStat(profile, MasteryType.PACKS, MasteryStat.OPEN_SPEED_MULTIPLIER));
         openService.start();
 
         enchantGui = new EnchantGui(playerStore, enchantService, enchantItem, () -> content.rarities(), core.getGuiManager());
         CommandManager.register(this, EnchantCommand.build(enchantGui), "Drag-and-drop enchant slots", List.of());
+        enchantMarketService = new EnchantMarketService(this, playerStore, () -> content.rarities(), enchantService);
+        enchantMarketService.start();
+        EnchantMarketGui enchantMarketGui = new EnchantMarketGui(enchantMarketService, playerStore, core.getGuiManager());
+        enchantMarketGui.setEnchantGui(enchantGui);
+        enchantGui.setMarketGui(enchantMarketGui);
+        CommandManager.register(this, EnchantMarketCommand.build(enchantMarketGui),
+                "This hour's Enchant Books - restocks for everyone at the top of the hour", List.of("emarket"));
         MasteryGui masteryGui = new MasteryGui(playerStore, masteryService, core.getGuiManager());
         CommandManager.register(this, MasteryCommand.build(masteryGui), "View your mastery progress", List.of());
 
@@ -474,6 +485,9 @@ public final class YieldPacks extends JavaPlugin {
         if (petEnchantTableDisplay != null) {
             petEnchantTableDisplay.reload(petEnchantContent.tables());
         }
+        if (enchantMarketService != null) {
+            enchantMarketService.reload();
+        }
     }
 
     public PlayerDataStore<PackPlayerProfile> getPlayerStore() {
@@ -563,6 +577,10 @@ public final class YieldPacks extends JavaPlugin {
 
     public ShardItem getShardItem() {
         return shardItem;
+    }
+
+    public EnchantMarketService getEnchantMarketService() {
+        return enchantMarketService;
     }
 
     public EnchantService getEnchantService() {

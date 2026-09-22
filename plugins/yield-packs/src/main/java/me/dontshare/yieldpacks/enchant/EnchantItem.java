@@ -22,12 +22,21 @@ public final class EnchantItem {
         this.rarityKey = new NamespacedKey(plugin, "enchant_rarity");
     }
 
+    /** "LEGENDARY Damage Enchant" in the rarity's colour - the book's own name, shared with the Enchant Market so an offer reads exactly like the book it hands over. */
+    public static String displayName(EnchantType type, Rarity rarity) {
+        return "<" + rarity.colorHex() + "><bold>" + rarity.displayName().toUpperCase(Locale.ROOT)
+                + "</bold></" + rarity.colorHex() + "> &7" + type.displayName() + " Enchant";
+    }
+
+    /** "+26% Damage" - what one book of this rarity adds before same-type decay. */
+    public static String bonusLine(EnchantType type, Rarity rarity) {
+        return "&a+" + String.format(Locale.ROOT, "%.0f", EnchantService.magnitudeFor(rarity) * 100) + "% " + type.displayName();
+    }
+
     public ItemStack create(EnchantType type, Rarity rarity) {
-        double magnitude = EnchantService.magnitudeFor(rarity);
         String accent = "<" + rarity.colorHex() + ">";
         ItemBuilder builder = ItemBuilder.of(type.icon())
-                .name(accent + "<bold>" + rarity.displayName().toUpperCase(Locale.ROOT)
-                        + "</bold></" + rarity.colorHex() + "> &7" + type.displayName() + " Enchant")
+                .name(displayName(type, rarity))
                 .tag(typeKey, PersistentDataType.STRING, type.name())
                 .tag(rarityKey, PersistentDataType.STRING, rarity.id())
                 .hideAttributes();
@@ -35,7 +44,7 @@ public final class EnchantItem {
                 "enchant book",
                 List.of(" &7Drag into an open slot at", " &7/enchants to apply."),
                 accent,
-                List.of("Bonus: &a+" + String.format(Locale.ROOT, "%.0f", magnitude * 100) + "% " + type.displayName())
+                List.of("Bonus: " + bonusLine(type, rarity))
         ).forEach(builder::lore);
         return builder.build();
     }

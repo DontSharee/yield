@@ -175,6 +175,58 @@ big safe's edge.
 
 Treasure chests never come giant: they are already their zone's event.
 
+**The boss block** is the 2×2×2 at the very top: REINFORCED_DEEPSLATE, red
+glow, about 1 in 3,300 spawns (roughly once an hour of play), a full-screen
+title and a wither roar when it lands, 15× the zone's toughest cube in HP
+and a **guaranteed Enchant Book** when it dies. The book is the prize; its
+coins are held to 10× so it costs the ladder under 1%. Pets ring a big
+target wider (`PetDisplayService#ringRadiusFor`), so they stand clear of a
+2-block cube instead of inside it. With it, the whole giant budget is
+**about 14% (13.1 h → 11.4 h)**.
+
+### Enchant Books and the Enchant Market
+
+Books used to drop from 1 hatch in 20. The pacing model hatches ~1,360 eggs
+an hour, so that was **~68 books an hour — one every 53 seconds**, and
+every book was junk. They are found now, not farmed:
+
+| source | rate |
+|---|---|
+| any cube | 1 in 2,500, × luck (`enchant-book-chance` in zones.yml) — ~1.4/h |
+| big safe | 1 in 20 |
+| boss block | always |
+| **Enchant Market** | 6 offers per player per hour, each buyable once |
+
+Hatching gives no books at all.
+
+**The market** restocks for everyone at the top of every real hour, but
+each player's six offers are their own. They are generated from the
+player's UUID and the hour, not stored, so there is no restock job and
+nothing goes stale for someone offline at :00. Only what a player bought
+this hour is saved. Offer rarity weights are 100 / 55 / 25 / 9 / 5, common
+to legendary, so **a Legendary is in about 14.5% of hours** (checked over
+a million simulated player-hours): roughly once every seven hours of
+play. Anyone online whose market rolled one is told at the restock.
+Mythic and above never appear — they stay drop-only.
+
+**Prices are in basic cubes of the richest ladder zone you've unlocked**
+(common 100 → legendary 6,000), not in eggs. An hour of income buys about
+1,800 eggs in the Meadow but only about 21 near the end, because egg prices
+outgrow income. Priced in eggs, a book would cost ~80× less, relative to
+earnings, at the start than at the end. A basic cube is what a player
+actually earns per kill, so the price keeps pace. "Ladder" (zones with
+their own egg) keeps the free Haunted Hollow, whose basic cube pays 15× the
+Meadow's, from inflating a new player's prices.
+
+**What this does to power:** the model doesn't simulate enchants, so pacing
+figures don't move. Total book supply falls from ~68/h to ~3/h found plus
+up to 6/h bought. That's fewer books but chosen ones, with nine slots to
+fill. At luck 1 over a full run that is roughly **2 Legendaries instead of
+~5, and ~4 Epics instead of ~20**, if a player buys every one they're
+offered. That's a real cut to enchant power, and it's what "rare" means here.
+If it proves too harsh in play, the market's legendary weight is the dial
+that keeps books rare to find while making them easier to buy.
+
 ### Why a new zone feels like a power spike
 
 You walk into a new zone carrying the **previous** zone's pets, which are

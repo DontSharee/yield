@@ -105,6 +105,14 @@ public final class PackPlayerProfile implements PlayerRecord {
     private double shardAttackSpeedBonus;
     private double shardCritChanceBonus;
     private List<String> enchantSlots = newEmptyEnchantSlots();
+    /**
+     * The Enchant Market hour {@link #enchantMarketBought} belongs to - see
+     * yield-packs' EnchantMarketService. Offers are regenerated from the
+     * player and the hour rather than stored, so this is the only market
+     * state there is; a stale hour simply means nothing is bought yet.
+     */
+    private long enchantMarketHour;
+    private List<Integer> enchantMarketBought = new ArrayList<>();
     // Mastery (see yield-packs' MasteryService) - accumulated XP per
     // MasteryType#name(), always-growing, never spent - level is derived
     // fresh from this each time, same philosophy as PlayerLevelingService.
@@ -516,6 +524,22 @@ public final class PackPlayerProfile implements PlayerRecord {
 
     public List<String> getEnchantSlots() {
         return enchantSlots;
+    }
+
+    public long getEnchantMarketHour() {
+        return enchantMarketHour;
+    }
+
+    public void setEnchantMarketHour(long enchantMarketHour) {
+        this.enchantMarketHour = enchantMarketHour;
+    }
+
+    public List<Integer> getEnchantMarketBought() {
+        return enchantMarketBought;
+    }
+
+    public void setEnchantMarketBought(List<Integer> enchantMarketBought) {
+        this.enchantMarketBought = enchantMarketBought == null ? new ArrayList<>() : enchantMarketBought;
     }
 
     public Map<String, Long> getMasteryXp() {

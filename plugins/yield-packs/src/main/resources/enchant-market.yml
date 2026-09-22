@@ -1,0 +1,48 @@
+# The Enchant Market - /enchantmarket, or the button on /enchants.
+#
+# Every player gets their OWN set of offers, but everyone's restocks at the
+# same moment: the top of every real hour (server clock). Nothing is stored
+# to make that happen - a player's offers are generated from their UUID and
+# the hour, so they are the same every time they open the screen, different
+# from everyone else's, and brand new at :00. Only which offers they have
+# already bought is saved.
+#
+# Each offer can be bought once per restock.
+#
+# Books are otherwise rare: they drop from roughly one cube in 2,500 (see
+# yield-zones' zones.yml, "enchant-book-chance"). This is the steady,
+# choosable source - you can't pick what drops, but you can pick what you
+# buy here.
+offers: 6
+
+# Per-offer rarity weights. Legendary at 5 of 194 is ~2.6% an offer, so an
+# hour's six offers hold at least one Legendary about 14% of the time -
+# roughly once every seven hours. Everyone online whose market rolled one
+# gets told at the restock. Mythic and above never appear here: those stay
+# drop-only, the thing the market cannot sell you.
+rarity-weights:
+  common: 100
+  uncommon: 55
+  rare: 25
+  epic: 9
+  legendary: 5
+
+# Price of one book, in BASIC CUBES of the richest ladder zone the player
+# has unlocked - i.e. price = that zone's tier-1 coin value x this number.
+# So it keeps pace with the ladder: a Legendary in the Meadow and one in
+# the Genesis Core are both "about 6,000 basic cubes' worth".
+#
+# Not priced in eggs, deliberately: an hour of income buys ~1,800 eggs
+# early on and ~21 late (egg prices outgrow income), so a price in eggs
+# would make books ~80x cheaper at the start than at the end.
+#
+# A steady player breaks about one cube a second, and with the zone's
+# richer tiers and their own multipliers earns well over a basic cube's
+# worth each - so a Legendary is under an hour of play, less the stronger
+# the player's coin multipliers are.
+price-in-basic-cubes:
+  common: 100
+  uncommon: 250
+  rare: 700
+  epic: 2000
+  legendary: 6000

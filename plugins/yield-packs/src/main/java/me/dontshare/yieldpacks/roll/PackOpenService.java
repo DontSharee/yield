@@ -5,7 +5,6 @@ import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.data.PackContentLoader;
 import me.dontshare.yieldpacks.data.PackDefinition;
-import me.dontshare.yieldpacks.enchant.EnchantService;
 import me.dontshare.yieldpacks.event.PackOpenedEvent;
 import me.dontshare.yieldpacks.mastery.MasteryService;
 import me.dontshare.yieldpacks.mastery.MasteryType;
@@ -67,7 +66,6 @@ public final class PackOpenService {
     private final PlayerDataStore<PackPlayerProfile> store;
     private final PackRollService rollService;
     private final PackRevealAnimationService revealService;
-    private final EnchantService enchantService;
     private final MasteryService masteryService;
     private final Map<UUID, Long> lastHatchAtMillis = new ConcurrentHashMap<>();
 
@@ -96,13 +94,12 @@ public final class PackOpenService {
     public PackOpenService(JavaPlugin plugin, Supplier<PackContentLoader.ContentSnapshot> content,
                             PlayerDataStore<PackPlayerProfile> store, PackRollService rollService,
                             PackRevealAnimationService revealService,
-                            EnchantService enchantService, MasteryService masteryService) {
+                            MasteryService masteryService) {
         this.plugin = plugin;
         this.content = content;
         this.store = store;
         this.rollService = rollService;
         this.revealService = revealService;
-        this.enchantService = enchantService;
         this.masteryService = masteryService;
     }
 
@@ -228,13 +225,11 @@ public final class PackOpenService {
     /** The half every hatch shares once the pets are actually rolled and paid for. */
     private void finish(Player player, PackPlayerProfile profile, String packId,
                          PackRollService.PurchaseResult result) {
-        // Both fire once PER EGG, exactly as that many separate hatches
-        // would have, so book drops and Mastery XP stay identical however
-        // the eggs were batched.
-        for (int i = 0; i < result.rolls().size(); i++) {
-            enchantService.maybeDropBook(player, result.luckMultiplier());
-            masteryService.grantXp(player, MasteryType.PACKS, 1);
-        }
+        // Once PER EGG, exactly as that many separate hatches would have,
+        // so Mastery XP stays identical however the eggs were batched.
+        // Enchant Books no longer drop here - they come from breaking cubes
+        // and the Enchant Market (see EnchantService#tryDropBook).
+        masteryService.grantXp(player, MasteryType.PACKS, result.rolls().size());
 
         PackDefinition pack = content.get().packs().getOrThrow(packId);
         // hatch() already advanced rollCount once per egg - the pity bar

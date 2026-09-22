@@ -76,6 +76,14 @@ public final class PetDisplayService {
     private final Map<UUID, float[]> lastYaws = new ConcurrentHashMap<>();
     /** Per-owner, per-equip-slot target overrides - a slot missing from the map stays in formation. Multiple slots may point at different targets at once (see single-send). */
     private final Map<UUID, Map<Integer, Location>> attackOverrides = new ConcurrentHashMap<>();
+    /**
+     * Per-owner inner ring radius for a target, keyed by the same target
+     * location {@link #attackOverrides} uses. Missing means an ordinary
+     * one-block cube and {@link #BASE_RING_RADIUS}. A 2x2x2 boss block is a
+     * full block wider than that ring was sized for, and pets ringing it at
+     * the normal distance would stand inside it.
+     */
+    private final Map<UUID, Map<Location, Double>> ringRadii = new ConcurrentHashMap<>();
     private long elapsedTicks;
 
     public PetDisplayService(JavaPlugin plugin, PlayerDataStore<PackPlayerProfile> playerStore,
@@ -106,11 +114,31 @@ public final class PetDisplayService {
      * formation.
      */
     public void setAttackTargets(Player owner, Map<Integer, Location> slotTargets) {
+        setAttackTargets(owner, slotTargets, Map.of());
+    }
+
+    /**
+     * {@link #setAttackTargets(Player, Map)} with an inner ring radius per
+     * target, for targets bigger than a block - see {@link #ringRadii}.
+     * Targets missing from {@code radii} use the normal radius.
+     */
+    public void setAttackTargets(Player owner, Map<Integer, Location> slotTargets, Map<Location, Double> radii) {
         attackOverrides.put(owner.getUniqueId(), Map.copyOf(slotTargets));
+        if (radii.isEmpty()) {
+            ringRadii.remove(owner.getUniqueId());
+        } else {
+            ringRadii.put(owner.getUniqueId(), Map.copyOf(radii));
+        }
+    }
+
+    /** The inner ring radius that keeps pets clear of a target {@code size} blocks wide - exactly {@link #BASE_RING_RADIUS} for a normal cube. */
+    public static double ringRadiusFor(double size) {
+        return BASE_RING_RADIUS + (size - 1.0) / 2.0;
     }
 
     public void clearAttackTarget(Player owner) {
         attackOverrides.remove(owner.getUniqueId());
+        ringRadii.remove(owner.getUniqueId());
     }
 
     /**
@@ -479,6 +507,7 @@ public final class PetDisplayService {
         // the exact per-pet trig cost this class was fixed to eliminate.
         List<Location> positions = positionsFor(owner, instances, hoverOffset);
         if (overrides != null && !overrides.isEmpty()) {
+            Map<Location, Double> radii = ringRadii.getOrDefault(owner.getUniqueId(), Map.of());
             Map<Location, List<Integer>> slotsByTarget = new LinkedHashMap<>();
             for (Map.Entry<Integer, Location> entry : overrides.entrySet()) {
                 slotsByTarget.computeIfAbsent(entry.getValue(), k -> new ArrayList<>()).add(entry.getKey());
@@ -488,7 +517,8 @@ public final class PetDisplayService {
                 for (int i = 0; i < slots.size(); i++) {
                     int slot = slots.get(i);
                     if (slot < positions.size()) {
-                        positions.set(slot, ringPositionFor(group.getKey(), i, slots.size()));
+                        positions.set(slot, ringPositionFor(group.getKey(), i, slots.size(),
+                                radii.getOrDefault(group.getKey(), BASE_RING_RADIUS)));
                     }
                 }
             }
@@ -514,11 +544,11 @@ public final class PetDisplayService {
      * ranks/bonus slots) crams every pet onto one fixed-radius circle -
      * visually a "death ball" rather than a formation.
      */
-    private Location ringPositionFor(Location center, int ringIndex, int ringCount) {
+    private Location ringPositionFor(Location center, int ringIndex, int ringCount, double baseRadius) {
         int ring = ringIndex / PETS_PER_RING;
         int indexInRing = ringIndex % PETS_PER_RING;
         int countInThisRing = Math.min(PETS_PER_RING, ringCount - ring * PETS_PER_RING);
-        double radius = BASE_RING_RADIUS + ring * RING_RADIUS_STEP;
+        double radius = baseRadius + ring * RING_RADIUS_STEP;
         double angle = 2 * Math.PI * indexInRing / Math.max(1, countInThisRing);
         double x = center.getX() + radius * Math.cos(angle);
         double z = center.getZ() + radius * Math.sin(angle);

@@ -31,6 +31,7 @@ import me.dontshare.yieldzones.data.ZoneRegion;
 import me.dontshare.yieldzones.gui.FastTravelGui;
 import me.dontshare.yieldzones.gui.ZonePurchaseGui;
 import me.dontshare.yieldzones.zone.ZoneLockService;
+import me.dontshare.yieldzones.data.CubeTier;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -39,6 +40,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
 import java.util.Map;
+import java.math.BigInteger;
 
 public final class YieldZones extends JavaPlugin {
 
@@ -126,6 +128,10 @@ public final class YieldZones extends JavaPlugin {
         lockService.setPurchaseGui(purchaseGui);
         FastTravelGui fastTravelGui = new FastTravelGui(core.getGuiManager(), () -> zones, lockService, purchaseGui);
         CommandManager.register(this, FastTravelCommand.build(fastTravelGui), "Teleport to any zone you've unlocked", List.of("warp"));
+        // The Enchant Market prices books in "basic cubes" of the player's
+        // richest zone - only this plugin knows what a zone's basic cube is
+        // worth, so it answers for yield-packs.
+        packs.getEnchantMarketService().setPriceBasis(player -> enchantPriceBasis(packs, player));
 
         core.getAdminCommandRegistry().register(buildAdminCommand());
 
@@ -272,5 +278,35 @@ public final class YieldZones extends JavaPlugin {
         packs.getPlayerStore().save(target.getUniqueId());
         ctx.getSource().getSender().sendMessage(Text.parse("<green>Unlocked '" + zoneId + "' for " + target.getName() + ".</green>"));
         return Command.SINGLE_SUCCESS;
+    }
+
+    /**
+     * The coin value of one basic cube - the zone's most common ordinary
+     * tier - in the richest LADDER zone this player has unlocked.
+     * <p>
+     * Ladder means the zone has its own egg ({@code zone_<id>_pack}), the
+     * same rule the pacing model uses to tell the progression from
+     * everything else. Without it the free, always-"unlocked" Haunted
+     * Hollow - whose basic cube pays 150 against the Meadow's 10 - would set
+     * a brand-new player's prices fifteen times too high.
+     */
+    private BigInteger enchantPriceBasis(YieldPacks packs, Player player) {
+        long best = 0;
+        for (ZoneDefinition zone : zones.values()) {
+            if (packs.getPackRegistry().find("zone_" + zone.id() + "_pack").isEmpty()
+                    || !lockService.isUnlocked(player, zone)) {
+                continue;
+            }
+            CubeTier basic = null;
+            for (CubeTier tier : zone.cubeTiers()) {
+                if (!tier.treasure() && !tier.giant() && (basic == null || tier.weight() > basic.weight())) {
+                    basic = tier;
+                }
+            }
+            if (basic != null) {
+                best = Math.max(best, basic.coinValue());
+            }
+        }
+        return BigInteger.valueOf(Math.max(1, best));
     }
 }

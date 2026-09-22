@@ -40,12 +40,16 @@ public final class ZoneContentLoader {
             return zones;
         }
         List<GiantCube> giants = loadGiants(config.getConfigurationSection("giant-cubes"));
+        // Very rare on purpose - books used to fall out of 1 hatch in 20,
+        // about 68 an hour, which made every one of them junk. See the
+        // comment on this key in zones.yml.
+        double bookChance = Math.max(0.0, Math.min(1.0, config.getDouble("enchant-book-chance", 0.0004)));
         for (String id : section.getKeys(false)) {
             ConfigurationSection zoneSection = section.getConfigurationSection(id);
             if (zoneSection == null) {
                 continue;
             }
-            ZoneDefinition zone = loadZone(id, zoneSection, giants);
+            ZoneDefinition zone = loadZone(id, zoneSection, giants, bookChance);
             if (zone != null) {
                 zones.put(id, zone);
             }
@@ -53,7 +57,7 @@ public final class ZoneContentLoader {
         return zones;
     }
 
-    private ZoneDefinition loadZone(String id, ConfigurationSection section, List<GiantCube> giants) {
+    private ZoneDefinition loadZone(String id, ConfigurationSection section, List<GiantCube> giants, double bookChance) {
         String worldName = section.getString("world", "world");
         World world = Bukkit.getWorld(worldName);
         if (world == null) {
@@ -106,6 +110,7 @@ public final class ZoneContentLoader {
             return null;
         }
         tiers.addAll(deriveGiants(tiers, giants));
+        tiers.replaceAll(tier -> tier.withBookChance(bookChance));
 
         List<CubeBonus> bonuses = new ArrayList<>();
         for (Map<?, ?> entry : section.getMapList("cube-bonuses")) {
@@ -146,7 +151,8 @@ public final class ZoneContentLoader {
      */
     private record GiantCube(String id, String label, Material material, float size, double chance,
                              NamedTextColor glow, double hpMultiplier, double coinMultiplier,
-                             double diamondMultiplier, double xpMultiplier) {
+                             double diamondMultiplier, double xpMultiplier, String landingTitle,
+                             double bookChance) {
     }
 
     private List<GiantCube> loadGiants(ConfigurationSection section) {
@@ -188,7 +194,11 @@ public final class ZoneContentLoader {
                     Math.max(1.0, s.getDouble("hp-multiplier", 1.0)),
                     Math.max(0.0, s.getDouble("coin-multiplier", 1.0)),
                     Math.max(0.0, s.getDouble("diamond-multiplier", 1.0)),
-                    Math.max(0.0, s.getDouble("xp-multiplier", 1.0))));
+                    Math.max(0.0, s.getDouble("xp-multiplier", 1.0)),
+                    s.getString("landing-title"),
+                    s.contains("enchant-book-chance")
+                            ? Math.max(0.0, Math.min(1.0, s.getDouble("enchant-book-chance")))
+                            : CubeTier.UNSET_BOOK_CHANCE));
         }
         return giants;
     }
@@ -252,7 +262,7 @@ public final class ZoneContentLoader {
                 Math.round(base.xpValue() * giant.xpMultiplier()),
                 weight,
                 false, null, 0,
-                giant.size(), giant.label(), giant.glow());
+                giant.size(), giant.label(), giant.glow(), giant.landingTitle(), giant.bookChance());
     }
 
     /** A zone's optional treasure chest - null when the zone has no {@code treasure:} section. */

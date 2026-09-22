@@ -27,6 +27,7 @@ import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -799,7 +800,14 @@ public final class OreCubeService implements Listener {
         owner.spawnParticle(Particle.BLOCK, floor, 30, cube.size() * 0.5, 0.05, cube.size() * 0.5, 0.1,
                 cube.tier().material().createBlockData());
         owner.spawnParticle(Particle.CLOUD, floor, 12, cube.size() * 0.5, 0.05, cube.size() * 0.5, 0.02);
-        if (cube.tier().label() != null) {
+        if (cube.tier().landingTitle() != null) {
+            // The boss block's arrival is an event, not a notification: a
+            // full title and a sound nobody mistakes for a normal landing.
+            owner.showTitle(Title.title(
+                    Text.parse(cube.tier().landingTitle()),
+                    Text.parse("<gray>It's yours - go break it!</gray>")));
+            owner.playSound(owner.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.5f, 1.3f);
+        } else if (cube.tier().label() != null) {
             owner.sendActionBar(Text.parse(cube.tier().label() + " <gray>landed nearby!</gray>"));
         }
     }
@@ -1268,6 +1276,10 @@ public final class OreCubeService implements Listener {
             packs.getPetDisplayService().showXpGain(player, contributorId, petXpAmount);
         }
         giveCandyDrops(player, luck);
+        // Enchant Books: very rare from an ordinary cube, likelier from a big
+        // safe, guaranteed from a boss block - the cube's own chance, set at
+        // load (see CubeTier#bookChance).
+        packs.getEnchantService().tryDropBook(player, tier.bookChance(), luck);
         showEarningsIndicator(player, cubeCenter, coins, diamondsEarned, combo.count());
         announceCombo(player, cubeCenter, combo);
         queueSummary(player, coins, diamondsEarned);

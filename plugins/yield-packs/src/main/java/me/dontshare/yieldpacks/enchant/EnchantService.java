@@ -1,15 +1,19 @@
 package me.dontshare.yieldpacks.enchant;
 
 import me.dontshare.yieldcore.database.PlayerDataStore;
+import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.data.Rarity;
 import me.dontshare.yieldpacks.data.RarityRegistry;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
+import net.kyori.adventure.title.Title;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -27,8 +31,11 @@ import java.util.function.Supplier;
  * "bonus slot" contributors (donor ranks - see {@link
  * #registerBonusSlotProvider}, mirroring PS99's Robux-purchased slots).
  * Slots are populated via real drag-and-drop ({@code EnchantGui}'s
- * {@code editableSlots}), never bought directly - books drop from
- * opening packs (see {@link #maybeDropBook}). Same-type stacking has
+ * {@code editableSlots}). Books come from two places: a very rare drop
+ * when an ore cube dies (see {@link #tryDropBook}), and the hourly Enchant
+ * Market (see {@code EnchantMarketService}). Hatching used to drop them
+ * one egg in twenty - about 68 books an hour - which made every book
+ * junk; they are meant to be found. Same-type stacking has
  * diminishing returns (see {@link #DECAY}), computed fresh from {@code
  * PackPlayerProfile.getEnchantSlots()} on every call rather than cached -
  * matches this codebase's existing "always computed from current config"
@@ -52,8 +59,6 @@ public final class EnchantService {
 
     /** How likely a dropped book is to land on each rarity tier, indexed by {@link Rarity#sortOrder()} - identical proportions to a zone pack's own per-tier pool weight. */
     private static final double[] DROP_WEIGHT_BY_SORT = {100, 40, 15, 4, 1, 0.2, 0.05, 0.01};
-
-    private static final double BASE_DROP_CHANCE = 0.05;
 
     private final PlayerDataStore<PackPlayerProfile> store;
     private final Supplier<RarityRegistry> rarities;
@@ -155,22 +160,51 @@ public final class EnchantService {
         return i >= 0 && i < MAGNITUDE_BY_SORT.length ? MAGNITUDE_BY_SORT[i] : MAGNITUDE_BY_SORT[MAGNITUDE_BY_SORT.length - 1];
     }
 
-    /** Called after a pack open resolves (see PackOpenService#tryOpen) - a small independent roll for whether an Enchant Book drops alongside the pet, scaled by the same luck multiplier that roll used. */
-    public void maybeDropBook(Player player, double luckMultiplier) {
-        double chance = Math.min(1.0, BASE_DROP_CHANCE * luckMultiplier);
-        if (ThreadLocalRandom.current().nextDouble() >= chance) {
-            return;
+    /**
+     * Rolls a cube's Enchant Book drop: {@code chance} (the cube's own -
+     * see yield-zones' CubeTier#bookChance), scaled by luck, and on a hit a
+     * random type at a luck-weighted rarity. Announced, because a drop this
+     * rare that lands silently in an inventory is one nobody notices.
+     * Returns whether a book dropped.
+     */
+    public boolean tryDropBook(Player player, double chance, double luckMultiplier) {
+        if (chance <= 0 || ThreadLocalRandom.current().nextDouble() >= Math.min(1.0, chance * luckMultiplier)) {
+            return false;
         }
         EnchantType[] types = EnchantType.values();
         EnchantType type = types[ThreadLocalRandom.current().nextInt(types.length)];
         Rarity rarity = rollRarity(luckMultiplier);
         if (rarity == null) {
-            return;
+            return false;
         }
         giveItem(player, enchantItem.create(type, rarity));
+        announceFind(player, type, rarity);
+        return true;
     }
 
-    /** Admin-only direct grant (see "/admin packs give") - bypasses the drop roll entirely, same real item {@link #maybeDropBook} would have given. */
+    /**
+     * Chat line and a chime for any book; a full title for Legendary and up,
+     * which at these odds is a once-in-many-hours moment.
+     */
+    private void announceFind(Player player, EnchantType type, Rarity rarity) {
+        String accent = "<" + rarity.colorHex() + ">";
+        String name = accent + "<bold>" + rarity.displayName().toUpperCase(Locale.ROOT) + "</bold></"
+                + rarity.colorHex() + "> <white>" + type.displayName() + " Enchant</white>";
+        player.sendMessage(Text.parse("<#4BD9FF>✦</#4BD9FF> <gray>You found a</gray> " + name
+                + " <gray>book!</gray>"));
+        player.playSound(player.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1f, 1.2f);
+        if (rarity.sortOrder() >= LEGENDARY_SORT) {
+            player.showTitle(Title.title(Text.parse(accent + "<bold>" + rarity.displayName().toUpperCase(Locale.ROOT)
+                            + " BOOK!</bold>"),
+                    Text.parse("<white>" + type.displayName() + " Enchant</white>")));
+            player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.8f, 1.2f);
+        }
+    }
+
+    /** {@code Rarity#sortOrder} of Legendary - the line past which a book is worth a title card and a market ping. */
+    public static final int LEGENDARY_SORT = 4;
+
+    /** Direct grant - "/admin packs give" and the Enchant Market both hand books over through here. */
     public void giveBook(Player player, EnchantType type, Rarity rarity) {
         giveItem(player, enchantItem.create(type, rarity));
     }

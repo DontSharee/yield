@@ -33,22 +33,39 @@ import org.bukkit.Material;
  * the bonus glow, the look-at outline, the click and highlight hitboxes,
  * the hit squish, the HP label, where pets aim - reads it instead.
  * {@code label} is the name shown above it ("BIG SAFE"), or null for a
- * cube that is only its material.
+ * cube that is only its material. {@code landingTitle}, if set, is shown
+ * as a full-screen title when it lands - reserved for the boss block.
+ * <p>
+ * {@code bookChance} is this cube's chance to drop an Enchant Book when it
+ * dies, before luck. It is always a real value once loaded: the zones.yml
+ * default, or a giant's own override (the boss block's is 1.0).
  */
 public record CubeTier(Material material, long maxHp, long coinValue, long diamondValue, long xpValue, double weight,
                         boolean treasure, String rewardPackId, int rewardPackAmount,
-                        float size, String label, NamedTextColor glow) {
+                        float size, String label, NamedTextColor glow, String landingTitle, double bookChance) {
+
+    /** Not yet given a book chance - {@link #withBookChance} fills it in at load. */
+    public static final double UNSET_BOOK_CHANCE = -1.0;
 
     /** An ordinary, non-treasure tier - the shape every cube-tiers entry loads as. */
     public CubeTier(Material material, long maxHp, long coinValue, long diamondValue, long xpValue, double weight) {
-        this(material, maxHp, coinValue, diamondValue, xpValue, weight, false, null, 0, 1f, null, null);
+        this(material, maxHp, coinValue, diamondValue, xpValue, weight, false, null, 0);
     }
 
     /** A treasure tier - normal size, no label of its own. */
     public CubeTier(Material material, long maxHp, long coinValue, long diamondValue, long xpValue, double weight,
                     boolean treasure, String rewardPackId, int rewardPackAmount) {
         this(material, maxHp, coinValue, diamondValue, xpValue, weight, treasure, rewardPackId, rewardPackAmount,
-                1f, null, null);
+                1f, null, null, null, UNSET_BOOK_CHANCE);
+    }
+
+    /** This tier with {@code chance} as its book chance, unless it already has its own. */
+    public CubeTier withBookChance(double chance) {
+        if (bookChance >= 0) {
+            return this;
+        }
+        return new CubeTier(material, maxHp, coinValue, diamondValue, xpValue, weight, treasure, rewardPackId,
+                rewardPackAmount, size, label, glow, landingTitle, chance);
     }
 
     /** Bigger than a block - everything size-dependent branches on this rather than on which config section a tier came from. */

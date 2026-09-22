@@ -1,5 +1,6 @@
 package me.dontshare.yieldzones.cube;
 
+import me.dontshare.yieldpacks.display.PetDisplayService;
 import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldpacks.leveling.MilestoneEffect;
 import me.dontshare.yieldpacks.pet.PetInstance;
@@ -17,6 +18,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Comparator;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -336,7 +338,7 @@ public final class PetCombatController implements Listener {
         for (int slot = 0; slot < equipped.size(); slot++) {
             slotTargets.put(slot, centered);
         }
-        packs.getPetDisplayService().setAttackTargets(player, slotTargets);
+        packs.getPetDisplayService().setAttackTargets(player, slotTargets, ringRadii(List.of(target)));
 
         OreCube finalTarget = target;
         for (int slot = 0; slot < equipped.size(); slot++) {
@@ -406,7 +408,7 @@ public final class PetCombatController implements Listener {
         if (slotTargets.isEmpty()) {
             packs.getPetDisplayService().clearAttackTarget(player);
         } else {
-            packs.getPetDisplayService().setAttackTargets(player, slotTargets);
+            packs.getPetDisplayService().setAttackTargets(player, slotTargets, ringRadii(effectiveTargets.values()));
         }
 
         // Second pass: damage/cooldowns now that the visual state matches.
@@ -481,7 +483,7 @@ public final class PetCombatController implements Listener {
         if (slotTargets.isEmpty()) {
             packs.getPetDisplayService().clearAttackTarget(player);
         } else {
-            packs.getPetDisplayService().setAttackTargets(player, slotTargets);
+            packs.getPetDisplayService().setAttackTargets(player, slotTargets, ringRadii(effectiveTargets.values()));
         }
 
         for (int slot = 0; slot < equipped.size(); slot++) {
@@ -549,5 +551,21 @@ public final class PetCombatController implements Listener {
             }
         }
         return best;
+    }
+
+    /**
+     * The ring radius for each targeted cube bigger than a block, keyed by
+     * the same centre point the targets are - so pets stand clear of a big
+     * safe or a 2x2x2 boss block instead of inside it. Ordinary cubes are
+     * left out and keep the normal ring.
+     */
+    private static Map<Location, Double> ringRadii(Collection<OreCube> targets) {
+        Map<Location, Double> radii = new HashMap<>();
+        for (OreCube cube : targets) {
+            if (cube.tier().giant()) {
+                radii.put(cube.center(), PetDisplayService.ringRadiusFor(cube.size()));
+            }
+        }
+        return radii;
     }
 }
