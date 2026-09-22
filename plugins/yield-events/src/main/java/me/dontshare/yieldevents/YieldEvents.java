@@ -4,6 +4,7 @@ import me.dontshare.yieldcore.YieldCore;
 import me.dontshare.yieldcore.command.CommandManager;
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.database.PlayerStores;
+import me.dontshare.yieldcore.spawn.SpawnService;
 import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldevents.command.EventCommand;
@@ -15,13 +16,18 @@ import me.dontshare.yieldevents.listener.EventCurrencyListener;
 import me.dontshare.yieldevents.listener.EventHatchListener;
 import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldzones.YieldZones;
+import me.dontshare.yieldzones.data.ZoneDefinition;
+import me.dontshare.yieldzones.zone.ZoneLockService;
 import me.dontshare.yieldpackstations.YieldPackStations;
 import me.dontshare.yieldpackstations.data.PackStationContentLoader;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Seasonal events: a window of dates in which an extra currency drops from
@@ -48,6 +54,8 @@ public final class YieldEvents extends JavaPlugin {
     private List<SeasonalEvent> events = List.of();
     private EventService eventService;
     private EventQuestGui questGui;
+    private Supplier<Map<String, ZoneDefinition>> zoneLookup;
+    private SpawnService spawn;
     private String announcedEventId;
 
     @Override
@@ -64,7 +72,8 @@ public final class YieldEvents extends JavaPlugin {
 
         PlayerDataStore<EventProfile> store = PlayerStores.register(this, core.getListenerManager(),
                 core.getDatabaseManager(), "events", EventProfile.class, EventProfile::new, "event data");
-        eventService = new EventService(() -> events, store, zones::getZones);
+        zoneLookup = zones::getZones;
+        eventService = new EventService(() -> events, store, zoneLookup);
         reloadContent();
 
         // The station's contents ARE the active event's egg, asked for live -
@@ -75,6 +84,12 @@ public final class YieldEvents extends JavaPlugin {
         for (SeasonalEvent event : events) {
             stations.getStationService().registerAlternateCharge(event.eggId(), new EventStationCharge(eventService));
         }
+
+        // The event's zone exists only while the event does. Registered as
+        // a gate rather than as a zone unlock cost because there is nothing
+        // to buy: the answer changes with the calendar, not with the player.
+        zones.getZoneLockService().registerAccessGate("seasonal-event", this::zoneDenialReason);
+        this.spawn = core.getSpawnService();
 
         core.getListenerManager().register(new EventCurrencyListener(eventService, packs));
         core.getListenerManager().register(new EventHatchListener(eventService));
@@ -105,7 +120,7 @@ public final class YieldEvents extends JavaPlugin {
      * way a hardcoded copy of the rendered string would. A line that no
      * longer matches simply leaves the sidebar as it was.
      */
-    private List<String> swapCurrencyLine(org.bukkit.entity.Player player, List<String> lines) {
+    private List<String> swapCurrencyLine(Player player, List<String> lines) {
         SeasonalEvent event = eventService.active();
         if (event == null || !eventService.inEventZone(player, event)) {
             return lines;
@@ -123,6 +138,64 @@ public final class YieldEvents extends JavaPlugin {
         return swapped;
     }
 
+    /**
+     * Keeps everyone out of an event's zone while that event is not
+     * running.
+     * <p>
+     * The zone is left in zones.yml year-round on purpose - it is built,
+     * walled, full of its own cubes and listed in fast travel, which is
+     * what makes its return feel like a place reopening rather than one
+     * appearing. Closing it is a date check, not a config edit.
+     */
+    private String zoneDenialReason(Player player, ZoneDefinition zone) {
+        SeasonalEvent owner = eventService.eventOwning(zone.id());
+        if (owner == null) {
+            return null;
+        }
+        SeasonalEvent active = eventService.active();
+        if (active != null && active.id().equals(owner.id())) {
+            return null;
+        }
+        return "<gray>" + Formatting.stripLeadingColorCodes(owner.displayName())
+                + " is closed until the event returns.</gray>";
+    }
+
+    /**
+     * Walks anyone still standing in a just-closed event zone back to spawn.
+     * <p>
+     * The access gate only cancels MOVEMENT, so a player who logged off
+     * inside the Haunted Hollow - or was simply stood still at midnight -
+     * would otherwise be sealed in it: unable to walk out through the
+     * boundary the gate is now blocking in both directions.
+     */
+    private void evictFromClosedZones() {
+        if (spawn == null || zoneLookup == null) {
+            return;
+        }
+        SeasonalEvent active = eventService.active();
+        for (SeasonalEvent event : events) {
+            if (event.zoneId() == null || (active != null && active.id().equals(event.id()))) {
+                continue;
+            }
+            ZoneDefinition zone = zoneLookup.get().get(event.zoneId());
+            if (zone == null) {
+                continue;
+            }
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                if (player.hasPermission(ZoneLockService.BYPASS_PERMISSION)) {
+                    continue;
+                }
+                if (!zone.region().contains(player.getLocation())) {
+                    continue;
+                }
+                player.teleport(spawn.get());
+                player.sendMessage(Text.parse(
+                        "<gray><name> has closed - you've been sent back to spawn.</gray>",
+                        Placeholder.unparsed("name", Formatting.stripLeadingColorCodes(event.displayName()))));
+            }
+        }
+    }
+
     private String stationLabel() {
         SeasonalEvent event = eventService.active();
         return event == null ? "" : "<" + event.color() + "><bold>" + event.displayName() + "</bold></" + event.color() + ">";
@@ -138,6 +211,9 @@ public final class YieldEvents extends JavaPlugin {
     private void watchForChange() {
         SeasonalEvent active = eventService.active();
         String activeId = active != null ? active.id() : null;
+        // Every pass, not just the one that sees the event end: someone can
+        // log back IN to a closed zone long after it shut.
+        evictFromClosedZones();
         if (java.util.Objects.equals(activeId, announcedEventId)) {
             return;
         }

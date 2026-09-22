@@ -1,6 +1,7 @@
 package me.dontshare.yieldzones.zone;
 
 import me.dontshare.yieldcore.fakeblock.FakeBlockClickRegistry;
+import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import me.dontshare.yieldzones.data.ZoneDefinition;
@@ -62,12 +63,26 @@ public final class ZoneLockService implements Listener {
     private static final long AUTO_POPUP_COOLDOWN_MILLIS = 8_000L;
     public static final String BYPASS_PERMISSION = "yieldzones.bypasslock";
 
+    private static final long DENIAL_MESSAGE_INTERVAL_MILLIS = 2000L;
+
     private final JavaPlugin plugin;
     private final YieldPacks packs;
     private final Supplier<Map<String, ZoneDefinition>> zones;
 
     // Which locked zones currently have their wall actually rendered for a given viewer - so it's only shown/hidden once per state change, not re-sent every tick.
     private final Map<UUID, Set<String>> wallShownFor = new ConcurrentHashMap<>();
+    /**
+     * Extra conditions on entering a zone, beyond its own unlock cost -
+     * keyed and composable like every other provider registry here.
+     * <p>
+     * A zone can be closed for reasons that have nothing to do with whether
+     * a player has paid for it: the Haunted Hollow exists only while its
+     * event is running (see yield-events). yield-zones has no business
+     * knowing what a seasonal event is, so it asks rather than decides.
+     */
+    private final Map<String, AccessGate> accessGates = new ConcurrentHashMap<>();
+    /** When each player was last told why a zone turned them away, so a gate cannot spam on a movement event. */
+    private final Map<UUID, Long> lastDenialAt = new ConcurrentHashMap<>();
     private final Map<UUID, Map<String, Long>> lastAutoPopupAt = new ConcurrentHashMap<>();
 
     private ZonePurchaseGui purchaseGui;
@@ -153,6 +168,42 @@ public final class ZoneLockService implements Listener {
         }
     }
 
+    /** See {@link #accessGates}. */
+    public interface AccessGate {
+
+        /** Null to allow entry, or the reason to show the player, already MiniMessage-formatted. */
+        String denyReason(Player player, ZoneDefinition zone);
+    }
+
+    public void registerAccessGate(String key, AccessGate gate) {
+        accessGates.put(key, gate);
+    }
+
+    public void unregisterAccessGate(String key) {
+        accessGates.remove(key);
+    }
+
+    /**
+     * Why this player cannot enter {@code zone} right now, or null if they
+     * can - unlock state aside, which {@link #isUnlocked} owns.
+     * <p>
+     * The bypass permission is honoured here rather than only at the move
+     * handler, so every way INTO a zone (walking, fast travel, anything
+     * added later) gets the same answer from one place.
+     */
+    public String accessDenialReason(Player player, ZoneDefinition zone) {
+        if (player.hasPermission(BYPASS_PERMISSION)) {
+            return null;
+        }
+        for (AccessGate gate : accessGates.values()) {
+            String reason = gate.denyReason(player, zone);
+            if (reason != null) {
+                return reason;
+            }
+        }
+        return null;
+    }
+
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
         Location to = event.getTo();
@@ -165,11 +216,34 @@ public final class ZoneLockService implements Listener {
             return;
         }
         for (ZoneDefinition zone : zones.get().values()) {
-            if (!zone.unlockCost().isFree() && zone.region().contains(to) && !isUnlocked(player, zone)) {
+            if (!zone.region().contains(to)) {
+                continue;
+            }
+            if (!zone.unlockCost().isFree() && !isUnlocked(player, zone)) {
                 event.setCancelled(true);
                 return;
             }
+            // A closed zone turns players away with a reason, because
+            // unlike a locked one it has no wall to explain itself - being
+            // silently unable to walk forwards reads as a broken server.
+            String denial = accessDenialReason(player, zone);
+            if (denial != null) {
+                event.setCancelled(true);
+                tellDenied(player, denial);
+                return;
+            }
         }
+    }
+
+    /** At most one denial message every {@value #DENIAL_MESSAGE_INTERVAL_MILLIS}ms - a blocked player walks into the boundary many times a second. */
+    private void tellDenied(Player player, String reason) {
+        long now = System.currentTimeMillis();
+        Long last = lastDenialAt.get(player.getUniqueId());
+        if (last != null && now - last < DENIAL_MESSAGE_INTERVAL_MILLIS) {
+            return;
+        }
+        lastDenialAt.put(player.getUniqueId(), now);
+        player.sendActionBar(Text.parse(reason));
     }
 
     @EventHandler
@@ -177,6 +251,7 @@ public final class ZoneLockService implements Listener {
         UUID id = event.getPlayer().getUniqueId();
         wallShownFor.remove(id);
         lastAutoPopupAt.remove(id);
+        lastDenialAt.remove(id);
     }
 
     /**

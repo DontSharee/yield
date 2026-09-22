@@ -70,6 +70,24 @@ public final class EventService {
         return true;
     }
 
+    /**
+     * The event that owns {@code zoneId}, running or not - null if the zone
+     * belongs to no event and is therefore an ordinary zone.
+     * <p>
+     * Deliberately not filtered by {@link #active()}: a closed event zone is
+     * exactly the case the access gate has to recognise, and it can only do
+     * that by knowing the zone is seasonal at all.
+     */
+    public SeasonalEvent eventOwning(String zoneId) {
+        if (zoneId == null) {
+            return null;
+        }
+        return events.get().stream()
+                .filter(event -> zoneId.equals(event.zoneId()))
+                .findFirst()
+                .orElse(null);
+    }
+
     /** Whether this player is standing in the event's own zone - false when the event names no zone, in which case everywhere counts. */
     public boolean inEventZone(Player player, SeasonalEvent event) {
         if (event.zoneId() == null) {

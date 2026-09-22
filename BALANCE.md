@@ -377,6 +377,15 @@ coming here means giving up your normal income, and what you get for that
 is Candy, not a better place to earn. Its chests hand out the event egg
 itself, which is the only free source of one.
 
+**It is shut when the event is not running.** The zone stays defined all
+year — built, walled, listed in fast travel — but yield-events registers an
+access gate on it, so walking in or fast-travelling to it is refused
+outside the event window and anyone still standing inside when it ends is
+returned to spawn. That is what keeps its cubes, its chests and its egg
+from being a year-round alternative income the ladder was never balanced
+against: the Hollow's whole trade — poor coins for Candy — only makes sense
+while there is Candy to spend.
+
 **Every cube in the zone pays Candy**, 1–3 of it, rather than a lucky few:
 a player who has already given up their income should not also be paid at a
 trickle. Outside the zone the flat 8% chance still applies, so the event is

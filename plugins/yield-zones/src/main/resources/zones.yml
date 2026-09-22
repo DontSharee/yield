@@ -719,6 +719,12 @@ zones:
   #
   # Its chests hand out the event egg itself, which is the one free source
   # of one.
+  #
+  # It has no "unlock:" and is still not walkable year-round: yield-events
+  # registers an access gate on it, so walking in or fast-travelling to it
+  # is refused whenever its event is not running, and anyone left inside
+  # when it ends is sent back to spawn. That is a date check in code, not a
+  # thing to edit here - leave the zone defined all year.
   halloween:
     display-name: "&6Haunted Hollow"
     world: world
