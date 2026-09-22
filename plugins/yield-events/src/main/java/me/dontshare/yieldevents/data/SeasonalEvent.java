@@ -17,7 +17,7 @@ import java.util.Map;
  * adds is only what is genuinely seasonal: when it runs, what it pays, and
  * what that buys.
  *
- * @param currencyName  what the event's currency is called, e.g. "Candy"
+ * @param currencyName  what the event's currency is called, e.g. "Candy Corn"
  * @param dropChance    chance per cube killed that it pays out at all
  * @param dropMin/Max   how much it pays when it does, inclusive
  * @param eggId         the pack id its station sells while it runs
@@ -26,11 +26,14 @@ import java.util.Map;
  *                      "anywhere" - see EventCurrencyListener
  * @param petCandyBonus how much extra currency each of the event's own pets
  *                      earns while equipped, as a fraction
+ * @param shop          what the currency buys other than eggs - see
+ *                      {@link EventShopEntry}
  */
 public record SeasonalEvent(String id, String displayName, String color, LocalDate start, LocalDate end,
                              String currencyName, double dropChance, int dropMin, int dropMax,
                              String eggId, long eggPrice, String zoneId,
-                             Map<String, Double> petCandyBonus, List<EventQuest> quests) {
+                             Map<String, Double> petCandyBonus, List<EventQuest> quests,
+                             List<EventShopEntry> shop) {
 
     /**
      * How much more candy this player's equipped pets earn them, as a

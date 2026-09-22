@@ -8,7 +8,8 @@ import org.bukkit.entity.Player;
 /**
  * Pays for an event egg in that event's own currency.
  * <p>
- * yield-packstations knows how to take coins, diamonds and credits; Candy
+ * yield-packstations knows how to take coins, diamonds and credits; an
+ * event currency
  * is this plugin's business, so this is the adapter it registers rather
  * than a fourth currency bolted onto an egg definition. The station asks
  * what it costs, whether the player has it, and then to take it - and hands

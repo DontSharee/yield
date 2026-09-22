@@ -24,8 +24,8 @@ import java.util.concurrent.ThreadLocalRandom;
  * <ul>
  *   <li><b>Flat, not a share of the payout.</b> Coins scale by a factor of
  *       a million across the zone ladder, so anything proportional would
- *       make an early player's Candy worthless and a late player's free. A
- *       flat drop means an hour of play is worth an hour of play, which is
+ *       make an early player's balance worthless and a late player's free.
+ *       A flat drop means an hour of play is worth an hour of play, which is
  *       what a seasonal currency has to be if the event is for everyone.</li>
  *   <li><b>Every cube in the zone pays, not a lucky few.</b> The event zone
  *       gives away almost no coins, so a player standing in it has already

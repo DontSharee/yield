@@ -714,7 +714,7 @@ zones:
   #
   # Its coins are deliberately poor: about what the third zone pays, which
   # is pocket change to anyone past it. Coming here means giving up your
-  # normal income for a while, and what you get for that is Candy (see
+  # normal income for a while, and what you get for that is Candy Corn (see
   # yield-events' events.yml) - not a better place to earn.
   #
   # Its chests hand out the event egg itself, which is the one free source

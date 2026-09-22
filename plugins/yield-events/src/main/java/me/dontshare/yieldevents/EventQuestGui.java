@@ -33,15 +33,22 @@ import java.util.stream.IntStream;
 public final class EventQuestGui {
 
     private static final int QUEST_SLOTS = 45;
+    private static final int SHOP_SLOT = 45;
     private static final int HEADER_SLOT = 49;
     private static final int CLOSE_SLOT = 53;
 
     private final GuiManager guiManager;
     private final EventService eventService;
+    /** Set after construction - the two screens point at each other, so one has to be wired second. */
+    private EventShopGui shopGui;
 
     public EventQuestGui(GuiManager guiManager, EventService eventService) {
         this.guiManager = guiManager;
         this.eventService = eventService;
+    }
+
+    public void setShopGui(EventShopGui shopGui) {
+        this.shopGui = shopGui;
     }
 
     public void open(Player player) {
@@ -61,8 +68,13 @@ public final class EventQuestGui {
                     (clicker, e) -> claim(clicker, event, quest));
         }
         builder.fill(IntStream.range(slot, QUEST_SLOTS), GuiIcons.filler());
-        builder.fill(IntStream.range(QUEST_SLOTS, 54).filter(s -> s != HEADER_SLOT && s != CLOSE_SLOT),
-                GuiIcons.filler());
+        builder.fill(IntStream.range(QUEST_SLOTS, 54)
+                .filter(s -> s != SHOP_SLOT && s != HEADER_SLOT && s != CLOSE_SLOT), GuiIcons.filler());
+        // Hidden when the event sells nothing, rather than shown as an
+        // empty room - an event with no shelf is a valid event.
+        if (shopGui != null && !event.shop().isEmpty()) {
+            builder.item(SHOP_SLOT, shopButton(event), (clicker, e) -> shopGui.open(clicker));
+        }
         builder.item(HEADER_SLOT, buildHeaderIcon(player, event));
         builder.item(CLOSE_SLOT, GuiIcons.closeButton(), (clicker, e) -> clicker.closeInventory());
         guiManager.open(player, builder.build());
@@ -119,7 +131,7 @@ public final class EventQuestGui {
             lore.add(" &8- &b" + Formatting.format((double) quest.rewardDiamonds()) + " diamonds");
         }
         for (String command : quest.commands()) {
-            lore.add(" &8- &d" + describeCommand(command));
+            lore.add(" &8- &d" + RewardText.describeCommand(command));
         }
         lore.add("");
         lore.add(claimed ? "&8Already claimed" : complete ? "&8[CLICK] &fTo Claim" : "&cNot finished yet");
@@ -127,38 +139,12 @@ public final class EventQuestGui {
         return builder.hideAttributes().build();
     }
 
-    /**
-     * A reward command in words. Deliberately crude - it reads the command
-     * a server owner wrote rather than a second "label" field they would
-     * have to keep in sync with it, so a reward can never advertise one
-     * thing and hand over another.
-     */
-    private String describeCommand(String command) {
-        String[] parts = command.trim().split("\\s+");
-        // "admin potions give <player> <stat> <multiplier> <duration>"
-        if (parts.length >= 7 && parts[0].equals("admin") && parts[1].equals("potions")) {
-            return "x" + parts[5] + " " + prettify(parts[4]) + " Potion";
-        }
-        // "admin pets give <player> <pet> <fusion> <amount>"
-        if (parts.length >= 7 && parts[0].equals("admin") && parts[1].equals("pets")) {
-            return prettify(parts[4].replaceFirst("^event_", ""));
-        }
-        return command;
-    }
-
-    private String prettify(String raw) {
-        String[] words = raw.toLowerCase(java.util.Locale.ROOT).split("_");
-        StringBuilder out = new StringBuilder();
-        for (String word : words) {
-            if (word.isEmpty()) {
-                continue;
-            }
-            if (!out.isEmpty()) {
-                out.append(' ');
-            }
-            out.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
-        }
-        return out.toString();
+    private ItemStack shopButton(SeasonalEvent event) {
+        ItemBuilder builder = ItemBuilder.of(Material.CHEST)
+                .name(MenuLore.buttonName("<" + event.color() + ">", "SHOP"));
+        MenuLore.button("shop", List.of(" &7Spend your " + event.currencyName() + " on", " &7something you pick."),
+                "<" + event.color() + ">", "Click to Open").forEach(builder::lore);
+        return builder.hideAttributes().build();
     }
 
     private ItemStack buildHeaderIcon(Player player, SeasonalEvent event) {
@@ -168,7 +154,8 @@ public final class EventQuestGui {
         MenuLore.info("event", List.of(
                 " &7Break cubes in the event zone",
                 " &7to earn " + event.currencyName() + ", then hatch",
-                " &7the event egg at spawn.",
+                " &7the event egg at spawn or",
+                " &7spend it in the shop.",
                 " &7Event pets earn extra " + event.currencyName() + "."),
                 "<" + event.color() + ">",
                 List.of(event.currencyName() + ": &f" + Formatting.format((double) eventService.balance(player, event)),

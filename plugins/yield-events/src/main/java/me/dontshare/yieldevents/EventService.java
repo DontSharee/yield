@@ -3,6 +3,7 @@ package me.dontshare.yieldevents;
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldevents.data.EventProfile;
 import me.dontshare.yieldevents.data.EventQuest;
+import me.dontshare.yieldevents.data.EventShopEntry;
 import me.dontshare.yieldevents.data.SeasonalEvent;
 import me.dontshare.yieldzones.data.ZoneDefinition;
 import org.bukkit.entity.Player;
@@ -134,6 +135,38 @@ public final class EventService {
         }
         store.save(player.getUniqueId());
         return true;
+    }
+
+    /** What this event's shop has already sold this player, for a limited entry. */
+    public int bought(Player player, SeasonalEvent event, EventShopEntry entry) {
+        return store.getOrCreate(player.getUniqueId()).bought(event.id(), entry.id());
+    }
+
+    /** Why a buy cannot happen, or null when it can. */
+    public enum BuyResult { SUCCESS, OUT_OF_STOCK, TOO_POOR }
+
+    /**
+     * Buys one of {@code entry}, taking the currency and recording the
+     * purchase against the player's stock.
+     * <p>
+     * Both the deduction and the stock count are written and SAVED before
+     * the caller runs the entry's reward commands, for the reason
+     * {@link #claim} saves first too: a command that fails, or a server
+     * that dies between the two, must not leave a one-per-player pity buy
+     * purchasable again. The player has been charged, so the shelf has to
+     * agree they bought it.
+     */
+    public BuyResult buy(Player player, SeasonalEvent event, EventShopEntry entry) {
+        EventProfile profile = store.getOrCreate(player.getUniqueId());
+        if (entry.remaining(profile.bought(event.id(), entry.id())) <= 0) {
+            return BuyResult.OUT_OF_STOCK;
+        }
+        if (!profile.take(event.id(), entry.price())) {
+            return BuyResult.TOO_POOR;
+        }
+        profile.recordPurchase(event.id(), entry.id(), 1);
+        store.save(player.getUniqueId());
+        return BuyResult.SUCCESS;
     }
 
     public void refund(Player player, SeasonalEvent event, long amount) {

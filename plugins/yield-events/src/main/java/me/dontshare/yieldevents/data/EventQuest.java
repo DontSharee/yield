@@ -17,7 +17,12 @@ public record EventQuest(String id, String displayName, List<String> description
 
     /** What a quest counts. Each is tracked by the listener that already sees the thing happen. */
     public enum Goal {
-        /** Candy earned during this event, all sources. */
+        /**
+         * This event's currency earned, all sources. Named for Halloween's
+         * because it was written for it; Winter's counter is Snowflakes
+         * under the same key. Kept as-is because these names are persisted
+         * into every player's quest progress, and a rename would orphan it.
+         */
         CANDY_EARNED,
         /** Cubes broken inside the event zone. */
         CUBES_BROKEN,

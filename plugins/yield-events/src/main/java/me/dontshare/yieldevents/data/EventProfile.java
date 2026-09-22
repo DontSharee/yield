@@ -13,10 +13,11 @@ import java.util.UUID;
  * This plugin's own slice of a player's data - how much of each event's
  * currency they are holding.
  * <p>
- * Holds three things per event: the currency balance, quest progress, and
- * which quests have already paid out. All keyed by event id and kept
+ * Holds four things per event: the currency balance, quest progress,
+ * which quests have already paid out, and what has been bought from the
+ * shop. All keyed by event id and kept
  * forever rather than wiped when an event ends.
- * Leftover Candy is worth nothing until next October, which is the point: a
+ * Leftover currency is worth nothing until next October, which is the point: a
  * player who grinds the last day of an event and cannot spend it all has
  * something waiting for them a year later, and nobody has to be told their
  * currency expired. Requires a public no-arg constructor for the MongoDB
@@ -31,6 +32,15 @@ public final class EventProfile implements PlayerRecord {
     private Map<String, Long> questProgress = new HashMap<>();
     /** Quests already paid out, keyed "<eventId>:<questId>" - a quest pays once, however many times it is re-completed. */
     private Set<String> claimedQuests = new HashSet<>();
+    /**
+     * How many of each limited shop entry has been bought, keyed
+     * "&lt;eventId&gt;:&lt;entryId&gt;".
+     * <p>
+     * Kept forever like everything else here, which is what a limit of 1
+     * has to mean: a pity buy a player could take again next October would
+     * not be one.
+     */
+    private Map<String, Integer> shopPurchases = new HashMap<>();
 
     public EventProfile() {
     }
@@ -64,7 +74,6 @@ public final class EventProfile implements PlayerRecord {
         balances.merge(eventId, amount, Long::sum);
     }
 
-    /** Takes {@code amount} if it is there, and reports whether it was. */
     public Map<String, Long> getQuestProgress() {
         return questProgress;
     }
@@ -97,6 +106,23 @@ public final class EventProfile implements PlayerRecord {
         claimedQuests.add(eventId + ":" + questId);
     }
 
+    public Map<String, Integer> getShopPurchases() {
+        return shopPurchases;
+    }
+
+    public void setShopPurchases(Map<String, Integer> shopPurchases) {
+        this.shopPurchases = shopPurchases;
+    }
+
+    public int bought(String eventId, String entryId) {
+        return shopPurchases.getOrDefault(eventId + ":" + entryId, 0);
+    }
+
+    public void recordPurchase(String eventId, String entryId, int amount) {
+        shopPurchases.merge(eventId + ":" + entryId, amount, Integer::sum);
+    }
+
+    /** Takes {@code amount} if it is there, and reports whether it was. */
     public boolean take(String eventId, long amount) {
         long held = balance(eventId);
         if (held < amount) {

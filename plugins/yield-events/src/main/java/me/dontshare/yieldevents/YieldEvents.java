@@ -94,8 +94,12 @@ public final class YieldEvents extends JavaPlugin {
         core.getListenerManager().register(new EventCurrencyListener(eventService, packs));
         core.getListenerManager().register(new EventHatchListener(eventService));
         questGui = new EventQuestGui(core.getGuiManager(), eventService);
+        EventShopGui shopGui = new EventShopGui(core.getGuiManager(), eventService);
+        questGui.setShopGui(shopGui);
+        shopGui.setQuestGui(questGui);
         // While a player stands in the event zone, the wallet's Credits line
-        // becomes their Candy: the sidebar has a fixed number of lines, and
+        // becomes the event's own currency: the sidebar has a fixed number
+        // of lines, and
         // the number that matters where the event is happening is not the
         // one they spend at the Store.
         core.getScoreboardDisplay().addLineTransformer(this::swapCurrencyLine);

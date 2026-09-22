@@ -333,8 +333,9 @@ is a reason to look; a shop that sells the same thing slower is not.
 A window of dates in which an extra currency drops from cubes and an extra
 egg stands at spawn, selling pets that exist nowhere else and leave with it.
 
-Two ship configured: **Halloween** (Oct 20 – Nov 3, Candy) and the **Winter
-Festival** (Dec 15 – Jan 5, Snowflakes). Each sells a five-pet egg:
+Two ship configured: **Halloween** (Oct 20 – Nov 3, Candy Corn) and the
+**Winter Festival** (Dec 15 – Jan 5, Snowflakes). Each sells a five-pet
+egg:
 
 | rarity | damage | chance |
 |---|---|---|
@@ -349,18 +350,33 @@ for a mid-game player, and still short of both the black market's best
 (60M) and the Genesis Core Secret (125M). A fortnight should be worth
 showing up for without ending anyone's progression.
 
-**The currency is a flat drop** — 8% of cubes pay 1–3 Candy — and
-deliberately *not* a share of the payout. Coins scale by a factor of a
-million across the zone ladder, so a proportional drop would make an early
-player's Candy worthless and a late player's free. A flat rate means an
-hour of play is worth an hour of play wherever it is spent, which is what a
-seasonal currency has to be if the event is for everyone.
+**The currency is a flat drop** — 1–3 per cube — and deliberately *not* a
+share of the payout. Coins scale by a factor of a million across the zone
+ladder, so a proportional drop would make an early player's balance
+worthless and a late player's free. A flat rate means an hour of play is
+worth an hour of play wherever it is spent, which is what a seasonal
+currency has to be if the event is for everyone. Inside the event's own
+zone every cube pays; outside it, 8% do.
 
-At ~0.16 Candy a cube and a couple of cubes a second, the 400-Candy egg is
-about **twenty minutes of play per hatch**: a casual player gets a handful
-over a fortnight, a dedicated one gets the set.
+**Not called "Candy".** The first draft was, and it collided head-on with
+Pet Candy (`candy.yml`) — which also drops from cubes and is also spent on
+pets. Two unrelated things with one name, falling out of the same block,
+is a bug report waiting to be filed. Candy Corn is the same joke without
+the collision.
 
-**Leftover currency is never wiped.** Candy is worth nothing until next
+**Earn rate, measured against the real config:** a cube takes about a
+second, every cube in the Hollow pays, and the average drop is 2. So the
+zone pays ~7,200/hour bare and ~12,600/hour with a full set of event pets.
+Over a fortnight that is ~69k at half an hour a day, ~208k at ninety
+minutes, ~416k at three hours.
+
+**The egg costs 2,500**, which is 28 hatches for the casual player and 166
+for the dedicated one — and the rarest pet is 1 in 160, so the whole set is
+exactly the dedicated player's fortnight and nobody else's. This shipped at
+400, which paid the *casual* player 173 hatches: the event was over in a
+weekend and the chase pet was not a chase.
+
+**Leftover currency is never wiped.** It is worth nothing until next
 October, which is the point — nobody has to be told their currency expired,
 and a player who grinds the last day has something waiting a year later.
 
@@ -374,8 +390,8 @@ unlock cost, no zone egg, no pack station, no upgrade stations, and cube HP
 near the bottom of the ladder so a brand-new player can break them. Its
 coins are deliberately poor — about what the third zone pays — because
 coming here means giving up your normal income, and what you get for that
-is Candy, not a better place to earn. Its chests hand out the event egg
-itself, which is the only free source of one.
+is Candy Corn, not a better place to earn. Its chests hand out the event
+egg itself, which is the only free source of one.
 
 **It is shut when the event is not running.** The zone stays defined all
 year — built, walled, listed in fast travel — but yield-events registers an
@@ -383,20 +399,22 @@ access gate on it, so walking in or fast-travelling to it is refused
 outside the event window and anyone still standing inside when it ends is
 returned to spawn. That is what keeps its cubes, its chests and its egg
 from being a year-round alternative income the ladder was never balanced
-against: the Hollow's whole trade — poor coins for Candy — only makes sense
-while there is Candy to spend.
+against: the Hollow's whole trade — poor coins for Candy Corn — only makes
+sense while there is Candy Corn to spend.
 
-**Every cube in the zone pays Candy**, 1–3 of it, rather than a lucky few:
+**Every cube in the zone pays**, 1–3 of it, rather than a lucky few:
 a player who has already given up their income should not also be paid at a
 trickle. Outside the zone the flat 8% chance still applies, so the event is
 visible wherever you are and far faster where it is happening.
 
-**The event's pets boost Candy and nothing else** — +5% to +25% each, so
-six of the best is +150%. That is what makes them worth equipping *during*
+**The event's pets boost Candy Corn and nothing else** — +5% to +25% each.
+They stack per equipped *pet*, not per kind, so one of each is +75% and six
+of the best is +150%. That is what makes them worth equipping *during*
 the event rather than a trophy that would have to out-scale a zone pet to
 matter. An event is not the place to renegotiate the damage ladder.
 
-**While you stand in the zone, the sidebar's Credits line becomes Candy.**
+**While you stand in the zone, the sidebar's Credits line becomes your
+Candy Corn.**
 The sidebar has a fixed number of lines, and the number that matters where
 the event is happening is not the one you spend at the Store.
 
@@ -404,12 +422,15 @@ the event is happening is not the one you spend at the Store.
 
 | quest | goal | reward |
 |---|---|---|
-| Trick or Treat | 50 cubes in the Hollow | 150 Candy |
-| Sweet Tooth | 1,000 Candy | 250 Candy + 2× Luck potion |
-| Hollow Dweller | 1,000 cubes in the Hollow | 500 Candy + 3× Coins potion |
-| Pumpkin Hatcher | 10 Pumpkin Eggs | 400 Candy + 3× Damage potion |
-| Candy Hoarder | 10,000 Candy | 1,000 Candy + **Hollow Reaper** |
-| King of the Hollow | 100 Pumpkin Eggs | 2,500 Candy + **Pumpkin King** |
+| Trick or Treat | 50 cubes in the Hollow | 1,000 |
+| Sweet Tooth | 10,000 Candy Corn | 1,500 + 2× Luck potion |
+| Hollow Dweller | 10,000 cubes in the Hollow | 3,000 + 3× Coins potion |
+| Pumpkin Hatcher | 10 Pumpkin Eggs | 2,500 + 3× Damage potion |
+| Candy Hoarder | 150,000 Candy Corn | 6,000 + **Hollow Reaper** |
+| King of the Hollow | 50 Pumpkin Eggs | 15,000 + **Pumpkin King** |
+
+Targets are set against the measured rates above — 10,000 cubes is about
+three hours, 150,000 Candy Corn is most of a fortnight's casual play.
 
 The last two hand over the event's two rarest pets outright, which is the
 point of a quest board: the egg is luck, the quests are a guarantee for
@@ -417,6 +438,50 @@ anyone who actually turns up. Rewards are console commands with
 `%player%` substituted, so a quest can pay a potion, a pet, credits or a
 rank without this plugin knowing how any of those work — a seasonal reward
 table changes every year and should not need code to.
+
+### The shop
+
+The egg answers *spend a little, many times*. The shop answers *spend a
+lot, once* — and without it a fortnight of currency had exactly one sink,
+which fails at both ends: a player who already has the pets they wanted is
+earning something they cannot use, and a player the odds never favoured has
+no way to convert effort into the pet they were chasing.
+
+Per-player stock is what stops the shelf collapsing into a second, better
+egg. Consumables are unlimited, so leftover currency always has somewhere
+to go. Pets are stocked once — or three times, exactly enough to fuse.
+
+| item | price | stock |
+|---|---|---|
+| Haunted Luck (2× luck, 30m) | 4,000 | ∞ |
+| Cursed Fortune (3× coins, 30m) | 5,000 | ∞ |
+| Grave Might (3× damage, 30m) | 5,000 | ∞ |
+| Witching Hour (2× roll speed, 30m) | 8,000 | ∞ |
+| Prowler Pact (**Pumpkin Prowler**) | 12,000 | 3 |
+| Warden Pact (**Grave Warden**) | 40,000 | 3 |
+| Reaper's Bargain (**Hollow Reaper**) | 120,000 | 1 |
+
+Pet prices are set against what the *egg* costs for the same pet, so a
+guarantee always costs a premium over gambling for it — never less:
+
+| pet | odds | expected via egg | on the shelf |
+|---|---|---|---|
+| Pumpkin Prowler | 1 in 4 | ~10,000 | 12,000 (1.2×) |
+| Grave Warden | 1 in 10.7 | ~26,700 | 40,000 (1.5×) |
+| Hollow Reaper | 1 in 40 | ~100,000 | 120,000 (1.2×) |
+| Pumpkin King | 1 in 160 | ~400,000 | **not sold** |
+
+The King is off the shelf on purpose: a shop that sells the top prize is a
+shop that makes the egg pointless. It has its own quest instead.
+
+Clearing the whole limited shelf costs ~276,000 — most, but not all, of a
+dedicated player's fortnight. That gap is the decision: guarantee the pets
+you want, or keep hatching for the one nobody can buy.
+
+Both the charge and the stock count are written and saved *before* the
+reward commands run, for the same reason quest claims are: a double-click,
+a failed command or a server that dies mid-payout must not leave a
+one-per-player pity buy purchasable again.
 
 ---
 

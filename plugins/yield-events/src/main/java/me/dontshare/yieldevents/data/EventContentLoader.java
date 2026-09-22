@@ -1,5 +1,6 @@
 package me.dontshare.yieldevents.data;
 
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -63,7 +64,8 @@ public final class EventContentLoader {
                     Math.max(1, s.getLong("egg-price", 100)),
                     s.getString("zone"),
                     loadPetBonuses(s.getConfigurationSection("pet-candy-bonus")),
-                    loadQuests(id, s)));
+                    loadQuests(id, s),
+                    loadShop(id, s)));
         }
         return events;
     }
@@ -110,6 +112,47 @@ public final class EventContentLoader {
                     List.copyOf(s.getStringList("reward-commands"))));
         }
         return quests;
+    }
+
+    /**
+     * The shop shelf. An entry whose material is unreadable is skipped
+     * rather than silently rendered as a stone block - a shelf item nobody
+     * recognises is one nobody buys, and a typo should say so in the log.
+     */
+    private List<EventShopEntry> loadShop(String eventId, ConfigurationSection event) {
+        List<EventShopEntry> entries = new ArrayList<>();
+        ConfigurationSection section = event.getConfigurationSection("shop");
+        if (section == null) {
+            return entries;
+        }
+        for (String entryId : section.getKeys(false)) {
+            ConfigurationSection s = section.getConfigurationSection(entryId);
+            if (s == null) {
+                continue;
+            }
+            String rawMaterial = s.getString("material", "CHEST");
+            Material material = Material.matchMaterial(rawMaterial.toUpperCase(Locale.ROOT));
+            if (material == null) {
+                logger.warning("Event '" + eventId + "' shop entry '" + entryId + "' has an unknown material '"
+                        + rawMaterial + "' - skipping.");
+                continue;
+            }
+            List<String> commands = List.copyOf(s.getStringList("commands"));
+            if (commands.isEmpty()) {
+                logger.warning("Event '" + eventId + "' shop entry '" + entryId
+                        + "' has no commands, so buying it would hand over nothing - skipping.");
+                continue;
+            }
+            entries.add(new EventShopEntry(
+                    entryId,
+                    s.getString("display-name", entryId),
+                    s.getStringList("description"),
+                    material,
+                    Math.max(1, s.getLong("price", 1)),
+                    Math.max(0, s.getInt("limit", 0)),
+                    commands));
+        }
+        return entries;
     }
 
     private LocalDate parseDate(String eventId, String raw) {
