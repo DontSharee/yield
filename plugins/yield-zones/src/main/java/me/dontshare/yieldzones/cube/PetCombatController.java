@@ -252,6 +252,15 @@ public final class PetCombatController implements Listener {
         Map<UUID, OreCube> targets = singleTargetsByPet.computeIfAbsent(id, k -> new ConcurrentHashMap<>());
         List<OreCube> live = cubeService.liveCubes(player);
 
+        // Every pet busy: take the weakest one off the most crowded cube, so
+        // a click never strips the only pet off a cube that has one.
+        Map<OreCube, Long> load = new HashMap<>();
+        for (UUID petId : equipped) {
+            OreCube current = targets.get(petId);
+            if (current != null && live.contains(current)) {
+                load.merge(current, 1L, Long::sum);
+            }
+        }
         UUID chosen = equipped.stream()
                 .filter(petId -> {
                     OreCube current = targets.get(petId);
@@ -259,7 +268,9 @@ public final class PetCombatController implements Listener {
                 })
                 .max(Comparator.comparingDouble(petId -> effectiveDamageOf(profile, petId)))
                 .orElseGet(() -> equipped.stream()
-                        .min(Comparator.comparingDouble(petId -> effectiveDamageOf(profile, petId)))
+                        .filter(petId -> !cube.equals(targets.get(petId)))
+                        .min(Comparator.comparingLong((UUID petId) -> -load.getOrDefault(targets.get(petId), 0L))
+                                .thenComparingDouble(petId -> effectiveDamageOf(profile, petId)))
                         .orElse(null));
         if (chosen == null || cube.equals(targets.get(chosen))) {
             return;
