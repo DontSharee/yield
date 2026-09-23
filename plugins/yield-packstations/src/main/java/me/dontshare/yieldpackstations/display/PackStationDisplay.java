@@ -230,6 +230,17 @@ public final class PackStationDisplay {
         return null;
     }
 
+    /** Where the station {@link #hatchSiteFor} would pick stands - what the auto-hatch leash is measured from. */
+    public Location hatchSiteLocation(Player player) {
+        for (PackStation station : stations) {
+            if (player.getWorld().equals(station.location().getWorld())
+                    && station.location().distanceSquared(player.getLocation()) <= HATCH_SITE_RANGE_SQUARED) {
+                return station.location();
+            }
+        }
+        return null;
+    }
+
     private void refreshFor(Player viewer, PackStation station) {
         Set<UUID> viewers = viewersByStation.get(station);
         if (viewers == null || !viewers.contains(viewer.getUniqueId())) {

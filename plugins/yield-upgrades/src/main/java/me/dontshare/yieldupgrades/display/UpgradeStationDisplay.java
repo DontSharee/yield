@@ -44,11 +44,11 @@ public final class UpgradeStationDisplay {
     /** Keeps the shrunk block centered in its cell rather than anchored at the block-display's own origin corner - see BlockDisplayManager#setTransformation. */
     private static final float BUTTON_TRANSLATE = (1f - BUTTON_SCALE) / 2f;
     /**
-     * The invisible {@code Interaction} hitbox's own width/height - a touch
-     * more generous than the visual button (which is tiny) so it's still
-     * easy to click, not pixel-precise.
+     * The invisible {@code Interaction} hitbox's own width/height - the same
+     * as the plate behind the button, so the whole visible station is the
+     * click target and nothing around it is.
      */
-    private static final float HITBOX_SIZE = 0.8f;
+    private static final float HITBOX_SIZE = 0.9f;
     /** The "push" - briefly shrinks below resting size (depresses inward), then eases back - on every click regardless of outcome, same as a real button giving under your finger. */
     private static final float PUSH_SCALE = BUTTON_SCALE * 0.6f;
     private static final float PUSH_TRANSLATE = (1f - PUSH_SCALE) / 2f;
@@ -231,24 +231,16 @@ public final class UpgradeStationDisplay {
     }
 
     /**
-     * A {@code BlockDisplayManager}-shrunk block is centered within the
-     * 1x1x1 cell whose corner is {@code stationCorner} (translate+scale/2
-     * always works out to +0.5 on every axis, regardless of the scale
-     * chosen) - i.e. its visual center is {@code stationCorner + (0.5,0.5,0.5)}.
-     * <p>
-     * Three in-game screenshots of real measured data on the still-
-     * unconfirmed {@code Interaction} anchor behavior: inset 0.5 (pure
-     * center-style spawn) overshot; inset 0.3 (blended toward center)
-     * overshot WORSE than inset 0.1 - i.e. more inset is strictly worse,
-     * not a U-shape to interpolate inside. Reverted to inset 0.1 (pure
-     * corner-style, {@code (1-size)/2} at this size), the best-measured
-     * point so far, rather than guessing a value below it blind. If more
-     * precision is wanted later, the next experiment should try LESS
-     * inset than 0.1 (toward 0 or negative), not more.
+     * The button and its plate are drawn centred in the station's block
+     * cell - their visual centre is {@code corner + (0.5, 0.5, 0.5)}. An
+     * {@code Interaction} hitbox is anchored differently: its position is
+     * the centre of its BOTTOM face (centred on X/Z, extending UP by its
+     * height). So the hitbox goes at the cell's centre on X/Z and half its
+     * height below the visual centre on Y. The old corner-inset placement
+     * put it ~0.4 blocks off on both X and Z, which is why clicks missed.
      */
     private Location hitboxLocation(Location stationCorner) {
-        double inset = (1.0 - HITBOX_SIZE) / 2.0;
-        return stationCorner.clone().add(inset, inset, inset);
+        return stationCorner.clone().add(0.5, 0.5 - HITBOX_SIZE / 2.0, 0.5);
     }
 
     /** Above the button's own top (button spans roughly {@code corner.y+0.325} to {@code corner.y+0.675}) and centered on the same X/Z the button/wall use - previously spawned at the raw, uncentered corner with too little clearance, so it rendered overlapping the button instead of floating above it. */

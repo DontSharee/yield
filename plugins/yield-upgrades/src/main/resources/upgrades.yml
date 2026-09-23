@@ -113,56 +113,60 @@ types:
 # in-game once the later zones are actually built - the Z values follow
 # zones.yml's own 94-block per-zone pitch, same as every other station in
 # this repo.
+
 stations:
-  # meadow - cap 10
-  - { zone: meadow, type: coin_boost, cap: 10, location: [spawn, -6, 98, 58, 180, 0] }
-  - { zone: meadow, type: damage_boost, cap: 10, location: [spawn, -2, 98, 58, 180, 0] }
-  - { zone: meadow, type: cube_cap_boost, cap: 10, location: [spawn, 2, 98, 58, 180, 0] }
-  - { zone: meadow, type: cube_luck_boost, cap: 10, location: [spawn, 6, 98, 58, 180, 0] }
-  - { zone: meadow, type: auto_switch_speed, cap: 10, location: [spawn, 10, 98, 58, 180, 0] }
-  - { zone: meadow, type: gem_boost, cap: 10, location: [spawn, -10, 98, 58, 180, 0] }
-  - { zone: meadow, type: speed_boost, cap: 10, location: [spawn, 14, 98, 58, 180, 0] }
-  - { zone: meadow, type: rebirth_boost, cap: 10, location: [spawn, -14, 98, 58, 180, 0] }
-  # iron_foothills - cap 20
-  - { zone: iron_foothills, type: coin_boost, cap: 20, location: [spawn, -6, 98, 246, 180, 0] }
-  - { zone: iron_foothills, type: damage_boost, cap: 20, location: [spawn, -2, 98, 246, 180, 0] }
-  - { zone: iron_foothills, type: cube_luck_boost, cap: 20, location: [spawn, 6, 98, 246, 180, 0] }
-  - { zone: iron_foothills, type: gem_boost, cap: 20, location: [spawn, -10, 98, 246, 180, 0] }
-  - { zone: iron_foothills, type: speed_boost, cap: 20, location: [spawn, 14, 98, 246, 180, 0] }
-  - { zone: iron_foothills, type: rebirth_boost, cap: 20, location: [spawn, -14, 98, 246, 180, 0] }
-  # scorched_wastes - cap 30
-  - { zone: scorched_wastes, type: coin_boost, cap: 30, location: [spawn, -6, 98, 434, 180, 0] }
-  - { zone: scorched_wastes, type: damage_boost, cap: 30, location: [spawn, -2, 98, 434, 180, 0] }
-  - { zone: scorched_wastes, type: cube_luck_boost, cap: 25, location: [spawn, 6, 98, 434, 180, 0] }
-  - { zone: scorched_wastes, type: gem_boost, cap: 30, location: [spawn, -10, 98, 434, 180, 0] }
-  - { zone: scorched_wastes, type: rebirth_boost, cap: 30, location: [spawn, -14, 98, 434, 180, 0] }
-  # diamond_hollow - cap 40
-  - { zone: diamond_hollow, type: coin_boost, cap: 40, location: [spawn, -6, 98, 622, 180, 0] }
-  - { zone: diamond_hollow, type: damage_boost, cap: 40, location: [spawn, -2, 98, 622, 180, 0] }
-  - { zone: diamond_hollow, type: gem_boost, cap: 40, location: [spawn, -10, 98, 622, 180, 0] }
-  - { zone: diamond_hollow, type: rebirth_boost, cap: 40, location: [spawn, -14, 98, 622, 180, 0] }
-  # obsidian_rift - cap 50
-  - { zone: obsidian_rift, type: coin_boost, cap: 50, location: [spawn, -6, 98, 810, 180, 0] }
-  - { zone: obsidian_rift, type: damage_boost, cap: 50, location: [spawn, -2, 98, 810, 180, 0] }
-  - { zone: obsidian_rift, type: gem_boost, cap: 50, location: [spawn, -10, 98, 810, 180, 0] }
-  - { zone: obsidian_rift, type: rebirth_boost, cap: 50, location: [spawn, -14, 98, 810, 180, 0] }
-  # netherite_wastes - cap 60
-  - { zone: netherite_wastes, type: coin_boost, cap: 60, location: [spawn, -6, 98, 998, 180, 0] }
-  - { zone: netherite_wastes, type: damage_boost, cap: 60, location: [spawn, -2, 98, 998, 180, 0] }
-  - { zone: netherite_wastes, type: gem_boost, cap: 60, location: [spawn, -10, 98, 998, 180, 0] }
-  # end_barrens - cap 70
-  - { zone: end_barrens, type: coin_boost, cap: 70, location: [spawn, -6, 98, 1186, 180, 0] }
-  - { zone: end_barrens, type: damage_boost, cap: 70, location: [spawn, -2, 98, 1186, 180, 0] }
-  - { zone: end_barrens, type: gem_boost, cap: 70, location: [spawn, -10, 98, 1186, 180, 0] }
-  # celestial_sanctum - cap 80
-  - { zone: celestial_sanctum, type: coin_boost, cap: 80, location: [spawn, -6, 98, 1374, 180, 0] }
-  - { zone: celestial_sanctum, type: damage_boost, cap: 80, location: [spawn, -2, 98, 1374, 180, 0] }
-  - { zone: celestial_sanctum, type: gem_boost, cap: 80, location: [spawn, -10, 98, 1374, 180, 0] }
-  # cosmic_abyss - cap 90
-  - { zone: cosmic_abyss, type: coin_boost, cap: 90, location: [spawn, -6, 98, 1562, 180, 0] }
-  - { zone: cosmic_abyss, type: damage_boost, cap: 90, location: [spawn, -2, 98, 1562, 180, 0] }
-  - { zone: cosmic_abyss, type: gem_boost, cap: 90, location: [spawn, -10, 98, 1562, 180, 0] }
-  # astral_peak - cap 100
-  - { zone: astral_peak, type: coin_boost, cap: 100, location: [spawn, -6, 98, 1750, 180, 0] }
-  - { zone: astral_peak, type: damage_boost, cap: 100, location: [spawn, -2, 98, 1750, 180, 0] }
-  - { zone: astral_peak, type: gem_boost, cap: 100, location: [spawn, -10, 98, 1750, 180, 0] }
+  # Upgrades arrive gradually: Meadow has only Coin Boost and Damage Boost,
+  # and each station zone after it adds a type or two until Diamond Hollow
+  # has the full set. Every row is centred on the zone path (corner x
+  # = -2(n-1) + 4i, so a row of any length sits around x = 0.5), spaced
+  # 4 blocks apart. Caps for Coin/Damage still climb 10 per station zone,
+  # which is all the pacing model (BALANCE.md) reads from this list.
+  # meadow - Coin Boost and Damage Boost only - the two that matter from minute one
+  - { zone: meadow, type: coin_boost, cap: 10, location: [spawn, -2, 98, 58, 180, 0] }
+  - { zone: meadow, type: damage_boost, cap: 10, location: [spawn, 2, 98, 58, 180, 0] }
+  # iron_foothills - adds Gem Boost and Cube Luck
+  - { zone: iron_foothills, type: gem_boost, cap: 10, location: [spawn, -6, 98, 246, 180, 0] }
+  - { zone: iron_foothills, type: coin_boost, cap: 20, location: [spawn, -2, 98, 246, 180, 0] }
+  - { zone: iron_foothills, type: damage_boost, cap: 20, location: [spawn, 2, 98, 246, 180, 0] }
+  - { zone: iron_foothills, type: cube_luck_boost, cap: 10, location: [spawn, 6, 98, 246, 180, 0] }
+  # scorched_wastes - adds Speed and Cube Cap
+  - { zone: scorched_wastes, type: speed_boost, cap: 10, location: [spawn, -10, 98, 434, 180, 0] }
+  - { zone: scorched_wastes, type: gem_boost, cap: 20, location: [spawn, -6, 98, 434, 180, 0] }
+  - { zone: scorched_wastes, type: coin_boost, cap: 30, location: [spawn, -2, 98, 434, 180, 0] }
+  - { zone: scorched_wastes, type: damage_boost, cap: 30, location: [spawn, 2, 98, 434, 180, 0] }
+  - { zone: scorched_wastes, type: cube_luck_boost, cap: 20, location: [spawn, 6, 98, 434, 180, 0] }
+  - { zone: scorched_wastes, type: cube_cap_boost, cap: 10, location: [spawn, 10, 98, 434, 180, 0] }
+  # diamond_hollow - adds Rebirth Boost and Auto-Switch Speed
+  - { zone: diamond_hollow, type: rebirth_boost, cap: 20, location: [spawn, -12, 98, 622, 180, 0] }
+  - { zone: diamond_hollow, type: speed_boost, cap: 20, location: [spawn, -8, 98, 622, 180, 0] }
+  - { zone: diamond_hollow, type: gem_boost, cap: 30, location: [spawn, -4, 98, 622, 180, 0] }
+  - { zone: diamond_hollow, type: coin_boost, cap: 40, location: [spawn, 0, 98, 622, 180, 0] }
+  - { zone: diamond_hollow, type: damage_boost, cap: 40, location: [spawn, 4, 98, 622, 180, 0] }
+  - { zone: diamond_hollow, type: cube_luck_boost, cap: 25, location: [spawn, 8, 98, 622, 180, 0] }
+  - { zone: diamond_hollow, type: auto_switch_speed, cap: 10, location: [spawn, 12, 98, 622, 180, 0] }
+  # obsidian_rift
+  - { zone: obsidian_rift, type: rebirth_boost, cap: 35, location: [spawn, -6, 98, 810, 180, 0] }
+  - { zone: obsidian_rift, type: gem_boost, cap: 40, location: [spawn, -2, 98, 810, 180, 0] }
+  - { zone: obsidian_rift, type: coin_boost, cap: 50, location: [spawn, 2, 98, 810, 180, 0] }
+  - { zone: obsidian_rift, type: damage_boost, cap: 50, location: [spawn, 6, 98, 810, 180, 0] }
+  # netherite_wastes
+  - { zone: netherite_wastes, type: rebirth_boost, cap: 50, location: [spawn, -6, 98, 998, 180, 0] }
+  - { zone: netherite_wastes, type: gem_boost, cap: 60, location: [spawn, -2, 98, 998, 180, 0] }
+  - { zone: netherite_wastes, type: coin_boost, cap: 60, location: [spawn, 2, 98, 998, 180, 0] }
+  - { zone: netherite_wastes, type: damage_boost, cap: 60, location: [spawn, 6, 98, 998, 180, 0] }
+  # end_barrens
+  - { zone: end_barrens, type: gem_boost, cap: 70, location: [spawn, -4, 98, 1186, 180, 0] }
+  - { zone: end_barrens, type: coin_boost, cap: 70, location: [spawn, 0, 98, 1186, 180, 0] }
+  - { zone: end_barrens, type: damage_boost, cap: 70, location: [spawn, 4, 98, 1186, 180, 0] }
+  # celestial_sanctum
+  - { zone: celestial_sanctum, type: gem_boost, cap: 80, location: [spawn, -4, 98, 1374, 180, 0] }
+  - { zone: celestial_sanctum, type: coin_boost, cap: 80, location: [spawn, 0, 98, 1374, 180, 0] }
+  - { zone: celestial_sanctum, type: damage_boost, cap: 80, location: [spawn, 4, 98, 1374, 180, 0] }
+  # cosmic_abyss
+  - { zone: cosmic_abyss, type: gem_boost, cap: 90, location: [spawn, -4, 98, 1562, 180, 0] }
+  - { zone: cosmic_abyss, type: coin_boost, cap: 90, location: [spawn, 0, 98, 1562, 180, 0] }
+  - { zone: cosmic_abyss, type: damage_boost, cap: 90, location: [spawn, 4, 98, 1562, 180, 0] }
+  # astral_peak
+  - { zone: astral_peak, type: gem_boost, cap: 100, location: [spawn, -4, 98, 1750, 180, 0] }
+  - { zone: astral_peak, type: coin_boost, cap: 100, location: [spawn, 0, 98, 1750, 180, 0] }
+  - { zone: astral_peak, type: damage_boost, cap: 100, location: [spawn, 4, 98, 1750, 180, 0] }

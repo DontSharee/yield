@@ -247,7 +247,10 @@ public final class WorldBossService implements Listener {
         for (int slot = 0; slot < equipped.size(); slot++) {
             slotTargets.put(slot, centered);
         }
-        packs.getPetDisplayService().setAttackTargets(player, slotTargets);
+        // The boss is size x size blocks - ring the pets around its outside,
+        // on its floor, rather than a normal cube's radius inside it.
+        packs.getPetDisplayService().setAttackTargets(player, slotTargets,
+                Map.of(centered, me.dontshare.yieldpacks.display.PetDisplayService.ringRadiusFor(boss.definition().size())));
 
         Map<UUID, Long> cooldowns = cooldownsByPetByPlayer.computeIfAbsent(id, k -> new ConcurrentHashMap<>());
         for (int slot = 0; slot < equipped.size(); slot++) {

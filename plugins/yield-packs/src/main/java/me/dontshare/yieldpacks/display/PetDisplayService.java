@@ -53,7 +53,8 @@ import java.util.function.Supplier;
 public final class PetDisplayService {
 
     /** How far (as a fraction of the distance to the target) an attacking pet lunges forward per hit. */
-    private static final double LUNGE_REACH = 0.65;
+    /** Blocks a pet steps toward its target on each hit. */
+    private static final double LUNGE_STEP = 0.3;
 
     /** Below this, a yaw change isn't worth a packet - it's far finer than anyone can see. */
     private static final float YAW_EPSILON_DEGREES = 0.5f;
@@ -173,7 +174,13 @@ public final class PetDisplayService {
             return;
         }
         Location current = resolvePositions(owner, instances, 0).get(slot);
-        Vector towardTarget = target.toVector().subtract(current.toVector()).multiply(LUNGE_REACH);
+        // A short, fixed step toward the target, level with the pet - not a
+        // share of the distance to the cube's centre, which carried every
+        // pet into the cube on each hit.
+        Vector towardTarget = target.toVector().subtract(current.toVector()).setY(0);
+        if (towardTarget.lengthSquared() > 1.0E-6) {
+            towardTarget.normalize().multiply(LUNGE_STEP);
+        }
         Location lunge = current.clone().add(towardTarget);
 
         PetDisplayInstance instance = instances.get(slot);
@@ -520,16 +527,42 @@ public final class PetDisplayService {
             }
             for (Map.Entry<Location, List<Integer>> group : slotsByTarget.entrySet()) {
                 List<Integer> slots = group.getValue();
+                double radius = radii.getOrDefault(group.getKey(), BASE_RING_RADIUS);
+                // The target is the cube's centre; its size falls out of the
+                // ring radius (see ringRadiusFor), and with it the floor the
+                // cube stands on - pets stand on that floor, around the cube,
+                // instead of floating at its middle.
+                double targetSize = Math.max(1.0, 2.0 * (radius - BASE_RING_RADIUS) + 1.0);
+                double floorY = group.getKey().getY() - targetSize / 2.0;
+                // A Huge pet is 2.5x as wide - push the ring out so it
+                // doesn't stand inside the cube either.
+                double widest = 0.0;
+                for (int slot : slots) {
+                    if (slot < instances.size()) {
+                        widest = Math.max(widest, modelHalfSize(instances.get(slot)));
+                    }
+                }
+                radius += Math.max(0.0, widest - modelHalfSize(null));
                 for (int i = 0; i < slots.size(); i++) {
                     int slot = slots.get(i);
                     if (slot < positions.size()) {
-                        positions.set(slot, ringPositionFor(group.getKey(), i, slots.size(),
-                                radii.getOrDefault(group.getKey(), BASE_RING_RADIUS)));
+                        Location ring = ringPositionFor(group.getKey(), i, slots.size(), radius);
+                        ring.setY(floorY + modelHalfSize(slot < instances.size() ? instances.get(slot) : null) + hoverOffset);
+                        positions.set(slot, ring);
                     }
                 }
             }
         }
         return positions;
+    }
+
+    /** Half the rendered size of this pet's model - how far above the floor its centre sits, and how far it reaches sideways. Null means a normal-size pet. */
+    private double modelHalfSize(PetDisplayInstance instance) {
+        float scale = config.scale();
+        if (instance != null && isHuge(instance.itemId())) {
+            scale *= config.hugeScaleMultiplier();
+        }
+        return scale * 0.5;
     }
 
     private boolean isHuge(String itemId) {

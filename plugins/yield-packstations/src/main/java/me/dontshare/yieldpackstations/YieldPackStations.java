@@ -52,7 +52,7 @@ public final class YieldPackStations extends JavaPlugin {
         // Auto-hatch only runs while a player is stood at an egg, and only
         // this plugin knows where the eggs physically are - yield-packs
         // asks rather than looks, since the dependency runs the other way.
-        packs.getPackOpenService().registerHatchSiteProvider("pack_stations", display::hatchSiteFor);
+        packs.getPackOpenService().registerHatchSiteProvider("pack_stations", display::hatchSiteFor, display::hatchSiteLocation);
 
         core.getAdminCommandRegistry().register(PackStationsAdminCommand.build(this));
 

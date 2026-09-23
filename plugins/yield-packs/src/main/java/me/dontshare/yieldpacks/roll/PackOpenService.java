@@ -87,6 +87,14 @@ public final class PackOpenService implements Listener {
      * the other way round, so the auto-hatch loop asks rather than looks.
      */
     private final Map<String, Function<Player, String>> hatchSiteProviders = new ConcurrentHashMap<>();
+    /** Where each provider's egg physically stands - see {@link #registerHatchSiteProvider(String, Function, Function)}. */
+    private final Map<String, Function<Player, org.bukkit.Location>> hatchSiteLocators = new ConcurrentHashMap<>();
+    /** The egg an auto-hatch session is tied to - see {@link #autoHatchTick}. */
+    private record AutoSession(String packId, org.bukkit.Location at) {
+    }
+    private final Map<java.util.UUID, AutoSession> autoSessions = new ConcurrentHashMap<>();
+    /** How far a player can walk from the egg they're auto-hatching before it switches off. */
+    public static final double AUTO_HATCH_LEASH = 15.0;
 
     /**
      * Shortens the hatch cooldown for a player - each registered factor
@@ -123,8 +131,26 @@ public final class PackOpenService implements Listener {
         hatchSiteProviders.put(key, provider);
     }
 
+    /** Same as {@link #registerHatchSiteProvider(String, Function)}, plus where the egg it names stands - what the auto-hatch leash measures from. */
+    public void registerHatchSiteProvider(String key, Function<Player, String> provider, Function<Player, org.bukkit.Location> locator) {
+        hatchSiteProviders.put(key, provider);
+        hatchSiteLocators.put(key, locator);
+    }
+
     public void unregisterHatchSiteProvider(String key) {
         hatchSiteProviders.remove(key);
+        hatchSiteLocators.remove(key);
+    }
+
+    /** Where the egg the player is standing at stands, or null. */
+    private org.bukkit.Location hatchSiteLocation(Player player) {
+        for (Map.Entry<String, Function<Player, String>> entry : hatchSiteProviders.entrySet()) {
+            if (entry.getValue().apply(player) != null) {
+                Function<Player, org.bukkit.Location> locator = hatchSiteLocators.get(entry.getKey());
+                return locator != null ? locator.apply(player) : null;
+            }
+        }
+        return null;
     }
 
     /** The egg the player is standing at right now, or null if they aren't at one. */
@@ -344,23 +370,51 @@ public final class PackOpenService implements Listener {
      * egg - rather than the old "toggle it on anywhere and drain a
      * stockpile".
      */
+    /**
+     * Auto-hatch is tied to the egg it started at: it keeps hatching that
+     * egg while the player stays within {@link #AUTO_HATCH_LEASH} blocks of
+     * it (so stepping back from the crowd around a station doesn't pause
+     * it), and switches itself OFF once they walk further - rather than
+     * quietly resuming at whatever egg they happen to pass next.
+     */
     private void autoHatchTick() {
         for (Player player : Bukkit.getOnlinePlayers()) {
-            PackPlayerProfile profile = store.getCached(player.getUniqueId());
+            java.util.UUID id = player.getUniqueId();
+            PackPlayerProfile profile = store.getCached(id);
             if (profile == null || !profile.isAutoOpenEnabled()) {
+                autoSessions.remove(id);
                 continue;
             }
-            String packId = hatchSiteFor(player);
-            if (packId == null) {
+            AutoSession session = autoSessions.get(id);
+            if (session == null) {
+                String packId = hatchSiteFor(player);
+                if (packId == null) {
+                    continue;
+                }
+                org.bukkit.Location at = hatchSiteLocation(player);
+                session = new AutoSession(packId, at != null ? at : player.getLocation());
+                autoSessions.put(id, session);
+            } else if (!player.getWorld().equals(session.at().getWorld())
+                    || player.getLocation().distanceSquared(session.at()) > AUTO_HATCH_LEASH * AUTO_HATCH_LEASH) {
+                autoSessions.remove(id);
+                profile.setAutoOpenEnabled(false);
+                store.save(id);
+                player.sendMessage(me.dontshare.yieldcore.text.Text.parse(
+                        "<gray>Auto Hatch <red>off</red> - you walked away from the egg.</gray>"));
                 continue;
             }
             // Exactly the rung they picked - see PackPlayerProfile#getAutoHatchAmount
             // for why this never quietly settles for fewer.
             int amount = Math.min(profile.getAutoHatchAmount(), maxTierFor(player));
-            if (rollService.affordableHatches(player, packId, amount) < amount) {
+            if (rollService.affordableHatches(player, session.packId(), amount) < amount) {
                 continue;
             }
-            tryHatch(player, packId, amount);
+            tryHatch(player, session.packId(), amount);
         }
+    }
+
+    @org.bukkit.event.EventHandler
+    public void onQuitClearAutoSession(org.bukkit.event.player.PlayerQuitEvent event) {
+        autoSessions.remove(event.getPlayer().getUniqueId());
     }
 }
