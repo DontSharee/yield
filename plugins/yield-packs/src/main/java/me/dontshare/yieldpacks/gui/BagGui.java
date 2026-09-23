@@ -146,7 +146,11 @@ public final class BagGui {
         // Row 1: equipped strip, 5 slots (2-6) with its own prev/next arrows.
         // Slot 8 hosts the "Delete by Rarity" shortcut. How pets fight
         // (Auto Attack, single/multi send) lives in /settings, not here.
-        builder.item(0, GuiIcons.filler());
+        if (storage != null) {
+            builder.item(0, buildStorageButton(player, profile), (clicker, event) -> upgradeStorage(clicker));
+        } else {
+            builder.item(0, GuiIcons.filler());
+        }
         builder.item(8, buildDeleteByRarityButton(), (clicker, event) -> deleteByRarityGui.open(clicker));
         builder.item(1, GuiIcons.pageArrow(false, equippedPage.hasPrevious()),
                 (clicker, event) -> turnPage(clicker, equippedPageIndex, equippedPage, -1));
@@ -352,6 +356,62 @@ public final class BagGui {
         profile.removePet(instanceId);
         store.save(player.getUniqueId());
         player.sendMessage(Text.parse("<gray>Deleted 1x.</gray>"));
+        open(player);
+    }
+
+    private me.dontshare.yieldpacks.storage.BagStorageService storage;
+
+    /** Set once at startup - see YieldPacks. */
+    public void setStorage(me.dontshare.yieldpacks.storage.BagStorageService storage) {
+        this.storage = storage;
+    }
+
+    /** Pet storage: how full the bag is, and the next diamond upgrade (or the pass). */
+    private ItemStack buildStorageButton(Player viewer, PackPlayerProfile profile) {
+        ItemBuilder builder = ItemBuilder.of(Material.ENDER_CHEST).name(MenuLore.name(ACCENT, "Pet Storage"));
+        List<String> data = new ArrayList<>();
+        int used = storage.used(profile);
+        if (storage.isInfinite(viewer)) {
+            data.add("Stored: &a" + Formatting.format((double) used) + " &8/ &a\u221E");
+            MenuLore.info("storage", List.of("Infinite Storage - no limit."), ACCENT, data).forEach(builder::lore);
+            return builder.hideAttributes().build();
+        }
+        int capacity = storage.capacity(viewer, profile);
+        data.add("Stored: " + MenuLore.progress(used, capacity));
+        data.add("Upgrades: " + MenuLore.progress(profile.getStorageUpgrades(),
+                me.dontshare.yieldpacks.storage.BagStorageService.MAX_UPGRADES));
+        java.math.BigInteger cost = storage.nextUpgradeCost(profile);
+        if (cost == null) {
+            MenuLore.info("storage", List.of("Fully upgraded. Infinite Storage", "at &f/buy &7removes the limit."), ACCENT, data)
+                    .forEach(builder::lore);
+            return builder.hideAttributes().build();
+        }
+        boolean affordable = profile.getDiamonds().compareTo(cost) >= 0;
+        data.add("Next: &a+" + me.dontshare.yieldpacks.storage.BagStorageService.SLOTS_PER_UPGRADE + " &7slots");
+        data.add("Cost: " + (affordable ? "&b" : "&c") + Formatting.format(cost) + " &7diamonds");
+        List<String> description = List.of("Hatching stops when your bag", "is full. Infinite Storage at &f/buy&7.");
+        if (affordable) {
+            MenuLore.purchase("storage", description, "&b", data, "Click to upgrade").forEach(builder::lore);
+        } else {
+            MenuLore.info("storage", description, ACCENT, data).forEach(builder::lore);
+        }
+        return builder.hideAttributes().build();
+    }
+
+    private void upgradeStorage(Player player) {
+        switch (storage.buyUpgrade(player)) {
+            case SUCCESS -> {
+                player.playSound(player.getLocation(), Sound.BLOCK_ENDER_CHEST_OPEN, 0.8f, 1.2f);
+                PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
+                player.sendMessage(Text.parse("<green>Pet storage upgraded - now <cap>.</green>",
+                        Placeholder.unparsed("cap", storage.usageLabel(player, profile))));
+            }
+            case TOO_POOR -> {
+                player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
+                player.sendMessage(Text.parse("<red>You need more diamonds for that.</red>"));
+            }
+            case MAXED, INFINITE -> player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
+        }
         open(player);
     }
 

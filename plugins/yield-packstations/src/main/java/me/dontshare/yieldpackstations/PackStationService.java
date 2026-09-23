@@ -32,7 +32,7 @@ import java.util.function.Supplier;
  */
 public final class PackStationService {
 
-    public enum Result { SUCCESS, ZONE_LOCKED, CANT_AFFORD, NO_STOCK_CONFIGURED, BUSY }
+    public enum Result { SUCCESS, ZONE_LOCKED, CANT_AFFORD, NO_STOCK_CONFIGURED, BUSY, BAG_FULL }
 
     /**
      * How a station's egg is paid for when coins and diamonds are not the
@@ -149,6 +149,10 @@ public final class PackStationService {
         PackDefinition pack = resolvePack(station);
         if (packId == null || pack == null) {
             return new Purchase(Result.NO_STOCK_CONFIGURED, 0);
+        }
+        var storage = packs.getBagStorageService();
+        if (!storage.hasRoom(player, packs.getPlayerStore().getOrCreate(player.getUniqueId()), 1)) {
+            return new Purchase(Result.BAG_FULL, 0);
         }
         int tier = packs.getPackOpenService().maxTierFor(player);
         AlternateCharge charge = alternateCharges.get(packId);

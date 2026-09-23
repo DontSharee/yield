@@ -125,6 +125,17 @@ products:
     category: gamepass
     commands:
       - "lp user %player% permission set yieldpacks.autotap true"
+  infinite_storage_pass:
+    display-name: "&bInfinite Pet Storage"
+    icon: ENDER_CHEST
+    description:
+      - "No limit on how many pets"
+      - "your Bag holds - never stop"
+      - "hatching for space. Permanent."
+    cost-credits: 2500
+    category: gamepass
+    commands:
+      - "lp user %player% permission set yieldpacks.storage.infinite true"
   premium_auto_tap_pass:
     display-name: "&6&lPremium Auto Tap"
     icon: NETHER_STAR

@@ -134,6 +134,7 @@ public final class YieldPacks extends JavaPlugin {
     private volatile PetLevelingConfig petLevelingConfig;
     private PetLevelingService petLevelingService;
     private PackRollService rollService;
+    private me.dontshare.yieldpacks.storage.BagStorageService bagStorageService;
     private ItemIconFactory iconFactory;
     private EggCatalogGui eggCatalogGui;
     private HatchMenuGui hatchMenuGui;
@@ -251,6 +252,8 @@ public final class YieldPacks extends JavaPlugin {
 
         rollService = new PackRollService(() -> content, playerStore, equipmentService, luckService,
                 existsCounterStore, petDisplayService, stockService, pityService);
+        bagStorageService = new me.dontshare.yieldpacks.storage.BagStorageService(playerStore);
+        rollService.setStorage(bagStorageService);
 
         core.getPlaceholderRegistry().register("coins", player -> {
             PackPlayerProfile profile = playerStore.getCached(player.getUniqueId());
@@ -377,12 +380,13 @@ public final class YieldPacks extends JavaPlugin {
 
         DeleteByRarityGui deleteByRarityGui = new DeleteByRarityGui(playerStore, () -> content.items(), () -> content.rarities(), core.getGuiManager());
         PetWithdrawItem withdrawItem = new PetWithdrawItem(this, iconFactory, petLevelingService, () -> petEnchantContent);
-        core.getListenerManager().register(new PetRedeemListener(withdrawItem, playerStore, petDisplayService));
+        core.getListenerManager().register(new PetRedeemListener(withdrawItem, playerStore, petDisplayService, bagStorageService));
         core.getListenerManager().register(new PetItemFeedListener(withdrawItem, playerStore, () -> content.items(),
                 () -> content.rarities(), equipmentService, this::applyPetItemHandlers));
         BagGui bagGui = new BagGui(playerStore, () -> content.items(), () -> content.rarities(), equipmentService,
                 core.getGuiManager(), iconFactory, petDisplayService, deleteByRarityGui, petLevelingService,
                 withdrawItem, existsCounterStore, this::applyPetItemHandlers, () -> petEnchantContent);
+        bagGui.setStorage(bagStorageService);
         IndexGui indexGui = new IndexGui(() -> content, playerStore, luckService, core.getGuiManager(), iconFactory);
         HugeIndexGui hugeIndexGui = new HugeIndexGui(() -> content, playerStore, iconFactory, core.getGuiManager());
         indexGui.setHugeIndexGui(hugeIndexGui);
@@ -536,6 +540,10 @@ public final class YieldPacks extends JavaPlugin {
     /** The right-click menu a physical egg station opens - see yield-packstations. */
     public HatchMenuGui getHatchMenuGui() {
         return hatchMenuGui;
+    }
+
+    public me.dontshare.yieldpacks.storage.BagStorageService getBagStorageService() {
+        return bagStorageService;
     }
 
     public PackRollService getPackRollService() {

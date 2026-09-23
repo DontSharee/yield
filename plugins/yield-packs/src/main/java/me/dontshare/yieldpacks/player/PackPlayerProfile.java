@@ -50,6 +50,8 @@ public final class PackPlayerProfile implements PlayerRecord {
     private List<PetInstance> pets = new ArrayList<>();
     /** Ordered instance ids from {@link #pets} currently equipped - equip-slot order, same role {@code equippedItemIds} used to play before the per-instance migration. */
     private List<UUID> equippedPetIds = new ArrayList<>();
+    /** Pet-storage upgrades bought with diamonds - see BagStorageService. */
+    private int storageUpgrades;
     private SendMode sendMode = SendMode.MANUAL;
     /**
      * True once the player has switched auto-attack OFF. Pets fight on
@@ -262,6 +264,14 @@ public final class PackPlayerProfile implements PlayerRecord {
      * {@link #removePets}/{@link #clearPets} for changes - they keep
      * {@link #findPet} fast instead of forcing it to rebuild.
      */
+    public int getStorageUpgrades() {
+        return storageUpgrades;
+    }
+
+    public void setStorageUpgrades(int storageUpgrades) {
+        this.storageUpgrades = storageUpgrades;
+    }
+
     public List<PetInstance> getPets() {
         return pets;
     }

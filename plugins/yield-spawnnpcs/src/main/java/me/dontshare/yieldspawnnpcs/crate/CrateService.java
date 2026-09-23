@@ -27,7 +27,7 @@ import java.util.function.Supplier;
 public final class CrateService {
 
     public enum PurchaseResult {
-        SUCCESS, NOT_ENOUGH_KEYS, UNKNOWN_CRATE
+        SUCCESS, NOT_ENOUGH_KEYS, UNKNOWN_CRATE, BAG_FULL
     }
 
     public record PurchaseOutcome(PurchaseResult result, CrateRewardEntry reward) {
@@ -58,6 +58,10 @@ public final class CrateService {
         int keys = profile.getCrateKeys().getOrDefault(crateId, 0);
         if (keys <= 0) {
             return PurchaseOutcome.of(PurchaseResult.NOT_ENOUGH_KEYS);
+        }
+        // A crate can hold a pet - a full bag keeps the key.
+        if (!packs.getBagStorageService().hasRoom(player, profile, 1)) {
+            return PurchaseOutcome.of(PurchaseResult.BAG_FULL);
         }
         profile.getCrateKeys().put(crateId, keys - 1);
 

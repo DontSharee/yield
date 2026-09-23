@@ -11,6 +11,9 @@ permissions:
     default: op
   yieldpacks.autotap:
     default: false
+  # Infinite Storage pass - no pet storage limit (BagStorageService).
+  yieldpacks.storage.infinite:
+    default: false
   # The old Free Auto Send pass - still honoured, as Auto Tap (CombatPerks).
   yieldpacks.automode:
     default: false

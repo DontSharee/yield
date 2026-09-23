@@ -123,6 +123,12 @@ public final class CrateDisplay {
                 player.sendMessage(Text.parse("<red>You don't have a <crate> Key - find them by killing Ore Cubes!</red>",
                         Placeholder.unparsed("crate", crate.displayName())));
             }
+            case BAG_FULL -> {
+                player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
+                var storage = packs.getBagStorageService();
+                var profile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
+                player.sendMessage(Text.parse("<red><msg></red>", Placeholder.unparsed("msg", storage.fullMessage(player, profile))));
+            }
             case UNKNOWN_CRATE -> {
                 // Shouldn't happen from a real click - the station this handler is bound to always matches a live crate.
             }

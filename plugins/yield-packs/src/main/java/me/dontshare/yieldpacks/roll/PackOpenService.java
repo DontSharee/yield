@@ -406,6 +406,15 @@ public final class PackOpenService implements Listener {
             // Exactly the rung they picked - see PackPlayerProfile#getAutoHatchAmount
             // for why this never quietly settles for fewer.
             int amount = Math.min(profile.getAutoHatchAmount(), maxTierFor(player));
+            var storage = rollService.storage();
+            if (storage != null && !storage.hasRoom(player, profile, amount)) {
+                autoSessions.remove(id);
+                profile.setAutoOpenEnabled(false);
+                store.save(id);
+                player.sendMessage(me.dontshare.yieldcore.text.Text.parse("<gray>Auto Hatch <red>off</red> - <msg></gray>",
+                        net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed("msg", storage.fullMessage(player, profile))));
+                continue;
+            }
             if (rollService.affordableHatches(player, session.packId(), amount) < amount) {
                 continue;
             }

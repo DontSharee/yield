@@ -260,6 +260,17 @@ public final class PackRollService {
      *               another currency entirely - a treasure chest's free
      *               burst, or an admin grant.
      */
+    private me.dontshare.yieldpacks.storage.BagStorageService storage;
+
+    /** Set once at startup - see BagStorageService. */
+    public void setStorage(me.dontshare.yieldpacks.storage.BagStorageService storage) {
+        this.storage = storage;
+    }
+
+    public me.dontshare.yieldpacks.storage.BagStorageService storage() {
+        return storage;
+    }
+
     public PurchaseResult hatch(Player player, String packId, int count, boolean charge) {
         PackDefinition pack;
         try {
@@ -273,6 +284,10 @@ public final class PackRollService {
         }
 
         PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
+        // Refused before anything is charged - a full bag never costs a hatch.
+        if (storage != null && !storage.hasRoom(player, profile, actual)) {
+            return PurchaseResult.failure(storage.fullMessage(player, profile));
+        }
         if (charge) {
             BigInteger coinCost = BigInteger.valueOf(pack.coinCost()).multiply(BigInteger.valueOf(actual));
             BigInteger diamondCost = BigInteger.valueOf(pack.diamondCost()).multiply(BigInteger.valueOf(actual));

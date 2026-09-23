@@ -19,7 +19,11 @@ public final class PetRedeemListener implements Listener {
     private final PlayerDataStore<PackPlayerProfile> playerStore;
     private final PetDisplayService petDisplayService;
 
-    public PetRedeemListener(PetWithdrawItem withdrawItem, PlayerDataStore<PackPlayerProfile> playerStore, PetDisplayService petDisplayService) {
+    private final me.dontshare.yieldpacks.storage.BagStorageService storage;
+
+    public PetRedeemListener(PetWithdrawItem withdrawItem, PlayerDataStore<PackPlayerProfile> playerStore, PetDisplayService petDisplayService,
+                             me.dontshare.yieldpacks.storage.BagStorageService storage) {
+        this.storage = storage;
         this.withdrawItem = withdrawItem;
         this.playerStore = playerStore;
         this.petDisplayService = petDisplayService;
@@ -40,6 +44,11 @@ public final class PetRedeemListener implements Listener {
         event.setUseItemInHand(Event.Result.DENY);
 
         PackPlayerProfile profile = playerStore.getOrCreate(player.getUniqueId());
+        // The item stays in hand when there's no room - nothing is lost.
+        if (!storage.hasRoom(player, profile, 1)) {
+            player.sendMessage(Text.parse("<red><msg></red>", net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed("msg", storage.fullMessage(player, profile))));
+            return;
+        }
         profile.addPet(pet);
         item.setAmount(item.getAmount() - 1);
         playerStore.save(player.getUniqueId());

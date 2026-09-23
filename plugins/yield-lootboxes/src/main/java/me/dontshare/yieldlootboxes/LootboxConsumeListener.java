@@ -47,6 +47,13 @@ public final class LootboxConsumeListener implements Listener {
         if (box == null) {
             return;
         }
+        // A box can hold a pet, so a full bag keeps the box unopened.
+        var storage = me.dontshare.yieldpacks.YieldPacks.getPlugin(me.dontshare.yieldpacks.YieldPacks.class).getBagStorageService();
+        var profile = me.dontshare.yieldpacks.YieldPacks.getPlugin(me.dontshare.yieldpacks.YieldPacks.class).getPlayerStore().getOrCreate(player.getUniqueId());
+        if (!storage.hasRoom(player, profile, 1)) {
+            player.sendMessage(Text.parse("<red><msg></red>", Placeholder.unparsed("msg", storage.fullMessage(player, profile))));
+            return;
+        }
         item.setAmount(item.getAmount() - 1);
         service.open(player, box);
         player.sendMessage(Text.parse("<#4BD9FF><bold>Opened!</bold></#4BD9FF> <gray><name></gray>",

@@ -183,6 +183,12 @@ public final class PackStationDisplay {
                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
                 player.sendMessage(Text.parse("<red>You can't afford this egg yet.</red>"));
             }
+            case BAG_FULL -> {
+                player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
+                var storage = packs.getBagStorageService();
+                player.sendMessage(Text.parse("<red><msg></red>", net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed("msg",
+                        storage.fullMessage(player, packs.getPlayerStore().getOrCreate(player.getUniqueId())))));
+            }
             case NO_STOCK_CONFIGURED -> {
                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
                 player.sendMessage(Text.parse("<red>This station has nothing in it right now.</red>"));
