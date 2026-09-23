@@ -710,9 +710,16 @@ after a boss kill), Relic Hunter (big safes and boss blocks twice as
 often), Extra Hand (+1 equip slot), Enchanter's Gift (+1 enchant slot),
 and so on - blocktree.yml lists them all with what their value means.
 
-What they cost the pacing: nothing on a first pass. Tier 7 is ~25 passes
-of a block, which no first-pass player reaches, so the 11.4h genesis time
-stands. They are what a camping or rebirthing player works toward. The
+What they cost the pacing: `bt_pacing.py` replays verify.py with every
+tier claimed the moment its goal is reached (flat coins added raw, as the
+game does, block multipliers inside the coin multiplier). Genesis goes
+from 11.4h to 11.2h (-1.5%). The early zones feel it most - Sulfur Flats
+at 13 minutes instead of 16, Obsidian Rift at 61 instead of 67 - because
+a flat bonus sized off a block's own value is a big share of a small
+payout and a vanishing share once rebirth and upgrade multipliers stack
+up. That is the right shape: the trees reward the opening, then fade into
+the perks. Tier 7 is ~25 passes of a block, which no first-pass player
+reaches, so no perk is in that number. They are what a camping or rebirthing player works toward. The
 averages once you have them: Midas +9% coins, Shadow Clone +5%, High Tide
 roughly +20% at ~40 kills a minute, Beacon Aura +10%, Stonewall +30% damage
 for anyone standing still (most of the time, for an idle grinder), Deep
