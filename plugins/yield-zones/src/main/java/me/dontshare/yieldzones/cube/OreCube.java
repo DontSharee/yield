@@ -15,8 +15,6 @@ public final class OreCube {
     private final UUID blockEntityUuid;
     private final int textEntityId;
     private final CubeBonus bonus;
-    private final int glowEntityId;
-    private final UUID glowEntityUuid;
     private long currentHp;
     // Whether the temporary white "you're looking at this one" outline is
     // currently applied - toggled as a glow flag directly on this cube's own
@@ -27,15 +25,13 @@ public final class OreCube {
     // already stands out).
     private boolean highlighted;
 
-    public OreCube(Location location, CubeTier tier, int blockEntityId, UUID blockEntityUuid, int textEntityId, CubeBonus bonus, int glowEntityId, UUID glowEntityUuid) {
+    public OreCube(Location location, CubeTier tier, int blockEntityId, UUID blockEntityUuid, int textEntityId, CubeBonus bonus) {
         this.location = location;
         this.tier = tier;
         this.blockEntityId = blockEntityId;
         this.blockEntityUuid = blockEntityUuid;
         this.textEntityId = textEntityId;
         this.bonus = bonus;
-        this.glowEntityId = glowEntityId;
-        this.glowEntityUuid = glowEntityUuid;
         this.currentHp = tier.maxHp();
     }
 
@@ -81,16 +77,6 @@ public final class OreCube {
     /** Null for a plain cube - see OreCubeService's glow/payout handling. */
     public CubeBonus bonus() {
         return bonus;
-    }
-
-    /** The packet-only, glowing block_display entity sitting on this cube - -1 if it has no bonus (see OreCubeService). */
-    public int glowEntityId() {
-        return glowEntityId;
-    }
-
-    /** This glow entity's UUID - needed to remove its scoreboard team entry on despawn. Null if it has no bonus. */
-    public UUID glowEntityUuid() {
-        return glowEntityUuid;
     }
 
     public long currentHp() {

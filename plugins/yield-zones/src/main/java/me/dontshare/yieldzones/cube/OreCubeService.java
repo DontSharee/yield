@@ -97,16 +97,6 @@ public final class OreCubeService implements Listener {
     // limit on how far a highlight (or a click-to-target) can reach, not
     // this constant.
     private static final double HIGHLIGHT_RANGE = 512.0;
-    // A glow-carrier BlockDisplay sits exactly on top of the real (fake)
-    // placed block underneath it, using the same material, purely so it can
-    // hold the "Glowing" flag a real block can't - two coplanar, identically
-    // textured opaque surfaces at the exact same position z-fight/flicker
-    // against each other otherwise. Nudging the overlay ~2% larger (and
-    // re-centering via the matching negative translation) gives it real
-    // depth separation without changing its silhouette or breaking the
-    // glow outline. See BlockDisplayManager#setTransformation.
-    private static final float GLOW_OVERLAY_SCALE = 1.02f;
-    private static final float GLOW_OVERLAY_TRANSLATE = -0.01f;
     /** How high above the zone's own configured floor a cube starts its fall - a short, consistent drop regardless of where in the zone it spawns. */
     private static final int FALL_HEIGHT_BLOCKS = 12;
     private static final int DAMAGE_INDICATOR_RISE_TICKS = 10;
@@ -603,9 +593,14 @@ public final class OreCubeService implements Listener {
         UUID playerId = player.getUniqueId();
         int x = 0;
         int z = 0;
+        // A giant hangs past its own column on every side (half a block for
+        // a 2x2x2), so it keeps one column in from the zone's edge rather
+        // than overhanging into whatever borders it. A zone too narrow for
+        // that falls back to the full width.
+        int inset = tier.giant() && region.maxX() - region.minX() >= 2 && region.maxZ() - region.minZ() >= 2 ? 1 : 0;
         for (int attempt = 0; attempt < SPAWN_COLUMN_RETRY_ATTEMPTS; attempt++) {
-            x = ThreadLocalRandom.current().nextInt(region.minX(), region.maxX() + 1);
-            z = ThreadLocalRandom.current().nextInt(region.minZ(), region.maxZ() + 1);
+            x = ThreadLocalRandom.current().nextInt(region.minX() + inset, region.maxX() - inset + 1);
+            z = ThreadLocalRandom.current().nextInt(region.minZ() + inset, region.maxZ() - inset + 1);
             if (!isColumnOccupied(playerId, x, z, tier.giant())) {
                 break;
             }
@@ -723,14 +718,10 @@ public final class OreCubeService implements Listener {
             return;
         }
         int textEntityId = PacketEntityManager.nextEntityId();
-        int glowEntityId = -1;
-        UUID glowEntityUuid = null;
         if (bonus != null) {
-            glowEntityId = PacketEntityManager.nextEntityId();
-            glowEntityUuid = UUID.randomUUID();
-            spawnGlow(owner, tier, bonus, landedAt, glowEntityId, glowEntityUuid);
+            applyBonusGlow(owner, blockEntityId, blockEntityUuid, bonus);
         }
-        OreCube cube = new OreCube(landedAt, tier, blockEntityId, blockEntityUuid, textEntityId, bonus, glowEntityId, glowEntityUuid);
+        OreCube cube = new OreCube(landedAt, tier, blockEntityId, blockEntityUuid, textEntityId, bonus);
         // Registration first, health bar last - the block has already
         // physically landed by this point (FakeFallingBlock's own handler
         // already did the sendBlockChange before invoking this callback),
@@ -746,22 +737,28 @@ public final class OreCubeService implements Listener {
     }
 
     /**
-     * A packet-only, glowing block_display sitting exactly on the bonus
-     * cube - the same block model, so it renders as a normal-looking block
-     * PLUS vanilla's colored glow outline around it (visible through
-     * walls). The outline's color comes from a real scoreboard {@code Team}
-     * on the OWNER'S OWN currently-active board (see {@code
-     * ScoreboardManager#scoreboardFor} - every player has their own private
-     * board for the sidebar, so a team registered on the shared main
-     * scoreboard would be invisible to them; only the owner ever needs to
-     * see this anyway, since cubes are already a per-viewer illusion).
+     * Gives a bonus cube - and every big safe and boss block, which carry a
+     * cosmetic one - its coloured see-through-walls outline, on the cube's
+     * OWN body entity.
+     * <p>
+     * This used to be a second display entity: a copy of the same block 2%
+     * bigger, sat over the body purely to carry the glow flag, from when the
+     * body was a real (fake) block that could not glow. The body has long
+     * been a display entity that can, and the copy had a cost nobody saw
+     * until giants made glowing cubes the ones worth fighting: it never
+     * animated, so it hid the body's hit squish completely - every golden
+     * cube, big safe and boss block took its hits without reacting. Glowing
+     * the body means the outline squishes with it.
+     * <p>
+     * The colour comes from a scoreboard {@code Team} on the OWNER'S OWN
+     * board (see {@code ScoreboardManager#scoreboardFor} - every player has
+     * a private board for the sidebar, so a team on the shared main board
+     * would be invisible to them; only the owner ever sees a cube anyway).
+     * A body can only be on one team, which is fine: the white look-at
+     * outline is never applied to a cube that already glows.
      */
-    private void spawnGlow(Player owner, CubeTier tier, CubeBonus bonus, Location landedAt, int glowEntityId, UUID glowEntityUuid) {
-        BlockDisplayManager.spawn(owner, glowEntityId, glowEntityUuid, landedAt);
-        BlockDisplayManager.setBlockState(owner, glowEntityId, tier.material());
-        setGlowOverlaySize(owner, glowEntityId, tier.size());
-        PacketEntityManager.setGlowing(owner, glowEntityId, true);
-
+    private void applyBonusGlow(Player owner, int bodyEntityId, UUID bodyEntityUuid, CubeBonus bonus) {
+        PacketEntityManager.setGlowing(owner, bodyEntityId, true);
         Scoreboard board = core().getScoreboardManager().scoreboardFor(owner);
         String teamName = "cube_glow_" + bonus.color().toString().toLowerCase(Locale.ROOT);
         Team team = board.getTeam(teamName);
@@ -769,22 +766,7 @@ public final class OreCubeService implements Listener {
             team = board.registerNewTeam(teamName);
             team.color(bonus.color());
         }
-        team.addEntry(glowEntityUuid.toString());
-    }
-
-    /**
-     * The glow overlay's transform for a cube {@code size} blocks big:
-     * {@link #GLOW_OVERLAY_SCALE} times bigger than the body and centred on
-     * it on every axis, so it keeps the same small depth gap that stops it
-     * z-fighting the body whatever the size. At size 1 this is exactly the
-     * old fixed {@link #GLOW_OVERLAY_TRANSLATE} / {@link #GLOW_OVERLAY_SCALE}.
-     */
-    private static void setGlowOverlaySize(Player viewer, int glowEntityId, float size) {
-        float scale = size * GLOW_OVERLAY_SCALE;
-        float horizontal = 0.5f - scale / 2f;
-        float vertical = size * GLOW_OVERLAY_TRANSLATE;
-        BlockDisplayManager.setTransformation(viewer, glowEntityId,
-                new Vector3f(horizontal, vertical, horizontal), new Vector3f(scale, scale, scale));
+        team.addEntry(bodyEntityUuid.toString());
     }
 
     /**
@@ -874,11 +856,13 @@ public final class OreCubeService implements Listener {
             tracked.remove(cube.textEntityId());
         }
         if (cube.bonus() != null) {
-            PacketEntityManager.destroyEntity(player, cube.glowEntityId());
+            // The body carried the bonus colour's team entry itself (see
+            // applyBonusGlow); the entity is gone, the entry must go too or
+            // the team keeps a dead UUID for the rest of the session.
             Scoreboard board = core().getScoreboardManager().scoreboardFor(player);
-            Team team = board.getEntryTeam(cube.glowEntityUuid().toString());
+            Team team = board.getEntryTeam(cube.blockEntityUuid().toString());
             if (team != null) {
-                team.removeEntry(cube.glowEntityUuid().toString());
+                team.removeEntry(cube.blockEntityUuid().toString());
             }
         }
     }
