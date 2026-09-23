@@ -71,6 +71,8 @@ public final class TapService implements Listener {
     private final OreCubeService cubes;
     private final Map<UUID, Long> lastTapAt = new ConcurrentHashMap<>();
     private final Map<UUID, Long> lastTapKillAt = new ConcurrentHashMap<>();
+    /** The part of a tap that didn't make a whole HP yet - see {@link #tap}. */
+    private final Map<UUID, Double> fractionCarry = new ConcurrentHashMap<>();
     private final Map<String, BiFunction<Player, PackPlayerProfile, Double>> multiplierProviders = new ConcurrentHashMap<>();
     private final Map<String, BiFunction<Player, PackPlayerProfile, Double>> powerProviders = new ConcurrentHashMap<>();
     private final Map<String, TapListener> tapListeners = new ConcurrentHashMap<>();
@@ -82,7 +84,7 @@ public final class TapService implements Listener {
      */
     @FunctionalInterface
     public interface TapListener {
-        void onTap(Player player, PackPlayerProfile profile, OreCube cube, long damage);
+        void onTap(Player player, PackPlayerProfile profile, OreCube cube, double damage);
     }
     /** Players whose taps should do nothing right now - a world boss fight owns their attention. */
     private Predicate<Player> paused = player -> false;
@@ -156,17 +158,18 @@ public final class TapService implements Listener {
         return power;
     }
 
-    /** What one tap deals right now. Never below 1. */
-    public long tapDamage(Player player, PackPlayerProfile profile) {
+    /** What one tap deals right now, exactly - fractions and all. */
+    public double tapDamage(Player player, PackPlayerProfile profile) {
         return tapDamageAt(player, profile, tapPower(player, profile));
     }
 
     /**
      * What one tap WOULD deal at {@code power} x pet power - how the weapons
      * screen shows a weapon's damage whatever the player is holding while
-     * they look at it. Never below 1.
+     * they look at it. Exact: a 0.3x weapon on 1 pet power is 0.3 a tap,
+     * and three taps take one HP (see {@link #tap}).
      */
-    public long tapDamageAt(Player player, PackPlayerProfile profile, double power) {
+    public double tapDamageAt(Player player, PackPlayerProfile profile, double power) {
         double multiplier = 1.0;
         for (BiFunction<Player, PackPlayerProfile, Double> provider : multiplierProviders.values()) {
             Double value = provider.apply(player, profile);
@@ -174,7 +177,7 @@ public final class TapService implements Listener {
                 multiplier *= Math.max(0.0, value);
             }
         }
-        return Math.max(1L, Math.round(petPower(profile) * power * multiplier));
+        return Math.max(0.0, petPower(profile) * power * multiplier);
     }
 
     /**
@@ -198,8 +201,14 @@ public final class TapService implements Listener {
             return false;
         }
         lastTapAt.put(id, now);
-        long damage = tapDamage(player, profile);
-        if (damage >= cube.currentHp()) {
+        // Cube HP is whole numbers, taps aren't: the fraction a tap doesn't
+        // spend is carried to the next one, so 0.3 a tap really is one HP
+        // every three and a third taps rather than rounding to 0 or 1.
+        double exact = tapDamage(player, profile);
+        double total = exact + fractionCarry.getOrDefault(id, 0.0);
+        long damage = (long) Math.floor(total);
+        fractionCarry.put(id, total - damage);
+        if (damage > 0 && damage >= cube.currentHp()) {
             Long lastKill = lastTapKillAt.get(id);
             if (lastKill != null && now - lastKill < TAP_KILL_COOLDOWN_MILLIS) {
                 // Too soon for another tap kill - see TAP_KILL_COOLDOWN_MILLIS.
@@ -208,11 +217,10 @@ public final class TapService implements Listener {
                 lastTapKillAt.put(id, now);
             }
         }
-        cubes.queueDamage(player, cube, damage, null);
         for (TapListener listener : tapListeners.values()) {
-            listener.onTap(player, profile, cube, damage);
+            listener.onTap(player, profile, cube, exact);
         }
-        cubes.flushDamage(player);
+        cubes.applyTap(player, cube, damage, exact);
         return true;
     }
 
@@ -242,5 +250,6 @@ public final class TapService implements Listener {
     public void onQuit(PlayerQuitEvent event) {
         lastTapAt.remove(event.getPlayer().getUniqueId());
         lastTapKillAt.remove(event.getPlayer().getUniqueId());
+        fractionCarry.remove(event.getPlayer().getUniqueId());
     }
 }

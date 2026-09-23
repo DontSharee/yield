@@ -508,8 +508,14 @@ public final class PetDisplayService {
         List<Location> positions = positionsFor(owner, instances, hoverOffset);
         if (overrides != null && !overrides.isEmpty()) {
             Map<Location, Double> radii = ringRadii.getOrDefault(owner.getUniqueId(), Map.of());
+            // Slots are taken in slot order, not the override map's own
+            // (Map.copyOf's order is arbitrary and changes whenever the set
+            // of targeted slots does). Without this, sending ONE pet to a
+            // new cube reshuffled every other pet's place around its ring,
+            // and the whole squad visibly swapped places at once - which
+            // read as all the pets flying back and out again.
             Map<Location, List<Integer>> slotsByTarget = new LinkedHashMap<>();
-            for (Map.Entry<Integer, Location> entry : overrides.entrySet()) {
+            for (Map.Entry<Integer, Location> entry : new java.util.TreeMap<>(overrides).entrySet()) {
                 slotsByTarget.computeIfAbsent(entry.getValue(), k -> new ArrayList<>()).add(entry.getKey());
             }
             for (Map.Entry<Location, List<Integer>> group : slotsByTarget.entrySet()) {

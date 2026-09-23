@@ -20,6 +20,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.Comparator;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -251,6 +252,15 @@ public final class PetCombatController implements Listener {
         Map<UUID, OreCube> targets = singleTargetsByPet.computeIfAbsent(id, k -> new ConcurrentHashMap<>());
         List<OreCube> live = cubeService.liveCubes(player);
 
+        // Every pet busy: take the weakest one off the most crowded cube, so
+        // a click never strips the only pet off a cube that has one.
+        Map<OreCube, Long> load = new HashMap<>();
+        for (UUID petId : equipped) {
+            OreCube current = targets.get(petId);
+            if (current != null && live.contains(current)) {
+                load.merge(current, 1L, Long::sum);
+            }
+        }
         UUID chosen = equipped.stream()
                 .filter(petId -> {
                     OreCube current = targets.get(petId);
@@ -258,7 +268,9 @@ public final class PetCombatController implements Listener {
                 })
                 .max(Comparator.comparingDouble(petId -> effectiveDamageOf(profile, petId)))
                 .orElseGet(() -> equipped.stream()
-                        .min(Comparator.comparingDouble(petId -> effectiveDamageOf(profile, petId)))
+                        .filter(petId -> !cube.equals(targets.get(petId)))
+                        .min(Comparator.comparingLong((UUID petId) -> -load.getOrDefault(targets.get(petId), 0L))
+                                .thenComparingDouble(petId -> effectiveDamageOf(profile, petId)))
                         .orElse(null));
         if (chosen == null || cube.equals(targets.get(chosen))) {
             return;
@@ -322,7 +334,9 @@ public final class PetCombatController implements Listener {
             recallAll(player);
         }
 
-        if (autoOn) {
+        if (autoOn && profile.getAttackMode() == AttackMode.SINGLE) {
+            tickAutoSpread(player, profile, profile.getAutoTargetMode(), equipped, live);
+        } else if (autoOn) {
             tickShared(player, profile, profile.getAutoTargetMode(), equipped, live);
         } else if (profile.getAttackMode() == AttackMode.SINGLE) {
             tickSingle(player, profile, equipped, live);
@@ -351,8 +365,116 @@ public final class PetCombatController implements Listener {
         tickPlayer(event.getPlayer());
     }
 
+    /**
+     * Auto Attack with Single Send: the squad spreads out, one pet per cube
+     * while there are cubes to go round, doubling up only once every cube
+     * has one. A pet whose cube dies takes the least-crowded cube left (by
+     * the auto-target preference on ties), and a fresh cube pulls a pet off
+     * whichever cube has the most. A click on a cube a pet is already on is
+     * a tap; on any other it sends one more pet there (see YieldZones).
+     */
+    private void tickAutoSpread(Player player, PackPlayerProfile profile, AutoTargetMode mode, List<UUID> equipped, List<OreCube> live) {
+        UUID id = player.getUniqueId();
+        sharedTargetByPlayer.remove(id);
+        Map<UUID, OreCube> targets = singleTargetsByPet.computeIfAbsent(id, k -> new ConcurrentHashMap<>());
+        Map<UUID, Long> cooldowns = cooldownsByPet.computeIfAbsent(id, k -> new ConcurrentHashMap<>());
+        targets.keySet().retainAll(equipped);
+        targets.values().removeIf(cube -> !live.contains(cube));
+        if (live.isEmpty()) {
+            tickSingle(player, profile, equipped, live);
+            return;
+        }
+
+        // Cubes in the order this player's auto-target setting prefers them.
+        List<OreCube> preferred = new ArrayList<>(live);
+        List<OreCube> ordered = new ArrayList<>();
+        while (!preferred.isEmpty()) {
+            OreCube next = autoTarget(mode, player, preferred);
+            ordered.add(next);
+            preferred.remove(next);
+        }
+        Map<OreCube, Integer> load = new HashMap<>();
+        for (OreCube cube : ordered) {
+            load.put(cube, 0);
+        }
+        targets.values().forEach(cube -> load.merge(cube, 1, Integer::sum));
+
+        long arrival = autoSwitchCooldownTicks(player, profile);
+        // Idle pets, strongest first, each to the least-crowded cube.
+        List<UUID> idle = new ArrayList<>();
+        for (UUID petId : equipped) {
+            if (!targets.containsKey(petId)) {
+                idle.add(petId);
+            }
+        }
+        idle.sort(Comparator.comparingDouble((UUID petId) -> effectiveDamageOf(profile, petId)).reversed());
+        for (UUID petId : idle) {
+            OreCube best = leastLoaded(ordered, load);
+            targets.put(petId, best);
+            load.merge(best, 1, Integer::sum);
+            cooldowns.put(petId, currentTick + arrival);
+        }
+        // A cube nobody is on while another has two or more: move the
+        // weakest pet off the most crowded one.
+        while (true) {
+            OreCube empty = null;
+            for (OreCube cube : ordered) {
+                if (load.get(cube) == 0) {
+                    empty = cube;
+                    break;
+                }
+            }
+            OreCube crowded = null;
+            for (OreCube cube : ordered) {
+                if (load.get(cube) >= 2 && (crowded == null || load.get(cube) > load.get(crowded))) {
+                    crowded = cube;
+                }
+            }
+            if (empty == null || crowded == null) {
+                break;
+            }
+            OreCube from = crowded;
+            UUID mover = targets.entrySet().stream()
+                    .filter(entry -> entry.getValue().equals(from))
+                    .map(Map.Entry::getKey)
+                    .min(Comparator.comparingDouble(petId -> effectiveDamageOf(profile, petId)))
+                    .orElse(null);
+            if (mover == null) {
+                break;
+            }
+            targets.put(mover, empty);
+            load.merge(from, -1, Integer::sum);
+            load.merge(empty, 1, Integer::sum);
+            cooldowns.put(mover, currentTick + arrival);
+        }
+
+        // The boss bar (and Auto Tap) follow the cube the strongest pet is on.
+        OreCube current = cubeService.currentTarget(player);
+        if (current == null || !targets.containsValue(current)) {
+            equipped.stream()
+                    .filter(targets::containsKey)
+                    .max(Comparator.comparingDouble(petId -> effectiveDamageOf(profile, petId)))
+                    .map(targets::get)
+                    .ifPresent(cube -> cubeService.setTarget(player, cube));
+        }
+        tickSingle(player, profile, equipped, live);
+    }
+
+    private static OreCube leastLoaded(List<OreCube> ordered, Map<OreCube, Integer> load) {
+        OreCube best = ordered.get(0);
+        for (OreCube cube : ordered) {
+            if (load.get(cube) < load.get(best)) {
+                best = cube;
+            }
+        }
+        return best;
+    }
+
     private void tickShared(Player player, PackPlayerProfile profile, AutoTargetMode mode, List<UUID> equipped, List<OreCube> live) {
         UUID id = player.getUniqueId();
+        // Per-pet assignments belong to the spread/single modes - left over
+        // from a mode switch they would make isAttacking lie.
+        singleTargetsByPet.remove(id);
         Map<UUID, Long> cooldowns = cooldownsByPet.computeIfAbsent(id, k -> new ConcurrentHashMap<>());
         if (live.isEmpty()) {
             packs.getPetDisplayService().clearAttackTarget(player);
@@ -464,6 +586,7 @@ public final class PetCombatController implements Listener {
      */
     private void tickManualMulti(Player player, PackPlayerProfile profile, List<UUID> equipped, List<OreCube> live) {
         UUID id = player.getUniqueId();
+        singleTargetsByPet.remove(id);
         Map<UUID, Long> cooldowns = cooldownsByPet.computeIfAbsent(id, k -> new ConcurrentHashMap<>());
         if (live.isEmpty()) {
             packs.getPetDisplayService().clearAttackTarget(player);

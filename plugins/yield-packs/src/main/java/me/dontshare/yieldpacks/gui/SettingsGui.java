@@ -175,9 +175,11 @@ public final class SettingsGui {
         MenuLore.button(
                 "settings",
                 List.of(
-                        " &7Only used while Auto Attack is off:",
-                        " &7Single Send - each click sends one pet.",
-                        " &7Multi Send - each click sends the whole squad."
+                        "Single Send: one pet per click. With",
+                        "Auto Attack on, pets spread out over",
+                        "different cubes.",
+                        "Multi Send: the whole squad goes",
+                        "together."
                 ),
                 ACCENT,
                 "Click to Toggle"
