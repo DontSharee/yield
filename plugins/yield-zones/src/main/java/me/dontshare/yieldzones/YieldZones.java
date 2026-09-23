@@ -120,6 +120,14 @@ public final class YieldZones extends JavaPlugin {
         tapService.start();
         cubeService.setClickHandler((clicker, cube) -> {
             worldBossService.disengage(clicker);
+            // As in Pet Simulator 99: clicking the cube your pets are already
+            // on is click damage and nothing else - the squad stays put.
+            // Clicking any other cube is an order: the pets go there, and
+            // clicks on it deal damage once they're on it.
+            if (combatController.isAttacking(clicker, cube)) {
+                tapService.tap(clicker, cube);
+                return;
+            }
             PackPlayerProfile profile = packs.getPlayerStore().getCached(clicker.getUniqueId());
             boolean sendOneAtATime = profile != null && !profile.isAutoAttackOn()
                     && profile.getAttackMode() == AttackMode.SINGLE;
@@ -128,10 +136,6 @@ public final class YieldZones extends JavaPlugin {
             } else {
                 combatController.assignSharedTarget(clicker, cube);
             }
-            // Every click is also a tap, as in Pet Simulator 99 - after the
-            // redirect, so a tap that finishes the cube leaves nothing
-            // pointing at a dead one.
-            tapService.tap(clicker, cube);
         });
 
         Bukkit.getPluginManager().registerEvents(new SneakRecallListener(combatController), this);
