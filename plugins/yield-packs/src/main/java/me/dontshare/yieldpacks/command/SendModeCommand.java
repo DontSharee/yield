@@ -35,7 +35,7 @@ public final class SendModeCommand {
             // Free for everyone - pets fighting on their own is the
             // baseline now, not a perk (see CombatPerks).
             PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
-            profile.setAutoAttack(sendMode == SendMode.AUTO);
+            profile.applyAutoAttack(sendMode == SendMode.AUTO);
             store.save(player.getUniqueId());
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.4f);
             player.sendMessage(Text.parse("<green>Send mode set to " + literal + ".</green>"));
