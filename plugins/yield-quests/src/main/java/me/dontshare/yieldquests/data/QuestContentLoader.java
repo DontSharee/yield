@@ -1,5 +1,6 @@
 package me.dontshare.yieldquests.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -26,7 +27,7 @@ public final class QuestContentLoader {
     }
 
     public QuestContent load() {
-        plugin.saveResource("quests.yml", false);
+        BundledConfig.sync(plugin, "quests.yml");
         File file = new File(plugin.getDataFolder(), "quests.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
         return new QuestContent(loadCategories(config));

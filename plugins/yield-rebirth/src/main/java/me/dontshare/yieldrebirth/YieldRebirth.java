@@ -1,5 +1,6 @@
 package me.dontshare.yieldrebirth;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import me.dontshare.yieldcore.YieldCore;
 import me.dontshare.yieldcore.command.CommandManager;
 import me.dontshare.yieldpacks.YieldPacks;
@@ -26,7 +27,7 @@ public final class YieldRebirth extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        saveResource("rebirth.yml", false);
+        BundledConfig.sync(this, "rebirth.yml");
 
         YieldCore core = JavaPlugin.getPlugin(YieldCore.class);
         YieldPacks packs = JavaPlugin.getPlugin(YieldPacks.class);

@@ -1,5 +1,6 @@
 package me.dontshare.yieldquests.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -22,7 +23,7 @@ public final class RankQuestContentLoader {
     }
 
     public List<RankQuestDefinition> load() {
-        plugin.saveResource("rank-quests.yml", false);
+        BundledConfig.sync(plugin, "rank-quests.yml");
         File file = new File(plugin.getDataFolder(), "rank-quests.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
         List<RankQuestDefinition> pool = new ArrayList<>();

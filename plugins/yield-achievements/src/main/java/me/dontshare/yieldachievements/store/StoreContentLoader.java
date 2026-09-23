@@ -1,5 +1,6 @@
 package me.dontshare.yieldachievements.store;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -25,7 +26,7 @@ public final class StoreContentLoader {
     }
 
     public Map<String, StoreProduct> load() {
-        plugin.saveResource("store.yml", false);
+        BundledConfig.sync(plugin, "store.yml");
         File file = new File(plugin.getDataFolder(), "store.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 

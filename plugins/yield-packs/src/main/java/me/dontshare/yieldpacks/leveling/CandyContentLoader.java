@@ -1,5 +1,6 @@
 package me.dontshare.yieldpacks.leveling;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -22,7 +23,7 @@ public final class CandyContentLoader {
     }
 
     public Map<String, Candy> load() {
-        plugin.saveResource("candy.yml", false);
+        BundledConfig.sync(plugin, "candy.yml");
         File file = new File(plugin.getDataFolder(), "candy.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 

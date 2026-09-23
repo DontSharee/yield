@@ -1,5 +1,6 @@
 package me.dontshare.yieldauctionhouse.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -14,7 +15,7 @@ public final class AuctionConfigLoader {
     }
 
     public AuctionConfig load() {
-        plugin.saveResource("auctionhouse.yml", false);
+        BundledConfig.sync(plugin, "auctionhouse.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), "auctionhouse.yml"));
 
         double saleTaxPercent = config.getDouble("sale-tax-percent", 5.0);

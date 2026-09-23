@@ -1,5 +1,6 @@
 package me.dontshare.yieldcosmetics.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -32,7 +33,7 @@ public final class CosmeticContentLoader {
     }
 
     public Content load() {
-        plugin.saveResource("cosmetics.yml", false);
+        BundledConfig.sync(plugin, "cosmetics.yml");
         File file = new File(plugin.getDataFolder(), "cosmetics.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 

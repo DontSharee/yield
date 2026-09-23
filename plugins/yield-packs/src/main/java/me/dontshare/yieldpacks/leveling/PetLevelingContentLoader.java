@@ -1,5 +1,6 @@
 package me.dontshare.yieldpacks.leveling;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -22,7 +23,7 @@ public final class PetLevelingContentLoader {
     }
 
     public PetLevelingConfig load() {
-        plugin.saveResource("pet-leveling.yml", false);
+        BundledConfig.sync(plugin, "pet-leveling.yml");
         File file = new File(plugin.getDataFolder(), "pet-leveling.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 

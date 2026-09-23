@@ -1,5 +1,6 @@
 package me.dontshare.yieldtools.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -22,7 +23,7 @@ public final class ToolContentLoader {
     }
 
     public List<ToolDefinition> load() {
-        plugin.saveResource("tools.yml", false);
+        BundledConfig.sync(plugin, "tools.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), "tools.yml"));
         ConfigurationSection section = config.getConfigurationSection("tools");
         List<ToolDefinition> tools = new ArrayList<>();

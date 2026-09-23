@@ -1,5 +1,6 @@
 package me.dontshare.yieldzones.boss;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import me.dontshare.yieldzones.data.ZoneDefinition;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -31,7 +32,7 @@ public final class WorldBossContentLoader {
     }
 
     public Map<String, WorldBossDefinition> load(Map<String, ZoneDefinition> zones) {
-        plugin.saveResource("worldboss.yml", false);
+        BundledConfig.sync(plugin, "worldboss.yml");
         File file = new File(plugin.getDataFolder(), "worldboss.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 

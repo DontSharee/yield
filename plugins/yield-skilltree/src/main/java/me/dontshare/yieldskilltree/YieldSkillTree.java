@@ -1,5 +1,6 @@
 package me.dontshare.yieldskilltree;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import me.dontshare.yieldcore.YieldCore;
 import me.dontshare.yieldcore.database.PlayerStores;
 import me.dontshare.yieldskilltree.data.SkillTreeProfile;
@@ -43,7 +44,7 @@ public final class YieldSkillTree extends JavaPlugin {
                 PlayerStores.register(this, core.getListenerManager(), core.getDatabaseManager(),
                         "skilltree", SkillTreeProfile.class, SkillTreeProfile::new, "skill tree data"));
 
-        saveResource("prestige.yml", false);
+        BundledConfig.sync(this, "prestige.yml");
         prestigeService = new PrestigeService(packs.getPlayerStore(), loadPrestigeConfig());
 
         registerProviders(packs);

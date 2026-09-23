@@ -1,5 +1,6 @@
 package me.dontshare.yieldmining.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -34,7 +35,7 @@ public final class MiningContentLoader {
     }
 
     public MiningContent load() {
-        plugin.saveResource("mining.yml", false);
+        BundledConfig.sync(plugin, "mining.yml");
         File oreFile = new File(plugin.getDataFolder(), "mining.yml");
         Map<Material, OreDefinition> ores = loadOres(YamlConfiguration.loadConfiguration(oreFile));
 

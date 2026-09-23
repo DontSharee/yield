@@ -1,5 +1,6 @@
 package me.dontshare.yieldranks.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -22,7 +23,7 @@ public final class RankContentLoader {
     }
 
     public Map<String, DonorRank> load() {
-        plugin.saveResource("ranks.yml", false);
+        BundledConfig.sync(plugin, "ranks.yml");
         File file = new File(plugin.getDataFolder(), "ranks.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 

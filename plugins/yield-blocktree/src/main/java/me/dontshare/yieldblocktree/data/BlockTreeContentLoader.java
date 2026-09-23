@@ -1,5 +1,6 @@
 package me.dontshare.yieldblocktree.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -24,7 +25,7 @@ public final class BlockTreeContentLoader {
     }
 
     public Map<Material, BlockTreeDefinition> load() {
-        plugin.saveResource("blocktree.yml", false);
+        BundledConfig.sync(plugin, "blocktree.yml");
         File file = new File(plugin.getDataFolder(), "blocktree.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 

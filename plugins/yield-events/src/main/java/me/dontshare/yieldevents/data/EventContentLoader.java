@@ -1,5 +1,6 @@
 package me.dontshare.yieldevents.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -27,7 +28,7 @@ public final class EventContentLoader {
     }
 
     public List<SeasonalEvent> load() {
-        plugin.saveResource("events.yml", false);
+        BundledConfig.sync(plugin, "events.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), "events.yml"));
         ConfigurationSection section = config.getConfigurationSection("events");
         List<SeasonalEvent> events = new ArrayList<>();

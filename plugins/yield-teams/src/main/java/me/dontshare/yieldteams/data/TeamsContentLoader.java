@@ -1,5 +1,6 @@
 package me.dontshare.yieldteams.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -28,7 +29,7 @@ public final class TeamsContentLoader {
     }
 
     public TeamsContent load() {
-        plugin.saveResource("teams.yml", false);
+        BundledConfig.sync(plugin, "teams.yml");
         File file = new File(plugin.getDataFolder(), "teams.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 

@@ -1,5 +1,6 @@
 package me.dontshare.yieldzones.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -30,7 +31,7 @@ public final class ZoneContentLoader {
     }
 
     public Map<String, ZoneDefinition> load() {
-        plugin.saveResource("zones.yml", false);
+        BundledConfig.sync(plugin, "zones.yml");
         File file = new File(plugin.getDataFolder(), "zones.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 
