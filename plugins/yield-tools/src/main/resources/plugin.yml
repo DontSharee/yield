@@ -1,0 +1,5 @@
+name: yield-tools
+version: '${version}'
+main: me.dontshare.yieldtools.YieldTools
+api-version: '26.2'
+depend: [yield-core, yield-packs, yield-zones]

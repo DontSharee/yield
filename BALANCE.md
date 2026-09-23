@@ -75,26 +75,33 @@ the same cap. Old Free Auto Send owners are treated as owning Auto Tap.
 The 1-second kill floor above is why: extra damage only helps on cubes that
 need more than one volley.
 
-**A tap never deals more than 10% of a cube's max HP.** Without that cap,
-taps quietly broke the pacing model. Clicking a cube redirects the squad and
-resets their 1-second switch, but a tap lands immediately, so a player
-spam-clicking from cube to cube kills with taps alone. Late in a zone a
-squad is 5–25× a basic cube's HP, so even a plain tap is up to half a cube:
-~3 kills a second against the 1 the ladder is balanced on. With the cap,
-every cube takes at least 10 taps, so tap-killing tops out around **0.67
-cubes a second**, below what the pets manage alone. Clicking can only ever
-*add* damage to a fight, never replace it. It barely touches an honest tap:
-early in a zone, when cubes are tough, a tap is far under 10% of one.
+**Taps can land a killing blow at most once a second.** A tap that would
+kill sooner leaves the cube on 1 HP. Without that, taps quietly broke the
+pacing model. Clicking a cube redirects the squad and resets their
+1-second switch, but a tap lands immediately, so a player spam-clicking
+from cube to cube kills with taps alone. Late in a zone a squad is 5–25×
+a basic cube's HP, so even a bare tap is up to half a cube: ~3 kills a
+second against the 1 the ladder is balanced on, and more with tools.
+Limiting tap *kills* to once a second, the pets' own pace, means clicking
+can never out-kill the pets. Tap *damage* is left free to scale, so tools
+always feel stronger.
 
-**Designing hand-held tools.** Tools should plug in as a tap multiplier
-provider (`TapService#registerTapMultiplierProvider`, reading what the player
-holds). The pacing model puts even ×20 at only ~3.8% faster, and the 10% cap
-is what keeps that true. It stops a strong tool from turning clicking into
-the main way to kill. A tool that should break that rule (a late-game
-"click-farming" tool, say) should do it on purpose, by raising the cap for
-its holder. Past the cap, the only limit is the zone's spawn rate (~4
-cubes/s with 12 concurrent and a 3 s respawn), roughly 4× the income the
-ladder assumes.
+The first version capped every tap at 10% of the cube's HP instead. Once
+tools existed that flattened everything past the third tool on common
+cubes: the cap is ~1/20 of a squad's hit on a basic cube, and a ×2.5 tool
+already reaches it. So thirteen of the sixteen tools would have shown the
+same numbers.
+
+**Hand-held tools** (yield-tools, `/tools`) are the tap multiplier. Sixteen
+tools, Stone Button (×1.5) to Nether Star (×35), bought in order with
+coins, each priced at 500 basic cubes of the zone it's pinned to so it
+lands as you reach that zone. A tool only counts while held. Measured with
+the top tool and Auto Tap: **~4% faster** to the last zone. The kill
+cooldown and the pets' 1-second floor are what hold that down. A tool
+meant to make clicking beat the pets (a late-game "click-farming" item)
+should lower `TAP_KILL_COOLDOWN_MILLIS` for its holder, on purpose. Past
+that, the only limit is the zone's spawn rate (~4 cubes/s), roughly 4× the
+income the ladder assumes.
 
 ## 2. The zone ladder — `yield-zones/…/zones.yml`
 

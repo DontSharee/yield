@@ -1,0 +1,163 @@
+# Tools - held in hotbar slot 0, they make your TAPS hit harder.
+#
+# Every click on a cube is a tap (see yield-zones' TapService): 10% of your
+# strongest equipped pet's hit. The tool you're HOLDING multiplies that by
+# its tap-multiplier - put it away and your taps are back to bare hands. You
+# always get your best owned tool; buying the next one swaps it in place.
+#
+# The path is LINEAR, in the order written here: each tool needs the one
+# above it. /tools shows the whole path with Buy Next and Buy Max (buys as
+# far down the path as your coins reach, in one click).
+#
+# PRICES are 500 "basic cubes" of the zone each tool is pinned to - that
+# zone's most common cube's coin value x 500, roughly 5-10 minutes of its
+# income - so every tool lands as you reach its zone however far the coin
+# ladder climbs. Written out as plain coins so they're easy to tweak; if
+# zones.yml's ladder moves, re-derive them the same way.
+#
+# BALANCE: tap DAMAGE scales freely with the tool, but taps can land a
+# killing blow at most once a second (TapService#TAP_KILL_COOLDOWN_MILLIS),
+# the same pace the pets kill at - so no tool can make clicking out-kill the
+# pets; tools make taps hit hard and tough cubes fall faster. Measured
+# against the pacing model, the top tool with Auto Tap is ~4% faster to the
+# last zone. See BALANCE.md, "Tap damage".
+#
+# Fields:
+#   display-name     & colour codes work
+#   material         the item held - any Minecraft item
+#   tap-multiplier   what it multiplies a tap by, while held
+#   cost-coins       price to unlock (needs every tool above it first)
+#   description      lore lines under the name, optional
+#
+# Adding a tool: add an entry where it belongs in the path. Reordering
+# changes what each player owns (ownership is a position on this list), so
+# prefer appending. Run /admin tools reload after editing.
+tools:
+  stone_button:
+    display-name: "&7Stone Button"
+    material: STONE_BUTTON
+    tap-multiplier: 1.5
+    # meadow
+    cost-coins: 5000
+    description:
+      - "&7A button. It's a start."
+  wooden_shovel:
+    display-name: "&6Wooden Shovel"
+    material: WOODEN_SHOVEL
+    tap-multiplier: 2
+    # frostpeak
+    cost-coins: 12500
+    description:
+      - "&7Digs. Hits. Mostly hits."
+  stone_sword:
+    display-name: "&7Stone Sword"
+    material: STONE_SWORD
+    tap-multiplier: 2.5
+    # sulfur_flats
+    cost-coins: 87500
+    description:
+      - "&7Now we're talking."
+  copper_sword:
+    display-name: "&6Copper Sword"
+    material: COPPER_SWORD
+    tap-multiplier: 3
+    # scorched_wastes
+    cost-coins: 225000
+    description:
+      - "&7Shiny, until it isn't."
+  iron_shovel:
+    display-name: "&fIron Shovel"
+    material: IRON_SHOVEL
+    tap-multiplier: 4
+    # crystal_caverns
+    cost-coins: 600000
+    description:
+      - "&7Heavier than it looks."
+  iron_sword:
+    display-name: "&fIron Sword"
+    material: IRON_SWORD
+    tap-multiplier: 5
+    # diamond_hollow
+    cost-coins: 1500000
+    description:
+      - "&7The real deal."
+  golden_axe:
+    display-name: "&eGolden Axe"
+    material: GOLDEN_AXE
+    tap-multiplier: 6.5
+    # obsidian_rift
+    cost-coins: 10000000
+    description:
+      - "&7Soft metal, hard swing."
+  mace:
+    display-name: "&8Mace"
+    material: MACE
+    tap-multiplier: 8
+    # void_expanse
+    cost-coins: 25000000
+    description:
+      - "&7Built for one thing."
+  diamond_pickaxe:
+    display-name: "&bDiamond Pickaxe"
+    material: DIAMOND_PICKAXE
+    tap-multiplier: 10
+    # netherite_wastes
+    cost-coins: 65000000
+    description:
+      - "&7Cuts through anything."
+  diamond_sword:
+    display-name: "&bDiamond Sword"
+    material: DIAMOND_SWORD
+    tap-multiplier: 12.5
+    # ancient_ruins
+    cost-coins: 170000000
+    description:
+      - "&7Every cube's least favourite."
+  trident:
+    display-name: "&3Trident"
+    material: TRIDENT
+    tap-multiplier: 15
+    # purpur_spires
+    cost-coins: 1125000000
+    description:
+      - "&7From the deep."
+  netherite_axe:
+    display-name: "&4Netherite Axe"
+    material: NETHERITE_AXE
+    tap-multiplier: 18
+    # celestial_sanctum
+    cost-coins: 2900000000
+    description:
+      - "&7Forged in the Wastes."
+  netherite_sword:
+    display-name: "&4Netherite Sword"
+    material: NETHERITE_SWORD
+    tap-multiplier: 22
+    # starlight_fields
+    cost-coins: 7500000000
+    description:
+      - "&7The heaviest blade there is."
+  breeze_rod:
+    display-name: "&bBreeze Rod"
+    material: BREEZE_ROD
+    tap-multiplier: 26
+    # cosmic_abyss
+    cost-coins: 19000000000
+    description:
+      - "&7Hits like a gale."
+  heavy_core:
+    display-name: "&8Heavy Core"
+    material: HEAVY_CORE
+    tap-multiplier: 30
+    # astral_peak
+    cost-coins: 130000000000
+    description:
+      - "&7All weight, no mercy."
+  nether_star:
+    display-name: "&d&lNether Star"
+    material: NETHER_STAR
+    tap-multiplier: 35
+    # genesis_core
+    cost-coins: 337500000000
+    description:
+      - "&7The last word in tapping."

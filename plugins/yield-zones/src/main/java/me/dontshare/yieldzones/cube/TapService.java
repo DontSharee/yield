@@ -46,26 +46,24 @@ public final class TapService implements Listener {
     /** The fastest a player can tap for damage - about 6.7 taps a second. */
     public static final long MIN_TAP_INTERVAL_MILLIS = 150L;
     /**
-     * No single tap deals more than this share of a cube's max HP, so every
-     * cube takes at least ten taps.
+     * Taps can land a killing blow at most once per this long; a tap that
+     * would kill sooner leaves the cube on 1 HP instead. Matches the pets'
+     * own one-second re-engage (PetCombatController's
+     * BASE_AUTO_SWITCH_COOLDOWN_TICKS), the per-cube cost the whole pacing
+     * model assumes.
      * <p>
-     * Without it, taps quietly broke the whole pacing model. Clicking a cube
-     * redirects the squad and resets their one-second switch cooldown, but
-     * a tap lands immediately - so a player spam-clicking from cube to cube
-     * kills with taps alone, never waiting on the pets. Late in a zone a
-     * squad is 5-25x a basic cube's HP, which makes even a plain tap half a
-     * cube: ~3 kills a second against the 1 a second the ladder is balanced
-     * on. At ten taps minimum, tap-killing tops out around 0.67 cubes a
-     * second - below what the pets do alone - so clicking can only ever
-     * ADD damage to a fight, never replace the fight. It barely touches an
-     * honest tap: early in a zone, when cubes are tough, a tap is far
-     * under 10% of one anyway.
-     * <p>
-     * Tools that raise tap damage are bounded by this too, which is the
-     * point. A tool that should break the rule should do it on purpose, by
-     * raising this cap for its holder, not by accident.
+     * The thing it stops: a click resets the pets' switch cooldown but a
+     * tap lands at once, so a player spam-clicking from cube to cube kills
+     * with taps alone. Late in a zone a squad is 5-25x a basic cube's HP,
+     * which makes even a bare tap half a cube - ~3 kills a second against
+     * the one a second the ladder is balanced on, and tools would make it
+     * worse. Limiting tap KILLS, not tap damage, is what keeps tools worth
+     * buying: a first version capped every tap at 10% of the cube's HP,
+     * which flattened every tool past the third on common cubes. This way
+     * tool damage scales freely - bigger numbers, faster kills on tough
+     * cubes - and clicking still can never out-kill the pets.
      */
-    public static final double MAX_TAP_SHARE_OF_CUBE_HP = 0.10;
+    public static final long TAP_KILL_COOLDOWN_MILLIS = 1000L;
     /** Auto Tap taps once every this many ticks - four a second, under the manual cap on purpose. */
     public static final long AUTO_TAP_INTERVAL_TICKS = 5L;
 
@@ -73,6 +71,7 @@ public final class TapService implements Listener {
     private final YieldPacks packs;
     private final OreCubeService cubes;
     private final Map<UUID, Long> lastTapAt = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> lastTapKillAt = new ConcurrentHashMap<>();
     private final Map<String, BiFunction<Player, PackPlayerProfile, Double>> multiplierProviders = new ConcurrentHashMap<>();
     /** Players whose taps should do nothing right now - a world boss fight owns their attention. */
     private Predicate<Player> paused = player -> false;
@@ -141,8 +140,17 @@ public final class TapService implements Listener {
             return false;
         }
         lastTapAt.put(id, now);
-        long cap = Math.max(1L, Math.round(cube.tier().maxHp() * MAX_TAP_SHARE_OF_CUBE_HP));
-        cubes.queueDamage(player, cube, Math.min(tapDamage(player, profile), cap), null);
+        long damage = tapDamage(player, profile);
+        if (damage >= cube.currentHp()) {
+            Long lastKill = lastTapKillAt.get(id);
+            if (lastKill != null && now - lastKill < TAP_KILL_COOLDOWN_MILLIS) {
+                // Too soon for another tap kill - see TAP_KILL_COOLDOWN_MILLIS.
+                damage = cube.currentHp() - 1;
+            } else {
+                lastTapKillAt.put(id, now);
+            }
+        }
+        cubes.queueDamage(player, cube, damage, null);
         cubes.flushDamage(player);
         return true;
     }
@@ -172,5 +180,6 @@ public final class TapService implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         lastTapAt.remove(event.getPlayer().getUniqueId());
+        lastTapKillAt.remove(event.getPlayer().getUniqueId());
     }
 }
