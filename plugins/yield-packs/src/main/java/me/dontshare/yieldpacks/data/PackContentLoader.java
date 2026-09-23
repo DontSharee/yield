@@ -145,7 +145,7 @@ public final class PackContentLoader {
                     modelData,
                     headDatabaseId,
                     rarityId,
-                    s.getDouble("damage", 1.0),
+                    s.getDouble("damage", 1000.0),
                     s.getBoolean("track-exists", false),
                     s.getStringList("lore"),
                     FusionTier.NORMAL,

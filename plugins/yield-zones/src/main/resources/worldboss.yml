@@ -39,7 +39,7 @@ bosses:
     material: IRON_BLOCK
     size: 5
     location: [0, 100, 81]
-    max-hp: 3600
+    max-hp: 3600000
     check-interval-minutes: 10
     spawn-chance: 0.5
     reward-coins: 25000
@@ -52,7 +52,7 @@ bosses:
     material: DIAMOND_BLOCK
     size: 6
     location: [0, 100, 645]
-    max-hp: 3600000
+    max-hp: 3600000000
     check-interval-minutes: 15
     spawn-chance: 0.5
     reward-coins: 25000000
@@ -65,7 +65,7 @@ bosses:
     material: PURPUR_BLOCK
     size: 7
     location: [0, 100, 1209]
-    max-hp: 1050000000
+    max-hp: 1050000000000
     check-interval-minutes: 20
     spawn-chance: 0.5
     reward-coins: 25000000000
@@ -78,7 +78,7 @@ bosses:
     material: BEACON
     size: 8
     location: [0, 100, 1773]
-    max-hp: 312000000000
+    max-hp: 312000000000000
     check-interval-minutes: 30
     spawn-chance: 0.5
     reward-coins: 20000000000000

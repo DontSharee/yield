@@ -221,9 +221,9 @@ zones:
     # tier-1 is the headline number; tier-2/3 are fixed ratios off it
     # (see this file's own BALANCE header).
     cube-tiers:
-      - { material: STONE, max-hp: 12, coin-value: 10, diamond-value: 1, xp-value: 20, weight: 100 }
-      - { material: COPPER_BLOCK, max-hp: 36, coin-value: 40, diamond-value: 3, xp-value: 60, weight: 25 }
-      - { material: IRON_BLOCK, max-hp: 84, coin-value: 120, diamond-value: 8, xp-value: 160, weight: 5 }
+      - { material: STONE, max-hp: 12000, coin-value: 10, diamond-value: 1, xp-value: 20, weight: 100 }
+      - { material: COPPER_BLOCK, max-hp: 36000, coin-value: 40, diamond-value: 3, xp-value: 60, weight: 25 }
+      - { material: IRON_BLOCK, max-hp: 84000, coin-value: 120, diamond-value: 8, xp-value: 160, weight: 5 }
     # Independent of which tier gets rolled above - every spawned cube also
     # rolls each of these on its own. If more than one hits at once, the
     # highest multiplier wins. "color" must be one of vanilla's 16 named
@@ -249,7 +249,7 @@ zones:
     treasure:
       material: CHEST
       weight: 0.6
-      max-hp: 120
+      max-hp: 120000
       coin-value: 600
       diamond-value: 25
       xp-value: 300
@@ -268,13 +268,13 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: SNOW_BLOCK, max-hp: 60, coin-value: 25, diamond-value: 2, xp-value: 25, weight: 100 }
-      - { material: PACKED_ICE, max-hp: 180, coin-value: 100, diamond-value: 6, xp-value: 75, weight: 25 }
-      - { material: BLUE_ICE, max-hp: 420, coin-value: 300, diamond-value: 16, xp-value: 200, weight: 5 }
+      - { material: SNOW_BLOCK, max-hp: 60000, coin-value: 25, diamond-value: 2, xp-value: 25, weight: 100 }
+      - { material: PACKED_ICE, max-hp: 180000, coin-value: 100, diamond-value: 6, xp-value: 75, weight: 25 }
+      - { material: BLUE_ICE, max-hp: 420000, coin-value: 300, diamond-value: 16, xp-value: 200, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
-      max-hp: 600
+      max-hp: 600000
       coin-value: 1500
       diamond-value: 50
       xp-value: 375
@@ -305,13 +305,13 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: COBBLESTONE, max-hp: 200, coin-value: 65, diamond-value: 4, xp-value: 31, weight: 100 }
-      - { material: IRON_BLOCK, max-hp: 600, coin-value: 260, diamond-value: 12, xp-value: 93, weight: 25 }
-      - { material: RAW_IRON_BLOCK, max-hp: 1400, coin-value: 780, diamond-value: 32, xp-value: 248, weight: 5 }
+      - { material: COBBLESTONE, max-hp: 200000, coin-value: 65, diamond-value: 4, xp-value: 31, weight: 100 }
+      - { material: IRON_BLOCK, max-hp: 600000, coin-value: 260, diamond-value: 12, xp-value: 93, weight: 25 }
+      - { material: RAW_IRON_BLOCK, max-hp: 1400000, coin-value: 780, diamond-value: 32, xp-value: 248, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
-      max-hp: 2000
+      max-hp: 2000000
       coin-value: 3900
       diamond-value: 100
       xp-value: 465
@@ -335,13 +335,13 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: NETHERRACK, max-hp: 600, coin-value: 175, diamond-value: 7, xp-value: 39, weight: 100 }
-      - { material: GOLD_BLOCK, max-hp: 1800, coin-value: 700, diamond-value: 21, xp-value: 117, weight: 25 }
-      - { material: MAGMA_BLOCK, max-hp: 4200, coin-value: 2100, diamond-value: 56, xp-value: 312, weight: 5 }
+      - { material: NETHERRACK, max-hp: 600000, coin-value: 175, diamond-value: 7, xp-value: 39, weight: 100 }
+      - { material: GOLD_BLOCK, max-hp: 1800000, coin-value: 700, diamond-value: 21, xp-value: 117, weight: 25 }
+      - { material: MAGMA_BLOCK, max-hp: 4200000, coin-value: 2100, diamond-value: 56, xp-value: 312, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
-      max-hp: 6000
+      max-hp: 6000000
       coin-value: 10500
       diamond-value: 175
       xp-value: 585
@@ -365,13 +365,13 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: BASALT, max-hp: 1700, coin-value: 450, diamond-value: 13, xp-value: 49, weight: 100 }
-      - { material: BLACKSTONE, max-hp: 5100, coin-value: 1800, diamond-value: 39, xp-value: 147, weight: 25 }
-      - { material: MAGMA_BLOCK, max-hp: 11900, coin-value: 5400, diamond-value: 104, xp-value: 392, weight: 5 }
+      - { material: BASALT, max-hp: 1700000, coin-value: 450, diamond-value: 13, xp-value: 49, weight: 100 }
+      - { material: BLACKSTONE, max-hp: 5100000, coin-value: 1800, diamond-value: 39, xp-value: 147, weight: 25 }
+      - { material: MAGMA_BLOCK, max-hp: 11900000, coin-value: 5400, diamond-value: 104, xp-value: 392, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
-      max-hp: 17000
+      max-hp: 17000000
       coin-value: 27000
       diamond-value: 325
       xp-value: 735
@@ -395,13 +395,13 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: CALCITE, max-hp: 4800, coin-value: 1200, diamond-value: 25, xp-value: 61, weight: 100 }
-      - { material: AMETHYST_BLOCK, max-hp: 14400, coin-value: 4800, diamond-value: 75, xp-value: 183, weight: 25 }
-      - { material: DRIPSTONE_BLOCK, max-hp: 33600, coin-value: 14400, diamond-value: 200, xp-value: 488, weight: 5 }
+      - { material: CALCITE, max-hp: 4800000, coin-value: 1200, diamond-value: 25, xp-value: 61, weight: 100 }
+      - { material: AMETHYST_BLOCK, max-hp: 14400000, coin-value: 4800, diamond-value: 75, xp-value: 183, weight: 25 }
+      - { material: DRIPSTONE_BLOCK, max-hp: 33600000, coin-value: 14400, diamond-value: 200, xp-value: 488, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
-      max-hp: 48000
+      max-hp: 48000000
       coin-value: 72000
       diamond-value: 625
       xp-value: 915
@@ -425,13 +425,13 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: DEEPSLATE, max-hp: 12000, coin-value: 3000, diamond-value: 45, xp-value: 76, weight: 100 }
-      - { material: DEEPSLATE_DIAMOND_ORE, max-hp: 36000, coin-value: 12000, diamond-value: 135, xp-value: 228, weight: 25 }
-      - { material: DIAMOND_BLOCK, max-hp: 84000, coin-value: 36000, diamond-value: 360, xp-value: 608, weight: 5 }
+      - { material: DEEPSLATE, max-hp: 12000000, coin-value: 3000, diamond-value: 45, xp-value: 76, weight: 100 }
+      - { material: DEEPSLATE_DIAMOND_ORE, max-hp: 36000000, coin-value: 12000, diamond-value: 135, xp-value: 228, weight: 25 }
+      - { material: DIAMOND_BLOCK, max-hp: 84000000, coin-value: 36000, diamond-value: 360, xp-value: 608, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
-      max-hp: 120000
+      max-hp: 120000000
       coin-value: 180000
       diamond-value: 1125
       xp-value: 1140
@@ -455,13 +455,13 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: DEEPSLATE, max-hp: 32000, coin-value: 8000, diamond-value: 90, xp-value: 95, weight: 100 }
-      - { material: DEEPSLATE_EMERALD_ORE, max-hp: 96000, coin-value: 32000, diamond-value: 270, xp-value: 285, weight: 25 }
-      - { material: EMERALD_BLOCK, max-hp: 224000, coin-value: 96000, diamond-value: 720, xp-value: 760, weight: 5 }
+      - { material: DEEPSLATE, max-hp: 32000000, coin-value: 8000, diamond-value: 90, xp-value: 95, weight: 100 }
+      - { material: DEEPSLATE_EMERALD_ORE, max-hp: 96000000, coin-value: 32000, diamond-value: 270, xp-value: 285, weight: 25 }
+      - { material: EMERALD_BLOCK, max-hp: 224000000, coin-value: 96000, diamond-value: 720, xp-value: 760, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
-      max-hp: 320000
+      max-hp: 320000000
       coin-value: 480000
       diamond-value: 2250
       xp-value: 1425
@@ -485,13 +485,13 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: BLACKSTONE, max-hp: 80000, coin-value: 20000, diamond-value: 170, xp-value: 120, weight: 100 }
-      - { material: OBSIDIAN, max-hp: 240000, coin-value: 80000, diamond-value: 510, xp-value: 360, weight: 25 }
-      - { material: CRYING_OBSIDIAN, max-hp: 560000, coin-value: 240000, diamond-value: 1360, xp-value: 960, weight: 5 }
+      - { material: BLACKSTONE, max-hp: 80000000, coin-value: 20000, diamond-value: 170, xp-value: 120, weight: 100 }
+      - { material: OBSIDIAN, max-hp: 240000000, coin-value: 80000, diamond-value: 510, xp-value: 360, weight: 25 }
+      - { material: CRYING_OBSIDIAN, max-hp: 560000000, coin-value: 240000, diamond-value: 1360, xp-value: 960, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
-      max-hp: 800000
+      max-hp: 800000000
       coin-value: 1200000
       diamond-value: 4250
       xp-value: 1800
@@ -515,13 +515,13 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: OBSIDIAN, max-hp: 200000, coin-value: 50000, diamond-value: 320, xp-value: 150, weight: 100 }
-      - { material: CRYING_OBSIDIAN, max-hp: 600000, coin-value: 200000, diamond-value: 960, xp-value: 450, weight: 25 }
-      - { material: NETHERITE_BLOCK, max-hp: 1400000, coin-value: 600000, diamond-value: 2560, xp-value: 1200, weight: 5 }
+      - { material: OBSIDIAN, max-hp: 200000000, coin-value: 50000, diamond-value: 320, xp-value: 150, weight: 100 }
+      - { material: CRYING_OBSIDIAN, max-hp: 600000000, coin-value: 200000, diamond-value: 960, xp-value: 450, weight: 25 }
+      - { material: NETHERITE_BLOCK, max-hp: 1400000000, coin-value: 600000, diamond-value: 2560, xp-value: 1200, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
-      max-hp: 2000000
+      max-hp: 2000000000
       coin-value: 3000000
       diamond-value: 8000
       xp-value: 2250
@@ -545,13 +545,13 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: ANCIENT_DEBRIS, max-hp: 520000, coin-value: 130000, diamond-value: 600, xp-value: 185, weight: 100 }
-      - { material: NETHERITE_BLOCK, max-hp: 1560000, coin-value: 520000, diamond-value: 1800, xp-value: 555, weight: 25 }
-      - { material: RESPAWN_ANCHOR, max-hp: 3640000, coin-value: 1560000, diamond-value: 4800, xp-value: 1480, weight: 5 }
+      - { material: ANCIENT_DEBRIS, max-hp: 520000000, coin-value: 130000, diamond-value: 600, xp-value: 185, weight: 100 }
+      - { material: NETHERITE_BLOCK, max-hp: 1560000000, coin-value: 520000, diamond-value: 1800, xp-value: 555, weight: 25 }
+      - { material: RESPAWN_ANCHOR, max-hp: 3640000000, coin-value: 1560000, diamond-value: 4800, xp-value: 1480, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
-      max-hp: 5200000
+      max-hp: 5200000000
       coin-value: 7800000
       diamond-value: 15000
       xp-value: 2775
@@ -575,13 +575,13 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: COBBLED_DEEPSLATE, max-hp: 1360000, coin-value: 340000, diamond-value: 1150, xp-value: 230, weight: 100 }
-      - { material: ANCIENT_DEBRIS, max-hp: 4080000, coin-value: 1360000, diamond-value: 3450, xp-value: 690, weight: 25 }
-      - { material: CHISELED_DEEPSLATE, max-hp: 9520000, coin-value: 4080000, diamond-value: 9200, xp-value: 1840, weight: 5 }
+      - { material: COBBLED_DEEPSLATE, max-hp: 1360000000, coin-value: 340000, diamond-value: 1150, xp-value: 230, weight: 100 }
+      - { material: ANCIENT_DEBRIS, max-hp: 4080000000, coin-value: 1360000, diamond-value: 3450, xp-value: 690, weight: 25 }
+      - { material: CHISELED_DEEPSLATE, max-hp: 9520000000, coin-value: 4080000, diamond-value: 9200, xp-value: 1840, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
-      max-hp: 13600000
+      max-hp: 13600000000
       coin-value: 20400000
       diamond-value: 28750
       xp-value: 3450
@@ -605,13 +605,13 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: END_STONE, max-hp: 3500000, coin-value: 875000, diamond-value: 2200, xp-value: 290, weight: 100 }
-      - { material: END_STONE_BRICKS, max-hp: 10500000, coin-value: 3500000, diamond-value: 6600, xp-value: 870, weight: 25 }
-      - { material: PURPUR_BLOCK, max-hp: 24500000, coin-value: 10500000, diamond-value: 17600, xp-value: 2320, weight: 5 }
+      - { material: END_STONE, max-hp: 3500000000, coin-value: 875000, diamond-value: 2200, xp-value: 290, weight: 100 }
+      - { material: END_STONE_BRICKS, max-hp: 10500000000, coin-value: 3500000, diamond-value: 6600, xp-value: 870, weight: 25 }
+      - { material: PURPUR_BLOCK, max-hp: 24500000000, coin-value: 10500000, diamond-value: 17600, xp-value: 2320, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
-      max-hp: 35000000
+      max-hp: 35000000000
       coin-value: 52500000
       diamond-value: 55000
       xp-value: 4350
@@ -635,13 +635,13 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: PURPUR_BLOCK, max-hp: 9000000, coin-value: 2250000, diamond-value: 4200, xp-value: 360, weight: 100 }
-      - { material: PURPUR_PILLAR, max-hp: 27000000, coin-value: 9000000, diamond-value: 12600, xp-value: 1080, weight: 25 }
-      - { material: SHULKER_BOX, max-hp: 63000000, coin-value: 27000000, diamond-value: 33600, xp-value: 2880, weight: 5 }
+      - { material: PURPUR_BLOCK, max-hp: 9000000000, coin-value: 2250000, diamond-value: 4200, xp-value: 360, weight: 100 }
+      - { material: PURPUR_PILLAR, max-hp: 27000000000, coin-value: 9000000, diamond-value: 12600, xp-value: 1080, weight: 25 }
+      - { material: SHULKER_BOX, max-hp: 63000000000, coin-value: 27000000, diamond-value: 33600, xp-value: 2880, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
-      max-hp: 90000000
+      max-hp: 90000000000
       coin-value: 135000000
       diamond-value: 105000
       xp-value: 5400
@@ -665,13 +665,13 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: END_STONE, max-hp: 23000000, coin-value: 5800000, diamond-value: 8000, xp-value: 450, weight: 100 }
-      - { material: PURPUR_BLOCK, max-hp: 69000000, coin-value: 23200000, diamond-value: 24000, xp-value: 1350, weight: 25 }
-      - { material: BEACON, max-hp: 161000000, coin-value: 69600000, diamond-value: 64000, xp-value: 3600, weight: 5 }
+      - { material: END_STONE, max-hp: 23000000000, coin-value: 5800000, diamond-value: 8000, xp-value: 450, weight: 100 }
+      - { material: PURPUR_BLOCK, max-hp: 69000000000, coin-value: 23200000, diamond-value: 24000, xp-value: 1350, weight: 25 }
+      - { material: BEACON, max-hp: 161000000000, coin-value: 69600000, diamond-value: 64000, xp-value: 3600, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
-      max-hp: 230000000
+      max-hp: 230000000000
       coin-value: 348000000
       diamond-value: 200000
       xp-value: 6750
@@ -695,13 +695,13 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: GLOWSTONE, max-hp: 60000000, coin-value: 15000000, diamond-value: 15000, xp-value: 560, weight: 100 }
-      - { material: SEA_LANTERN, max-hp: 180000000, coin-value: 60000000, diamond-value: 45000, xp-value: 1680, weight: 25 }
-      - { material: BEACON, max-hp: 420000000, coin-value: 180000000, diamond-value: 120000, xp-value: 4480, weight: 5 }
+      - { material: GLOWSTONE, max-hp: 60000000000, coin-value: 15000000, diamond-value: 15000, xp-value: 560, weight: 100 }
+      - { material: SEA_LANTERN, max-hp: 180000000000, coin-value: 60000000, diamond-value: 45000, xp-value: 1680, weight: 25 }
+      - { material: BEACON, max-hp: 420000000000, coin-value: 180000000, diamond-value: 120000, xp-value: 4480, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
-      max-hp: 600000000
+      max-hp: 600000000000
       coin-value: 900000000
       diamond-value: 375000
       xp-value: 8400
@@ -725,13 +725,13 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: OBSIDIAN, max-hp: 152000000, coin-value: 38000000, diamond-value: 29000, xp-value: 700, weight: 100 }
-      - { material: NETHERITE_BLOCK, max-hp: 456000000, coin-value: 152000000, diamond-value: 87000, xp-value: 2100, weight: 25 }
-      - { material: BEACON, max-hp: 1064000000, coin-value: 456000000, diamond-value: 232000, xp-value: 5600, weight: 5 }
+      - { material: OBSIDIAN, max-hp: 152000000000, coin-value: 38000000, diamond-value: 29000, xp-value: 700, weight: 100 }
+      - { material: NETHERITE_BLOCK, max-hp: 456000000000, coin-value: 152000000, diamond-value: 87000, xp-value: 2100, weight: 25 }
+      - { material: BEACON, max-hp: 1064000000000, coin-value: 456000000, diamond-value: 232000, xp-value: 5600, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
-      max-hp: 1520000000
+      max-hp: 1520000000000
       coin-value: 2280000000
       diamond-value: 725000
       xp-value: 10500
@@ -755,13 +755,13 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: NETHERITE_BLOCK, max-hp: 400000000, coin-value: 100000000, diamond-value: 55000, xp-value: 880, weight: 100 }
-      - { material: ANCIENT_DEBRIS, max-hp: 1200000000, coin-value: 400000000, diamond-value: 165000, xp-value: 2640, weight: 25 }
-      - { material: BEACON, max-hp: 2800000000, coin-value: 1200000000, diamond-value: 440000, xp-value: 7040, weight: 5 }
+      - { material: NETHERITE_BLOCK, max-hp: 400000000000, coin-value: 100000000, diamond-value: 55000, xp-value: 880, weight: 100 }
+      - { material: ANCIENT_DEBRIS, max-hp: 1200000000000, coin-value: 400000000, diamond-value: 165000, xp-value: 2640, weight: 25 }
+      - { material: BEACON, max-hp: 2800000000000, coin-value: 1200000000, diamond-value: 440000, xp-value: 7040, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
-      max-hp: 4000000000
+      max-hp: 4000000000000
       coin-value: 6000000000
       diamond-value: 1375000
       xp-value: 13200
@@ -785,13 +785,13 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: AMETHYST_BLOCK, max-hp: 1040000000, coin-value: 260000000, diamond-value: 105000, xp-value: 1100, weight: 100 }
-      - { material: DIAMOND_BLOCK, max-hp: 3120000000, coin-value: 1040000000, diamond-value: 315000, xp-value: 3300, weight: 25 }
-      - { material: BEACON, max-hp: 7280000000, coin-value: 3120000000, diamond-value: 840000, xp-value: 8800, weight: 5 }
+      - { material: AMETHYST_BLOCK, max-hp: 1040000000000, coin-value: 260000000, diamond-value: 105000, xp-value: 1100, weight: 100 }
+      - { material: DIAMOND_BLOCK, max-hp: 3120000000000, coin-value: 1040000000, diamond-value: 315000, xp-value: 3300, weight: 25 }
+      - { material: BEACON, max-hp: 7280000000000, coin-value: 3120000000, diamond-value: 840000, xp-value: 8800, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
-      max-hp: 10400000000
+      max-hp: 10400000000000
       coin-value: 15600000000
       diamond-value: 2625000
       xp-value: 16500
@@ -815,13 +815,13 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: DIAMOND_BLOCK, max-hp: 2700000000, coin-value: 675000000, diamond-value: 200000, xp-value: 1400, weight: 100 }
-      - { material: EMERALD_BLOCK, max-hp: 8100000000, coin-value: 2700000000, diamond-value: 600000, xp-value: 4200, weight: 25 }
-      - { material: BEACON, max-hp: 18900000000, coin-value: 8100000000, diamond-value: 1600000, xp-value: 11200, weight: 5 }
+      - { material: DIAMOND_BLOCK, max-hp: 2700000000000, coin-value: 675000000, diamond-value: 200000, xp-value: 1400, weight: 100 }
+      - { material: EMERALD_BLOCK, max-hp: 8100000000000, coin-value: 2700000000, diamond-value: 600000, xp-value: 4200, weight: 25 }
+      - { material: BEACON, max-hp: 18900000000000, coin-value: 8100000000, diamond-value: 1600000, xp-value: 11200, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
-      max-hp: 27000000000
+      max-hp: 27000000000000
       coin-value: 40500000000
       diamond-value: 5000000
       xp-value: 21000
@@ -864,13 +864,13 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 12
     cube-tiers:
-      - { material: CARVED_PUMPKIN, max-hp: 40, coin-value: 150, diamond-value: 1, xp-value: 60, weight: 100 }
-      - { material: JACK_O_LANTERN, max-hp: 120, coin-value: 600, diamond-value: 3, xp-value: 180, weight: 25 }
-      - { material: SOUL_LANTERN, max-hp: 280, coin-value: 1800, diamond-value: 8, xp-value: 480, weight: 5 }
+      - { material: CARVED_PUMPKIN, max-hp: 40000, coin-value: 150, diamond-value: 1, xp-value: 60, weight: 100 }
+      - { material: JACK_O_LANTERN, max-hp: 120000, coin-value: 600, diamond-value: 3, xp-value: 180, weight: 25 }
+      - { material: SOUL_LANTERN, max-hp: 280000, coin-value: 1800, diamond-value: 8, xp-value: 480, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
-      max-hp: 400
+      max-hp: 400000
       coin-value: 9000
       diamond-value: 25
       xp-value: 900

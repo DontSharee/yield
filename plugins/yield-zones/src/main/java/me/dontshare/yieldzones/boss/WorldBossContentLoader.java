@@ -81,7 +81,7 @@ public final class WorldBossContentLoader {
         Location location = new Location(world, x, y, z);
 
         int size = Math.max(1, section.getInt("size", 5));
-        long maxHp = Math.max(1, section.getLong("max-hp", 100000));
+        long maxHp = Math.max(1, section.getLong("max-hp", 100_000_000L));
         long checkIntervalMillis = Math.round(section.getDouble("check-interval-minutes", 10.0) * 60_000);
         double spawnChance = Math.max(0.0, Math.min(1.0, section.getDouble("spawn-chance", 0.5)));
         long rewardCoins = Math.max(0, section.getLong("reward-coins", 0));
