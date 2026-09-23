@@ -44,20 +44,13 @@ public final class YieldTools extends JavaPlugin {
         ToolItem toolItem = new ToolItem(this);
         ToolService toolService = new ToolService(() -> tools, store, packs, toolItem);
 
-        // The whole of what a tool does: multiply taps while it's held.
-        zones.getTapService().registerTapMultiplierProvider("tool", (player, profile) -> toolService.tapMultiplier(player));
+        // The whole of what a weapon does: set a tap's share of pet power
+        // while it's held.
+        zones.getTapService().registerTapPowerProvider("weapon", (player, profile) -> toolService.tapPower(player));
 
-        ToolsGui gui = new ToolsGui(toolService, packs, core.getGuiManager(), player -> {
-            var profile = packs.getPlayerStore().getCached(player.getUniqueId());
-            if (profile == null) {
-                return 0L;
-            }
-            // Bare-handed: the tool's own share is shown separately in the menu.
-            double held = toolService.tapMultiplier(player);
-            return Math.round(zones.getTapService().tapDamage(player, profile) / held);
-        });
+        ToolsGui gui = new ToolsGui(toolService, packs, core.getGuiManager(), zones.getTapService());
         core.getListenerManager().register(new ToolListener(this, toolService, toolItem, gui));
-        CommandManager.register(this, ToolsCommand.build(gui), "Unlock tools that make your taps hit harder", List.of());
+        CommandManager.register(this, ToolsCommand.build(gui), "Unlock weapons that make your taps hit harder", List.of("weapons"));
         core.getAdminCommandRegistry().register(ToolsAdminCommand.build(this, toolService));
     }
 

@@ -109,54 +109,35 @@ events:
     # "commands" runs as console with %player% substituted, exactly like a
     # quest's reward-commands, so a shelf item can be anything that already
     # has an admin command. The lore is generated FROM the command, so it
-    # can never advertise one thing and hand over another.
+    # can never advertise one thing and hand over another - and there is no
+    # per-item description: every entry reads the same generated way.
     shop:
       haunted_luck:
         display-name: "&6Haunted Luck"
-        description:
-          - "&7Double luck for half an hour."
-          - "&7Stacks with everything else."
         material: GLOWSTONE_DUST
         price: 4000
         commands:
           - "admin potions give %player% LUCK 2 1800"
       cursed_fortune:
         display-name: "&6Cursed Fortune"
-        description:
-          - "&7Triple coins for half an hour."
-          - "&7Best spent somewhere that"
-          - "&7isn't the Hollow."
         material: GOLD_INGOT
         price: 5000
         commands:
           - "admin potions give %player% COINS 3 1800"
       grave_might:
         display-name: "&6Grave Might"
-        description:
-          - "&7Triple damage for half an"
-          - "&7hour - and triple the cubes"
-          - "&7broken while it lasts."
         material: NETHERITE_SCRAP
         price: 5000
         commands:
           - "admin potions give %player% DAMAGE 3 1800"
       witching_hour:
         display-name: "&6&lWitching Hour"
-        description:
-          - "&7Double roll speed for half"
-          - "&7an hour. The Hollow pays per"
-          - "&7cube, so this is the one"
-          - "&7that pays for itself."
         material: CLOCK
         price: 8000
         commands:
           - "admin potions give %player% ROLL_SPEED 2 1800"
       prowler_pact:
         display-name: "&6Prowler Pact"
-        description:
-          - "&7One Pumpkin Prowler,"
-          - "&7guaranteed. Three of them"
-          - "&7fuse into something better."
         material: CARVED_PUMPKIN
         price: 12000
         limit: 3
@@ -164,10 +145,6 @@ events:
           - "admin pets give %player% event_pumpkin_prowler NORMAL 1"
       warden_pact:
         display-name: "&6Warden Pact"
-        description:
-          - "&7One Grave Warden,"
-          - "&7guaranteed. The egg gives"
-          - "&7one in eleven."
         material: SOUL_LANTERN
         price: 40000
         limit: 3
@@ -175,10 +152,6 @@ events:
           - "admin pets give %player% event_grave_warden NORMAL 1"
       reapers_bargain:
         display-name: "&6&lReaper's Bargain"
-        description:
-          - "&7One Hollow Reaper,"
-          - "&7guaranteed. Once, ever."
-          - "&7The egg gives one in forty."
         material: WITHER_SKELETON_SKULL
         price: 120000
         limit: 1

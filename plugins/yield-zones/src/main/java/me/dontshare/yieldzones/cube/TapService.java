@@ -22,17 +22,16 @@ import java.util.function.Predicate;
  * Tap damage - the player's own hit, as in Pet Simulator 99.
  * <p>
  * Pets fight on their own; clicking a cube pulls them onto it AND deals a
- * tap. A tap is {@link #BASE_TAP_SHARE} of the player's strongest equipped
- * pet's hit (after every damage multiplier), so it keeps pace with the
- * ladder on its own - a flat number would be decisive in the Meadow and
- * invisible by the Genesis Core - and it stays a garnish on the squad
- * rather than a replacement for it.
+ * tap. A tap is a share of the player's PET POWER - their equipped pets'
+ * combined hit, after every damage multiplier ({@link #petPower}) - so it
+ * keeps pace with the ladder on its own; a flat number would be decisive
+ * in the Meadow and invisible by the Genesis Core.
  * <p>
- * Everything that makes taps hit harder is a keyed multiplier provider
- * ({@link #registerTapMultiplierProvider}), the same composable idiom as
- * every other damage and payout modifier here: the level-10 pet milestone
- * is one, and hand-held tools are meant to be the next - a tool plugs in
- * as a provider reading what the player is holding, with no change here.
+ * That share is {@link #BARE_TAP_POWER} bare-handed, or whatever a
+ * registered tap POWER provider says - the held weapon (yield-tools)
+ * supplies its own; the best one wins. Keyed MULTIPLIER providers then
+ * scale the result (the level-10 pet milestone is one) - the same
+ * composable idiom as every other damage modifier here.
  * <p>
  * Taps are rate-limited to one every {@link #MIN_TAP_INTERVAL_MILLIS}, so
  * an autoclicker gets exactly what a fast human does and no more. Faster
@@ -41,8 +40,8 @@ import java.util.function.Predicate;
  */
 public final class TapService implements Listener {
 
-    /** A tap is this share of the strongest equipped pet's hit, before tap multipliers. */
-    public static final double BASE_TAP_SHARE = 0.10;
+    /** A bare-handed tap, as a share of pet power - about what a tap was before weapons existed. */
+    public static final double BARE_TAP_POWER = 0.02;
     /** The fastest a player can tap for damage - about 6.7 taps a second. */
     public static final long MIN_TAP_INTERVAL_MILLIS = 150L;
     /**
@@ -73,6 +72,7 @@ public final class TapService implements Listener {
     private final Map<UUID, Long> lastTapAt = new ConcurrentHashMap<>();
     private final Map<UUID, Long> lastTapKillAt = new ConcurrentHashMap<>();
     private final Map<String, BiFunction<Player, PackPlayerProfile, Double>> multiplierProviders = new ConcurrentHashMap<>();
+    private final Map<String, BiFunction<Player, PackPlayerProfile, Double>> powerProviders = new ConcurrentHashMap<>();
     /** Players whose taps should do nothing right now - a world boss fight owns their attention. */
     private Predicate<Player> paused = player -> false;
 
@@ -100,15 +100,54 @@ public final class TapService implements Listener {
         multiplierProviders.remove(key);
     }
 
-    /** What one tap deals right now - also what a tools or stats screen would show. Never below 1. */
-    public long tapDamage(Player player, PackPlayerProfile profile) {
-        double best = 0;
+    /**
+     * Replaces the bare-handed share of pet power a tap deals - a held
+     * weapon is one. The highest answer from every provider wins; nothing
+     * can take a tap below {@link #BARE_TAP_POWER}.
+     */
+    public void registerTapPowerProvider(String key, BiFunction<Player, PackPlayerProfile, Double> provider) {
+        powerProviders.put(key, provider);
+    }
+
+    public void unregisterTapPowerProvider(String key) {
+        powerProviders.remove(key);
+    }
+
+    /** The player's pets' combined hit, after damage boosts - what a tap is measured against. */
+    public double petPower(PackPlayerProfile profile) {
+        double total = 0;
         for (UUID petId : profile.getEquippedPetIds()) {
             PetInstance pet = profile.findPet(petId).orElse(null);
             if (pet != null) {
-                best = Math.max(best, packs.getEquipmentService().effectiveDamage(profile, pet));
+                total += packs.getEquipmentService().effectiveDamage(profile, pet);
             }
         }
+        return total * packs.damageMultiplier(profile);
+    }
+
+    /** The share of pet power one tap deals right now, before multipliers. */
+    public double tapPower(Player player, PackPlayerProfile profile) {
+        double power = BARE_TAP_POWER;
+        for (BiFunction<Player, PackPlayerProfile, Double> provider : powerProviders.values()) {
+            Double value = provider.apply(player, profile);
+            if (value != null) {
+                power = Math.max(power, value);
+            }
+        }
+        return power;
+    }
+
+    /** What one tap deals right now. Never below 1. */
+    public long tapDamage(Player player, PackPlayerProfile profile) {
+        return tapDamageAt(player, profile, tapPower(player, profile));
+    }
+
+    /**
+     * What one tap WOULD deal at {@code power} x pet power - how the weapons
+     * screen shows a weapon's damage whatever the player is holding while
+     * they look at it. Never below 1.
+     */
+    public long tapDamageAt(Player player, PackPlayerProfile profile, double power) {
         double multiplier = 1.0;
         for (BiFunction<Player, PackPlayerProfile, Double> provider : multiplierProviders.values()) {
             Double value = provider.apply(player, profile);
@@ -116,7 +155,7 @@ public final class TapService implements Listener {
                 multiplier *= Math.max(0.0, value);
             }
         }
-        return Math.max(1L, Math.round(best * packs.damageMultiplier(profile) * BASE_TAP_SHARE * multiplier));
+        return Math.max(1L, Math.round(petPower(profile) * power * multiplier));
     }
 
     /**

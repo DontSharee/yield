@@ -52,12 +52,13 @@ on the rare big one.
 ## 1b. Tap damage
 
 Every click on a cube is also a **tap**: the player's own hit, as in Pet
-Simulator 99. A tap is **10% of the strongest equipped pet's hit** (after
-every damage multiplier), so it scales with the ladder by itself — a flat
-number would be decisive in the Meadow and invisible by the Genesis Core.
-Level-10+ pets each add **+10%** to tap damage (the milestone that used to
-be "fights without being sent", which stopped meaning anything once every
-pet fought on its own).
+Simulator 99. A tap is a share of **pet power**, the equipped pets' combined
+hit after every damage boost, so it scales with the ladder by itself. A
+flat number would be decisive in the Meadow and invisible by the Genesis
+Core. Bare-handed the share is **0.02×**; holding a weapon it's that
+weapon's power (below). Level-10+ pets each add **+10%** on top (the
+milestone that used to be "fights without being sent", which stopped
+meaning anything once every pet fought on its own).
 
 Taps are capped at one every **150 ms** (~6.7/s), so an autoclicker gets
 exactly what a fast human does. **Auto Tap** — the gamepass that replaced
@@ -92,16 +93,18 @@ cubes: the cap is ~1/20 of a squad's hit on a basic cube, and a ×2.5 tool
 already reaches it. So thirteen of the sixteen tools would have shown the
 same numbers.
 
-**Hand-held tools** (yield-tools, `/tools`) are the tap multiplier. Sixteen
-tools, Stone Button (×1.5) to Nether Star (×35), bought in order with
-coins, each priced at 500 basic cubes of the zone it's pinned to so it
-lands as you reach that zone. A tool only counts while held. Measured with
-the top tool and Auto Tap: **~4% faster** to the last zone. The kill
-cooldown and the pets' 1-second floor are what hold that down. A tool
-meant to make clicking beat the pets (a late-game "click-farming" item)
-should lower `TAP_KILL_COOLDOWN_MILLIS` for its holder, on purpose. Past
-that, the only limit is the zone's spawn rate (~4 cubes/s), roughly 4× the
-income the ladder assumes.
+**Weapons** (yield-tools, `/tools` or `/weapons`) set what share of pet
+power a tap deals while held. There are **120**: six per zone (Dagger,
+Hatchet, Pick, Scythe, Blade and the zone's signature piece), from
+**0.1× to 25× pet power**, each ~4.75% stronger than the last, bought in
+order with coins. Each is priced at 500 basic cubes at its point on the
+zone ladder, so it lands as you reach it. The first costs 5,000 coins in
+the Meadow; the last, 340B at the Genesis Core. A weapon only counts while
+held. Measured with the top weapon and Auto Tap, a full run is **~3.5%
+faster**. The tap-kill cooldown and the pets' 1-second floor are what hold
+that down, so the range can be this wide without touching the ladder's
+timings. A weapon meant to make clicking beat the pets should lower
+`TAP_KILL_COOLDOWN_MILLIS` for its holder, on purpose.
 
 ## 2. The zone ladder — `yield-zones/…/zones.yml`
 
