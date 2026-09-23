@@ -80,7 +80,7 @@ public final class BlockTreeFeedback {
         }
     }
 
-    private void giveShard(Player player, ShardType type, boolean perfect) {
+    void giveShard(Player player, ShardType type, boolean perfect) {
         ItemStack item = packs.getShardItem().create(type, perfect);
         player.getInventory().addItem(item).values()
                 .forEach(leftover -> player.getWorld().dropItemNaturally(player.getLocation(), leftover));

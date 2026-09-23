@@ -201,7 +201,7 @@ public final class QuestGui {
 
         List<String> data = new ArrayList<>(List.of(
                 "&7Difficulty: &f" + selected.name(),
-                "&7Progress: &f" + Math.min(progress, quest.goal()) + " &7/ &f" + quest.goal(),
+                "&7Progress: " + MenuLore.progress(Math.min(progress, quest.goal()), quest.goal()),
                 buildRewardLine(quest)
         ));
 

@@ -29,11 +29,15 @@
 #   power          tap damage as a multiple of pet power, while held
 #   cost-coins     price to unlock (needs every weapon above it first)
 #
+# The FIRST entry is every player's starting weapon - they own it from their
+# first join, it is pinned to hotbar slot 1 and can't be moved, dropped,
+# traded or auctioned, so its cost is always 0.
+#
 # Adding a weapon: add an entry where it belongs. Ownership is a position on
 # this list, so prefer appending. Run /admin tools reload after editing.
 tools:
   # --- meadow ---
-  meadow_dagger: { display-name: "&7Meadow Dagger", material: WOODEN_SHOVEL, power: 0.1, cost-coins: 5000 }
+  meadow_dagger: { display-name: "&7Meadow Dagger", material: WOODEN_SHOVEL, power: 0.1, cost-coins: 0 }
   meadow_hatchet: { display-name: "&7Meadow Hatchet", material: WOODEN_AXE, power: 0.105, cost-coins: 5800 }
   meadow_pick: { display-name: "&7Meadow Pick", material: WOODEN_PICKAXE, power: 0.11, cost-coins: 6700 }
   meadow_scythe: { display-name: "&7Meadow Scythe", material: WOODEN_HOE, power: 0.115, cost-coins: 7800 }

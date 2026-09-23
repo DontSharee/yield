@@ -72,7 +72,19 @@ public final class BlockTreeContentLoader {
         if (tiers.size() != 7) {
             logger.warning("Blocktree entry '" + id + "' has " + tiers.size() + " tier(s), expected 7.");
         }
-        return new BlockTreeDefinition(material, displayName, icon, tiers);
+        return new BlockTreeDefinition(material, displayName, icon, tiers, perkTitle(section, tiers));
+    }
+
+    /** A {@code perk} effect anywhere on the tree names it; otherwise the block's own {@code perk-name}, or none. */
+    private static String perkTitle(ConfigurationSection section, List<BlockTreeTier> tiers) {
+        for (int i = tiers.size() - 1; i >= 0; i--) {
+            for (BlockTreeEffect effect : tiers.get(i).effects()) {
+                if (effect.type() == BlockTreeEffectType.PERK) {
+                    return BlockPerk.parse(effect.data()).title();
+                }
+            }
+        }
+        return section.getString("perk-name");
     }
 
     private List<BlockTreeEffect> loadEffects(String id, Object rawEffects) {
@@ -91,12 +103,24 @@ public final class BlockTreeContentLoader {
                 continue;
             }
             Object dataValue = effectMap.get("data");
+            BlockTreeEffectType type;
             try {
-                effects.add(new BlockTreeEffect(BlockTreeEffectType.parse(String.valueOf(typeValue)), amountNumber.doubleValue(),
-                        dataValue != null ? String.valueOf(dataValue) : null));
+                type = BlockTreeEffectType.parse(String.valueOf(typeValue));
             } catch (IllegalArgumentException e) {
                 logger.warning("Blocktree entry '" + id + "' has an unknown effect type '" + typeValue + "' - skipping it.");
+                continue;
             }
+            String data = dataValue != null ? String.valueOf(dataValue) : null;
+            if (type == BlockTreeEffectType.PERK) {
+                // Stored by enum name, so the service can compare it straight against BlockPerk.name().
+                try {
+                    data = BlockPerk.parse(String.valueOf(data)).name();
+                } catch (IllegalArgumentException e) {
+                    logger.warning("Blocktree entry '" + id + "' has an unknown perk '" + data + "' - skipping it.");
+                    continue;
+                }
+            }
+            effects.add(new BlockTreeEffect(type, amountNumber.doubleValue(), data));
         }
         return effects;
     }

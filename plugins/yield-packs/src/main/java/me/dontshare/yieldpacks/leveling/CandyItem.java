@@ -20,7 +20,7 @@ public final class CandyItem {
 
     public ItemStack create(Candy candy) {
         ItemBuilder builder = ItemBuilder.of(candy.material())
-                .name("<#FFB6E1><bold>" + candy.displayName() + "</bold>");
+                .name(MenuLore.name("<#FFB6E1>", candy.displayName()));
         MenuLore.info("candy", List.of(), MenuLore.ACCENT, List.of("Level Cap: &f+" + candy.levelCapBonus()))
                 .forEach(builder::lore);
         return builder

@@ -1,5 +1,6 @@
 package me.dontshare.yieldblocktree;
 
+import me.dontshare.yieldblocktree.data.BlockPerk;
 import me.dontshare.yieldblocktree.data.BlockTreeDefinition;
 import me.dontshare.yieldblocktree.data.BlockTreeEffect;
 import me.dontshare.yieldblocktree.data.BlockTreeEffectType;
@@ -11,8 +12,11 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 /**
@@ -44,6 +48,13 @@ public final class BlockTreeService {
     private final PlayerDataStore<PackPlayerProfile> store;
     /** This plugin's own progress and claims. The pack store above stays for the rewards a claim pays out. */
     private final PlayerDataStore<BlockTreeProfile> blockStore;
+    /**
+     * Each player's claimed perks, summed once. Unlike the stat helpers
+     * below, perks are asked about on every hit, tap and kill - and Beacon
+     * Aura asks about every nearby player too - so they are cached, and
+     * dropped whenever the answer could change (a claim, a reload, a quit).
+     */
+    private final Map<UUID, Map<BlockPerk, Double>> perkCache = new ConcurrentHashMap<>();
 
     public BlockTreeService(Supplier<Map<Material, BlockTreeDefinition>> content, PlayerDataStore<PackPlayerProfile> store,
                              PlayerDataStore<BlockTreeProfile> blockStore) {
@@ -148,6 +159,7 @@ public final class BlockTreeService {
         blockStore.getOrCreate(profile.getPlayerId()).getClaimedTiers().add(key);
         store.save(player.getUniqueId());
         blockStore.save(player.getUniqueId());
+        perkCache.remove(player.getUniqueId());
         return ClaimResult.SUCCESS;
     }
 
@@ -172,6 +184,50 @@ public final class BlockTreeService {
         store.save(player.getUniqueId());
         blockStore.save(player.getUniqueId());
         return claim(player, material, tierIndex);
+    }
+
+    /** This player's claimed value for {@code perk} - 0.0 if they don't have it (or aren't loaded). */
+    public double perkValue(UUID playerId, BlockPerk perk) {
+        Map<BlockPerk, Double> perks = perkCache.get(playerId);
+        if (perks == null) {
+            BlockTreeProfile profile = blockStore.getCached(playerId);
+            if (profile == null) {
+                return 0.0;
+            }
+            perks = computePerks(profile);
+            perkCache.put(playerId, perks);
+        }
+        return perks.getOrDefault(perk, 0.0);
+    }
+
+    public boolean hasPerk(UUID playerId, BlockPerk perk) {
+        return perkValue(playerId, perk) > 0.0;
+    }
+
+    /** Forget cached perks - one player's (on quit) or everyone's (after a reload). */
+    public void invalidatePerks(UUID playerId) {
+        perkCache.remove(playerId);
+    }
+
+    public void invalidateAllPerks() {
+        perkCache.clear();
+    }
+
+    private Map<BlockPerk, Double> computePerks(BlockTreeProfile profile) {
+        Map<BlockPerk, Double> perks = new EnumMap<>(BlockPerk.class);
+        for (BlockTreeDefinition def : content.get().values()) {
+            for (int i = 0; i < def.tiers().size(); i++) {
+                if (!profile.getClaimedTiers().contains(key(def.material(), i))) {
+                    continue;
+                }
+                for (BlockTreeEffect effect : def.tiers().get(i).effects()) {
+                    if (effect.type() == BlockTreeEffectType.PERK) {
+                        perks.merge(BlockPerk.valueOf(effect.data()), effect.value(), Double::sum);
+                    }
+                }
+            }
+        }
+        return perks;
     }
 
     private String key(Material material, int tierIndex) {

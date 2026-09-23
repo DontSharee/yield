@@ -3,6 +3,7 @@ package me.dontshare.yieldpacks.gui;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiBuilder;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
@@ -26,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Supplier;
-import java.util.stream.IntStream;
 
 /**
  * What a player sees when they right-click an egg: everything that can come
@@ -43,10 +43,13 @@ import java.util.stream.IntStream;
 public final class HatchMenuGui {
 
     private static final String ACCENT = "<#4BD9FF>";
+    /** Rows 0-3: the drops, centred seven to a row (see GuiLayout). */
     private static final int DROP_SLOTS = 36;
-    private static final int TIER_ROW = 45;
-    private static final int AUTO_SLOT = 50;
-    private static final int CLOSE_SLOT = 53;
+    /** Row 4: the chase pet in the middle with the hatch buttons either side of it. */
+    private static final int CHASE_SLOT = 40;
+    private static final int[] TIER_SLOTS = {38, 39, 41, 42};
+    private static final int AUTO_SLOT = 45;
+    private static final int CLOSE_SLOT = 49;
 
     private final Supplier<PackContentLoader.ContentSnapshot> content;
     private final GuiManager guiManager;
@@ -80,22 +83,17 @@ public final class HatchMenuGui {
                 rollService.oddsFor(egg, rollService.displayLuckFor(player)));
         drops.sort(Comparator.comparingDouble(PackRollService.WeightedOdds::probability).reversed());
 
-        int slot = 0;
-        for (PackRollService.WeightedOdds drop : drops) {
-            if (slot >= DROP_SLOTS) {
-                break;
-            }
-            builder.item(slot++, buildDropIcon(drop));
+        builder.fill(GuiLayout.all(6), GuiIcons.filler());
+        int[] dropSlots = GuiLayout.centered(0, Math.min(drops.size(), GuiLayout.capacity(DROP_SLOTS / 9)));
+        for (int i = 0; i < dropSlots.length; i++) {
+            builder.item(dropSlots[i], buildDropIcon(drops.get(i)));
         }
-        builder.fill(IntStream.range(slot, DROP_SLOTS), GuiIcons.filler());
-        builder.fill(IntStream.range(DROP_SLOTS, 54).filter(s -> s < TIER_ROW || s > TIER_ROW + 3)
-                .filter(s -> s != CLOSE_SLOT && s != AUTO_SLOT && s != DROP_SLOTS + 4), GuiIcons.filler());
 
-        builder.item(DROP_SLOTS + 4, buildChaseIcon(egg, player));
+        builder.item(CHASE_SLOT, buildChaseIcon(egg, player));
         int[] tiers = PackOpenService.HATCH_TIERS;
-        for (int i = 0; i < tiers.length; i++) {
+        for (int i = 0; i < tiers.length && i < TIER_SLOTS.length; i++) {
             int count = tiers[i];
-            builder.item(TIER_ROW + i, buildTierIcon(egg, player, count),
+            builder.item(TIER_SLOTS[i], buildTierIcon(egg, player, count),
                     (clicker, event) -> hatch(clicker, egg, count));
         }
         builder.item(AUTO_SLOT, buildAutoIcon(player), (clicker, event) -> toggleAuto(clicker, egg.id()));
@@ -175,26 +173,27 @@ public final class HatchMenuGui {
     private ItemStack buildDropIcon(PackRollService.WeightedOdds drop) {
         ItemDefinition item = drop.item();
         Rarity rarity = content.get().rarities().find(item.rarityId()).orElse(null);
-        // baseIcon only resolves the ICON - a head or a material - and never
-        // names it, so without this every pet in the list read "Player Head".
         ItemBuilder builder = iconFactory.baseIcon(item).name(item.displayName());
-        builder.lore("");
+        List<String> data = new ArrayList<>();
         if (rarity != null) {
-            builder.lore(rarity.displayName());
+            data.add("Rarity: " + rarity.displayName());
         }
-        builder.lore("&7Chance: &f" + PackOddsLore.formatChance(drop.probability()));
+        data.add("Chance: &e" + PackOddsLore.formatChance(drop.probability()));
+        MenuLore.info("pet", List.of(), ACCENT, data).forEach(builder::lore);
         return builder.hideAttributes().build();
     }
 
     /** The luck/Huge/Shiny block, given its own slot so it reads as a property of the egg rather than of any one pet. */
     private ItemStack buildChaseIcon(PackDefinition egg, Player player) {
-        ItemBuilder builder = ItemBuilder.of(Material.NETHER_STAR).name(MenuLore.buttonName(ACCENT, "Your Odds"));
-        List<String> chase = oddsLore.chaseLines(egg, player);
-        if (chase.isEmpty()) {
-            builder.lore("&7Nothing extra on this egg.");
-        } else {
-            chase.forEach(builder::lore);
+        ItemBuilder builder = ItemBuilder.of(Material.NETHER_STAR).name(MenuLore.infoName(ACCENT, "Your Odds"));
+        List<String> chase = new ArrayList<>();
+        for (String line : oddsLore.chaseLines(egg, player)) {
+            if (!line.isBlank()) {
+                chase.add(line);
+            }
         }
+        MenuLore.info("odds", chase.isEmpty() ? List.of("Nothing extra on this egg.") : List.of(), ACCENT, chase)
+                .forEach(builder::lore);
         return builder.hideAttributes().build();
     }
 
@@ -202,20 +201,18 @@ public final class HatchMenuGui {
         boolean gamepassed = count <= openService.maxTierFor(player);
         boolean affordable = rollService.affordableHatches(player, egg.id(), count) >= count;
         Material material = !gamepassed ? Material.BARRIER : affordable ? Material.LIME_DYE : Material.GRAY_DYE;
+        boolean auto = store.getOrCreate(player.getUniqueId()).isAutoOpenEnabled();
 
         ItemBuilder builder = ItemBuilder.of(material)
-                .name(MenuLore.buttonName(ACCENT, "Hatch " + count + "x"));
-        builder.lore("&7Cost: " + PackOddsLore.costLine(egg, count));
-        builder.lore("");
-        boolean auto = store.getOrCreate(player.getUniqueId()).isAutoOpenEnabled();
+                .name(MenuLore.buttonName(gamepassed && affordable ? "&a" : "&7", "Hatch " + count + "x"));
+        List<String> data = List.of("Cost: " + PackOddsLore.costLine(egg, count));
         if (!gamepassed) {
-            builder.lore("&cNeeds the Multi-Hatch gamepass.");
+            MenuLore.info("hatch", List.of("&cNeeds the Multi-Hatch gamepass."), ACCENT, data).forEach(builder::lore);
         } else if (!affordable) {
-            builder.lore("&cYou can't afford this yet.");
-        } else if (auto) {
-            builder.lore("&8[CLICK] &fTo Auto-Hatch " + count + "x");
+            MenuLore.info("hatch", List.of("&cYou can't afford this yet."), ACCENT, data).forEach(builder::lore);
         } else {
-            builder.lore("&8[CLICK] &fTo Hatch");
+            MenuLore.purchase("hatch", List.of(), "&a", data, auto ? "Click to auto-hatch" : "Click to hatch")
+                    .forEach(builder::lore);
         }
         return builder.hideAttributes().build();
     }

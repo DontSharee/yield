@@ -5,6 +5,7 @@ import me.dontshare.yieldachievements.data.AchievementDefinition;
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.gui.Page;
 import me.dontshare.yieldcore.item.ItemBuilder;
@@ -27,10 +28,11 @@ public final class AchievementsGui {
 
     private static final int TOTAL_ROWS = 6;
     private static final int CONTENT_ROWS = TOTAL_ROWS - 1;
-    private static final int PAGE_SIZE = CONTENT_ROWS * 9;
-    private static final int PREV_SLOT = 45;
+    /** Centred rows of seven inside the border - see GuiLayout. */
+    private static final int PAGE_SIZE = GuiLayout.capacity(CONTENT_ROWS);
+    private static final int PREV_SLOT = 47;
     private static final int CLOSE_SLOT = 49;
-    private static final int NEXT_SLOT = 53;
+    private static final int NEXT_SLOT = 51;
 
     private final Supplier<Map<String, AchievementDefinition>> content;
     private final PlayerDataStore<PackPlayerProfile> store;
@@ -55,9 +57,11 @@ public final class AchievementsGui {
 
         var builder = Gui.builder(TOTAL_ROWS, "Achievements");
         List<AchievementDefinition> items = page.items();
+        builder.fill(java.util.stream.IntStream.range(0, 45), GuiIcons.filler());
+        int[] contentSlots = GuiLayout.centered(0, items.size());
         for (int i = 0; i < items.size(); i++) {
             AchievementDefinition def = items.get(i);
-            builder.item(i, buildIcon(profile, def));
+            builder.item(contentSlots[i], buildIcon(profile, def));
         }
         builder.fill(java.util.stream.IntStream.range(45, 54).filter(s -> s != PREV_SLOT && s != CLOSE_SLOT && s != NEXT_SLOT), GuiIcons.filler());
         builder.item(PREV_SLOT, GuiIcons.pageArrow(false, page.hasPrevious()), (clicker, e) -> turnPage(clicker, -1));
@@ -84,7 +88,7 @@ public final class AchievementsGui {
             description.add(" &7" + line);
         }
         String progressLine = "Progress: " + (complete ? "&a&lCOMPLETE"
-                : "&f" + Formatting.format((double) progress) + " &7/ &f" + Formatting.format((double) def.goal()));
+                : MenuLore.progress(progress, def.goal()));
         String rewardLine = "Reward: &6" + Formatting.format(def.rewardCredits()) + " &7Credits";
         MenuLore.info("achievement", description, MenuLore.ACCENT, List.of(progressLine, rewardLine)).forEach(builder::lore);
 

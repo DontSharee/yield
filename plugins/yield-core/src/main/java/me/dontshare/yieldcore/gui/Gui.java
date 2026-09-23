@@ -31,6 +31,10 @@ public final class Gui implements InventoryHolder {
 
     private final Inventory inventory;
     private final Map<Integer, GuiClickHandler> handlers;
+    /** Chest rows, 0 for a fixed-shape GUI. */
+    private final int rows;
+    /** See {@link #applyFrame}. */
+    private boolean framed;
     private Consumer<Player> closeHandler;
     /** Slots a player can freely place/remove real items into - see {@link #isEditableSlot}/{@link GuiListener}. Empty for every ordinary GUI (the default, fully server-controlled behavior). */
     private Set<Integer> editableSlots = Set.of();
@@ -41,6 +45,7 @@ public final class Gui implements InventoryHolder {
     Gui(int rows, Component title, Map<Integer, ItemStack> items, Map<Integer, GuiClickHandler> handlers) {
         this.inventory = Bukkit.createInventory(this, rows * 9, title);
         this.handlers = handlers;
+        this.rows = rows;
         items.forEach(inventory::setItem);
     }
 
@@ -48,6 +53,7 @@ public final class Gui implements InventoryHolder {
     Gui(InventoryType type, Component title, Map<Integer, ItemStack> items, Map<Integer, GuiClickHandler> handlers) {
         this.inventory = Bukkit.createInventory(this, type, title);
         this.handlers = handlers;
+        this.rows = 0;
         items.forEach(inventory::setItem);
     }
 
@@ -77,7 +83,7 @@ public final class Gui implements InventoryHolder {
 
     /** Replaces one slot's item/handler on an already-open GUI - e.g. showing an inline error without rebuilding the whole menu. */
     public void set(int slot, ItemStack item, GuiClickHandler handler) {
-        inventory.setItem(slot, item);
+        inventory.setItem(slot, framed && handler == null && isInterior(slot) && GuiIcons.isFiller(item) ? null : item);
         if (handler != null) {
             handlers.put(slot, handler);
         } else {
@@ -98,6 +104,40 @@ public final class Gui implements InventoryHolder {
     /** Runs once whenever this specific Gui instance closes, for any reason - e.g. yield-auctionhouse uses this to stop tracking a player as an active Auction House browser once they leave the screen. */
     public void setCloseHandler(Consumer<Player> closeHandler) {
         this.closeHandler = closeHandler;
+    }
+
+    /**
+     * The house frame: panes around the edge, nothing inside. Every screen
+     * builds by filling first and placing second, so the panes a screen
+     * put inside the frame are taken back out here, and any gap in the
+     * edge is closed - one rule, applied the same way to every menu.
+     * <p>
+     * Skipped for screens with editable slots (there the panes are what
+     * tell a player which empty slots take items and which don't) and for
+     * inventory-style screens like the Bag, whose grid runs edge to edge.
+     */
+    void applyFrame() {
+        if (rows < 3 || !editableSlots.isEmpty() || allowPlayerInventoryInteraction) {
+            return;
+        }
+        framed = true;
+        for (int slot = 0; slot < rows * 9; slot++) {
+            ItemStack item = inventory.getItem(slot);
+            boolean empty = item == null || item.getType().isAir();
+            if (isInterior(slot)) {
+                if (!empty && !handlers.containsKey(slot) && GuiIcons.isFiller(item)) {
+                    inventory.setItem(slot, null);
+                }
+            } else if (empty) {
+                inventory.setItem(slot, GuiIcons.filler());
+            }
+        }
+    }
+
+    private boolean isInterior(int slot) {
+        int row = slot / 9;
+        int column = slot % 9;
+        return row > 0 && row < rows - 1 && column > 0 && column < 8;
     }
 
     /** Called by {@link GuiListener} whenever this GUI closes, for any reason. */

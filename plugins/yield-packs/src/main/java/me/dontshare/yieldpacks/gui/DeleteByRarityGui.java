@@ -3,6 +3,7 @@ package me.dontshare.yieldpacks.gui;
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.Formatting;
@@ -61,10 +62,11 @@ public final class DeleteByRarityGui {
         var builder = Gui.builder(TOTAL_ROWS, "Delete by Rarity");
         builder.fill(IntStream.range(0, TOTAL_ROWS * 9).filter(slot -> slot != CLOSE_SLOT), GuiIcons.filler());
 
-        for (int i = 0; i < rarities.size() && i < 9; i++) {
+        int[] slots = GuiLayout.centeredRow(RARITY_ROW_START / 9, Math.min(9, rarities.size()));
+        for (int i = 0; i < slots.length; i++) {
             Rarity rarity = rarities.get(i);
             int owned = unequippedCountFor(profile, rarity.id());
-            builder.item(RARITY_ROW_START + i, buildRarityIcon(rarity, owned),
+            builder.item(slots[i], buildRarityIcon(rarity, owned),
                     (clicker, event) -> deleteRarity(clicker, rarity));
         }
 

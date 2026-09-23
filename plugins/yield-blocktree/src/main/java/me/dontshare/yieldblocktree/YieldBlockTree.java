@@ -30,6 +30,7 @@ public final class YieldBlockTree extends JavaPlugin {
     private PlayerDataStore<BlockTreeProfile> blockStore;
     private BlockTreeService blockTreeService;
     private BlockTreeFeedback blockTreeFeedback;
+    private BlockPerkService perkService;
 
     @Override
     public void onEnable() {
@@ -46,6 +47,9 @@ public final class YieldBlockTree extends JavaPlugin {
         registerProviders(packs, zones);
         blockTreeFeedback = new BlockTreeFeedback(blockTreeService, packs);
         Bukkit.getPluginManager().registerEvents(new BlockTreeProgressListener(blockTreeFeedback), this);
+        perkService = new BlockPerkService(this, blockTreeService, blockTreeFeedback, packs, zones, () -> content);
+        perkService.register();
+        Bukkit.getPluginManager().registerEvents(perkService, this);
 
         BlockTreeCategoryGui categoryGui = new BlockTreeCategoryGui(() -> content, packs.getPlayerStore(), blockTreeService, core.getGuiManager());
         BlockTreeGui hubGui = new BlockTreeGui(() -> content, packs.getPlayerStore(), blockTreeService, core.getGuiManager(), categoryGui);
@@ -57,6 +61,9 @@ public final class YieldBlockTree extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (perkService != null) {
+            perkService.unregister();
+        }
         YieldPacks packs = JavaPlugin.getPlugin(YieldPacks.class);
         if (packs != null) {
             packs.unregisterCoinMultiplierProvider(PROVIDER_KEY);
@@ -80,6 +87,7 @@ public final class YieldBlockTree extends JavaPlugin {
     /** Re-reads blocktree.yml - existing GUI/service instances keep working against the same, now-updated content supplier. */
     public void reloadContent() {
         content = contentLoader.load();
+        blockTreeService.invalidateAllPerks();
     }
 
     public BlockTreeService getBlockTreeService() {

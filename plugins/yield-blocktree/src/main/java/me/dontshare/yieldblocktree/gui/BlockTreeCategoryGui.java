@@ -1,12 +1,14 @@
 package me.dontshare.yieldblocktree.gui;
 
 import me.dontshare.yieldblocktree.BlockTreeService;
+import me.dontshare.yieldblocktree.data.BlockPerk;
 import me.dontshare.yieldblocktree.data.BlockTreeDefinition;
 import me.dontshare.yieldblocktree.data.BlockTreeEffect;
 import me.dontshare.yieldblocktree.data.BlockTreeTier;
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.Formatting;
@@ -23,21 +25,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
-import java.util.stream.IntStream;
 
 /**
- * One block's 7-tier ladder - unlike yield-achievements' MilestoneCategoryGui
- * (an open-ended, paginated list), a block always has exactly 7 tiers, so
- * this is a single, non-paginated row: red = locked, yellow = in progress,
- * lime = complete (glowing if not yet claimed - click to claim, plain once
- * it is).
+ * One block's 7-tier ladder, three rows tall: back in the corner and the
+ * block itself in the middle of the top row, its seven tiers centred
+ * across the middle row, close underneath.
+ * Red = locked, yellow = in progress, lime = complete (glowing if not yet
+ * claimed - click to claim). The seventh tier is the tree's one-of-a-kind
+ * reward and gets a nether star and its own name instead of a pane.
  */
 public final class BlockTreeCategoryGui {
 
-    private static final int TOTAL_ROWS = 6;
-    private static final int BACK_SLOT = 47;
-    private static final int CLOSE_SLOT = 49;
-    private static final int TIER_START_SLOT = 10;
+    private static final int TOTAL_ROWS = 3;
+    private static final int HEADER_SLOT = 4;
+    private static final int TIER_ROW = 1;
+    private static final int BACK_SLOT = 0;
+    private static final int CLOSE_SLOT = 22;
 
     private final Supplier<Map<Material, BlockTreeDefinition>> content;
     private final PlayerDataStore<PackPlayerProfile> store;
@@ -68,13 +71,16 @@ public final class BlockTreeCategoryGui {
         List<BlockTreeTier> tiers = def.tiers();
 
         var builder = Gui.builder(TOTAL_ROWS, Formatting.stripLeadingColorCodes(def.displayName()));
-        for (int i = 0; i < tiers.size() && i < 7; i++) {
+        builder.fill(GuiLayout.all(TOTAL_ROWS), GuiIcons.filler());
+        builder.item(HEADER_SLOT, buildHeader(profile, material, def));
+        // Centred whatever the count: seven fill the middle row, fewer sit in the middle of it.
+        int[] slots = GuiLayout.centeredRow(TIER_ROW, Math.min(GuiLayout.INNER_WIDTH, tiers.size()));
+        for (int i = 0; i < slots.length; i++) {
             int tierIndex = i;
-            builder.item(TIER_START_SLOT + i, buildTierIcon(profile, material, def, tiers.get(i), tierIndex),
+            builder.item(slots[i], buildTierIcon(profile, material, def, tiers.get(i), tierIndex),
                     (clicker, e) -> handleClick(clicker, material, tierIndex));
         }
-        builder.fill(IntStream.range(45, 54).filter(s -> s != BACK_SLOT && s != CLOSE_SLOT), GuiIcons.filler());
-        builder.item(BACK_SLOT, buildBackButton(), (clicker, e) -> {
+        builder.item(BACK_SLOT, GuiIcons.backButton("the block list"), (clicker, e) -> {
             if (hubGui != null) {
                 hubGui.open(clicker);
             }
@@ -97,9 +103,12 @@ public final class BlockTreeCategoryGui {
             case COMPLETE_UNCLAIMED -> {
                 BlockTreeService.ClaimResult result = service.claim(player, material, tierIndex);
                 if (result == BlockTreeService.ClaimResult.SUCCESS) {
-                    player.sendMessage(Text.parse("<green><bold>Blocktree tier claimed!</bold></green> <gray>"
-                            + Formatting.stripLeadingColorCodes(def.displayName()) + " Tier " + (tierIndex + 1) + "</gray>"));
-                    player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
+                    boolean top = tierIndex == def.tiers().size() - 1 && def.perkTitle() != null;
+                    player.sendMessage(Text.parse(top
+                            ? "<green><bold>Blocktree complete!</bold></green> <gray>Unlocked</gray> " + def.perkTitle()
+                            : "<green><bold>Blocktree tier claimed!</bold></green> <gray>"
+                                    + Formatting.stripLeadingColorCodes(def.displayName()) + " Tier " + (tierIndex + 1) + "</gray>"));
+                    player.playSound(player.getLocation(), top ? Sound.UI_TOAST_CHALLENGE_COMPLETE : Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
                 }
             }
             case CLAIMED -> player.sendMessage(Text.parse("<gray>Already claimed.</gray>"));
@@ -115,18 +124,31 @@ public final class BlockTreeCategoryGui {
         open(player, material);
     }
 
-    private ItemStack buildBackButton() {
-        ItemBuilder builder = ItemBuilder.of(Material.ARROW).name(MenuLore.buttonName(MenuLore.ACCENT, "BACK"));
-        MenuLore.button("navigation", List.of(" &7Return to the block", " &7list."), MenuLore.ACCENT, "Click to Go Back")
-                .forEach(builder::lore);
+    private ItemStack buildHeader(PackPlayerProfile profile, Material material, BlockTreeDefinition def) {
+        int claimed = 0;
+        for (int i = 0; i < def.tiers().size(); i++) {
+            if (service.stateOf(profile, material, i, def.tiers().get(i)) == BlockTreeService.TierState.CLAIMED) {
+                claimed++;
+            }
+        }
+        ItemBuilder builder = ItemBuilder.of(def.icon()).name(MenuLore.infoName(MenuLore.ACCENT,
+                Formatting.stripLeadingColorCodes(def.displayName()).toUpperCase(java.util.Locale.ROOT)));
+        List<String> data = new ArrayList<>();
+        data.add("Broken: &f" + Formatting.format((double) service.progressOf(profile, material)));
+        data.add("Tiers: " + MenuLore.progress(claimed, def.tiers().size()));
+        if (def.perkTitle() != null) {
+            data.add("Top Reward: " + def.perkTitle());
+        }
+        MenuLore.info("blocktree", List.of(), MenuLore.ACCENT, data).forEach(builder::lore);
         return builder.hideAttributes().build();
     }
 
     private ItemStack buildTierIcon(PackPlayerProfile profile, Material material, BlockTreeDefinition def, BlockTreeTier tier, int tierIndex) {
         BlockTreeService.TierState state = service.stateOf(profile, material, tierIndex, tier);
         long progress = Math.min(tier.goal(), service.progressOf(profile, material));
+        boolean top = tierIndex == def.tiers().size() - 1 && def.perkTitle() != null;
 
-        Material icon = switch (state) {
+        Material icon = top ? Material.NETHER_STAR : switch (state) {
             case INCOMPLETE -> Material.RED_STAINED_GLASS_PANE;
             case IN_PROGRESS -> Material.YELLOW_STAINED_GLASS_PANE;
             case COMPLETE_UNCLAIMED, CLAIMED -> Material.LIME_STAINED_GLASS_PANE;
@@ -134,28 +156,36 @@ public final class BlockTreeCategoryGui {
         String stateLabel = switch (state) {
             case INCOMPLETE -> "&cLocked";
             case IN_PROGRESS -> "&eIn Progress";
-            case COMPLETE_UNCLAIMED -> "&a&lReady to Claim!";
-            case CLAIMED -> "&7Claimed";
+            case COMPLETE_UNCLAIMED -> "&aReady to claim";
+            case CLAIMED -> "&aClaimed";
         };
 
-        ItemBuilder builder = ItemBuilder.of(icon).name("&f" + Formatting.stripLeadingColorCodes(def.displayName()) + " &8- &fTier " + (tierIndex + 1));
+        String tierTag = " &7[" + Formatting.toRoman(tierIndex + 1) + "]";
+        String name = top
+                ? def.perkTitle() + tierTag
+                : MenuLore.name("&f", Formatting.stripLeadingColorCodes(def.displayName())) + tierTag;
+        ItemBuilder builder = ItemBuilder.of(icon).name(name);
         List<String> data = new ArrayList<>();
         data.add("Goal: &f" + Formatting.format((double) tier.goal()));
-        data.add("Progress: &f" + Formatting.format((double) progress) + " &7/ &f" + Formatting.format((double) tier.goal()));
+        data.add("Progress: " + MenuLore.progress(progress, tier.goal()));
+        data.add("Status: " + stateLabel);
         data.add("");
         for (BlockTreeEffect effect : tier.effects()) {
             data.add(describe(effect, def));
         }
-        MenuLore.info("blocktree", List.of(), MenuLore.ACCENT, data).forEach(builder::lore);
-        builder.lore("").lore(stateLabel);
         if (state == BlockTreeService.TierState.COMPLETE_UNCLAIMED) {
+            MenuLore.button("blocktree tier", List.of(), MenuLore.ACCENT, data, "Click to claim").forEach(builder::lore);
+        } else {
+            MenuLore.info("blocktree tier", List.of(), MenuLore.ACCENT, data).forEach(builder::lore);
+        }
+        if (state == BlockTreeService.TierState.COMPLETE_UNCLAIMED || (top && state == BlockTreeService.TierState.CLAIMED)) {
             builder.enchant(Enchantment.UNBREAKING, 1);
         }
         return builder.hideAttributes().build();
     }
 
     /** A plain-English line generated from the effect's own type/value - never hand-written per tier, so blocktree.yml stays the single source of truth. */
-    private String describe(BlockTreeEffect effect, BlockTreeDefinition def) {
+    static String describe(BlockTreeEffect effect, BlockTreeDefinition def) {
         String blockName = Formatting.stripLeadingColorCodes(def.displayName());
         String percent = Formatting.format(effect.value() * 100) + "%";
         return switch (effect.type()) {
@@ -168,13 +198,14 @@ public final class BlockTreeCategoryGui {
             case GLOBAL_DAMAGE_MULTIPLIER -> "&c+" + percent + " Damage &7from everything";
             case GLOBAL_LUCK_BOOST -> "&d+" + percent + " Luck &7everywhere";
             case GLOBAL_ATTACK_SPEED_MULTIPLIER -> "&e+" + percent + " Attack Speed &7for all pets";
-            case ROLL_SPEED_MULTIPLIER -> "&a+" + percent + " Pack Opening Speed";
+            case ROLL_SPEED_MULTIPLIER -> "&a+" + percent + " Hatch Speed";
             case DOUBLE_HIT_CHANCE -> "&e" + percent + " &7chance to double-hit with pets";
             case TRIPLE_HIT_CHANCE -> "&6" + percent + " &7chance to triple-hit with pets";
-            case EXCLUSIVE_FIND_CHANCE -> "&b" + percent + " &7chance to find an Exclusive in any pack";
+            case EXCLUSIVE_FIND_CHANCE -> "&b" + percent + " &7chance to find an Exclusive in any egg";
             case DIAMOND_CHANCE_BOOST -> "&b+" + percent + " Diamond Find Chance &7from cubes";
             case PROGRESS_MULTIPLIER -> "&d+" + percent + " Blocktree Progress &7from every block";
-            case UNLOCK_SHARD_DROP -> "&5Unlocks " + percent + " chance for " + blockName + " &7to drop a Shard";
+            case UNLOCK_SHARD_DROP -> "&e" + percent + " &7chance for " + blockName + " &7to drop a &5Shard";
+            case PERK -> BlockPerk.valueOf(effect.data()).describe(effect.value());
         };
     }
 }

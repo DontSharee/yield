@@ -27,10 +27,7 @@ import me.dontshare.yieldpacks.pet.PetItemHandler;
 import me.dontshare.yieldpacks.pet.PetWithdrawItem;
 import me.dontshare.yieldpacks.petenchant.PetEnchantContentLoader.PetEnchantContent;
 import me.dontshare.yieldpacks.petenchant.PetEnchantLore;
-import me.dontshare.yieldpacks.player.AttackMode;
-import me.dontshare.yieldpacks.player.CombatPerks;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
-import me.dontshare.yieldpacks.player.SendMode;
 import me.dontshare.yieldpacks.roll.ExistsCounterStore;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
@@ -147,11 +144,9 @@ public final class BagGui {
                 .allowPlayerInventoryInteraction();
 
         // Row 1: equipped strip, 5 slots (2-6) with its own prev/next arrows.
-        // Slot 0 hosts the Send/Attack-mode (single vs. all) toggle; slot 8
-        // hosts the "Delete by Rarity" shortcut - both overflow here rather
-        // than crowding a 6th/7th, unevenly-spaceable button into row 6,
-        // which is already exactly full at 5 evenly-spaced slots.
-        builder.item(0, buildAttackModeToggle(profile), (clicker, event) -> toggleAttackMode(clicker));
+        // Slot 8 hosts the "Delete by Rarity" shortcut. How pets fight
+        // (Auto Attack, single/multi send) lives in /settings, not here.
+        builder.item(0, GuiIcons.filler());
         builder.item(8, buildDeleteByRarityButton(), (clicker, event) -> deleteByRarityGui.open(clicker));
         builder.item(1, GuiIcons.pageArrow(false, equippedPage.hasPrevious()),
                 (clicker, event) -> turnPage(clicker, equippedPageIndex, equippedPage, -1));
@@ -188,24 +183,20 @@ public final class BagGui {
             });
         }
 
-        // Row 6: controls, evenly spaced with close dead-center. Slot 46
-        // (otherwise plain filler) hosts the Auto Attack
-        // toggle instead, and slot 50 hosts Equip Best - reusing already-
-        // inert slots rather than disturbing the 45/47/49/51/53 even-spacing
-        // rule. Slot 51 (Fusion) reverted to plain filler - fusing is now
-        // only reachable at its own tier-locked physical machine (Golden/
-        // Rainbow/Dark Matter - see yield-zonemachines), not from here.
-        builder.fill(IntStream.of(48, 51, 52), GuiIcons.filler());
-        builder.item(46, buildSendModeToggle(player, profile), (clicker, event) -> toggleSendMode(clicker));
-        builder.item(45, GuiIcons.pageArrow(false, storagePage.hasPrevious()),
+        // Row 6: page arrows either side of Close, sort and Equip Best in
+        // the corners - the same 45/47/49/51/53 bar as every other menu.
+        // Fusing is only reachable at its own tier-locked physical machine
+        // (see yield-zonemachines), and fight settings live in /settings.
+        builder.fill(IntStream.of(46, 48, 50, 52), GuiIcons.filler());
+        builder.item(47, GuiIcons.pageArrow(false, storagePage.hasPrevious()),
                 (clicker, event) -> turnPage(clicker, storagePageIndex, storagePage, -1));
-        builder.item(47, sortButton.buildIcon(player), (clicker, event) -> {
+        builder.item(45, sortButton.buildIcon(player), (clicker, event) -> {
             sortButton.cycle(clicker);
             open(clicker);
         });
         builder.item(49, GuiIcons.closeButton(), (clicker, event) -> clicker.closeInventory());
-        builder.item(50, buildEquipBestButton(), (clicker, event) -> equipBest(clicker));
-        builder.item(53, GuiIcons.pageArrow(true, storagePage.hasNext()),
+        builder.item(53, buildEquipBestButton(), (clicker, event) -> equipBest(clicker));
+        builder.item(51, GuiIcons.pageArrow(true, storagePage.hasNext()),
                 (clicker, event) -> turnPage(clicker, storagePageIndex, storagePage, 1));
 
         guiManager.open(player, builder.build());
@@ -362,68 +353,6 @@ public final class BagGui {
         store.save(player.getUniqueId());
         player.sendMessage(Text.parse("<gray>Deleted 1x.</gray>"));
         open(player);
-    }
-
-    private void toggleAttackMode(Player player) {
-        PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
-        profile.setAttackMode(profile.getAttackMode() == AttackMode.SINGLE ? AttackMode.ALL : AttackMode.SINGLE);
-        store.save(player.getUniqueId());
-        open(player);
-    }
-
-    private ItemStack buildAttackModeToggle(PackPlayerProfile profile) {
-        boolean all = profile.getAttackMode() == AttackMode.ALL;
-        ItemBuilder builder = ItemBuilder.of(all ? Material.TNT : Material.ARROW)
-                .name(MenuLore.buttonName(ACCENT, all ? "MULTI SEND" : "SINGLE SEND"));
-        MenuLore.button(
-                "settings",
-                List.of(
-                        " &7Only used while Auto Attack is off:",
-                        " &7Single Send - each click sends one pet.",
-                        " &7Multi Send - each click sends the whole squad."
-                ),
-                ACCENT,
-                "Click to Toggle"
-        ).forEach(builder::lore);
-        if (all) {
-            builder.enchant(org.bukkit.enchantments.Enchantment.UNBREAKING, 1);
-        }
-        return builder.hideAttributes().build();
-    }
-
-    private void toggleSendMode(Player player) {
-        PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
-        profile.setAutoAttack(!profile.isAutoAttackOn());
-        store.save(player.getUniqueId());
-        open(player);
-    }
-
-    /**
-     * Auto Attack - free for everyone, and on by default, as in Pet
-     * Simulator 99: pets pick their own cubes and a click redirects the
-     * whole squad (and taps it). Off means nothing fights until you click.
-     * This used to be the paid Auto Send perk; what is sold now is Auto Tap
-     * (see CombatPerks).
-     */
-    private ItemStack buildSendModeToggle(Player viewer, PackPlayerProfile profile) {
-        boolean auto = profile.isAutoAttackOn();
-        boolean premium = CombatPerks.hasPremium(viewer);
-        ItemBuilder builder = ItemBuilder.of(auto ? Material.CLOCK : Material.LEVER)
-                .name(MenuLore.buttonName(ACCENT, "AUTO ATTACK: " + (auto ? "ON" : "OFF") + (premium ? " &6[Premium]" : "")));
-        MenuLore.button(
-                "settings",
-                !auto
-                        ? List.of(" &7Off: no pet fights until you", " &7click a cube.")
-                        : premium
-                        ? List.of(" &7Pets pick their own cubes;", " &7click one to send them all", " &7to it. Re-engaging 2x faster", " &7after each kill (Premium).")
-                        : List.of(" &7Pets pick their own cubes;", " &7click one to send them all", " &7to it - clicks tap it too."),
-                ACCENT,
-                "Click to Toggle"
-        ).forEach(builder::lore);
-        if (auto) {
-            builder.enchant(org.bukkit.enchantments.Enchantment.UNBREAKING, 1);
-        }
-        return builder.hideAttributes().build();
     }
 
     private ItemStack buildDeleteByRarityButton() {

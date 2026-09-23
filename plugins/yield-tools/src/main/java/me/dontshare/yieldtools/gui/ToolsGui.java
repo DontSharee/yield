@@ -1,8 +1,10 @@
 package me.dontshare.yieldtools.gui;
 
+import me.dontshare.yieldcore.text.MenuLore;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiBuilder;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.gui.Page;
 import me.dontshare.yieldcore.item.ItemBuilder;
@@ -10,6 +12,7 @@ import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
+import me.dontshare.yieldtools.ToolItem;
 import me.dontshare.yieldtools.ToolService;
 import me.dontshare.yieldtools.data.ToolDefinition;
 import me.dontshare.yieldzones.cube.TapService;
@@ -20,11 +23,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.IntStream;
 
 /**
  * /tools (/weapons) - the whole weapon path, a page at a time.
@@ -40,12 +43,15 @@ import java.util.stream.IntStream;
  */
 public final class ToolsGui {
 
-    private static final int CONTENT_SLOTS = 45;
-    private static final int PREV_SLOT = 45;
-    private static final int CLOSE_SLOT = 48;
-    private static final int HEADER_SLOT = 49;
-    private static final int BUY_MAX_SLOT = 50;
-    private static final int NEXT_SLOT = 53;
+    /** Four centred rows of seven inside the border (see GuiLayout). */
+    private static final int CONTENT_SLOTS = GuiLayout.capacity(4);
+    private static final int CONTENT_FIRST_ROW = 1;
+    /** The top row carries the header and Buy Max, either side of its middle. */
+    private static final int HEADER_SLOT = 3;
+    private static final int BUY_MAX_SLOT = 5;
+    private static final int PREV_SLOT = 47;
+    private static final int CLOSE_SLOT = 49;
+    private static final int NEXT_SLOT = 51;
 
     private final ToolService tools;
     private final YieldPacks packs;
@@ -76,16 +82,20 @@ public final class ToolsGui {
         BigInteger coins = profile.getCoins();
         Page<ToolDefinition> page = Page.of(path, pageIndex.getOrDefault(player.getUniqueId(), 0), CONTENT_SLOTS);
 
-        GuiBuilder builder = Gui.builder(6, "Weapons");
-        int slot = 0;
-        for (ToolDefinition tool : page.items()) {
-            builder.item(slot++, weaponIcon(player, profile, tool, owned, coins), (clicker, e) -> clicked(clicker, tool));
+        GuiBuilder builder = Gui.builder(6, page.totalPages() > 1
+                ? "Weapons (" + (page.index() + 1) + "/" + page.totalPages() + ")" : "Weapons");
+        builder.fill(GuiLayout.all(6), GuiIcons.filler());
+        int[] slots = GuiLayout.centered(CONTENT_FIRST_ROW, page.items().size());
+        for (int i = 0; i < slots.length; i++) {
+            ToolDefinition tool = page.items().get(i);
+            builder.item(slots[i], weaponIcon(player, profile, tool, owned, coins), (clicker, e) -> clicked(clicker, tool));
         }
-        builder.fill(IntStream.range(slot, CONTENT_SLOTS), GuiIcons.filler());
-        builder.fill(IntStream.range(CONTENT_SLOTS, 54).filter(s -> s != PREV_SLOT && s != CLOSE_SLOT
-                && s != HEADER_SLOT && s != BUY_MAX_SLOT && s != NEXT_SLOT), GuiIcons.filler());
-        builder.item(PREV_SLOT, GuiIcons.pageArrow(false, page.hasPrevious()), (clicker, e) -> turnPage(clicker, -1));
-        builder.item(NEXT_SLOT, GuiIcons.pageArrow(true, page.hasNext()), (clicker, e) -> turnPage(clicker, 1));
+        if (page.hasPrevious()) {
+            builder.item(PREV_SLOT, GuiIcons.pageArrow(false, true), (clicker, e) -> turnPage(clicker, -1));
+        }
+        if (page.hasNext()) {
+            builder.item(NEXT_SLOT, GuiIcons.pageArrow(true, true), (clicker, e) -> turnPage(clicker, 1));
+        }
         builder.item(CLOSE_SLOT, GuiIcons.closeButton(), (clicker, e) -> clicker.closeInventory());
         builder.item(HEADER_SLOT, headerIcon(player, profile));
         builder.item(BUY_MAX_SLOT, buyMaxIcon(player, coins), (clicker, e) -> buyMax(clicker));
@@ -147,40 +157,44 @@ public final class ToolsGui {
         boolean isNext = tool.index() == owned + 1;
         BigInteger cost = BigInteger.valueOf(tool.costCoins());
 
-        String name = isOwned || isNext ? tool.displayName() : "&8" + Formatting.stripLeadingColorCodes(tool.displayName());
+        String name = isOwned || isNext ? ToolItem.nameOf(tool)
+                : "&8" + Formatting.stripLeadingColorCodes(tool.displayName()) + " [" + Formatting.toRoman(tool.index() + 1) + "]";
         ItemBuilder builder = ItemBuilder.of(tool.material()).name(name);
-        builder.lore("&7Damage: &f" + Formatting.format(tool.power()) + "x &7pet power &8("
-                + Formatting.format((double) taps.tapDamageAt(player, profile, tool.power())) + ")");
+        List<String> stats = new ArrayList<>();
+        stats.add("Damage: &a" + Formatting.format(tool.power()) + "x &7pet power");
+        stats.add("Per Tap: &c" + Formatting.format((double) taps.tapDamageAt(player, profile, tool.power())));
         if (!isOwned) {
-            builder.lore("&7Cost: &e" + Formatting.format(cost) + " &7coins");
+            stats.add("Price: " + (coins.compareTo(cost) >= 0 ? "&6" : "&c") + Formatting.format(cost) + " &7coins");
         }
-        builder.lore("");
+        String closing;
         if (current) {
-            builder.lore("&aEquipped");
+            closing = "&a\u2714 &fEquipped";
             builder.enchant(org.bukkit.enchantments.Enchantment.UNBREAKING, 1);
         } else if (isOwned) {
-            builder.lore("&8Owned");
+            closing = "&8Owned";
         } else if (isNext) {
-            builder.lore(coins.compareTo(cost) >= 0 ? "&8[CLICK] &fTo Buy" : "&cYou can't afford this yet.");
+            closing = coins.compareTo(cost) >= 0 ? MenuLore.arrowAction("&a", "Click to upgrade") : "&cYou can't afford this yet.";
         } else {
-            builder.lore("&8Locked");
+            closing = "&8Unlock the weapon before it first.";
         }
+        MenuLore.item("weapon", stats, closing).forEach(builder::lore);
         return builder.hideAttributes().build();
     }
 
     private ItemStack headerIcon(Player player, PackPlayerProfile profile) {
         ToolDefinition current = tools.current(player);
         double power = current == null ? TapService.BARE_TAP_POWER : current.power();
-        return ItemBuilder.of(current == null ? Material.BARRIER : current.material())
-                .name("<#4BD9FF><bold>WEAPONS</bold>")
-                .lore("&7Holding: " + (current == null ? "&7bare hands" : current.displayName()))
-                .lore("&7Pet power: &f" + Formatting.format(taps.petPower(profile)))
-                .lore("&7Tap damage: &f" + Formatting.format((double) taps.tapDamageAt(player, profile, power))
-                        + " &8(" + Formatting.format(power) + "x)")
-                .lore("")
-                .lore("&7Owned: &f" + (tools.ownedIndex(player) + 1) + "&7/&f" + tools.all().size())
-                .hideAttributes()
-                .build();
+        ItemBuilder builder = ItemBuilder.of(current == null ? Material.BARRIER : current.material())
+                .name(MenuLore.infoName(MenuLore.ACCENT, "Your Weapon"));
+        MenuLore.info("weapons", List.of("Hold your weapon to tap harder.", "Buy the next one to hit harder still."),
+                MenuLore.ACCENT, List.of(
+                        "Holding: " + (current == null ? "&fbare hands" : ToolItem.nameOf(current)),
+                        "Pet Power: &a" + Formatting.format(taps.petPower(profile)),
+                        "Per Tap: &c" + Formatting.format((double) taps.tapDamageAt(player, profile, power))
+                                + " &8(" + Formatting.format(power) + "x)",
+                        "Owned: " + MenuLore.progress(tools.ownedIndex(player) + 1, tools.all().size())
+                )).forEach(builder::lore);
+        return builder.hideAttributes().build();
     }
 
     /** Shows exactly how far Buy Max would get before it is pressed - no surprise spending. */
@@ -201,14 +215,16 @@ public final class ToolsGui {
             count++;
         }
         ItemBuilder builder = ItemBuilder.of(count > 0 ? Material.EMERALD_BLOCK : Material.GRAY_DYE)
-                .name("<#4BD9FF><bold>BUY MAX</bold>");
+                .name(MenuLore.buttonName(count > 0 ? "&a" : "&7", "Buy Max"));
         if (count == 0) {
-            builder.lore(tools.next(player) == null ? "&7You own every weapon." : "&cYou can't afford the next weapon yet.");
+            MenuLore.info("weapons", List.of(tools.next(player) == null ? "You own every weapon." : "&cYou can't afford the next weapon yet."),
+                    "&a", List.of()).forEach(builder::lore);
         } else {
-            builder.lore("&7Buys &f" + count + " &7weapon" + (count == 1 ? "" : "s") + ", up to " + path.get(index).displayName());
-            builder.lore("&7Total: &e" + Formatting.format(spend) + " &7coins");
-            builder.lore("");
-            builder.lore("&8[CLICK] &fTo Buy");
+            MenuLore.purchase("weapons", List.of("Buys every weapon you can afford, in order."), "&a", List.of(
+                    "Weapons: &f" + count,
+                    "Up To: " + ToolItem.nameOf(path.get(index)),
+                    "Price: &6" + Formatting.format(spend) + " &7coins"
+            ), "Click to buy max").forEach(builder::lore);
         }
         return builder.hideAttributes().build();
     }

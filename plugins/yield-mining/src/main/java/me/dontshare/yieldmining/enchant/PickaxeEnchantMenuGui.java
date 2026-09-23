@@ -24,8 +24,9 @@ public final class PickaxeEnchantMenuGui {
     private static final int[] BUY_AMOUNTS = {1, 10, 25, 50, 100, 250, 500};
     private static final int[] BUY_SLOTS = {10, 11, 12, 13, 14, 15, 16};
     private static final int PREFERENCES_SLOT = 4;
-    private static final int MASTERY_SLOT = 22;
-    private static final int DISENCHANT_SLOT = 32;
+    /** A matched pair either side of the middle column, so the back button below sits centred. */
+    private static final int MASTERY_SLOT = 21;
+    private static final int DISENCHANT_SLOT = 23;
     private static final int BACK_SLOT = 31;
 
     private final YieldPacks packs;

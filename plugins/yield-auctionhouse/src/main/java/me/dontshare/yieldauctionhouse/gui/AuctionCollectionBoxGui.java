@@ -5,6 +5,7 @@ import me.dontshare.yieldauctionhouse.data.AuctionClaim;
 import me.dontshare.yieldauctionhouse.data.AuctionCurrency;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.item.ItemSerialization;
@@ -29,8 +30,8 @@ public final class AuctionCollectionBoxGui {
 
     private static final int TOTAL_ROWS = 6;
     private static final int CONTENT_START = 0;
-    private static final int CONTENT_END = 44;
-    private static final int CLAIM_ALL_SLOT = 44;
+    private static final int CONTENT_END = 45;
+    private static final int CLAIM_ALL_SLOT = 49;
     private static final int BACK_SLOT = 45;
     private static final String ACCENT = "<#4BD9FF>";
 
@@ -52,15 +53,12 @@ public final class AuctionCollectionBoxGui {
     public void open(Player player) {
         List<AuctionClaim> claims = service.pendingClaimsFor(player);
         var builder = Gui.builder(TOTAL_ROWS, "Collection Box (" + claims.size() + ")");
-        builder.fill(IntStream.range(CONTENT_END, TOTAL_ROWS * 9).filter(s -> s != BACK_SLOT && s != CLAIM_ALL_SLOT), GuiIcons.filler());
+        builder.fill(IntStream.range(CONTENT_START, TOTAL_ROWS * 9).filter(s -> s != BACK_SLOT && s != CLAIM_ALL_SLOT), GuiIcons.filler());
 
-        int slot = CONTENT_START;
-        for (AuctionClaim claim : claims) {
-            if (slot >= CONTENT_END) {
-                break;
-            }
-            builder.item(slot, buildIcon(claim), (clicker, event) -> claimOne(clicker, claim));
-            slot++;
+        int[] slots = GuiLayout.centered(0, Math.min(claims.size(), GuiLayout.capacity(5)));
+        for (int i = 0; i < slots.length; i++) {
+            AuctionClaim claim = claims.get(i);
+            builder.item(slots[i], buildIcon(claim), (clicker, event) -> claimOne(clicker, claim));
         }
 
         builder.item(CLAIM_ALL_SLOT, buildClaimAllButton(), (clicker, event) -> claimAll(clicker));

@@ -19,8 +19,11 @@ public final class TrophyItem {
     public ItemStack create(TrophyConfig config) {
         return ItemBuilder.of(config.material())
                 .name(config.displayName())
-                .lore("&7Right-click to deposit into")
-                .lore("&7your team's trophy balance.")
+                .lore("&8" + me.dontshare.yieldcore.text.Formatting.fancyFont("team trophy"))
+                .lore("")
+                .lore("&7Adds to your team's trophy balance.")
+                .lore("")
+                .lore("&8Right Click to deposit")
                 .tag(key, PersistentDataType.BYTE, (byte) 1)
                 .hideAttributes()
                 .build();

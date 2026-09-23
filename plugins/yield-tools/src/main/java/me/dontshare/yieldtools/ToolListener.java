@@ -2,6 +2,13 @@ package me.dontshare.yieldtools;
 
 import me.dontshare.yieldtools.gui.ToolsGui;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
@@ -68,6 +75,51 @@ public final class ToolListener implements Listener {
     @EventHandler
     public void onDrop(PlayerDropItemEvent event) {
         if (toolItem.isTool(event.getItemDrop().getItemStack())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player) || player.getGameMode() == GameMode.CREATIVE) {
+            return;
+        }
+        boolean touchesToolSlot = event.getClickedInventory() instanceof PlayerInventory
+                && event.getSlot() == ToolService.TOOL_SLOT;
+        boolean hotbarSwapIntoToolSlot = event.getClick() == ClickType.NUMBER_KEY
+                && event.getHotbarButton() == ToolService.TOOL_SLOT;
+        boolean offhandSwap = event.getClick() == ClickType.SWAP_OFFHAND
+                && toolItem.isTool(event.getCurrentItem());
+        if (touchesToolSlot || hotbarSwapIntoToolSlot || offhandSwap
+                || toolItem.isTool(event.getCurrentItem()) || toolItem.isTool(event.getCursor())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onInventoryDrag(InventoryDragEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player) || player.getGameMode() == GameMode.CREATIVE) {
+            return;
+        }
+        if (toolItem.isTool(event.getOldCursor())) {
+            event.setCancelled(true);
+            return;
+        }
+        for (int raw : event.getRawSlots()) {
+            if (event.getView().getInventory(raw) instanceof PlayerInventory
+                    && event.getView().convertSlot(raw) == ToolService.TOOL_SLOT) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+    }
+
+    @EventHandler
+    public void onSwapHands(PlayerSwapHandItemsEvent event) {
+        if (event.getPlayer().getGameMode() == GameMode.CREATIVE) {
+            return;
+        }
+        if (toolItem.isTool(event.getMainHandItem()) || toolItem.isTool(event.getOffHandItem())) {
             event.setCancelled(true);
         }
     }

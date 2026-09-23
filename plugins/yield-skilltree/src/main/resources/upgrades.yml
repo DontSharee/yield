@@ -42,13 +42,14 @@ nodes:
   roll_speed:
     display-name: "&bRoll Speed"
     material: CLOCK
-    slot: 4
+    slot: 12
     requires: []
-    # This tree's layout: three root lanes at columns 1/4/7 (luck/roll/coin),
-    # each branching straight down its own column - a node always sits
-    # directly below its single prerequisite; a node with TWO prerequisites
-    # sits in the column between them. Keep this convention when adding
-    # nodes, or the tree turns back into an unreadable scatter.
+    # This tree's layout: one lane per column inside the menu's frame -
+    # Luck (column 1), Hatch Speed (3), Pet Slots (4), Damage (5) and
+    # Coins (7), each running straight down rows 1-4. The menu labels
+    # each lane with a coloured pane in the top row, named after the
+    # type of the lane's first node, so keep one type per column and
+    # keep nodes inside slots 10-16 / 19-25 / 28-34 / 37-43.
     max-level: 10
     cost-formula: "2000 * <level>^2.5"
     value-formula: "0.05 * <level>"
@@ -56,7 +57,7 @@ nodes:
   luck_boost:
     display-name: "&aLuck"
     material: EMERALD
-    slot: 1
+    slot: 10
     requires: []
     max-level: 5
     cost-formula: "5000 * <level>^3"
@@ -65,7 +66,7 @@ nodes:
   coin_boost:
     display-name: "&6Coin Boost"
     material: GOLD_INGOT
-    slot: 7
+    slot: 16
     requires: []
     max-level: 5
     cost-formula: "20000 * <level>^3.5"
@@ -74,7 +75,7 @@ nodes:
   greater_luck:
     display-name: "&2Greater Luck"
     material: RABBIT_FOOT
-    slot: 10
+    slot: 19
     requires: [luck_boost]
     max-level: 5
     cost-formula: "500000 * <level>^3.5"
@@ -92,7 +93,7 @@ nodes:
   golden_touch:
     display-name: "&6Golden Touch"
     material: GOLD_BLOCK
-    slot: 16
+    slot: 25
     requires: [coin_boost]
     max-level: 5
     cost-formula: "2000000 * <level>^3.5"
@@ -101,7 +102,7 @@ nodes:
   fortune_seeker:
     display-name: "&2Fortune Seeker"
     material: NAUTILUS_SHELL
-    slot: 19
+    slot: 28
     requires: [greater_luck]
     max-level: 5
     cost-formula: "50000000 * <level>^3.5"
@@ -110,7 +111,7 @@ nodes:
   swift_rolling:
     display-name: "&bSwift Rolling"
     material: SUGAR
-    slot: 22
+    slot: 21
     requires: [pet_slot]
     max-level: 8
     cost-formula: "2000000 * <level>^3"
@@ -119,7 +120,7 @@ nodes:
   second_pet_slot:
     display-name: "&dSecond Pet Slot"
     material: BONE_BLOCK
-    slot: 23
+    slot: 22
     requires: [pet_slot, coin_boost]
     max-level: 3
     cost-formula: "1000000 * 6^<level>"
@@ -128,7 +129,7 @@ nodes:
   pet_damage:
     display-name: "&cPet Training"
     material: IRON_SWORD
-    slot: 17
+    slot: 14
     requires: [coin_boost]
     max-level: 6
     cost-formula: "1000000 * <level>^3.5"
@@ -137,7 +138,7 @@ nodes:
   midas_blessing:
     display-name: "&6Midas Blessing"
     material: GOLDEN_APPLE
-    slot: 25
+    slot: 34
     requires: [golden_touch]
     max-level: 5
     cost-formula: "2000000000 * <level>^3.5"
@@ -146,7 +147,7 @@ nodes:
   hyper_rolling:
     display-name: "&bHyper Rolling"
     material: CLOCK
-    slot: 31
+    slot: 30
     requires: [swift_rolling]
     max-level: 5
     cost-formula: "200000000 * <level>^3.5"
@@ -155,7 +156,7 @@ nodes:
   third_pet_slot:
     display-name: "&dThird Pet Slot"
     material: BONE_BLOCK
-    slot: 32
+    slot: 31
     requires: [second_pet_slot]
     max-level: 2
     cost-formula: "50000000 * 8^<level>"
@@ -164,7 +165,7 @@ nodes:
   berserker:
     display-name: "&cBerserker"
     material: DIAMOND_SWORD
-    slot: 26
+    slot: 23
     requires: [pet_damage]
     max-level: 6
     cost-formula: "20000000 * <level>^3.5"
@@ -173,7 +174,7 @@ nodes:
   rampage:
     display-name: "&4Rampage"
     material: NETHERITE_SWORD
-    slot: 35
+    slot: 32
     requires: [berserker]
     max-level: 5
     cost-formula: "200000000 * <level>^3.5"
@@ -182,7 +183,7 @@ nodes:
   fourth_pet_slot:
     display-name: "&5Fourth Pet Slot"
     material: NETHER_STAR
-    slot: 42
+    slot: 40
     requires: [third_pet_slot, midas_blessing]
     max-level: 1
     cost-formula: "50000000000"

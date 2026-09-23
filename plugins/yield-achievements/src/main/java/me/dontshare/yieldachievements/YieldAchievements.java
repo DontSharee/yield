@@ -195,7 +195,7 @@ public final class YieldAchievements extends JavaPlugin {
         for (int slot : StoreHubGui.CONTENT_SLOTS) {
             gui.set(slot, GuiIcons.filler(), null);
         }
-        ItemBuilder builder = ItemBuilder.of(Material.BARRIER).name("<gray><bold>" + label.toUpperCase(Locale.ROOT) + "</bold></gray>");
+        ItemBuilder builder = ItemBuilder.of(Material.BARRIER).name(MenuLore.name("&7", label));
         MenuLore.info("store", List.of(), "<gray>", List.of(description)).forEach(builder::lore);
         gui.set(31, builder.hideAttributes().build(), null);
         gui.set(49, GuiIcons.closeButton(), (clicker, e) -> clicker.closeInventory());

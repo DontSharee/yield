@@ -43,6 +43,9 @@ public final class YieldTools extends JavaPlugin {
                 core.getDatabaseManager(), "tools", ToolProfile.class, ToolProfile::new, "tool data");
         ToolItem toolItem = new ToolItem(this);
         ToolService toolService = new ToolService(() -> tools, store, packs, toolItem);
+        // Trade and the Auction House move items themselves, past
+        // ToolListener's cancels - this is the check they make instead.
+        core.getBoundItemRegistry().register(toolItem::isTool);
 
         // The whole of what a weapon does: set a tap's share of pet power
         // while it's held.

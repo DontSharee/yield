@@ -40,6 +40,32 @@
 #     i.e. 2x) applied to how much progress EVERY block break counts for
 #     toward its own blocktree, not just this one - makes the whole system
 #     faster to climb.
+#   perk - the one-of-a-kind top rewards. "data" names the perk, "value" is
+#     the number it runs on; the menu line is generated from both, so any
+#     value here can be retuned freely. Every perk lives on exactly one tree:
+#       avalanche (kills between avalanches)   frostbite (extra tap damage)
+#       slipstream (faster retargeting)         quarry (extra cubes alive)
+#       tempered-edge (extra crit chance)       wildfire (chance per kill)
+#       midas-touch (chance per kill, 10x)      molten-core (extra giant coins)
+#       stonewall (damage while standing still) shadow-clone (chance to pay twice)
+#       resonance (damage per distinct block in the last minute, max 5)
+#       geode (shard chance per kill)           stalactite (chance per tap, 10x)
+#       deep-roots (damage per unlocked zone)   motherlode (chance, 5x diamonds)
+#       haggler (Enchant Market discount)       enchanters-gift (enchant slots)
+#       weeping-fortune (golden/diamond cube chance)
+#       relic-hunter (big safe + boss block spawn weight, 1.0 = twice as often)
+#       second-wind (share of respawn delay removed)
+#       archaeologist (book chance per kill)    scholar (extra pet XP per kill)
+#       extra-hand (equip slots)                echo (chance per tap to hit every cube)
+#       stash (free zone egg chance per kill)   beacon-aura (coins for you + anyone within 16 blocks)
+#       radiance (extra golden/diamond bonus)   high-tide (first kill each minute pays Nx)
+#       trick-or-treat (chance per kill)        wisp (chance per kill: +100% coins for 30s)
+#       soul-link (max damage from lifetime kills, +1% per 1K)
+#       treasure-sense (treasure chest spawn weight)
+#       safecracker (book chance per big safe - tree must be the big safe's block)
+#       warlord (damage after a boss kill - tree must be the boss block's block)
+#   A tree whose top reward is a plain stat instead gives it a name with
+#   "perk-name" on the block, so every tree's top reward reads the same way.
 #   unlock-shard-drop - block-scoped, NOT global despite living in this list:
 #     permanently unlocks a chance for THIS block's own cube kills to drop a
 #     Shard (a physical, right-click-consumed item granting a small
@@ -65,302 +91,1205 @@
 # summed over every zone and tier it appears in. Tier 1 is ~10% of one pass
 # (a few minutes), tier 4 is ~1.5 passes ("you cleared this properly"), and
 # tier 7 is ~25 passes - a deliberate camp, or a lot of rebirth loops.
-# Trees were also added for blocks much further down the ladder, so the
-# system has something to say in the late game instead of being three
-# Meadow blocks. Each tree still ends in exactly one big, permanent,
-# server-wide perk, and no block has two.
+# Every block a cube can be has a tree - all 39 ladder blocks, the treasure
+# chest, the big safe (VAULT), the boss block (REINFORCED_DEEPSLATE) and
+# Haunted Hollow's three. Event blocks count goals in whole events instead
+# of passes, since the zone is only open for one. Tiers 1-4 add flat coins
+# sized off the block's own coin value in the zone where a first pass
+# reaches that goal (0.25x / 0.5x / 1x / 2x of it), tiers 5-6 add +10% and
+# +25% to that block's payout, and tier 7 is the tree's own perk - no two
+# trees share one. Regenerate goals with the pacing sim when the zone
+# ladder changes.
 blocks:
   stone:
-    # The block every player breaks first, so it carries the perk that makes the whole system faster to climb - +100% blocktree progress from EVERY block, not just this one.
-    # ~117 of these are broken in one full pass down the zone ladder.
+    # Meadow. ~137 broken in one full pass down the ladder.
     material: STONE
     display-name: "&7Stone"
     icon: STONE
+    perk-name: "&f&lFoundation"
     tiers:
-      - goal: 15
+      - goal: 14
+        effects:
+          - { type: flat-coins, value: 2 }
+      - goal: 41
         effects:
           - { type: flat-coins, value: 5 }
-      - goal: 40
-        effects:
-          - { type: flat-coins, value: 10 }
       - goal: 100
         effects:
-          - { type: flat-coins, value: 20 }
-      - goal: 200
+          - { type: flat-coins, value: 10 }
+      - goal: 210
         effects:
-          - { type: flat-coins, value: 40 }
+          - { type: flat-coins, value: 20 }
           - { type: unlock-shard-drop, value: 0.01, data: CRIT_CHANCE }
-      - goal: 500
+      - goal: 550
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
           - { type: unlock-shard-drop, value: 0.015, data: LUCK }
-      - goal: 1500
+      - goal: 1400
         effects:
           - { type: block-coin-multiplier, value: 0.25 }
           - { type: unlock-shard-drop, value: 0.02, data: COINS }
-      - goal: 3000
+      - goal: 3400
         effects:
           - { type: progress-multiplier, value: 1.0 }
 
   copper_block:
-    # ~29 of these are broken in one full pass down the zone ladder.
+    # Meadow. ~34 broken in one full pass down the ladder.
     material: COPPER_BLOCK
     display-name: "&6Copper Block"
     icon: COPPER_BLOCK
+    perk-name: "&6&lConductor"
     tiers:
-      - goal: 5
-        effects:
-          - { type: flat-coins, value: 5 }
-      - goal: 10
+      - goal: 3
         effects:
           - { type: flat-coins, value: 10 }
-      - goal: 25
+      - goal: 10
         effects:
           - { type: flat-coins, value: 20 }
-      - goal: 50
+      - goal: 26
         effects:
           - { type: flat-coins, value: 40 }
-      - goal: 150
+      - goal: 51
+        effects:
+          - { type: flat-coins, value: 80 }
+      - goal: 140
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
-      - goal: 300
+      - goal: 340
         effects:
           - { type: block-coin-multiplier, value: 0.25 }
           - { type: unlock-shard-drop, value: 0.02, data: DAMAGE }
-      - goal: 800
+      - goal: 850
         effects:
           - { type: double-hit-chance, value: 0.1 }
 
   iron_block:
-    # Meadow's tier-3 and Iron Foothills' tier-2, so it fills off the rare big cubes in one zone and the mid cubes in the next.
-    # ~50 of these are broken in one full pass down the zone ladder.
+    # Meadow, Iron Foothills. ~67 broken in one full pass down the ladder.
     material: IRON_BLOCK
     display-name: "&fIron Block"
     icon: IRON_BLOCK
+    perk-name: "&f&lIron Will"
     tiers:
-      - goal: 5
+      - goal: 7
         effects:
-          - { type: flat-coins, value: 40 }
-      - goal: 15
+          - { type: flat-coins, value: 65 }
+      - goal: 20
         effects:
-          - { type: flat-coins, value: 80 }
-      - goal: 40
+          - { type: flat-coins, value: 130 }
+      - goal: 50
         effects:
-          - { type: flat-coins, value: 150 }
-      - goal: 80
+          - { type: flat-coins, value: 260 }
+      - goal: 100
         effects:
-          - { type: flat-coins, value: 300 }
-      - goal: 200
+          - { type: flat-coins, value: 520 }
+      - goal: 270
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
           - { type: unlock-shard-drop, value: 0.02, data: ATTACK_SPEED }
-      - goal: 500
+      - goal: 670
         effects:
           - { type: block-coin-multiplier, value: 0.25 }
           - { type: unlock-shard-drop, value: 0.015, data: DIAMONDS }
-      - goal: 1500
+      - goal: 1700
         effects:
           - { type: exclusive-find-chance, value: 0.02 }
 
+  snow_block:
+    # Frostpeak. ~207 broken in one full pass down the ladder.
+    material: SNOW_BLOCK
+    display-name: "&fSnow Block"
+    icon: SNOW_BLOCK
+    tiers:
+      - goal: 21
+        effects:
+          - { type: flat-coins, value: 6 }
+      - goal: 62
+        effects:
+          - { type: flat-coins, value: 12 }
+      - goal: 160
+        effects:
+          - { type: flat-coins, value: 25 }
+      - goal: 310
+        effects:
+          - { type: flat-coins, value: 50 }
+      - goal: 830
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 2100
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 5200
+        effects:
+          - { type: perk, value: 100, data: avalanche }
+
+  packed_ice:
+    # Frostpeak. ~52 broken in one full pass down the ladder.
+    material: PACKED_ICE
+    display-name: "&bPacked Ice"
+    icon: PACKED_ICE
+    tiers:
+      - goal: 5
+        effects:
+          - { type: flat-coins, value: 25 }
+      - goal: 16
+        effects:
+          - { type: flat-coins, value: 50 }
+      - goal: 39
+        effects:
+          - { type: flat-coins, value: 100 }
+      - goal: 78
+        effects:
+          - { type: flat-coins, value: 200 }
+      - goal: 210
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 520
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 1300
+        effects:
+          - { type: perk, value: 1.0, data: frostbite }
+
+  blue_ice:
+    # Frostpeak. ~10 broken in one full pass down the ladder.
+    material: BLUE_ICE
+    display-name: "&9Blue Ice"
+    icon: BLUE_ICE
+    tiers:
+      - goal: 1
+        effects:
+          - { type: flat-coins, value: 75 }
+      - goal: 3
+        effects:
+          - { type: flat-coins, value: 150 }
+      - goal: 8
+        effects:
+          - { type: flat-coins, value: 300 }
+      - goal: 16
+        effects:
+          - { type: flat-coins, value: 600 }
+      - goal: 41
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 100
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 260
+        effects:
+          - { type: perk, value: 0.5, data: slipstream }
+
+  cobblestone:
+    # Iron Foothills. ~239 broken in one full pass down the ladder.
+    material: COBBLESTONE
+    display-name: "&7Cobblestone"
+    icon: COBBLESTONE
+    tiers:
+      - goal: 24
+        effects:
+          - { type: flat-coins, value: 16 }
+      - goal: 72
+        effects:
+          - { type: flat-coins, value: 32 }
+      - goal: 180
+        effects:
+          - { type: flat-coins, value: 65 }
+      - goal: 360
+        effects:
+          - { type: flat-coins, value: 130 }
+      - goal: 960
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 2400
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 6000
+        effects:
+          - { type: perk, value: 2, data: quarry }
+
+  raw_iron_block:
+    # Iron Foothills. ~12 broken in one full pass down the ladder.
+    material: RAW_IRON_BLOCK
+    display-name: "&fRaw Iron Block"
+    icon: RAW_IRON_BLOCK
+    tiers:
+      - goal: 1
+        effects:
+          - { type: flat-coins, value: 200 }
+      - goal: 4
+        effects:
+          - { type: flat-coins, value: 390 }
+      - goal: 9
+        effects:
+          - { type: flat-coins, value: 780 }
+      - goal: 18
+        effects:
+          - { type: flat-coins, value: 1600 }
+      - goal: 48
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 120
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 300
+        effects:
+          - { type: perk, value: 0.1, data: tempered-edge }
+
+  netherrack:
+    # Sulfur Flats. ~264 broken in one full pass down the ladder.
+    material: NETHERRACK
+    display-name: "&cNetherrack"
+    icon: NETHERRACK
+    tiers:
+      - goal: 26
+        effects:
+          - { type: flat-coins, value: 44 }
+      - goal: 79
+        effects:
+          - { type: flat-coins, value: 88 }
+      - goal: 200
+        effects:
+          - { type: flat-coins, value: 180 }
+      - goal: 400
+        effects:
+          - { type: flat-coins, value: 350 }
+      - goal: 1100
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 2600
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 6600
+        effects:
+          - { type: perk, value: 0.1, data: wildfire }
+
+  gold_block:
+    # Sulfur Flats. ~66 broken in one full pass down the ladder.
+    material: GOLD_BLOCK
+    display-name: "&6Gold Block"
+    icon: GOLD_BLOCK
+    tiers:
+      - goal: 7
+        effects:
+          - { type: flat-coins, value: 180 }
+      - goal: 20
+        effects:
+          - { type: flat-coins, value: 350 }
+      - goal: 50
+        effects:
+          - { type: flat-coins, value: 700 }
+      - goal: 99
+        effects:
+          - { type: flat-coins, value: 1400 }
+      - goal: 260
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 660
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 1700
+        effects:
+          - { type: perk, value: 0.01, data: midas-touch }
+
+  magma_block:
+    # Sulfur Flats, Scorched Wastes. ~30 broken in one full pass down the ladder.
+    material: MAGMA_BLOCK
+    display-name: "&6Magma Block"
+    icon: MAGMA_BLOCK
+    tiers:
+      - goal: 3
+        effects:
+          - { type: flat-coins, value: 520 }
+      - goal: 9
+        effects:
+          - { type: flat-coins, value: 1000 }
+      - goal: 22
+        effects:
+          - { type: flat-coins, value: 5400 }
+      - goal: 45
+        effects:
+          - { type: flat-coins, value: 11000 }
+      - goal: 120
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 300
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 750
+        effects:
+          - { type: perk, value: 1.0, data: molten-core }
+
+  basalt:
+    # Scorched Wastes. ~334 broken in one full pass down the ladder.
+    material: BASALT
+    display-name: "&8Basalt"
+    icon: BASALT
+    tiers:
+      - goal: 33
+        effects:
+          - { type: flat-coins, value: 110 }
+      - goal: 100
+        effects:
+          - { type: flat-coins, value: 220 }
+      - goal: 250
+        effects:
+          - { type: flat-coins, value: 450 }
+      - goal: 500
+        effects:
+          - { type: flat-coins, value: 900 }
+      - goal: 1300
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 3300
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 8400
+        effects:
+          - { type: perk, value: 0.3, data: stonewall }
+
   blackstone:
-    # ~804 of these are broken in one full pass down the zone ladder.
+    # Scorched Wastes, Obsidian Rift. ~676 broken in one full pass down the ladder.
     material: BLACKSTONE
     display-name: "&8Blackstone"
     icon: BLACKSTONE
     tiers:
-      - goal: 100
+      - goal: 68
+        effects:
+          - { type: flat-coins, value: 450 }
+      - goal: 200
         effects:
           - { type: flat-coins, value: 10000 }
-      - goal: 250
+      - goal: 510
         effects:
           - { type: flat-coins, value: 20000 }
-      - goal: 800
+      - goal: 1000
         effects:
           - { type: flat-coins, value: 40000 }
-      - goal: 1500
-        effects:
-          - { type: flat-coins, value: 80000 }
-      - goal: 4000
+      - goal: 2700
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
-      - goal: 10000
+      - goal: 6800
         effects:
           - { type: block-coin-multiplier, value: 0.25 }
-      - goal: 25000
+      - goal: 17000
         effects:
-          - { type: global-coin-multiplier, value: 0.25 }
+          - { type: perk, value: 0.05, data: shadow-clone }
+
+  calcite:
+    # Crystal Caverns. ~411 broken in one full pass down the ladder.
+    material: CALCITE
+    display-name: "&fCalcite"
+    icon: CALCITE
+    tiers:
+      - goal: 41
+        effects:
+          - { type: flat-coins, value: 300 }
+      - goal: 120
+        effects:
+          - { type: flat-coins, value: 600 }
+      - goal: 310
+        effects:
+          - { type: flat-coins, value: 1200 }
+      - goal: 620
+        effects:
+          - { type: flat-coins, value: 2400 }
+      - goal: 1600
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 4100
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 10000
+        effects:
+          - { type: perk, value: 0.05, data: resonance }
+
+  amethyst_block:
+    # Crystal Caverns, Astral Peak. ~7,135 broken in one full pass down the ladder.
+    material: AMETHYST_BLOCK
+    display-name: "&dAmethyst Block"
+    icon: AMETHYST_BLOCK
+    tiers:
+      - goal: 710
+        effects:
+          - { type: flat-coins, value: 65000000 }
+      - goal: 2100
+        effects:
+          - { type: flat-coins, value: 130000000 }
+      - goal: 5400
+        effects:
+          - { type: flat-coins, value: 260000000 }
+      - goal: 11000
+        effects:
+          - { type: flat-coins, value: 520000000 }
+      - goal: 29000
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 71000
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 180000
+        effects:
+          - { type: perk, value: 0.005, data: geode }
+
+  dripstone_block:
+    # Crystal Caverns. ~21 broken in one full pass down the ladder.
+    material: DRIPSTONE_BLOCK
+    display-name: "&6Dripstone Block"
+    icon: DRIPSTONE_BLOCK
+    tiers:
+      - goal: 2
+        effects:
+          - { type: flat-coins, value: 3600 }
+      - goal: 6
+        effects:
+          - { type: flat-coins, value: 7200 }
+      - goal: 15
+        effects:
+          - { type: flat-coins, value: 14000 }
+      - goal: 31
+        effects:
+          - { type: flat-coins, value: 29000 }
+      - goal: 82
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 210
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 510
+        effects:
+          - { type: perk, value: 0.05, data: stalactite }
 
   deepslate:
-    # Tier-1 of BOTH Diamond Hollow and Emerald Depths, so this one fills across two whole zones.
-    # ~1,052 of these are broken in one full pass down the zone ladder.
+    # Diamond Hollow, Emerald Depths. ~925 broken in one full pass down the ladder.
     material: DEEPSLATE
     display-name: "&8Deepslate"
     icon: DEEPSLATE
     tiers:
-      - goal: 150
+      - goal: 92
         effects:
-          - { type: flat-coins, value: 4000 }
-      - goal: 400
+          - { type: flat-coins, value: 750 }
+      - goal: 280
+        effects:
+          - { type: flat-coins, value: 1500 }
+      - goal: 690
         effects:
           - { type: flat-coins, value: 8000 }
-      - goal: 800
+      - goal: 1400
         effects:
-          - { type: flat-coins, value: 20000 }
-      - goal: 2000
-        effects:
-          - { type: flat-coins, value: 40000 }
-      - goal: 5000
+          - { type: flat-coins, value: 16000 }
+      - goal: 3700
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
           - { type: unlock-shard-drop, value: 0.02, data: DAMAGE }
-      - goal: 15000
+      - goal: 9200
         effects:
           - { type: block-coin-multiplier, value: 0.25 }
-      - goal: 30000
+      - goal: 23000
         effects:
-          - { type: global-damage-multiplier, value: 0.25 }
+          - { type: perk, value: 0.02, data: deep-roots }
+
+  deepslate_diamond_ore:
+    # Diamond Hollow. ~123 broken in one full pass down the ladder.
+    material: DEEPSLATE_DIAMOND_ORE
+    display-name: "&bDiamond Ore"
+    icon: DEEPSLATE_DIAMOND_ORE
+    tiers:
+      - goal: 12
+        effects:
+          - { type: flat-coins, value: 3000 }
+      - goal: 37
+        effects:
+          - { type: flat-coins, value: 6000 }
+      - goal: 93
+        effects:
+          - { type: flat-coins, value: 12000 }
+      - goal: 190
+        effects:
+          - { type: flat-coins, value: 24000 }
+      - goal: 490
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 1200
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 3100
+        effects:
+          - { type: perk, value: 0.1, data: motherlode }
+
+  diamond_block:
+    # Diamond Hollow, Astral Peak, Genesis Core. ~1,783 broken in one full pass down the ladder.
+    material: DIAMOND_BLOCK
+    display-name: "&bDiamond Block"
+    icon: DIAMOND_BLOCK
+    perk-name: "&b&lHatchery"
+    tiers:
+      - goal: 180
+        effects:
+          - { type: flat-coins, value: 260000000 }
+      - goal: 530
+        effects:
+          - { type: flat-coins, value: 520000000 }
+      - goal: 1300
+        effects:
+          - { type: flat-coins, value: 1000000000 }
+      - goal: 2700
+        effects:
+          - { type: flat-coins, value: 1400000000 }
+      - goal: 7100
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 18000
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 45000
+        effects:
+          - { type: roll-speed-multiplier, value: 0.5 }
+
+  deepslate_emerald_ore:
+    # Emerald Depths. ~108 broken in one full pass down the ladder.
+    material: DEEPSLATE_EMERALD_ORE
+    display-name: "&aEmerald Ore"
+    icon: DEEPSLATE_EMERALD_ORE
+    tiers:
+      - goal: 11
+        effects:
+          - { type: flat-coins, value: 8000 }
+      - goal: 32
+        effects:
+          - { type: flat-coins, value: 16000 }
+      - goal: 81
+        effects:
+          - { type: flat-coins, value: 32000 }
+      - goal: 160
+        effects:
+          - { type: flat-coins, value: 64000 }
+      - goal: 430
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 1100
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 2700
+        effects:
+          - { type: perk, value: 0.25, data: haggler }
+
+  emerald_block:
+    # Emerald Depths, Genesis Core. ~22 broken in one full pass down the ladder.
+    material: EMERALD_BLOCK
+    display-name: "&aEmerald Block"
+    icon: EMERALD_BLOCK
+    tiers:
+      - goal: 2
+        effects:
+          - { type: flat-coins, value: 24000 }
+      - goal: 6
+        effects:
+          - { type: flat-coins, value: 48000 }
+      - goal: 16
+        effects:
+          - { type: flat-coins, value: 96000 }
+      - goal: 32
+        effects:
+          - { type: flat-coins, value: 5400000000 }
+      - goal: 86
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 220
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 540
+        effects:
+          - { type: perk, value: 1, data: enchanters-gift }
 
   obsidian:
-    # Spans Obsidian Rift, Void Expanse and Cosmic Abyss - it keeps ticking over most of the back half of the ladder.
-    # ~5,325 of these are broken in one full pass down the zone ladder.
+    # Obsidian Rift, Void Expanse, Cosmic Abyss. ~4,485 broken in one full pass down the ladder.
     material: OBSIDIAN
     display-name: "&5Obsidian"
     icon: OBSIDIAN
+    perk-name: "&5&lObsidian Fury"
     tiers:
-      - goal: 600
+      - goal: 450
         effects:
-          - { type: flat-coins, value: 20000000 }
-      - goal: 2000
+          - { type: flat-coins, value: 12000 }
+      - goal: 1300
         effects:
-          - { type: flat-coins, value: 40000000 }
-      - goal: 4000
+          - { type: flat-coins, value: 19000000 }
+      - goal: 3400
         effects:
-          - { type: flat-coins, value: 80000000 }
-      - goal: 8000
+          - { type: flat-coins, value: 38000000 }
+      - goal: 6700
+        effects:
+          - { type: flat-coins, value: 76000000 }
+      - goal: 18000
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 45000
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+          - { type: unlock-shard-drop, value: 0.02, data: COINS }
+      - goal: 110000
+        effects:
+          - { type: global-attack-speed-multiplier, value: 0.15 }
+
+  crying_obsidian:
+    # Obsidian Rift, Void Expanse. ~174 broken in one full pass down the ladder.
+    material: CRYING_OBSIDIAN
+    display-name: "&5Crying Obsidian"
+    icon: CRYING_OBSIDIAN
+    tiers:
+      - goal: 17
+        effects:
+          - { type: flat-coins, value: 60000 }
+      - goal: 52
+        effects:
+          - { type: flat-coins, value: 100000 }
+      - goal: 130
+        effects:
+          - { type: flat-coins, value: 200000 }
+      - goal: 260
+        effects:
+          - { type: flat-coins, value: 400000 }
+      - goal: 700
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 1700
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 4400
+        effects:
+          - { type: perk, value: 0.03, data: weeping-fortune }
+
+  netherite_block:
+    # Void Expanse, Netherite Wastes, Cosmic Abyss, Eternal Forge. ~6,153 broken in one full pass down the ladder.
+    material: NETHERITE_BLOCK
+    display-name: "&8Netherite Block"
+    icon: NETHERITE_BLOCK
+    perk-name: "&8&lTrinity"
+    tiers:
+      - goal: 620
+        effects:
+          - { type: flat-coins, value: 38000000 }
+      - goal: 1800
+        effects:
+          - { type: flat-coins, value: 50000000 }
+      - goal: 4600
+        effects:
+          - { type: flat-coins, value: 100000000 }
+      - goal: 9200
         effects:
           - { type: flat-coins, value: 200000000 }
       - goal: 25000
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
-      - goal: 60000
-        effects:
-          - { type: block-coin-multiplier, value: 0.25 }
-          - { type: unlock-shard-drop, value: 0.02, data: COINS }
-      - goal: 150000
-        effects:
-          - { type: global-attack-speed-multiplier, value: 0.15 }
-
-  end_stone:
-    # ~4,471 of these are broken in one full pass down the zone ladder.
-    material: END_STONE
-    display-name: "&fEnd Stone"
-    icon: END_STONE
-    tiers:
-      - goal: 500
-        effects:
-          - { type: flat-coins, value: 3000000 }
-      - goal: 1500
-        effects:
-          - { type: flat-coins, value: 6000000 }
-      - goal: 4000
-        effects:
-          - { type: flat-coins, value: 15000000 }
-      - goal: 8000
-        effects:
-          - { type: flat-coins, value: 25000000 }
-      - goal: 20000
-        effects:
-          - { type: block-coin-multiplier, value: 0.10 }
-      - goal: 50000
-        effects:
-          - { type: block-coin-multiplier, value: 0.25 }
-      - goal: 150000
-        effects:
-          - { type: diamond-chance-boost, value: 0.05 }
-
-  purpur_block:
-    # ~2,957 of these are broken in one full pass down the zone ladder.
-    material: PURPUR_BLOCK
-    display-name: "&5Purpur Block"
-    icon: PURPUR_BLOCK
-    tiers:
-      - goal: 300
-        effects:
-          - { type: flat-coins, value: 1500000 }
-      - goal: 1000
-        effects:
-          - { type: flat-coins, value: 2500000 }
-      - goal: 2500
-        effects:
-          - { type: flat-coins, value: 5000000 }
-      - goal: 5000
-        effects:
-          - { type: flat-coins, value: 10000000 }
-      - goal: 15000
-        effects:
-          - { type: block-coin-multiplier, value: 0.10 }
-      - goal: 30000
-        effects:
-          - { type: block-coin-multiplier, value: 0.25 }
-      - goal: 80000
-        effects:
-          - { type: global-luck-boost, value: 0.5 }
-
-  netherite_block:
-    # ~6,647 of these are broken in one full pass down the zone ladder.
-    material: NETHERITE_BLOCK
-    display-name: "&8Netherite Block"
-    icon: NETHERITE_BLOCK
-    tiers:
-      - goal: 800
-        effects:
-          - { type: flat-coins, value: 50000000 }
-      - goal: 2000
-        effects:
-          - { type: flat-coins, value: 100000000 }
-      - goal: 5000
-        effects:
-          - { type: flat-coins, value: 200000000 }
-      - goal: 10000
-        effects:
-          - { type: flat-coins, value: 400000000 }
-      - goal: 30000
-        effects:
-          - { type: block-coin-multiplier, value: 0.10 }
-      - goal: 80000
+      - goal: 62000
         effects:
           - { type: block-coin-multiplier, value: 0.25 }
           - { type: unlock-shard-drop, value: 0.02, data: DIAMONDS }
-      - goal: 200000
+      - goal: 150000
         effects:
           - { type: triple-hit-chance, value: 0.1 }
 
-  diamond_block:
-    # The deepest tree in the game: Diamond Hollow's tier-3 all the way through to Genesis Core's tier-1. Tier 7 is a genuine end-of-ladder trophy.
-    # ~8,678 of these are broken in one full pass down the zone ladder.
-    material: DIAMOND_BLOCK
-    display-name: "&bDiamond Block"
-    icon: DIAMOND_BLOCK
+  ancient_debris:
+    # Netherite Wastes, Ancient Ruins, Eternal Forge. ~2,384 broken in one full pass down the ladder.
+    material: ANCIENT_DEBRIS
+    display-name: "&6Ancient Debris"
+    icon: ANCIENT_DEBRIS
     tiers:
-      - goal: 1000
+      - goal: 240
+        effects:
+          - { type: flat-coins, value: 32000 }
+      - goal: 720
+        effects:
+          - { type: flat-coins, value: 65000 }
+      - goal: 1800
         effects:
           - { type: flat-coins, value: 400000000 }
-      - goal: 3000
+      - goal: 3600
         effects:
           - { type: flat-coins, value: 800000000 }
-      - goal: 8000
-        effects:
-          - { type: flat-coins, value: 1500000000 }
-      - goal: 15000
-        effects:
-          - { type: flat-coins, value: 3000000000 }
-      - goal: 40000
+      - goal: 9500
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
-      - goal: 100000
+      - goal: 24000
         effects:
           - { type: block-coin-multiplier, value: 0.25 }
-      - goal: 250000
+      - goal: 60000
         effects:
-          - { type: roll-speed-multiplier, value: 0.5 }
+          - { type: perk, value: 1.0, data: relic-hunter }
 
+  respawn_anchor:
+    # Netherite Wastes. ~43 broken in one full pass down the ladder.
+    material: RESPAWN_ANCHOR
+    display-name: "&5Respawn Anchor"
+    icon: RESPAWN_ANCHOR
+    tiers:
+      - goal: 4
+        effects:
+          - { type: flat-coins, value: 390000 }
+      - goal: 13
+        effects:
+          - { type: flat-coins, value: 780000 }
+      - goal: 33
+        effects:
+          - { type: flat-coins, value: 1600000 }
+      - goal: 65
+        effects:
+          - { type: flat-coins, value: 3100000 }
+      - goal: 170
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 430
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 1100
+        effects:
+          - { type: perk, value: 0.5, data: second-wind }
+
+  cobbled_deepslate:
+    # Ancient Ruins. ~1,098 broken in one full pass down the ladder.
+    material: COBBLED_DEEPSLATE
+    display-name: "&8Cobbled Deepslate"
+    icon: COBBLED_DEEPSLATE
+    tiers:
+      - goal: 110
+        effects:
+          - { type: flat-coins, value: 85000 }
+      - goal: 330
+        effects:
+          - { type: flat-coins, value: 170000 }
+      - goal: 820
+        effects:
+          - { type: flat-coins, value: 340000 }
+      - goal: 1600
+        effects:
+          - { type: flat-coins, value: 680000 }
+      - goal: 4400
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 11000
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 27000
+        effects:
+          - { type: perk, value: 0.005, data: archaeologist }
+
+  chiseled_deepslate:
+    # Ancient Ruins. ~55 broken in one full pass down the ladder.
+    material: CHISELED_DEEPSLATE
+    display-name: "&8Chiseled Deepslate"
+    icon: CHISELED_DEEPSLATE
+    tiers:
+      - goal: 5
+        effects:
+          - { type: flat-coins, value: 1000000 }
+      - goal: 16
+        effects:
+          - { type: flat-coins, value: 2000000 }
+      - goal: 41
+        effects:
+          - { type: flat-coins, value: 4100000 }
+      - goal: 82
+        effects:
+          - { type: flat-coins, value: 8200000 }
+      - goal: 220
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 550
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 1400
+        effects:
+          - { type: perk, value: 1.0, data: scholar }
+
+  end_stone:
+    # End Barrens, Celestial Sanctum. ~3,920 broken in one full pass down the ladder.
+    material: END_STONE
+    display-name: "&eEnd Stone"
+    icon: END_STONE
+    perk-name: "&e&lEnder Sight"
+    tiers:
+      - goal: 390
+        effects:
+          - { type: flat-coins, value: 220000 }
+      - goal: 1200
+        effects:
+          - { type: flat-coins, value: 440000 }
+      - goal: 2900
+        effects:
+          - { type: flat-coins, value: 5800000 }
+      - goal: 5900
+        effects:
+          - { type: flat-coins, value: 12000000 }
+      - goal: 16000
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 39000
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 98000
+        effects:
+          - { type: diamond-chance-boost, value: 0.05 }
+
+  end_stone_bricks:
+    # End Barrens. ~366 broken in one full pass down the ladder.
+    material: END_STONE_BRICKS
+    display-name: "&eEnd Stone Bricks"
+    icon: END_STONE_BRICKS
+    tiers:
+      - goal: 37
+        effects:
+          - { type: flat-coins, value: 880000 }
+      - goal: 110
+        effects:
+          - { type: flat-coins, value: 1800000 }
+      - goal: 270
+        effects:
+          - { type: flat-coins, value: 3500000 }
+      - goal: 550
+        effects:
+          - { type: flat-coins, value: 7000000 }
+      - goal: 1500
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 3700
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 9200
+        effects:
+          - { type: perk, value: 1, data: extra-hand }
+
+  purpur_block:
+    # End Barrens, Purpur Spires, Celestial Sanctum. ~2,525 broken in one full pass down the ladder.
+    material: PURPUR_BLOCK
+    display-name: "&dPurpur Block"
+    icon: PURPUR_BLOCK
+    perk-name: "&d&lChorus Luck"
+    tiers:
+      - goal: 250
+        effects:
+          - { type: flat-coins, value: 560000 }
+      - goal: 760
+        effects:
+          - { type: flat-coins, value: 1100000 }
+      - goal: 1900
+        effects:
+          - { type: flat-coins, value: 2200000 }
+      - goal: 3800
+        effects:
+          - { type: flat-coins, value: 46000000 }
+      - goal: 10000
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 25000
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 63000
+        effects:
+          - { type: global-luck-boost, value: 0.5 }
+
+  purpur_pillar:
+    # Purpur Spires. ~459 broken in one full pass down the ladder.
+    material: PURPUR_PILLAR
+    display-name: "&dPurpur Pillar"
+    icon: PURPUR_PILLAR
+    tiers:
+      - goal: 46
+        effects:
+          - { type: flat-coins, value: 2200000 }
+      - goal: 140
+        effects:
+          - { type: flat-coins, value: 4500000 }
+      - goal: 340
+        effects:
+          - { type: flat-coins, value: 9000000 }
+      - goal: 690
+        effects:
+          - { type: flat-coins, value: 18000000 }
+      - goal: 1800
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 4600
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 11000
+        effects:
+          - { type: perk, value: 0.1, data: echo }
+
+  shulker_box:
+    # Purpur Spires. ~92 broken in one full pass down the ladder.
+    material: SHULKER_BOX
+    display-name: "&5Shulker Box"
+    icon: SHULKER_BOX
+    tiers:
+      - goal: 9
+        effects:
+          - { type: flat-coins, value: 6800000 }
+      - goal: 28
+        effects:
+          - { type: flat-coins, value: 14000000 }
+      - goal: 69
+        effects:
+          - { type: flat-coins, value: 27000000 }
+      - goal: 140
+        effects:
+          - { type: flat-coins, value: 54000000 }
+      - goal: 370
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 920
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 2300
+        effects:
+          - { type: perk, value: 0.005, data: stash }
+
+  beacon:
+    # Celestial Sanctum, Starlight Fields, Cosmic Abyss, Eternal Forge, Astral Peak, Genesis Core. ~1,051 broken in one full pass down the ladder.
+    material: BEACON
+    display-name: "&bBeacon"
+    icon: BEACON
+    tiers:
+      - goal: 110
+        effects:
+          - { type: flat-coins, value: 17000000 }
+      - goal: 320
+        effects:
+          - { type: flat-coins, value: 230000000 }
+      - goal: 790
+        effects:
+          - { type: flat-coins, value: 3100000000 }
+      - goal: 1600
+        effects:
+          - { type: flat-coins, value: 16000000000 }
+      - goal: 4200
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 11000
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 26000
+        effects:
+          - { type: perk, value: 0.1, data: beacon-aura }
+
+  glowstone:
+    # Starlight Fields. ~2,800 broken in one full pass down the ladder.
+    material: GLOWSTONE
+    display-name: "&eGlowstone"
+    icon: GLOWSTONE
+    tiers:
+      - goal: 280
+        effects:
+          - { type: flat-coins, value: 3800000 }
+      - goal: 840
+        effects:
+          - { type: flat-coins, value: 7500000 }
+      - goal: 2100
+        effects:
+          - { type: flat-coins, value: 15000000 }
+      - goal: 4200
+        effects:
+          - { type: flat-coins, value: 30000000 }
+      - goal: 11000
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 28000
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 70000
+        effects:
+          - { type: perk, value: 1.0, data: radiance }
+
+  sea_lantern:
+    # Starlight Fields. ~700 broken in one full pass down the ladder.
+    material: SEA_LANTERN
+    display-name: "&3Sea Lantern"
+    icon: SEA_LANTERN
+    tiers:
+      - goal: 70
+        effects:
+          - { type: flat-coins, value: 15000000 }
+      - goal: 210
+        effects:
+          - { type: flat-coins, value: 30000000 }
+      - goal: 530
+        effects:
+          - { type: flat-coins, value: 60000000 }
+      - goal: 1100
+        effects:
+          - { type: flat-coins, value: 120000000 }
+      - goal: 2800
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 7000
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 18000
+        effects:
+          - { type: perk, value: 10, data: high-tide }
+
+  chest:
+    # every zone. ~175 broken in one full pass down the ladder.
+    material: CHEST
+    display-name: "&6Treasure Chest"
+    icon: CHEST
+    tiers:
+      - goal: 18
+        effects:
+          - { type: flat-coins, value: 300000 }
+      - goal: 53
+        effects:
+          - { type: flat-coins, value: 170000000 }
+      - goal: 130
+        effects:
+          - { type: flat-coins, value: 6000000000 }
+      - goal: 260
+        effects:
+          - { type: flat-coins, value: 81000000000 }
+      - goal: 700
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 1800
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 4400
+        effects:
+          - { type: perk, value: 1.0, data: treasure-sense }
+
+  vault:
+    # every zone. ~157 broken in one full pass down the ladder.
+    material: VAULT
+    display-name: "&aBig Safe"
+    icon: VAULT
+    tiers:
+      - goal: 16
+        effects:
+          - { type: flat-coins, value: 360000 }
+      - goal: 47
+        effects:
+          - { type: flat-coins, value: 81000000 }
+      - goal: 120
+        effects:
+          - { type: flat-coins, value: 7200000000 }
+      - goal: 240
+        effects:
+          - { type: flat-coins, value: 97000000000 }
+      - goal: 630
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 1600
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 3900
+        effects:
+          - { type: perk, value: 1.0, data: safecracker }
+
+  reinforced_deepslate:
+    # every zone. ~12 broken in one full pass down the ladder.
+    material: REINFORCED_DEEPSLATE
+    display-name: "&cBoss Block"
+    icon: REINFORCED_DEEPSLATE
+    tiers:
+      - goal: 1
+        effects:
+          - { type: flat-coins, value: 600000 }
+      - goal: 4
+        effects:
+          - { type: flat-coins, value: 350000000 }
+      - goal: 9
+        effects:
+          - { type: flat-coins, value: 12000000000 }
+      - goal: 18
+        effects:
+          - { type: flat-coins, value: 160000000000 }
+      - goal: 47
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 120
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 290
+        effects:
+          - { type: perk, value: 1.0, data: warlord }
+
+  carved_pumpkin:
+    # Haunted Hollow only. Goals are counted in whole events (~5,500 per event), not ladder passes - tier 7 is about two Halloweens.
+    material: CARVED_PUMPKIN
+    display-name: "&6Carved Pumpkin"
+    icon: CARVED_PUMPKIN
+    tiers:
+      - goal: 280
+        effects:
+          - { type: flat-coins, value: 38 }
+      - goal: 820
+        effects:
+          - { type: flat-coins, value: 75 }
+      - goal: 1600
+        effects:
+          - { type: flat-coins, value: 150 }
+      - goal: 2800
+        effects:
+          - { type: flat-coins, value: 300 }
+      - goal: 4100
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 5500
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 8200
+        effects:
+          - { type: perk, value: 0.05, data: trick-or-treat }
+
+  jack_o_lantern:
+    # Haunted Hollow only. Goals are counted in whole events (~1,400 per event), not ladder passes - tier 7 is about two Halloweens.
+    material: JACK_O_LANTERN
+    display-name: "&6Jack o'Lantern"
+    icon: JACK_O_LANTERN
+    tiers:
+      - goal: 70
+        effects:
+          - { type: flat-coins, value: 150 }
+      - goal: 210
+        effects:
+          - { type: flat-coins, value: 300 }
+      - goal: 420
+        effects:
+          - { type: flat-coins, value: 600 }
+      - goal: 700
+        effects:
+          - { type: flat-coins, value: 1200 }
+      - goal: 1000
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 1400
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 2100
+        effects:
+          - { type: perk, value: 0.01, data: wisp }
+
+  soul_lantern:
+    # Haunted Hollow only. Goals are counted in whole events (~280 per event), not ladder passes - tier 7 is about two Halloweens.
+    material: SOUL_LANTERN
+    display-name: "&3Soul Lantern"
+    icon: SOUL_LANTERN
+    tiers:
+      - goal: 14
+        effects:
+          - { type: flat-coins, value: 450 }
+      - goal: 42
+        effects:
+          - { type: flat-coins, value: 900 }
+      - goal: 84
+        effects:
+          - { type: flat-coins, value: 1800 }
+      - goal: 140
+        effects:
+          - { type: flat-coins, value: 3600 }
+      - goal: 210
+        effects:
+          - { type: block-coin-multiplier, value: 0.10 }
+      - goal: 280
+        effects:
+          - { type: block-coin-multiplier, value: 0.25 }
+      - goal: 420
+        effects:
+          - { type: perk, value: 0.5, data: soul-link }

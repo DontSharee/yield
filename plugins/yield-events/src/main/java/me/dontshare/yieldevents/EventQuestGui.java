@@ -3,6 +3,7 @@ package me.dontshare.yieldevents;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiBuilder;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.Formatting;
@@ -33,9 +34,9 @@ import java.util.stream.IntStream;
 public final class EventQuestGui {
 
     private static final int QUEST_SLOTS = 45;
-    private static final int SHOP_SLOT = 45;
+    private static final int SHOP_SLOT = 47;
     private static final int HEADER_SLOT = 49;
-    private static final int CLOSE_SLOT = 53;
+    private static final int CLOSE_SLOT = 51;
 
     private final GuiManager guiManager;
     private final EventService eventService;
@@ -59,15 +60,13 @@ public final class EventQuestGui {
         }
         GuiBuilder builder = Gui.builder(6, Formatting.stripLeadingColorCodes(event.displayName()));
         List<EventQuest> quests = event.quests();
-        int slot = 0;
-        for (EventQuest quest : quests) {
-            if (slot >= QUEST_SLOTS) {
-                break;
-            }
-            builder.item(slot++, buildQuestIcon(player, event, quest),
+        builder.fill(IntStream.range(0, QUEST_SLOTS), GuiIcons.filler());
+        int[] slots = GuiLayout.centered(0, Math.min(quests.size(), GuiLayout.capacity(5)));
+        for (int i = 0; i < slots.length; i++) {
+            EventQuest quest = quests.get(i);
+            builder.item(slots[i], buildQuestIcon(player, event, quest),
                     (clicker, e) -> claim(clicker, event, quest));
         }
-        builder.fill(IntStream.range(slot, QUEST_SLOTS), GuiIcons.filler());
         builder.fill(IntStream.range(QUEST_SLOTS, 54)
                 .filter(s -> s != SHOP_SLOT && s != HEADER_SLOT && s != CLOSE_SLOT), GuiIcons.filler());
         // Hidden when the event sells nothing, rather than shown as an
@@ -115,27 +114,28 @@ public final class EventQuestGui {
 
         ItemBuilder builder = ItemBuilder.of(material)
                 .name(MenuLore.buttonName("<" + event.color() + ">", quest.displayName()));
-        List<String> lore = new ArrayList<>(quest.description());
-        lore.add("");
-        lore.add("&7Progress: &f" + Formatting.format((double) Math.min(progress, quest.target()))
-                + "&7/&f" + Formatting.format((double) quest.target()));
-        lore.add("");
-        lore.add("&7Rewards:");
+        String accent = "<" + event.color() + ">";
+        List<String> data = new ArrayList<>();
+        data.add("Progress: " + MenuLore.progress(Math.min(progress, quest.target()), quest.target()));
         if (quest.rewardCandy() > 0) {
-            lore.add(" &8- &e" + Formatting.format((double) quest.rewardCandy()) + " " + event.currencyName());
+            data.add("Reward: &e" + Formatting.format((double) quest.rewardCandy()) + " " + event.currencyName());
         }
         if (quest.rewardCoins() > 0) {
-            lore.add(" &8- &a$" + Formatting.format((double) quest.rewardCoins()));
+            data.add("Reward: &6" + Formatting.format((double) quest.rewardCoins()) + " &7coins");
         }
         if (quest.rewardDiamonds() > 0) {
-            lore.add(" &8- &b" + Formatting.format((double) quest.rewardDiamonds()) + " diamonds");
+            data.add("Reward: &b" + Formatting.format((double) quest.rewardDiamonds()) + " &7diamonds");
         }
         for (String command : quest.commands()) {
-            lore.add(" &8- &d" + RewardText.describeCommand(command));
+            data.add("Reward: &d" + RewardText.describeCommand(command));
         }
-        lore.add("");
-        lore.add(claimed ? "&8Already claimed" : complete ? "&8[CLICK] &fTo Claim" : "&cNot finished yet");
-        lore.forEach(builder::lore);
+        if (complete && !claimed) {
+            MenuLore.button("event quest", quest.description(), accent, data, "Click to claim").forEach(builder::lore);
+        } else {
+            List<String> description = new ArrayList<>(quest.description());
+            description.add(claimed ? "&8Already claimed." : "&cNot finished yet.");
+            MenuLore.info("event quest", description, accent, data).forEach(builder::lore);
+        }
         return builder.hideAttributes().build();
     }
 

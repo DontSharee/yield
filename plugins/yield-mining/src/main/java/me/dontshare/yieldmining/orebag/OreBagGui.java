@@ -3,6 +3,7 @@ package me.dontshare.yieldmining.orebag;
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.gui.Page;
 import me.dontshare.yieldcore.item.ItemBuilder;
@@ -27,11 +28,12 @@ public final class OreBagGui {
     private static final String ACCENT = "<#4BD9FF>";
     private static final int TOTAL_ROWS = 6;
     private static final int CONTENT_ROWS = TOTAL_ROWS - 1;
-    private static final int PAGE_SIZE = CONTENT_ROWS * 9;
-    private static final int PREV_SLOT = 45;
-    private static final int TOGGLE_SLOT = 47;
+    /** Centred rows of seven inside the border - see GuiLayout. */
+    private static final int PAGE_SIZE = GuiLayout.capacity(CONTENT_ROWS);
+    private static final int PREV_SLOT = 47;
+    private static final int TOGGLE_SLOT = 45;
     private static final int CLOSE_SLOT = 49;
-    private static final int NEXT_SLOT = 53;
+    private static final int NEXT_SLOT = 51;
 
     private final PlayerDataStore<PackPlayerProfile> store;
     private final PlayerDataStore<MiningProfile> miningStore;
@@ -56,9 +58,11 @@ public final class OreBagGui {
 
         var builder = Gui.builder(TOTAL_ROWS, "Ore Bag");
         List<BagEntryView> items = page.items();
+        builder.fill(IntStream.range(0, 45), GuiIcons.filler());
+        int[] contentSlots = GuiLayout.centered(0, items.size());
         for (int i = 0; i < items.size(); i++) {
             BagEntryView entry = items.get(i);
-            builder.item(i, buildEntryIcon(entry), (clicker, e) -> withdraw(clicker, entry.entryId()));
+            builder.item(contentSlots[i], buildEntryIcon(entry), (clicker, e) -> withdraw(clicker, entry.entryId()));
         }
         builder.fill(IntStream.range(45, 54).filter(s -> s != PREV_SLOT && s != TOGGLE_SLOT && s != CLOSE_SLOT && s != NEXT_SLOT), GuiIcons.filler());
         builder.item(PREV_SLOT, GuiIcons.pageArrow(false, page.hasPrevious()), (clicker, e) -> turnPage(clicker, -1));

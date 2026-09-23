@@ -105,16 +105,15 @@ public final class EnchantMarketGui {
         boolean affordable = profile.getCoins().compareTo(price) >= 0;
         ItemBuilder builder = ItemBuilder.of(bought ? Material.GRAY_DYE : offer.type().icon())
                 .name(EnchantItem.displayName(offer.type(), offer.rarity()));
-        builder.lore("&7Bonus: " + EnchantItem.bonusLine(offer.type(), offer.rarity()));
-        builder.lore("");
-        builder.lore("&7Price: &e" + Formatting.format(price) + " &7coins");
-        builder.lore("");
+        List<String> data = List.of(
+                "Bonus: " + EnchantItem.bonusLine(offer.type(), offer.rarity()),
+                "Price: " + (affordable ? "&6" : "&c") + Formatting.format(price) + " &7coins");
         if (bought) {
-            builder.lore("&8Sold - back at the next restock.");
+            MenuLore.info("enchant book", List.of("&8Sold - back at the next restock."), MenuLore.ACCENT, data).forEach(builder::lore);
         } else if (affordable) {
-            builder.lore("&8[CLICK] &fTo Buy");
+            MenuLore.purchase("enchant book", List.of(), "&a", data, "Click to buy").forEach(builder::lore);
         } else {
-            builder.lore("&cYou can't afford this yet.");
+            MenuLore.info("enchant book", List.of("&cYou can't afford this yet."), MenuLore.ACCENT, data).forEach(builder::lore);
         }
         return builder.hideAttributes().build();
     }

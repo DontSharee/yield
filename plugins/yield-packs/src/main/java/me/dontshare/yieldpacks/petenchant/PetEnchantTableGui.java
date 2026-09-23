@@ -345,7 +345,7 @@ public final class PetEnchantTableGui {
     }
 
     private ItemStack buildEmptySlot() {
-        ItemBuilder builder = ItemBuilder.of(Material.RED_STAINED_GLASS_PANE).name("&c&lNO PET SELECTED");
+        ItemBuilder builder = ItemBuilder.of(Material.RED_STAINED_GLASS_PANE).name(MenuLore.name("&c", "No Pet Selected"));
         MenuLore.info("enchanting table", List.of(" &7Click to select a pet", " &7from your collection."), ACCENT, List.of())
                 .forEach(builder::lore);
         return builder.hideAttributes().build();

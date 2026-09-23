@@ -3,6 +3,7 @@ package me.dontshare.yieldpacks.gui;
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.gui.Page;
 import me.dontshare.yieldcore.item.ItemBuilder;
@@ -52,12 +53,13 @@ public final class FusionGui {
     private static final int TOTAL_ROWS = 6;
     private static final int CONTENT_START = 9;
     private static final int CONTENT_END = 45; // exclusive
-    private static final int PREV_SLOT = 45;
-    private static final int FUSE_ALL_SLOT = 47;
+    private static final int PREV_SLOT = 47;
+    private static final int FUSE_ALL_SLOT = 45;
     private static final int CLOSE_SLOT = 49;
-    private static final int AUTO_FUSE_SLOT = 51;
-    private static final int NEXT_SLOT = 53;
-    private static final int PAGE_SIZE = CONTENT_END - CONTENT_START;
+    private static final int AUTO_FUSE_SLOT = 53;
+    private static final int NEXT_SLOT = 51;
+    /** Four centred rows of seven between the top border and the control bar - see GuiLayout. */
+    private static final int PAGE_SIZE = GuiLayout.capacity(4);
     private static final int FUSE_COST = 3;
 
     private record FusionEntry(String itemId, ItemDefinition item, Rarity rarity, int remaining) {
@@ -106,12 +108,13 @@ public final class FusionGui {
         var builder = Gui.builder(TOTAL_ROWS, "Fusion (into " + targetTier.name() + ")");
 
         List<FusionEntry> items = page.items();
+        builder.fill(IntStream.range(0, CONTENT_END), GuiIcons.filler());
+        int[] contentSlots = GuiLayout.centered(CONTENT_START / 9, items.size());
         for (int i = 0; i < items.size(); i++) {
             FusionEntry entry = items.get(i);
-            builder.item(CONTENT_START + i, buildIcon(entry), (clicker, event) -> attemptFuse(clicker, entry.itemId()));
+            builder.item(contentSlots[i], buildIcon(entry), (clicker, event) -> attemptFuse(clicker, entry.itemId()));
         }
 
-        builder.fill(IntStream.range(0, 9), GuiIcons.filler());
         builder.fill(IntStream.range(CONTENT_END, TOTAL_ROWS * 9)
                 .filter(slot -> slot != PREV_SLOT && slot != FUSE_ALL_SLOT && slot != CLOSE_SLOT
                         && slot != AUTO_FUSE_SLOT && slot != NEXT_SLOT), GuiIcons.filler());
@@ -307,14 +310,12 @@ public final class FusionGui {
         ItemBuilder builder = iconFactory.baseIcon(item).name(taggedName(item));
         MenuLore.button(
                 "fusion",
-                List.of(" &7Combine " + FUSE_COST + " of this pet", " &7into a stronger fused form."),
+                List.of("Combine " + FUSE_COST + " of this pet into a stronger form."),
                 accent,
-                "Click to Fuse"
+                List.of("Owned: " + MenuLore.progress(entry.remaining(), FUSE_COST), "Fuses Into: " + nextName),
+                "Click to fuse"
         ).forEach(builder::lore);
         return builder
-                .lore("")
-                .lore("&7Owned: &f" + entry.remaining() + " &7/ &f" + FUSE_COST)
-                .lore("&7Fuses into: " + nextName)
                 .amount(Math.max(1, Math.min(64, entry.remaining())))
                 .hideAttributes()
                 .build();

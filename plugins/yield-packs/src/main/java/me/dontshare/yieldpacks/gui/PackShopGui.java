@@ -166,7 +166,7 @@ public final class PackShopGui {
     // A plain strikethrough run of spaces draws as a solid horizontal rule
     // in item lore - same trick OreCubeService's HP bar uses, just legacy-
     // coded here to match this GUI's own lore style.
-    private static final String SEPARATOR_LINE = "&8&m                              ";
+    private static final String ACCENT = MenuLore.ACCENT;
 
     private ItemStack buildIcon(ShopSlot shopSlot, int remaining, Player viewer) {
         PackDefinition pack = shopSlot.pack();
@@ -177,21 +177,16 @@ public final class PackShopGui {
             builder.modelData(pack.customModelData());
         }
 
-        List<String> lore = new ArrayList<>();
-        lore.add("&8" + Formatting.fancyFont("pack"));
-        lore.add("");
-        lore.addAll(oddsLore.lines(pack, viewer));
-        lore.add("");
-        lore.add("&7Cost: " + PackOddsLore.costLine(pack, 1));
-        lore.add("&7Stock: " + (soldOut ? "&c0" : "&a" + remaining + "x"));
-        lore.add(SEPARATOR_LINE);
+        List<String> data = new ArrayList<>(oddsLore.lines(pack, viewer));
+        data.add("");
+        data.add("Cost: " + PackOddsLore.costLine(pack, 1));
+        data.add("Stock: " + (soldOut ? "&c0" : "&a" + remaining + "x"));
         if (soldOut) {
-            lore.add("&c&l✗ Out of Stock!");
+            MenuLore.info("egg", List.of("&c&l\u2717 Out of Stock!"), ACCENT, data).forEach(builder::lore);
         } else {
-            lore.add("&8[LEFT-CLICK] &fTo Hatch 1");
-            lore.add("&8[RIGHT-CLICK] &fTo Hatch Max");
+            MenuLore.dualAction("egg", List.of(), ACCENT, data, "Left Click to hatch 1", "Right Click to hatch max")
+                    .forEach(builder::lore);
         }
-        builder.lore(lore);
         return builder.hideAttributes().build();
     }
 

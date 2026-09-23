@@ -1,4 +1,4 @@
-version = "0.1.7"
+version = "0.1.9"
 
 dependencies {
     // yield-core's DatabaseManager/PlayerDataStore-adjacent Mongo access,

@@ -3,6 +3,7 @@ package me.dontshare.yieldmining.orebag;
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.MenuLore;
@@ -29,7 +30,6 @@ import java.util.function.Supplier;
 public final class OreIndexGui {
 
     private static final String ACCENT = "<#4BD9FF>";
-    private static final int MAX_CONTENT_SLOTS = 45;
 
     private final Supplier<MiningContent> content;
     private final PlayerDataStore<MiningProfile> store;
@@ -46,16 +46,19 @@ public final class OreIndexGui {
         List<OreDefinition> ores = new ArrayList<>(content.get().ores().values());
         ores.removeIf(definition -> definition.dropMaterial() == null);
 
-        int contentSlots = Math.min(MAX_CONTENT_SLOTS, ores.size());
-        int contentRows = Math.max(1, (contentSlots + 8) / 9);
-        int totalRows = Math.min(6, contentRows + 1);
-        int closeSlot = totalRows * 9 - 5;
+        // A border row, the ores centred seven to a row, then Close centred underneath.
+        int shown = Math.min(GuiLayout.capacity(4), ores.size());
+        int contentRows = Math.max(1, (shown + GuiLayout.INNER_WIDTH - 1) / GuiLayout.INNER_WIDTH);
+        int totalRows = contentRows + 2;
+        int closeSlot = GuiLayout.center(totalRows - 1);
 
         var builder = Gui.builder(totalRows, "Ore Index");
-        for (int i = 0; i < ores.size() && i < contentRows * 9; i++) {
+        builder.fill(GuiLayout.all(totalRows), GuiIcons.filler());
+        int[] slots = GuiLayout.centered(1, shown);
+        for (int i = 0; i < shown; i++) {
             OreDefinition definition = ores.get(i);
             boolean discovered = profile.getDiscoveredOreMaterials().contains(definition.dropMaterial().name());
-            builder.item(i, discovered ? discoveredIcon(definition.dropMaterial()) : lockedIcon(definition.dropMaterial()));
+            builder.item(slots[i], discovered ? discoveredIcon(definition.dropMaterial()) : lockedIcon(definition.dropMaterial()));
         }
         builder.item(closeSlot, GuiIcons.closeButton(), (clicker, e) -> clicker.closeInventory());
 

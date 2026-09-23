@@ -36,9 +36,10 @@ public final class EnchantGui {
 
     private static final String ACCENT = "<#4BD9FF>";
     private static final int[] SLOT_POSITIONS = {0, 1, 2, 3, 4, 5, 6, 7, 8};
-    private static final int INFO_SLOT = 22;
+    /** Info and the market as a pair either side of the middle column; Close centred underneath. */
+    private static final int INFO_SLOT = 21;
+    private static final int MARKET_SLOT = 23;
     private static final int CLOSE_SLOT = 31;
-    private static final int MARKET_SLOT = 29;
 
     private final PlayerDataStore<PackPlayerProfile> store;
     private final EnchantService service;
@@ -177,7 +178,7 @@ public final class EnchantGui {
         String unlockHint = service.isPremiumSlot(slotIndex)
                 ? "Purchase a donor rank at /buy"
                 : "Reach " + service.rebirthsNeededFor(profile, slotIndex) + " more rebirth(s)";
-        ItemBuilder builder = ItemBuilder.of(Material.BARRIER).name("&7&lLOCKED SLOT");
+        ItemBuilder builder = ItemBuilder.of(Material.BARRIER).name(MenuLore.name("&7", "Locked Slot"));
         MenuLore.info("enchants", List.of(" &7" + unlockHint + " &7to", " &7unlock this slot."), ACCENT, List.of())
                 .forEach(builder::lore);
         return builder.hideAttributes().build();

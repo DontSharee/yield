@@ -75,6 +75,17 @@ public final class EnchantMarketService {
         reload();
     }
 
+    /** Discounts and surcharges on every offer, e.g. a blocktree perk - multiplied together, 1.0 = full price. */
+    private final Map<String, Function<Player, Double>> priceMultiplierProviders = new java.util.concurrent.ConcurrentHashMap<>();
+
+    public void registerPriceMultiplierProvider(String key, Function<Player, Double> provider) {
+        priceMultiplierProviders.put(key, provider);
+    }
+
+    public void unregisterPriceMultiplierProvider(String key) {
+        priceMultiplierProviders.remove(key);
+    }
+
     public void setPriceBasis(Function<Player, BigInteger> priceBasis) {
         this.priceBasis = priceBasis;
     }
@@ -164,7 +175,20 @@ public final class EnchantMarketService {
     }
 
     public BigInteger priceOf(Player player, Offer offer) {
-        return priceBasis.apply(player).max(BigInteger.ONE).multiply(BigInteger.valueOf(offer.priceInBasicCubes()));
+        BigInteger full = priceBasis.apply(player).max(BigInteger.ONE).multiply(BigInteger.valueOf(offer.priceInBasicCubes()));
+        double factor = 1.0;
+        for (Function<Player, Double> provider : priceMultiplierProviders.values()) {
+            Double value = provider.apply(player);
+            if (value != null) {
+                factor *= Math.max(0.0, value);
+            }
+        }
+        if (factor == 1.0) {
+            return full;
+        }
+        // Basis points keep the maths in BigInteger - a price can outgrow a double's exact range.
+        long basisPoints = Math.max(1L, Math.round(factor * 10_000));
+        return full.multiply(BigInteger.valueOf(basisPoints)).divide(BigInteger.valueOf(10_000)).max(BigInteger.ONE);
     }
 
     public boolean isBought(PackPlayerProfile profile, long hour, int index) {
