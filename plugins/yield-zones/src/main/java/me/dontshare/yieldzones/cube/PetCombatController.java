@@ -194,6 +194,21 @@ public final class PetCombatController implements Listener {
         cubeService.setTarget(player, cube);
     }
 
+    /**
+     * Whether this player's pets are already fighting {@code cube} - the
+     * squad's shared target (Auto Attack, or manual multi-send), or any
+     * one pet's own assignment (single-send). A click on such a cube is a
+     * tap, not an order: the pets are already where they're meant to be.
+     */
+    public boolean isAttacking(Player player, OreCube cube) {
+        OreCube shared = sharedTargetByPlayer.get(player.getUniqueId());
+        if (cube.equals(shared) && cube.equals(cubeService.currentTarget(player))) {
+            return true;
+        }
+        Map<UUID, OreCube> perPet = singleTargetsByPet.get(player.getUniqueId());
+        return perPet != null && perPet.containsValue(cube);
+    }
+
     /** Sneak-to-recall: drops every shared and per-pet target assignment this player has, in every mode at once. */
     public void recallAll(Player player) {
         UUID id = player.getUniqueId();

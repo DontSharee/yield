@@ -59,7 +59,7 @@ public final class PackPlayerProfile implements PlayerRecord {
      */
     private boolean autoAttackOff;
     /** Whether a player who owns Auto Tap has it running - /settings. */
-    private boolean autoTapEnabled = true;
+    private boolean autoTapEnabled = false;
     private AttackMode attackMode = AttackMode.SINGLE;
     private Map<String, Set<String>> packCollectionProgress = new HashMap<>();
     private Map<String, Long> lastObtainedAt = new HashMap<>();
