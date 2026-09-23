@@ -181,6 +181,19 @@ public final class FakeBlockClickRegistry {
                 closest = key;
             }
         }
+        if (closest == null) {
+            return null;
+        }
+        // Fake blocks exist only client-side, so the maths above sees
+        // straight through real ones. A real block in front of the fake one
+        // (a wall, or a world boss's barrier hitbox) is what the player
+        // actually clicked - without this, clicking a boss also "clicked"
+        // the ore cube behind it, which pulled the pets straight back off.
+        var realHit = eye.getWorld().rayTraceBlocks(eye, direction, closestDistance,
+                org.bukkit.FluidCollisionMode.NEVER, true);
+        if (realHit != null && realHit.getHitPosition().distance(eye.toVector()) < closestDistance - 1.0E-3) {
+            return null;
+        }
         return closest;
     }
 
