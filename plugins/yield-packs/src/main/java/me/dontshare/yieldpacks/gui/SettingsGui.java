@@ -66,7 +66,7 @@ public final class SettingsGui {
 
     private void toggleAutoAttack(Player player) {
         PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
-        profile.setAutoAttack(!profile.isAutoAttackOn());
+        profile.applyAutoAttack(!profile.isAutoAttackOn());
         store.save(player.getUniqueId());
         player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f,
                 profile.isAutoAttackOn() ? 1.4f : 1f);

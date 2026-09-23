@@ -364,8 +364,17 @@ public final class PackPlayerProfile implements PlayerRecord {
     /**
      * The one switch: ON is pets fighting on their own, OFF is nothing fighting on its
      * own - milestone pets included - until the player clicks a cube.
+     * <p>
+     * Deliberately NOT named {@code setAutoAttack} - the MongoDB POJO codec
+     * auto-discovers bean properties by matching {@code setX}/{@code getX}-or-
+     * {@code isX} pairs, and a bare {@code setAutoAttack} with no matching
+     * {@code isAutoAttack()} getter (only {@link #isAutoAttackOn()}/
+     * {@link #isAutoAttackOff()} exist, different property names) made the
+     * codec look for a phantom "autoAttack" property and throw
+     * CodecConfigurationException on every single save - this profile,
+     * pets included, silently stopped persisting at all until this was caught.
      */
-    public void setAutoAttack(boolean on) {
+    public void applyAutoAttack(boolean on) {
         this.sendMode = on ? SendMode.AUTO : SendMode.MANUAL;
         this.autoAttackOff = !on;
     }
