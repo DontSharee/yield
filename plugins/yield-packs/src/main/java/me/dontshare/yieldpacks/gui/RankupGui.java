@@ -4,6 +4,7 @@ import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiBuilder;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.Formatting;
@@ -26,36 +27,37 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
 /**
- * Rank is free/automatic - Stars only come from completing the 3 Rank
- * Quests shown in row 0 (fed by yield-quests via {@link RankQuestSource},
- * registered late since yield-packs can't depend on yield-quests). Below
- * that is a paginated grid (36/page, rows 1-4) previewing every rank's
- * diamond multiplier and reward, colored by claim state; the bottom row
- * holds paging plus a claim button for pending rewards. One screen for
- * both "/rankup" and "/rankquests" (same alias-worthy destination now -
- * there's no separate quest GUI anymore).
+ * /rankup: the rank ladder as a grid, in the house frame.
+ * <p>
+ * The top row holds the three active Rank Quests (fed by yield-quests via
+ * {@link RankQuestSource}, registered late since yield-packs can't depend
+ * on yield-quests). Inside the frame, 28 ranks a page as panes whose stack
+ * size is the rank number: yellow and glowing for the rank you're on,
+ * lime for claimed, orange for reached-but-unclaimed (click to claim),
+ * red for not reached yet. The bottom row is Claim All, the page arrows
+ * either side of your rank, and the quest board. One screen for both
+ * "/rankup" and "/rankquests".
  */
 public final class RankupGui {
 
     private static final String ACCENT = "<#B15CFF>";
     private static final int TOTAL_ROWS = 6;
-    private static final int PAGE_SIZE = 36; // rows 1-4
-    private static final int GRID_OFFSET = 9; // row 0 is the quest board
+    /** Four centred rows of seven inside the frame. */
+    private static final int PAGE_SIZE = GuiLayout.capacity(4);
     /** Same reasoning as before - ranks are unbounded, so paging is capped this far past the player's own current-rank page. */
     private static final int MAX_PAGES_AHEAD = 5;
-    private static final int QUEST_TITLE_SLOT = 1;
     private static final int[] QUEST_SLOTS = {3, 4, 5};
-    private static final int PREV_SLOT = 47;
     private static final int CLAIM_SLOT = 45;
-    private static final int CLOSE_SLOT = 49;
-    private static final int HEADER_SLOT = 53;
+    private static final int PREV_SLOT = 47;
+    private static final int HEADER_SLOT = 49;
     private static final int NEXT_SLOT = 51;
+    private static final int QUEST_INFO_SLOT = 53;
 
     private final PlayerDataStore<PackPlayerProfile> store;
     private final GuiManager guiManager;
     private final RankService rankService;
 
-    /** Registered by yield-quests once it enables - null (and the quest row just shows filler) until then. */
+    /** Registered by yield-quests once it enables - null (and the quest row just shows frame) until then. */
     private volatile RankQuestSource questSource;
 
     /** Which page each player is currently viewing - reset to their current rank's own page every time {@link #open} is called fresh, but preserved across a page turn or a claim so those don't yank the view somewhere else. */
@@ -89,37 +91,28 @@ public final class RankupGui {
         pageIndex.put(uuid, page);
         int pageStart = page * PAGE_SIZE;
 
-        var builder = Gui.builder(TOTAL_ROWS, "Rankup - Page " + (page + 1));
-        builder.fill(IntStream.range(0, TOTAL_ROWS * 9)
-                .filter(slot -> slot != QUEST_TITLE_SLOT && !isQuestSlot(slot)
-                        && (slot < GRID_OFFSET || slot >= GRID_OFFSET + PAGE_SIZE)
-                        && slot != PREV_SLOT && slot != CLAIM_SLOT && slot != CLOSE_SLOT
-                        && slot != HEADER_SLOT && slot != NEXT_SLOT), GuiIcons.filler());
-
-        builder.item(QUEST_TITLE_SLOT, buildQuestTitleIcon(profile));
+        var builder = Gui.builder(TOTAL_ROWS, "Rankup (" + (page + 1) + ")");
+        builder.fill(IntStream.range(0, TOTAL_ROWS * 9), GuiIcons.filler());
         renderQuestSlots(builder, player);
 
+        int[] slots = GuiLayout.centered(1, PAGE_SIZE);
         for (int i = 0; i < PAGE_SIZE; i++) {
             int rank = pageStart + i;
-            builder.item(GRID_OFFSET + i, buildRankIcon(profile, rank, currentRank));
-        }
-
-        builder.item(HEADER_SLOT, buildHeaderIcon(profile, currentRank));
-        builder.item(PREV_SLOT, GuiIcons.pageArrow(false, page > 0), (clicker, event) -> turnPage(clicker, page, -1));
-        builder.item(CLAIM_SLOT, buildClaimButton(profile), (clicker, event) -> claim(clicker));
-        builder.item(CLOSE_SLOT, GuiIcons.closeButton(), (clicker, event) -> clicker.closeInventory());
-        builder.item(NEXT_SLOT, GuiIcons.pageArrow(true, page < maxPage), (clicker, event) -> turnPage(clicker, page, 1));
-
-        guiManager.open(player, builder.build());
-    }
-
-    private boolean isQuestSlot(int slot) {
-        for (int questSlot : QUEST_SLOTS) {
-            if (questSlot == slot) {
-                return true;
+            boolean claimable = rank <= currentRank && rank > profile.getClaimedRank();
+            if (claimable) {
+                builder.item(slots[i], buildRankIcon(profile, rank, currentRank), (clicker, event) -> claim(clicker));
+            } else {
+                builder.item(slots[i], buildRankIcon(profile, rank, currentRank));
             }
         }
-        return false;
+
+        builder.item(CLAIM_SLOT, buildClaimButton(profile), (clicker, event) -> claim(clicker));
+        builder.item(PREV_SLOT, GuiIcons.pageArrow(false, page > 0), (clicker, event) -> turnPage(clicker, page, -1));
+        builder.item(HEADER_SLOT, buildHeaderIcon(profile, currentRank));
+        builder.item(NEXT_SLOT, GuiIcons.pageArrow(true, page < maxPage), (clicker, event) -> turnPage(clicker, page, 1));
+        builder.item(QUEST_INFO_SLOT, buildQuestTitleIcon(profile));
+
+        guiManager.open(player, builder.build());
     }
 
     private void renderQuestSlots(GuiBuilder builder, Player player) {
@@ -128,8 +121,6 @@ public final class RankupGui {
         for (int i = 0; i < QUEST_SLOTS.length; i++) {
             if (i < quests.size()) {
                 builder.item(QUEST_SLOTS[i], buildQuestIcon(quests.get(i)));
-            } else {
-                builder.item(QUEST_SLOTS[i], GuiIcons.filler());
             }
         }
     }
@@ -142,11 +133,11 @@ public final class RankupGui {
     }
 
     private ItemStack buildQuestTitleIcon(PackPlayerProfile profile) {
-        ItemBuilder builder = ItemBuilder.of(Material.KNOWLEDGE_BOOK).name(ACCENT + "&lRank Quests");
-        MenuLore.info("rankquests", List.of(
-                " &7Finish all 3 quests to the right to",
-                " &7roll a fresh set - Stars pay out",
-                " &7the instant each one is done."
+        ItemBuilder builder = ItemBuilder.of(Material.KNOWLEDGE_BOOK).name(MenuLore.infoName(ACCENT, "Rank Quests"));
+        MenuLore.info("rank quests", List.of(
+                "Finish all 3 quests above to roll",
+                "a fresh set. Stars pay out the",
+                "moment each one is done."
         ), ACCENT, List.of("Stars: &d" + Formatting.format(profile.getStars()))).forEach(builder::lore);
         return builder.hideAttributes().build();
     }
@@ -155,14 +146,15 @@ public final class RankupGui {
         String name = Formatting.stripLeadingColorCodes(quest.displayName());
         if (quest.completed()) {
             ItemBuilder builder = ItemBuilder.of(Material.LIME_DYE).name(MenuLore.name("&a", name) + " &7[Done]");
-            MenuLore.info("rankquest", List.of(), "<green>", List.of(
+            MenuLore.info("rank quest", List.of("Waiting on the other two."), "&a", List.of(
                     "Reward: &d" + Formatting.format(quest.rewardStars()) + " Stars",
-                    "Waiting on the other 2..."
+                    "Status: &aDone"
             )).forEach(builder::lore);
+            builder.enchant(org.bukkit.enchantments.Enchantment.UNBREAKING, 1);
             return builder.hideAttributes().build();
         }
-        ItemBuilder builder = ItemBuilder.of(quest.icon()).name(MenuLore.name("&f", name));
-        MenuLore.info("rankquest", List.of(), ACCENT, List.of(
+        ItemBuilder builder = ItemBuilder.of(quest.icon()).name(MenuLore.name(ACCENT, name));
+        MenuLore.info("rank quest", List.of(), ACCENT, List.of(
                 "Progress: " + MenuLore.progress(Math.min(quest.progress(), quest.goal()), quest.goal()),
                 "Reward: &d" + Formatting.format(quest.rewardStars()) + " Stars"
         )).forEach(builder::lore);
@@ -173,10 +165,11 @@ public final class RankupGui {
         long into = rankService.starsIntoCurrentRank(profile);
         long needed = rankService.starsForRank(currentRank);
         ItemBuilder builder = ItemBuilder.of(Material.NETHER_STAR)
-                .name(ACCENT + "&lRank " + Formatting.toRoman(currentRank));
-        MenuLore.info("rank", List.of(), ACCENT, List.of(
-                "&7Diamond Multiplier: &b" + Formatting.format(rankService.diamondMultiplier(profile)) + "x",
-                "&7Stars: &d" + Formatting.format(into) + " &7/ &d" + Formatting.format(needed)
+                .name(MenuLore.infoName(ACCENT, "Your Rank") + " &7[" + Formatting.toRoman(currentRank) + "]");
+        MenuLore.info("rank", List.of("Earn Stars from Rank Quests", "to climb the ladder."), ACCENT, List.of(
+                "Rank: &f" + currentRank,
+                "Diamond Multi: &b" + Formatting.format(rankService.diamondMultiplier(profile)) + "x",
+                "Next Rank: " + MenuLore.progress(into, needed) + " &7Stars"
         )).forEach(builder::lore);
         return builder.hideAttributes().build();
     }
@@ -187,55 +180,57 @@ public final class RankupGui {
         long rewardDiamonds = rankService.rewardDiamondsForRank(rank);
         boolean reached = rank <= currentRank;
         boolean claimed = rank <= profile.getClaimedRank();
+        boolean current = rank == currentRank;
 
+        Material pane;
+        String color;
+        String status;
         if (!reached) {
-            ItemBuilder builder = ItemBuilder.of(Material.GRAY_STAINED_GLASS_PANE)
-                    .name(MenuLore.name("&7", "Rank") + " &7[" + Formatting.toRoman(rank) + "] &8Locked");
-            MenuLore.info("rank", List.of(
-                    " &7Multiplier: &b" + Formatting.format(multiplier) + "x",
-                    " &7Reward: &6" + Formatting.format(rewardCoins) + " coins&7, &b" + Formatting.format(rewardDiamonds) + " diamonds"
-            ), "<gray>", List.of("Reach this rank with Stars")).forEach(builder::lore);
-            return builder.hideAttributes().build();
+            pane = Material.RED_STAINED_GLASS_PANE;
+            color = "&c";
+            status = "&cLocked";
+        } else if (!claimed) {
+            pane = Material.ORANGE_STAINED_GLASS_PANE;
+            color = "&6";
+            status = "&6Reward ready";
+        } else if (current) {
+            pane = Material.YELLOW_STAINED_GLASS_PANE;
+            color = "&e";
+            status = "&eYour rank";
+        } else {
+            pane = Material.LIME_STAINED_GLASS_PANE;
+            color = "&a";
+            status = "&aClaimed";
         }
-        if (claimed) {
-            boolean current = rank == currentRank;
-            ItemBuilder builder = ItemBuilder.of(current ? Material.LIME_CONCRETE : Material.GREEN_STAINED_GLASS_PANE)
-                    .name(MenuLore.name("&a", "Rank") + " &7[" + Formatting.toRoman(rank) + "]");
-            MenuLore.info("rank", List.of(), "<green>", List.of(
-                    "&7Multiplier: &b" + Formatting.format(multiplier) + "x",
-                    current ? "&7Your current rank." : "&7Reward claimed."
-            )).forEach(builder::lore);
-            return builder.hideAttributes().build();
+        ItemBuilder builder = ItemBuilder.of(pane)
+                .amount(Math.max(1, Math.min(64, rank)))
+                .name(MenuLore.name(color, "Rank") + " &7[" + Formatting.toRoman(rank) + "]");
+        List<String> data = List.of(
+                "Diamond Multi: &b" + Formatting.format(multiplier) + "x",
+                "Reward: &6" + Formatting.format(rewardCoins) + " &7coins, &b" + Formatting.format(rewardDiamonds) + " &7diamonds",
+                "Status: " + status);
+        if (reached && !claimed) {
+            MenuLore.button("rank", List.of(), "&6", data, "Click to claim").forEach(builder::lore);
+        } else {
+            MenuLore.info("rank", List.of(), color, data).forEach(builder::lore);
         }
-        ItemBuilder builder = ItemBuilder.of(Material.YELLOW_STAINED_GLASS_PANE)
-                .name(MenuLore.name("&e", "Rank") + " &7[" + Formatting.toRoman(rank) + "] &eUnclaimed");
-        MenuLore.button(
-                "rank",
-                List.of(
-                        " &7Multiplier: &b" + Formatting.format(multiplier) + "x",
-                        " &7Reward: &6" + Formatting.format(rewardCoins) + " coins&7, &b" + Formatting.format(rewardDiamonds) + " diamonds"
-                ),
-                "<yellow>",
-                "Click Claim below to collect"
-        ).forEach(builder::lore);
+        if (current || (reached && !claimed)) {
+            builder.enchant(org.bukkit.enchantments.Enchantment.UNBREAKING, 1);
+        }
         return builder.hideAttributes().build();
     }
 
     private ItemStack buildClaimButton(PackPlayerProfile profile) {
         int next = rankService.nextClaimableRank(profile);
         if (next < 0) {
-            ItemBuilder builder = ItemBuilder.of(Material.GRAY_DYE).name(MenuLore.buttonName("<gray>", "No Rewards Pending"));
-            MenuLore.info("rank", List.of(" &7Earn more Stars from the", " &7quests above to rank up."), "<gray>", List.of()).forEach(builder::lore);
+            ItemBuilder builder = ItemBuilder.of(Material.GRAY_DYE).name(MenuLore.infoName("&7", "No Rewards Pending"));
+            MenuLore.info("rank", List.of("Earn more Stars from the", "quests above to rank up."), "&7", List.of()).forEach(builder::lore);
             return builder.hideAttributes().build();
         }
-        ItemBuilder builder = ItemBuilder.of(Material.NETHERITE_INGOT).name(MenuLore.buttonName("<gold>", "CLAIM REWARDS"));
-        MenuLore.button(
-                "rank",
-                List.of(" &7Claims every reward you've", " &7reached but not collected yet.",
-                        " &7Next: &eRank " + Formatting.toRoman(next)),
-                "<gold>",
-                "Click to Claim All"
-        ).forEach(builder::lore);
+        ItemBuilder builder = ItemBuilder.of(Material.NETHERITE_INGOT).name(MenuLore.buttonName("&6", "Claim Rewards"));
+        MenuLore.button("rank", List.of("Claims every rank reward you've", "reached but not collected."),
+                "&6", List.of("Next: &eRank " + Formatting.toRoman(next)), "Click to claim all").forEach(builder::lore);
+        builder.enchant(org.bukkit.enchantments.Enchantment.UNBREAKING, 1);
         return builder.hideAttributes().build();
     }
 

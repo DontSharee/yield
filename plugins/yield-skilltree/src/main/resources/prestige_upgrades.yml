@@ -8,7 +8,7 @@ nodes:
   prestige_damage:
     display-name: "&cPrestige Damage"
     material: NETHERITE_SWORD
-    slot: 1
+    slot: 10
     requires: []
     # Same layout convention as upgrades.yml - see its header comment.
     max-level: 5
@@ -18,7 +18,7 @@ nodes:
   prestige_luck:
     display-name: "&aPrestige Luck"
     material: EMERALD
-    slot: 4
+    slot: 14
     requires: []
     max-level: 5
     cost-formula: "<level>"
@@ -27,7 +27,7 @@ nodes:
   prestige_coins:
     display-name: "&6Prestige Gold"
     material: GOLD_BLOCK
-    slot: 7
+    slot: 16
     requires: []
     max-level: 5
     cost-formula: "<level>"
@@ -36,7 +36,7 @@ nodes:
   prestige_roll_speed:
     display-name: "&bPrestige Roll Speed"
     material: PACKED_ICE
-    slot: 11
+    slot: 12
     requires: [prestige_damage]
     max-level: 5
     cost-formula: "2 * <level>"
@@ -45,7 +45,7 @@ nodes:
   greater_prestige_damage:
     display-name: "&4Greater Prestige Damage"
     material: NETHERITE_AXE
-    slot: 10
+    slot: 19
     requires: [prestige_damage]
     max-level: 5
     cost-formula: "3 * <level>"
@@ -54,7 +54,7 @@ nodes:
   greater_prestige_luck:
     display-name: "&2Greater Prestige Luck"
     material: EMERALD_BLOCK
-    slot: 13
+    slot: 23
     requires: [prestige_luck]
     max-level: 5
     cost-formula: "3 * <level>"
@@ -63,7 +63,7 @@ nodes:
   greater_prestige_coins:
     display-name: "&6Greater Prestige Gold"
     material: NETHERITE_INGOT
-    slot: 16
+    slot: 25
     requires: [prestige_coins]
     max-level: 5
     cost-formula: "3 * <level>"
@@ -72,7 +72,7 @@ nodes:
   greater_prestige_roll_speed:
     display-name: "&bGreater Prestige Roll Speed"
     material: BLUE_ICE
-    slot: 20
+    slot: 21
     requires: [prestige_roll_speed]
     max-level: 5
     cost-formula: "4 * <level>"
@@ -81,7 +81,7 @@ nodes:
   ascended_power:
     display-name: "&4&lAscended Power"
     material: NETHER_STAR
-    slot: 22
+    slot: 40
     requires: [greater_prestige_damage, greater_prestige_coins]
     max-level: 3
     cost-formula: "8 * <level>"
@@ -90,7 +90,7 @@ nodes:
   eternal_fortune:
     display-name: "&2&lEternal Fortune"
     material: BEACON
-    slot: 30
+    slot: 31
     requires: [greater_prestige_luck, greater_prestige_roll_speed]
     max-level: 3
     cost-formula: "8 * <level>"
