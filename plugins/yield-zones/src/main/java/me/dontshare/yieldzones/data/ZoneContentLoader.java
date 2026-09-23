@@ -152,7 +152,7 @@ public final class ZoneContentLoader {
     private record GiantCube(String id, String label, Material material, float size, double chance,
                              NamedTextColor glow, double hpMultiplier, double coinMultiplier,
                              double diamondMultiplier, double xpMultiplier, String landingTitle,
-                             double bookChance) {
+                             double bookChance, String bookMinRarity) {
     }
 
     private List<GiantCube> loadGiants(ConfigurationSection section) {
@@ -198,7 +198,8 @@ public final class ZoneContentLoader {
                     s.getString("landing-title"),
                     s.contains("enchant-book-chance")
                             ? Math.max(0.0, Math.min(1.0, s.getDouble("enchant-book-chance")))
-                            : CubeTier.UNSET_BOOK_CHANCE));
+                            : CubeTier.UNSET_BOOK_CHANCE,
+                    s.getString("enchant-book-min-rarity")));
         }
         return giants;
     }
@@ -262,7 +263,8 @@ public final class ZoneContentLoader {
                 Math.round(base.xpValue() * giant.xpMultiplier()),
                 weight,
                 false, null, 0,
-                giant.size(), giant.label(), giant.glow(), giant.landingTitle(), giant.bookChance());
+                giant.size(), giant.label(), giant.glow(), giant.landingTitle(), giant.bookChance(),
+                giant.bookMinRarity());
     }
 
     /** A zone's optional treasure chest - null when the zone has no {@code treasure:} section. */

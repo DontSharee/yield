@@ -39,10 +39,13 @@ import org.bukkit.Material;
  * {@code bookChance} is this cube's chance to drop an Enchant Book when it
  * dies, before luck. It is always a real value once loaded: the zones.yml
  * default, or a giant's own override (the boss block's is 1.0).
+ * {@code bookMinRarity} is the lowest rarity that book may be - a rarity
+ * id, or null for no floor. The boss block's is Epic: its book is its prize.
  */
 public record CubeTier(Material material, long maxHp, long coinValue, long diamondValue, long xpValue, double weight,
                         boolean treasure, String rewardPackId, int rewardPackAmount,
-                        float size, String label, NamedTextColor glow, String landingTitle, double bookChance) {
+                        float size, String label, NamedTextColor glow, String landingTitle, double bookChance,
+                        String bookMinRarity) {
 
     /** Not yet given a book chance - {@link #withBookChance} fills it in at load. */
     public static final double UNSET_BOOK_CHANCE = -1.0;
@@ -56,7 +59,7 @@ public record CubeTier(Material material, long maxHp, long coinValue, long diamo
     public CubeTier(Material material, long maxHp, long coinValue, long diamondValue, long xpValue, double weight,
                     boolean treasure, String rewardPackId, int rewardPackAmount) {
         this(material, maxHp, coinValue, diamondValue, xpValue, weight, treasure, rewardPackId, rewardPackAmount,
-                1f, null, null, null, UNSET_BOOK_CHANCE);
+                1f, null, null, null, UNSET_BOOK_CHANCE, null);
     }
 
     /** This tier with {@code chance} as its book chance, unless it already has its own. */
@@ -65,7 +68,7 @@ public record CubeTier(Material material, long maxHp, long coinValue, long diamo
             return this;
         }
         return new CubeTier(material, maxHp, coinValue, diamondValue, xpValue, weight, treasure, rewardPackId,
-                rewardPackAmount, size, label, glow, landingTitle, chance);
+                rewardPackAmount, size, label, glow, landingTitle, chance, bookMinRarity);
     }
 
     /** Bigger than a block - everything size-dependent branches on this rather than on which config section a tier came from. */

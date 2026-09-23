@@ -194,7 +194,7 @@ every book was junk. They are found now, not farmed:
 |---|---|
 | any cube | 1 in 2,500, × luck (`enchant-book-chance` in zones.yml) — ~1.4/h |
 | big safe | 1 in 20 |
-| boss block | always |
+| boss block | always, and always Epic or better |
 | **Enchant Market** | 6 offers per player per hour, each buyable once |
 
 Hatching gives no books at all.
@@ -203,10 +203,10 @@ Hatching gives no books at all.
 each player's six offers are their own. They are generated from the
 player's UUID and the hour, not stored, so there is no restock job and
 nothing goes stale for someone offline at :00. Only what a player bought
-this hour is saved. Offer rarity weights are 100 / 55 / 25 / 9 / 5, common
-to legendary, so **a Legendary is in about 14.5% of hours** (checked over
-a million simulated player-hours): roughly once every seven hours of
-play. Anyone online whose market rolled one is told at the restock.
+this hour is saved. Offer rarity weights are 60 / 50 / 35 / 20 / 6, common
+to legendary, so **a Legendary is in about 19% of hours** (checked over a
+million simulated player-hours): roughly once every five hours of play.
+About one offer in nine is Epic. Anyone online whose market rolled one is told at the restock.
 Mythic and above never appear — they stay drop-only.
 
 **Prices are in basic cubes of the richest ladder zone you've unlocked**
@@ -218,14 +218,30 @@ actually earns per kill, so the price keeps pace. "Ladder" (zones with
 their own egg) keeps the free Haunted Hollow, whose basic cube pays 15× the
 Meadow's, from inflating a new player's prices.
 
-**What this does to power:** the model doesn't simulate enchants, so pacing
-figures don't move. Total book supply falls from ~68/h to ~3/h found plus
-up to 6/h bought. That's fewer books but chosen ones, with nine slots to
-fill. At luck 1 over a full run that is roughly **2 Legendaries instead of
-~5, and ~4 Epics instead of ~20**, if a player buys every one they're
-offered. That's a real cut to enchant power, and it's what "rare" means here.
-If it proves too harsh in play, the market's legendary weight is the dial
-that keeps books rare to find while making them easier to buy.
+**Found books skew up.** A cube's book rolls 40 / 30 / 18 / 8 / 3 / 0.8 /
+0.15 / 0.05 (common → secret), not the egg-pool 100 / 40 / 15 / 4 / 1 it
+used to share. 62% commons were fine at 68 books an hour, when nobody read
+them. At a few an hour a common is a wasted moment.
+
+**What this does to power: nothing, by design.** At luck 1 over a full run
+(11.4 h), books used to give about **19 Epics, 5 Legendaries and 1 Mythic
+from ~775 books**. Now it's about **18 Epics, 6 Legendaries and 1 Mythic
+from ~104**, if a player buys every Epic and Legendary they're offered.
+Same enchant power from a seventh of the books, so each one is worth
+reading.
+
+The first cut shipped with the old drop table and a stingier market (100 /
+55 / 25 / 9 / 5, no boss floor). That gave only ~4 Epics and ~2
+Legendaries a run, a real loss of power that making books rare never
+called for. The pacing model doesn't simulate enchants, so none of this
+moves the ladder times above.
+
+**Giants are solid.** The fake barrier under a cube is one block, so on its
+own a 1.5 safe let you walk a quarter-block in and a boss block half a
+block. Each giant also spawns an invisible, owner-only shulker scaled to
+its size. The client treats it as a solid box, and vanilla centres a
+shulker on its block and stands it on the floor, exactly where the giant
+is, so the collision is precisely the visible cube.
 
 ### Why a new zone feels like a power spike
 

@@ -107,6 +107,9 @@
 #   enchant-book-chance
 #                 optional - this cube's chance to drop an Enchant Book,
 #                 overriding the global one below.
+#   enchant-book-min-rarity
+#                 optional - the lowest rarity that book can be (a rarity
+#                 id from packs.yml). Unset means any.
 #   landing-title optional - a full-screen title when it lands, for the
 #                 cubes whose arrival should be an event.
 #
@@ -115,8 +118,13 @@
 # The BOSS BLOCK is the 2x2x2 at the top of the pecking order: roughly one
 # an hour of steady play, a title card when it lands, a red glow, a real
 # fight (15x the zone's toughest cube - pets ring it wider so they stand
-# clear of it), and a GUARANTEED Enchant Book. The book is its prize; its
-# coins are held to 10x so it costs the ladder under 1% on its own.
+# clear of it), and a GUARANTEED Enchant Book of Epic or better. The book
+# is its prize; its coins are held to 10x so it costs the ladder under 1%
+# on its own.
+#
+# Every giant is solid across its whole body, not just the one-block
+# barrier underneath - an invisible shulker scaled to its size gives the
+# owner an exact-size collision box (see OreCubeService#spawnCollision).
 #
 # BALANCE: this is a deliberate budget, not free. Spawns are capped per
 # player, and a settled player one-shots most cubes, so a rarer, richer
@@ -183,6 +191,7 @@ giant-cubes:
     diamond-multiplier: 3
     xp-multiplier: 10
     enchant-book-chance: 1.0
+    enchant-book-min-rarity: epic
 
 # ---------------------------------------------------------------------------
 # ENCHANT BOOKS - every cube's chance to drop one when it dies, before luck.

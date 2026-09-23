@@ -15,6 +15,8 @@ public final class OreCube {
     private final UUID blockEntityUuid;
     private final int textEntityId;
     private final CubeBonus bonus;
+    /** The invisible shulker giving a giant cube its full-size collision, or -1 for an ordinary cube - see OreCubeService#spawnCollision. */
+    private int collisionEntityId = -1;
     private long currentHp;
     // Whether the temporary white "you're looking at this one" outline is
     // currently applied - toggled as a glow flag directly on this cube's own
@@ -77,6 +79,14 @@ public final class OreCube {
     /** Null for a plain cube - see OreCubeService's glow/payout handling. */
     public CubeBonus bonus() {
         return bonus;
+    }
+
+    public int collisionEntityId() {
+        return collisionEntityId;
+    }
+
+    public void setCollisionEntityId(int collisionEntityId) {
+        this.collisionEntityId = collisionEntityId;
     }
 
     public long currentHp() {

@@ -115,6 +115,16 @@ public final class PacketEntityManager {
                 List.of(new WrapperPlayServerUpdateAttributes.Property(Attributes.MAX_HEALTH, health, List.of()))));
     }
 
+    /**
+     * Sets a living entity's {@code scale} attribute - its model AND its
+     * collision box grow together, which is what makes a scaled, invisible
+     * shulker a solid box of any size (see yield-zones' giant cubes).
+     */
+    public static void setScale(Player viewer, int entityId, double scale) {
+        user(viewer).sendPacket(new WrapperPlayServerUpdateAttributes(entityId,
+                List.of(new WrapperPlayServerUpdateAttributes.Property(Attributes.SCALE, scale, List.of()))));
+    }
+
     public static void teleportEntity(Player viewer, int entityId, Location location) {
         user(viewer).sendPacket(new WrapperPlayServerEntityTeleport(
                 entityId, SpigotConversionUtil.fromBukkitLocation(location), true));

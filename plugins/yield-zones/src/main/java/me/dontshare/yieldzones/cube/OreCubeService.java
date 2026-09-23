@@ -23,6 +23,7 @@ import me.dontshare.yieldzones.data.ZoneDefinition;
 import me.dontshare.yieldzones.data.ZoneRegion;
 import me.dontshare.yieldzones.event.OreCubeKilledEvent;
 import me.dontshare.yieldzones.event.ZoneEnteredEvent;
+import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -732,6 +733,7 @@ public final class OreCubeService implements Listener {
         FakeBlockClickRegistry.register(owner, landedAt, cube.size(), clicker -> onCubeClicked.accept(clicker, cube));
         spawnHealthBar(owner, cube);
         if (tier.giant()) {
+            spawnCollision(owner, cube);
             announceGiantLanding(owner, cube);
         }
     }
@@ -767,6 +769,31 @@ public final class OreCubeService implements Listener {
             team.color(bonus.color());
         }
         team.addEntry(bodyEntityUuid.toString());
+    }
+
+    /**
+     * Makes a giant cube solid across its whole visible body, for its owner.
+     * <p>
+     * The fake barrier under every cube is one block, so on its own a 1.5
+     * safe let you walk a quarter-block into it and a 2x2x2 boss block half
+     * a block. Fake blocks can't fix that - they only come in whole blocks,
+     * so filling the neighbouring columns would put an invisible wall well
+     * outside what you can see. A shulker can: the client treats it as a
+     * solid box, and the scale attribute grows that box with it. Vanilla
+     * snaps a shulker to the centre of its block and stands it on the
+     * block's floor, which is exactly where a giant is centred and standing,
+     * so at scale {@code size} the box is precisely the visible cube.
+     * Invisible, packet-only and owner-only like the rest of the cube.
+     */
+    private void spawnCollision(Player owner, OreCube cube) {
+        int entityId = PacketEntityManager.nextEntityId();
+        Location at = cube.location().clone().add(0.5, 0, 0.5);
+        PacketEntityManager.beginBundle(owner);
+        PacketEntityManager.spawnEntity(owner, entityId, EntityTypes.SHULKER, at);
+        PacketEntityManager.setInvisible(owner, entityId, true);
+        PacketEntityManager.setScale(owner, entityId, cube.size());
+        PacketEntityManager.endBundle(owner);
+        cube.setCollisionEntityId(entityId);
     }
 
     /**
@@ -849,6 +876,9 @@ public final class OreCubeService implements Listener {
         despawnHighlight(player, cube);
         player.sendBlockChange(cube.location(), AIR_DATA);
         PacketEntityManager.destroyEntity(player, cube.blockEntityId());
+        if (cube.collisionEntityId() != -1) {
+            PacketEntityManager.destroyEntity(player, cube.collisionEntityId());
+        }
         FakeBlockClickRegistry.unregister(player, cube.location());
         PacketEntityManager.destroyEntity(player, cube.textEntityId());
         Set<Integer> tracked = spawnedHealthBarIds.get(player.getUniqueId());
@@ -1261,9 +1291,9 @@ public final class OreCubeService implements Listener {
         }
         giveCandyDrops(player, luck);
         // Enchant Books: very rare from an ordinary cube, likelier from a big
-        // safe, guaranteed from a boss block - the cube's own chance, set at
-        // load (see CubeTier#bookChance).
-        packs.getEnchantService().tryDropBook(player, tier.bookChance(), luck);
+        // safe, guaranteed (and at least Epic) from a boss block - the cube's
+        // own chance and floor, set at load (see CubeTier#bookChance).
+        packs.getEnchantService().tryDropBook(player, tier.bookChance(), luck, tier.bookMinRarity());
         showEarningsIndicator(player, cubeCenter, coins, diamondsEarned, combo.count());
         announceCombo(player, cubeCenter, combo);
         queueSummary(player, coins, diamondsEarned);

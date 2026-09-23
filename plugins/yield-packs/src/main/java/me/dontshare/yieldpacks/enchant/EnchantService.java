@@ -57,8 +57,20 @@ public final class EnchantService {
     /** Flat bonus magnitude per rarity tier, indexed by {@link Rarity#sortOrder()} - common(+5%) up to secret(+50%), same doubling-ish spirit as the zone pack rarity ladder. */
     private static final double[] MAGNITUDE_BY_SORT = {0.05, 0.08, 0.12, 0.18, 0.26, 0.35, 0.42, 0.50};
 
-    /** How likely a dropped book is to land on each rarity tier, indexed by {@link Rarity#sortOrder()} - identical proportions to a zone pack's own per-tier pool weight. */
-    private static final double[] DROP_WEIGHT_BY_SORT = {100, 40, 15, 4, 1, 0.2, 0.05, 0.01};
+    /**
+     * How likely a FOUND book is to land on each rarity tier, indexed by
+     * {@link Rarity#sortOrder()}, before luck.
+     * <p>
+     * Skewed well up from the egg-pool proportions this used to share
+     * (100 / 40 / 15 / 4 / 1 ...). Those were set when a book fell out of
+     * one hatch in twenty - ~68 an hour - and 62% commons were fine because
+     * nobody read them. A find is now a few an hour, so a common is a
+     * wasted moment. With the market's own table (enchant-market.yml) and
+     * the boss block's Epic floor, a full run at luck 1 comes out at ~18
+     * Epics, ~6 Legendaries and ~1 Mythic - the same enchant power the old
+     * drop gave, from ~100 books instead of ~775.
+     */
+    private static final double[] DROP_WEIGHT_BY_SORT = {40, 30, 18, 8, 3, 0.8, 0.15, 0.05};
 
     private final PlayerDataStore<PackPlayerProfile> store;
     private final Supplier<RarityRegistry> rarities;
@@ -168,12 +180,24 @@ public final class EnchantService {
      * Returns whether a book dropped.
      */
     public boolean tryDropBook(Player player, double chance, double luckMultiplier) {
+        return tryDropBook(player, chance, luckMultiplier, null);
+    }
+
+    /**
+     * {@link #tryDropBook(Player, double, double)} that never lands below
+     * {@code minRarityId} (null for no floor) - the boss block's book is
+     * its prize, so it is always at least Epic. The roll is the normal
+     * weighted one restricted to the floor and above, so the tiers keep
+     * their proportions to each other.
+     */
+    public boolean tryDropBook(Player player, double chance, double luckMultiplier, String minRarityId) {
         if (chance <= 0 || ThreadLocalRandom.current().nextDouble() >= Math.min(1.0, chance * luckMultiplier)) {
             return false;
         }
+        int minSort = minRarityId == null ? 0 : rarities.get().find(minRarityId).map(Rarity::sortOrder).orElse(0);
         EnchantType[] types = EnchantType.values();
         EnchantType type = types[ThreadLocalRandom.current().nextInt(types.length)];
-        Rarity rarity = rollRarity(luckMultiplier);
+        Rarity rarity = rollRarity(luckMultiplier, minSort);
         if (rarity == null) {
             return false;
         }
@@ -209,8 +233,9 @@ public final class EnchantService {
         giveItem(player, enchantItem.create(type, rarity));
     }
 
-    private Rarity rollRarity(double luckMultiplier) {
+    private Rarity rollRarity(double luckMultiplier, int minSort) {
         List<Rarity> ordered = new ArrayList<>(rarities.get().all());
+        ordered.removeIf(rarity -> rarity.sortOrder() < minSort);
         ordered.sort((a, b) -> Integer.compare(a.sortOrder(), b.sortOrder()));
         double[] adjusted = new double[ordered.size()];
         double total = 0;

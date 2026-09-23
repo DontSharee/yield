@@ -15,17 +15,25 @@
 # buy here.
 offers: 6
 
-# Per-offer rarity weights. Legendary at 5 of 194 is ~2.6% an offer, so an
-# hour's six offers hold at least one Legendary about 14% of the time -
-# roughly once every seven hours. Everyone online whose market rolled one
-# gets told at the restock. Mythic and above never appear here: those stay
-# drop-only, the thing the market cannot sell you.
+# Per-offer rarity weights. Legendary at 6 of 171 is ~3.5% an offer, so an
+# hour's six offers hold at least one Legendary about 19% of the time -
+# roughly once every five hours - and about one offer in nine is Epic.
+# Everyone online whose market rolled a Legendary gets told at the restock.
+# Mythic and above never appear here: those stay drop-only, the thing the
+# market cannot sell you.
+#
+# Tuned WITH the found-book table (yield-packs' EnchantService) and the boss
+# block's Epic floor so a full run at luck 1 comes out at ~18 Epics, ~6
+# Legendaries and ~1 Mythic - the enchant power books gave when they fell
+# from eggs, from ~100 books instead of ~775. The first cut of this file
+# (100/55/25/9/5) gave ~4 Epics and ~2 Legendaries: rare, but a real loss
+# of power nobody had asked for.
 rarity-weights:
-  common: 100
-  uncommon: 55
-  rare: 25
-  epic: 9
-  legendary: 5
+  common: 60
+  uncommon: 50
+  rare: 35
+  epic: 20
+  legendary: 6
 
 # Price of one book, in BASIC CUBES of the richest ladder zone the player
 # has unlocked - i.e. price = that zone's tier-1 coin value x this number.
