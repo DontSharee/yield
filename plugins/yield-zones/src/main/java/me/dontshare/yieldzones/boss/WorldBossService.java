@@ -146,17 +146,7 @@ public final class WorldBossService implements Listener {
         int baseX = center.getBlockX() - radius;
         int baseY = center.getBlockY() - radius;
         int baseZ = center.getBlockZ() - radius;
-        Location corner = new Location(world, baseX, baseY, baseZ);
-
-        BlockDisplay display = world.spawn(corner, BlockDisplay.class, entity -> {
-            entity.setBlock(def.material().createBlockData());
-            entity.setTransformation(new Transformation(
-                    new Vector3f(0f, 0f, 0f),
-                    new AxisAngle4f(0f, 0f, 0f, 1f),
-                    new Vector3f(size, size, size),
-                    new AxisAngle4f(0f, 0f, 0f, 1f)));
-            entity.setPersistent(false);
-        });
+        BlockDisplay display = spawnDisplay(def);
 
         List<Location> barrierLocations = new ArrayList<>();
         BlockData barrier = Material.BARRIER.createBlockData();
@@ -220,6 +210,7 @@ public final class WorldBossService implements Listener {
 
     private void tick() {
         currentTick += TICK_INTERVAL;
+        ensureDisplays();
         for (Player player : Bukkit.getOnlinePlayers()) {
             tickPlayer(player);
         }
@@ -273,6 +264,101 @@ public final class WorldBossService implements Listener {
             queueDamage(player, boss, Math.round(damage), petId);
             packs.getPetDisplayService().playAttackLunge(player, slot);
         }
+    }
+
+    /** The boss's model, at the integer corner its barrier hitbox is built from (see {@link #spawn}). */
+    private BlockDisplay spawnDisplay(WorldBossDefinition def) {
+        World world = def.location().getWorld();
+        int size = def.size();
+        int radius = size / 2;
+        Location corner = new Location(world, def.location().getBlockX() - radius,
+                def.location().getBlockY() - radius, def.location().getBlockZ() - radius);
+        return world.spawn(corner, BlockDisplay.class, entity -> {
+            entity.setBlock(def.material().createBlockData());
+            entity.setTransformation(new Transformation(
+                    new Vector3f(0f, 0f, 0f),
+                    new AxisAngle4f(0f, 0f, 0f, 1f),
+                    new Vector3f(size, size, size),
+                    new AxisAngle4f(0f, 0f, 0f, 1f)));
+            // Not saved with the chunk - a restart must never leave a model
+            // behind for a boss the server no longer knows about. The flip
+            // side is that the chunk unloading discards it too, which is
+            // what ensureDisplays puts right.
+            entity.setPersistent(false);
+        });
+    }
+
+    /**
+     * A non-persistent display is thrown away when its chunk unloads, but
+     * the boss itself (HP, bar, barrier hitbox) lives on - so without this
+     * a boss whose area emptied out came back invisible, an unclickable-
+     * looking wall of barriers. Respawns the model once the chunk is back.
+     */
+    private void ensureDisplays() {
+        for (WorldBoss boss : activeByBossId.values()) {
+            BlockDisplay display = boss.displayEntity();
+            if (display != null && display.isValid()) {
+                continue;
+            }
+            Location at = boss.definition().location();
+            if (at.getWorld() == null || !at.getWorld().isChunkLoaded(at.getBlockX() >> 4, at.getBlockZ() >> 4)) {
+                continue;
+            }
+            boss.setDisplayEntity(spawnDisplay(boss.definition()));
+        }
+    }
+
+    /**
+     * Barrier blocks are real world blocks and are saved with it; the boss
+     * that placed them is not. After a restart or crash with a boss up, its
+     * hitbox stayed in the world forever. Clears every BARRIER inside the
+     * footprint of any configured boss that isn't alive right now - called
+     * whenever worldboss.yml is (re)loaded, which includes startup.
+     */
+    public void clearLeftoverBarriers() {
+        for (WorldBossDefinition def : definitions.get().values()) {
+            if (activeByBossId.containsKey(def.id()) || def.location().getWorld() == null) {
+                continue;
+            }
+            World world = def.location().getWorld();
+            int size = def.size();
+            int radius = size / 2;
+            int baseX = def.location().getBlockX() - radius;
+            int baseY = def.location().getBlockY() - radius;
+            int baseZ = def.location().getBlockZ() - radius;
+            for (int dx = 0; dx < size; dx++) {
+                for (int dy = 0; dy < size; dy++) {
+                    for (int dz = 0; dz < size; dz++) {
+                        var block = world.getBlockAt(baseX + dx, baseY + dy, baseZ + dz);
+                        if (block.getType() == Material.BARRIER) {
+                            block.setType(Material.AIR, false);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /** Plugin shutdown: every live boss's model and barriers go with it, so nothing is left in the world for the next start to trip over. */
+    public void shutdown() {
+        for (WorldBoss boss : List.copyOf(activeByBossId.values())) {
+            activeByBossId.remove(boss.definition().id());
+            if (boss.displayEntity() != null) {
+                if (boss.displayEntity() != null) {
+            boss.displayEntity().remove();
+        }
+            }
+            for (Location barrier : boss.barrierLocations()) {
+                barrier.getBlock().setType(Material.AIR, false);
+            }
+            BossBar bar = boss.bossBar();
+            if (bar != null) {
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    player.hideBossBar(bar);
+                }
+            }
+        }
+        engagedBossIdByPlayer.clear();
     }
 
     /** Also called from {@code YieldZones}' cube click handler - clicking a regular cube while boss-engaged switches your pets back over, rather than staying locked onto the boss with no way out short of walking {@link #ENGAGE_RANGE} away. */
@@ -335,7 +421,9 @@ public final class WorldBossService implements Listener {
         WorldBossDefinition def = boss.definition();
         World world = def.location().getWorld();
 
-        boss.displayEntity().remove();
+        if (boss.displayEntity() != null) {
+            boss.displayEntity().remove();
+        }
         for (Location barrier : boss.barrierLocations()) {
             barrier.getBlock().setType(Material.AIR, false);
         }
@@ -377,7 +465,9 @@ public final class WorldBossService implements Listener {
         if (!activeByBossId.remove(boss.definition().id(), boss)) {
             return;
         }
-        boss.displayEntity().remove();
+        if (boss.displayEntity() != null) {
+            boss.displayEntity().remove();
+        }
         for (Location barrier : boss.barrierLocations()) {
             barrier.getBlock().setType(Material.AIR, false);
         }

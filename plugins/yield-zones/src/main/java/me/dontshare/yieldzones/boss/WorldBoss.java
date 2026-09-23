@@ -19,7 +19,7 @@ import java.util.UUID;
 public final class WorldBoss {
 
     private final WorldBossDefinition definition;
-    private final BlockDisplay displayEntity;
+    private BlockDisplay displayEntity;
     private final List<Location> barrierLocations;
     private final long spawnedAtMillis;
     private final Map<UUID, Long> damageByPlayer = new HashMap<>();
@@ -40,6 +40,11 @@ public final class WorldBoss {
 
     public BlockDisplay displayEntity() {
         return displayEntity;
+    }
+
+    /** Swapped in when the old one was discarded with its chunk - see WorldBossService#ensureDisplays. */
+    public void setDisplayEntity(BlockDisplay displayEntity) {
+        this.displayEntity = displayEntity;
     }
 
     public List<Location> barrierLocations() {

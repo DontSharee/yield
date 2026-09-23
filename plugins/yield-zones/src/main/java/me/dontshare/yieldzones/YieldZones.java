@@ -175,6 +175,14 @@ public final class YieldZones extends JavaPlugin {
     public void reloadContent() {
         zones = contentLoader.load();
         worldBosses = worldBossContentLoader.load(zones);
+        worldBossService.clearLeftoverBarriers();
+    }
+
+    @Override
+    public void onDisable() {
+        if (worldBossService != null) {
+            worldBossService.shutdown();
+        }
     }
 
     /** Exposed so other plugins (e.g. the admin unlock command) can reach the live cube service directly. Zone-transition/unlock reactions go through {@code ZoneEnteredEvent}/{@code ZoneUnlockedEvent} instead - a real Bukkit event, not this getter - so any number of plugins can listen without yield-zones needing any awareness of them. */
