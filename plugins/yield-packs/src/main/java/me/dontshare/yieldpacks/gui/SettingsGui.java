@@ -7,6 +7,8 @@ import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.MenuLore;
 import me.dontshare.yieldpacks.player.AttackMode;
+import me.dontshare.yieldpacks.player.CombatPerks;
+import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -28,6 +30,7 @@ public final class SettingsGui {
     private static final int TOTAL_ROWS = 3;
     private static final int TOGGLE_SLOT = 11;
     private static final int RARE_ANIMATION_SLOT = 15;
+    private static final int AUTO_TAP_SLOT = 13;
     private static final int CLOSE_SLOT = 22;
 
     private final PlayerDataStore<PackPlayerProfile> store;
@@ -43,7 +46,9 @@ public final class SettingsGui {
 
         var builder = Gui.builder(TOTAL_ROWS, "Settings");
         builder.fill(IntStream.range(0, TOTAL_ROWS * 9)
-                .filter(slot -> slot != TOGGLE_SLOT && slot != RARE_ANIMATION_SLOT && slot != CLOSE_SLOT), GuiIcons.filler());
+                .filter(slot -> slot != TOGGLE_SLOT && slot != RARE_ANIMATION_SLOT && slot != AUTO_TAP_SLOT
+                        && slot != CLOSE_SLOT), GuiIcons.filler());
+        builder.item(AUTO_TAP_SLOT, buildAutoTapToggle(player, profile), (clicker, event) -> toggleAutoTap(clicker));
         builder.item(TOGGLE_SLOT, buildAttackModeToggle(profile), (clicker, event) -> toggleAttackMode(clicker));
         builder.item(RARE_ANIMATION_SLOT, buildRareAnimationToggle(profile), (clicker, event) -> toggleRareAnimation(clicker));
         builder.item(CLOSE_SLOT, GuiIcons.closeButton(), (clicker, event) -> clicker.closeInventory());
@@ -56,6 +61,38 @@ public final class SettingsGui {
         profile.setAttackMode(profile.getAttackMode() == AttackMode.SINGLE ? AttackMode.ALL : AttackMode.SINGLE);
         store.save(player.getUniqueId());
         open(player);
+    }
+
+    private void toggleAutoTap(Player player) {
+        if (!CombatPerks.hasAutoTap(player)) {
+            player.sendMessage(Text.parse("<gray>Auto Tap taps your pets' cube for you. Get it at <white>/buy</white>.</gray>"));
+            return;
+        }
+        PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
+        profile.setAutoTapEnabled(!profile.isAutoTapEnabled());
+        store.save(player.getUniqueId());
+        player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f,
+                profile.isAutoTapEnabled() ? 1.4f : 1f);
+        open(player);
+    }
+
+    /** Auto Tap - a bought perk, so shown to everyone (it is how they find out it exists) but only switchable by owners. */
+    private ItemStack buildAutoTapToggle(Player viewer, PackPlayerProfile profile) {
+        if (!CombatPerks.hasAutoTap(viewer)) {
+            ItemBuilder locked = ItemBuilder.of(Material.GRAY_DYE).name("&7AUTO TAP");
+            MenuLore.info("settings", List.of(" &7Taps your pets' cube for you,", " &7four times a second.",
+                    " &7Get it at &f/buy&7."), ACCENT, List.of()).forEach(locked::lore);
+            return locked.hideAttributes().build();
+        }
+        boolean on = profile.isAutoTapEnabled();
+        ItemBuilder builder = ItemBuilder.of(on ? Material.GOLDEN_HOE : Material.WOODEN_HOE)
+                .name(MenuLore.buttonName(ACCENT, "AUTO TAP: " + (on ? "ON" : "OFF")));
+        MenuLore.button("settings", List.of(" &7Taps your pets' cube for you,", " &7four times a second."),
+                ACCENT, "Click to Toggle").forEach(builder::lore);
+        if (on) {
+            builder.enchant(org.bukkit.enchantments.Enchantment.UNBREAKING, 1);
+        }
+        return builder.hideAttributes().build();
     }
 
     private void toggleRareAnimation(Player player) {

@@ -36,7 +36,10 @@ default-level-cap: 20
 # Cumulative - a level-30 pet has every milestone at or below level 30
 # active at once, not just the highest one reached.
 milestones:
-  - { level: 10, effect: AUTO_ATTACK }
+  # Every equipped pet at level 10+ adds +10% to your tap damage. This was
+  # AUTO_ATTACK ("fights without being sent") until every pet started
+  # fighting on its own - see yield-zones' TapService.
+  - { level: 10, effect: TAP_DAMAGE_BONUS, value: 0.10 }
   - { level: 25, effect: EARNINGS_BONUS, value: 0.5 }
   - { level: 50, effect: GUARANTEED_DIAMOND_DROP }
   # Level 99's "unique buff" is intentionally left unconfigured for now -

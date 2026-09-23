@@ -9,5 +9,10 @@ permissions:
     default: op
   yieldpacks.autofuse:
     default: op
+  yieldpacks.autotap:
+    default: op
+  # The old Free Auto Send pass - still honoured, as Auto Tap (CombatPerks).
   yieldpacks.automode:
+    default: op
+  yieldpacks.automode.premium:
     default: op

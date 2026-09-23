@@ -12,7 +12,7 @@ import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 
-/** /autotarget closest|strongest|weakest - which live cube idle pets pick on their own (only used in Auto send mode - see /sendmode). */
+/** /autotarget closest|strongest|weakest - which live cube idle pets pick on their own (while Auto Attack is on - see /sendmode). */
 public final class AutoTargetCommand {
 
     private AutoTargetCommand() {

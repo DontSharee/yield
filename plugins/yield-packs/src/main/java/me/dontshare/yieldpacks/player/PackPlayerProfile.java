@@ -52,14 +52,14 @@ public final class PackPlayerProfile implements PlayerRecord {
     private List<UUID> equippedPetIds = new ArrayList<>();
     private SendMode sendMode = SendMode.MANUAL;
     /**
-     * True once the player has explicitly switched auto-attack OFF. A
-     * level-10 pet's AUTO_ATTACK milestone makes it fight on its own
-     * regardless of send mode - that is how a free player gets any
-     * auto-attack at all - but it must not override a player who turned
-     * auto-attack off: before this flag existed, the switch "didn't work"
-     * the moment a squad hit level 10.
+     * True once the player has switched auto-attack OFF. Pets fight on
+     * their own by default for everyone; off means nothing fights until
+     * the player clicks a cube. Stored as "off" rather than "on" so every
+     * existing profile - which predates the flag - reads as on.
      */
     private boolean autoAttackOff;
+    /** Whether a player who owns Auto Tap has it running - /settings. */
+    private boolean autoTapEnabled = true;
     private AttackMode attackMode = AttackMode.SINGLE;
     private Map<String, Set<String>> packCollectionProgress = new HashMap<>();
     private Map<String, Long> lastObtainedAt = new HashMap<>();
@@ -344,12 +344,25 @@ public final class PackPlayerProfile implements PlayerRecord {
         return autoAttackOff;
     }
 
+    /** What combat reads: pets fight on their own unless the player switched it off. */
+    public boolean isAutoAttackOn() {
+        return !autoAttackOff;
+    }
+
+    public boolean isAutoTapEnabled() {
+        return autoTapEnabled;
+    }
+
+    public void setAutoTapEnabled(boolean autoTapEnabled) {
+        this.autoTapEnabled = autoTapEnabled;
+    }
+
     public void setAutoAttackOff(boolean autoAttackOff) {
         this.autoAttackOff = autoAttackOff;
     }
 
     /**
-     * The one switch: ON is full Auto Send, OFF is nothing fighting on its
+     * The one switch: ON is pets fighting on their own, OFF is nothing fighting on its
      * own - milestone pets included - until the player clicks a cube.
      */
     public void setAutoAttack(boolean on) {
@@ -357,7 +370,7 @@ public final class PackPlayerProfile implements PlayerRecord {
         this.autoAttackOff = !on;
     }
 
-    /** Only consulted while {@link #getSendMode()} is MANUAL - toggled from the Settings GUI, not a command. */
+    /** Only consulted while auto-attack is off ({@link #isAutoAttackOn()}) - toggled from the Settings GUI, not a command. */
     public AttackMode getAttackMode() {
         return attackMode;
     }
@@ -459,7 +472,7 @@ public final class PackPlayerProfile implements PlayerRecord {
         this.rollCount = rollCount;
     }
 
-    /** Only consulted while {@link #getSendMode()} is AUTO - which live cube idle pets pick on their own, set via /autotarget. */
+    /** Only consulted while auto-attack is on ({@link #isAutoAttackOn()}) - which live cube idle pets pick on their own, set via /autotarget. */
     public AutoTargetMode getAutoTargetMode() {
         return autoTargetMode;
     }

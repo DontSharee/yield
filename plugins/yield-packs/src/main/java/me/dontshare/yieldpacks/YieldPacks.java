@@ -446,7 +446,7 @@ public final class YieldPacks extends JavaPlugin {
         CommandManager.register(this, PetVisibilityCommand.build(playerStore, petDisplayService),
                 "Set what equipped-pet displays you personally see", List.of());
         CommandManager.register(this, AutoTargetCommand.build(playerStore),
-                "Set how your pets auto-target ore cubes (only used in Auto send mode)", List.of());
+                "Set how your pets auto-target ore cubes (while Auto Attack is on)", List.of());
         CommandManager.register(this, SendModeCommand.build(playerStore),
                 "Set whether your pets fight on their own or only when sent", List.of());
         SettingsGui settingsGui = new SettingsGui(playerStore, core.getGuiManager());

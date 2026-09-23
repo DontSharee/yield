@@ -17,7 +17,7 @@ import me.dontshare.yieldpacks.mastery.MasteryStat;
 import me.dontshare.yieldpacks.mastery.MasteryType;
 import me.dontshare.yieldpacks.player.AttackMode;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
-import me.dontshare.yieldpacks.player.SendMode;
+import me.dontshare.yieldpacks.pet.PetInstance;
 import me.dontshare.yieldzones.boss.WorldBossContentLoader;
 import me.dontshare.yieldzones.boss.WorldBossDefinition;
 import me.dontshare.yieldzones.boss.WorldBossService;
@@ -25,6 +25,7 @@ import me.dontshare.yieldzones.command.FastTravelCommand;
 import me.dontshare.yieldzones.cube.OreCubeService;
 import me.dontshare.yieldzones.cube.PetCombatController;
 import me.dontshare.yieldzones.cube.SneakRecallListener;
+import me.dontshare.yieldzones.cube.TapService;
 import me.dontshare.yieldzones.data.ZoneContentLoader;
 import me.dontshare.yieldzones.data.ZoneDefinition;
 import me.dontshare.yieldzones.data.ZoneRegion;
@@ -49,6 +50,7 @@ public final class YieldZones extends JavaPlugin {
     private OreCubeService cubeService;
     private PetCombatController combatController;
     private ZoneLockService lockService;
+    private TapService tapService;
     private WorldBossContentLoader worldBossContentLoader;
     private volatile Map<String, WorldBossDefinition> worldBosses;
     private WorldBossService worldBossService;
@@ -106,16 +108,30 @@ public final class YieldZones extends JavaPlugin {
         // engaged one would stay locked onto it with no way to switch back,
         // since WorldBossService's own tick loop keeps claiming their pets
         // every tick regardless of what they click here.
+        tapService = new TapService(this, packs, cubeService);
+        tapService.setPaused(worldBossService::isEngaged);
+        // The level-10 pet milestone: each equipped pet past it adds its
+        // value to tap damage (see PetLevelingService#tapBonusFor).
+        tapService.registerTapMultiplierProvider("pet_milestones", (player, profile) -> {
+            List<PetInstance> equipped = profile.getEquippedPetIds().stream()
+                    .map(profile::findPet).flatMap(java.util.Optional::stream).toList();
+            return 1.0 + packs.getPetLevelingService().tapBonusFor(equipped);
+        });
+        tapService.start();
         cubeService.setClickHandler((clicker, cube) -> {
             worldBossService.disengage(clicker);
             PackPlayerProfile profile = packs.getPlayerStore().getCached(clicker.getUniqueId());
-            boolean sendOneAtATime = profile != null && profile.getSendMode() == SendMode.MANUAL
+            boolean sendOneAtATime = profile != null && !profile.isAutoAttackOn()
                     && profile.getAttackMode() == AttackMode.SINGLE;
             if (sendOneAtATime) {
                 combatController.assignNextPetTo(clicker, cube);
             } else {
                 combatController.assignSharedTarget(clicker, cube);
             }
+            // Every click is also a tap, as in Pet Simulator 99 - after the
+            // redirect, so a tap that finishes the cube leaves nothing
+            // pointing at a dead one.
+            tapService.tap(clicker, cube);
         });
 
         Bukkit.getPluginManager().registerEvents(new SneakRecallListener(combatController), this);
@@ -166,6 +182,11 @@ public final class YieldZones extends JavaPlugin {
     }
 
     /** Exposed for the same reason as {@link #getCubeService()} - lets e.g. yield-upgrades check whether a player has a given zone unlocked before letting them use one of its physical stations. */
+    /** Tap damage - register a tap multiplier provider here (e.g. a held tool) to make taps hit harder. */
+    public TapService getTapService() {
+        return tapService;
+    }
+
     public ZoneLockService getZoneLockService() {
         return lockService;
     }

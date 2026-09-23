@@ -28,6 +28,7 @@ import me.dontshare.yieldpacks.pet.PetWithdrawItem;
 import me.dontshare.yieldpacks.petenchant.PetEnchantContentLoader.PetEnchantContent;
 import me.dontshare.yieldpacks.petenchant.PetEnchantLore;
 import me.dontshare.yieldpacks.player.AttackMode;
+import me.dontshare.yieldpacks.player.CombatPerks;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import me.dontshare.yieldpacks.player.SendMode;
 import me.dontshare.yieldpacks.roll.ExistsCounterStore;
@@ -78,9 +79,6 @@ public final class BagGui {
     }
 
     private static final String ACCENT = "<#4BD9FF>";
-    private static final String AUTO_MODE_PERMISSION = SendMode.AUTO_PERMISSION;
-    /** Kept in sync with yield-zones' own PetCombatController#PREMIUM_AUTO_MODE_PERMISSION (no compile-time link between the two modules - see YieldPacks' composable-provider pattern for why). */
-    private static final String PREMIUM_AUTO_MODE_PERMISSION = SendMode.PREMIUM_AUTO_PERMISSION;
 
     private final PlayerDataStore<PackPlayerProfile> store;
     private final Supplier<ItemRegistry> itemRegistry;
@@ -191,7 +189,7 @@ public final class BagGui {
         }
 
         // Row 6: controls, evenly spaced with close dead-center. Slot 46
-        // (otherwise plain filler) hosts the permission-gated Auto Mode
+        // (otherwise plain filler) hosts the Auto Attack
         // toggle instead, and slot 50 hosts Equip Best - reusing already-
         // inert slots rather than disturbing the 45/47/49/51/53 even-spacing
         // rule. Slot 51 (Fusion) reverted to plain filler - fusing is now
@@ -380,7 +378,7 @@ public final class BagGui {
         MenuLore.button(
                 "settings",
                 List.of(
-                        " &7Only used while Auto Mode is off:",
+                        " &7Only used while Auto Attack is off:",
                         " &7Single Send - each click sends one pet.",
                         " &7Multi Send - each click sends the whole squad."
                 ),
@@ -394,34 +392,31 @@ public final class BagGui {
     }
 
     private void toggleSendMode(Player player) {
-        if (!player.hasPermission(AUTO_MODE_PERMISSION)) {
-            player.sendMessage(Text.parse("<red>You don't have permission to use Auto Mode.</red>"));
-            return;
-        }
         PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
-        profile.setAutoAttack(profile.getSendMode() != SendMode.AUTO);
+        profile.setAutoAttack(!profile.isAutoAttackOn());
         store.save(player.getUniqueId());
         open(player);
     }
 
+    /**
+     * Auto Attack - free for everyone, and on by default, as in Pet
+     * Simulator 99: pets pick their own cubes and a click redirects the
+     * whole squad (and taps it). Off means nothing fights until you click.
+     * This used to be the paid Auto Send perk; what is sold now is Auto Tap
+     * (see CombatPerks).
+     */
     private ItemStack buildSendModeToggle(Player viewer, PackPlayerProfile profile) {
-        if (!viewer.hasPermission(AUTO_MODE_PERMISSION)) {
-            ItemBuilder locked = ItemBuilder.of(Material.LEVER).name("&7AUTO SEND");
-            MenuLore.info("settings", List.of(" &7Buy &fFree Auto Send&7 from /buy", " &7to unlock this, permanently."), ACCENT, List.of())
-                    .forEach(locked::lore);
-            return locked.hideAttributes().build();
-        }
-        boolean auto = profile.getSendMode() == SendMode.AUTO;
-        boolean premium = viewer.hasPermission(PREMIUM_AUTO_MODE_PERMISSION);
+        boolean auto = profile.isAutoAttackOn();
+        boolean premium = CombatPerks.hasPremium(viewer);
         ItemBuilder builder = ItemBuilder.of(auto ? Material.CLOCK : Material.LEVER)
-                .name(MenuLore.buttonName(ACCENT, "AUTO SEND: " + (auto ? "ON" : "OFF") + (premium ? " &6[Premium]" : "")));
+                .name(MenuLore.buttonName(ACCENT, "AUTO ATTACK: " + (auto ? "ON" : "OFF") + (premium ? " &6[Premium]" : "")));
         MenuLore.button(
                 "settings",
                 !auto
-                        ? List.of(" &7Off: no pet fights until you", " &7click a cube - level 10 pets", " &7included.")
+                        ? List.of(" &7Off: no pet fights until you", " &7click a cube.")
                         : premium
-                        ? List.of(" &7Pets fight fully hands-off,", " &7re-engaging 2x faster after", " &7each kill (Premium tier).")
-                        : List.of(" &7Pets fight fully hands-off,", " &7re-engaging on a cooldown", " &7after each kill. &6/buy&7 Premium", " &7Auto Send to speed that up."),
+                        ? List.of(" &7Pets pick their own cubes;", " &7click one to send them all", " &7to it. Re-engaging 2x faster", " &7after each kill (Premium).")
+                        : List.of(" &7Pets pick their own cubes;", " &7click one to send them all", " &7to it - clicks tap it too."),
                 ACCENT,
                 "Click to Toggle"
         ).forEach(builder::lore);

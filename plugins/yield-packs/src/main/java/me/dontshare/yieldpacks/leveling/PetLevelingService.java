@@ -152,6 +152,29 @@ public final class PetLevelingService {
         return best;
     }
 
+    /**
+     * The total TAP_DAMAGE_BONUS from {@code equipped}: every equipped pet
+     * at or past a TAP_DAMAGE_BONUS milestone adds that milestone's value.
+     * A sum, unlike {@link #earningsBonusFor}, on purpose - it is the
+     * reason to keep levelling a whole squad rather than one pet, and it
+     * multiplies tap damage, which is a small share of anyone's damage, so
+     * stacking it cannot run away.
+     */
+    public double tapBonusFor(Collection<PetInstance> equipped) {
+        double total = 0;
+        for (PetMilestone milestone : config.get().milestones()) {
+            if (milestone.effect() != MilestoneEffect.TAP_DAMAGE_BONUS) {
+                continue;
+            }
+            for (PetInstance pet : equipped) {
+                if (pet.getLevel() >= milestone.level()) {
+                    total += milestone.value();
+                }
+            }
+        }
+        return total;
+    }
+
     /** Which candy (if any) {@code item} is - null/empty for anything else, including a plain material that happens to match one's icon. */
     public Optional<Candy> candyFor(ItemStack item) {
         String id = candyItem.idFor(item);

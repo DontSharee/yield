@@ -19,9 +19,10 @@ your head before touching any number.
   does.
 - Every hit has a **10% chance to crit for double**, so expected damage is
   `×1.10`.
-- In Auto mode, the whole squad shares one target, and switching to a new
-  one puts **every** pet on a 1-second cooldown
-  (`BASE_AUTO_SWITCH_COOLDOWN_TICKS`).
+- Pets fight on their own by default, for everyone (as in Pet Simulator
+  99). The whole squad shares one target, and switching to a new one puts
+  **every** pet on a 1-second cooldown (`BASE_AUTO_SWITCH_COOLDOWN_TICKS`).
+  Clicking a cube redirects the squad and pays that same cooldown.
 
 So the time to kill one cube is:
 
@@ -47,6 +48,53 @@ volley**: you one-shot the trash, take two swings on the mid tier, and four
 on the rare big one.
 
 ---
+
+## 1b. Tap damage
+
+Every click on a cube is also a **tap**: the player's own hit, as in Pet
+Simulator 99. A tap is **10% of the strongest equipped pet's hit** (after
+every damage multiplier), so it scales with the ladder by itself — a flat
+number would be decisive in the Meadow and invisible by the Genesis Core.
+Level-10+ pets each add **+10%** to tap damage (the milestone that used to
+be "fights without being sent", which stopped meaning anything once every
+pet fought on its own).
+
+Taps are capped at one every **150 ms** (~6.7/s), so an autoclicker gets
+exactly what a fast human does. **Auto Tap** — the gamepass that replaced
+"Free Auto Send" — taps whatever the pets are on, 4 times a second, through
+the same cap. Old Free Auto Send owners are treated as owning Auto Tap.
+
+**What it costs the curve: almost nothing.** Measured in the pacing model:
+
+| | to the last zone |
+|---|---|
+| casual clicking (2/s) | −0.7% |
+| Auto Tap (4/s) | −1.3% |
+| clicking at the cap (6.7/s) | −1.8% |
+
+The 1-second kill floor above is why: extra damage only helps on cubes that
+need more than one volley.
+
+**A tap never deals more than 10% of a cube's max HP.** Without that cap,
+taps quietly broke the pacing model. Clicking a cube redirects the squad and
+resets their 1-second switch, but a tap lands immediately, so a player
+spam-clicking from cube to cube kills with taps alone. Late in a zone a
+squad is 5–25× a basic cube's HP, so even a plain tap is up to half a cube:
+~3 kills a second against the 1 the ladder is balanced on. With the cap,
+every cube takes at least 10 taps, so tap-killing tops out around **0.67
+cubes a second**, below what the pets manage alone. Clicking can only ever
+*add* damage to a fight, never replace it. It barely touches an honest tap:
+early in a zone, when cubes are tough, a tap is far under 10% of one.
+
+**Designing hand-held tools.** Tools should plug in as a tap multiplier
+provider (`TapService#registerTapMultiplierProvider`, reading what the player
+holds). The pacing model puts even ×20 at only ~3.8% faster, and the 10% cap
+is what keeps that true. It stops a strong tool from turning clicking into
+the main way to kill. A tool that should break that rule (a late-game
+"click-farming" tool, say) should do it on purpose, by raising the cap for
+its holder. Past the cap, the only limit is the zone's spawn rate (~4
+cubes/s with 12 concurrent and a 3 s respawn), roughly 4× the income the
+ladder assumes.
 
 ## 2. The zone ladder — `yield-zones/…/zones.yml`
 

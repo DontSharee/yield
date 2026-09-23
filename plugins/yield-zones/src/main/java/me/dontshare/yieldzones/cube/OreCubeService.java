@@ -168,11 +168,18 @@ public final class OreCubeService implements Listener {
         }
     }
 
-    /** One cube's accumulated damage this tick, and every pet instance that contributed at least one hit - see queueDamage/flushDamage. */
+    /**
+     * One cube's accumulated damage this tick, and every pet instance that
+     * contributed at least one hit - see queueDamage/flushDamage. A tap
+     * adds damage with no pet behind it (a null id), so it never earns a
+     * pet kill XP it didn't fight for.
+     */
     private record PendingDamage(long amount, Set<UUID> contributingInstanceIds) {
         PendingDamage add(long moreAmount, UUID petInstanceId) {
             Set<UUID> merged = new HashSet<>(contributingInstanceIds);
-            merged.add(petInstanceId);
+            if (petInstanceId != null) {
+                merged.add(petInstanceId);
+            }
             return new PendingDamage(amount + moreAmount, merged);
         }
     }
@@ -970,7 +977,7 @@ public final class OreCubeService implements Listener {
             return;
         }
         pendingDamageByPlayer.computeIfAbsent(player.getUniqueId(), k -> new HashMap<>())
-                .merge(cube, new PendingDamage(amount, Set.of(petInstanceId)),
+                .merge(cube, new PendingDamage(amount, petInstanceId == null ? Set.of() : Set.of(petInstanceId)),
                         (existing, fresh) -> existing.add(fresh.amount(), petInstanceId));
     }
 

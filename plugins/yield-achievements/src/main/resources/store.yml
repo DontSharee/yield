@@ -108,30 +108,35 @@ products:
     category: gamepass
     commands:
       - "lp user %player% permission set yieldpacks.autofuse true"
-  auto_mode_pass:
-    display-name: "&dFree Auto Send"
-    icon: CLOCK
+  # Pets fight on their own for everyone now (as in Pet Simulator 99), so
+  # the old "Free Auto Send" had nothing left to sell. What PS99 sells is
+  # Auto Tap - the player's own tap, done for them - so that is this slot.
+  # Anyone who bought the old pass (yieldpacks.automode) is treated as
+  # owning Auto Tap - see yield-packs' CombatPerks.
+  auto_tap_pass:
+    display-name: "&dAuto Tap"
+    icon: GOLDEN_HOE
     description:
-      - "Unlocks the Auto Mode toggle"
-      - "in the Bag menu, permanently."
-      - "Pets re-engage on a real"
-      - "cooldown after each kill."
+      - "Taps your pets' cube for you,"
+      - "four times a second, while"
+      - "you're in a zone. Toggle it"
+      - "in /settings. Permanent."
     cost-credits: 1000
     category: gamepass
     commands:
-      - "lp user %player% permission set yieldpacks.automode true"
-  premium_auto_mode_pass:
-    display-name: "&6&lPremium Auto Send"
+      - "lp user %player% permission set yieldpacks.autotap true"
+  premium_auto_tap_pass:
+    display-name: "&6&lPremium Auto Tap"
     icon: NETHER_STAR
     description:
-      - "Everything Free Auto Send"
-      - "has, but pets re-engage"
-      - "2x faster after each kill."
-      - "Includes Free Auto Send."
+      - "Everything Auto Tap has, and"
+      - "your pets re-engage 2x faster"
+      - "after every kill."
+      - "Includes Auto Tap."
     cost-credits: 5000
     category: gamepass
     commands:
-      - "lp user %player% permission set yieldpacks.automode true"
+      - "lp user %player% permission set yieldpacks.autotap true"
       - "lp user %player% permission set yieldpacks.automode.premium true"
   multi_open_pass:
     display-name: "&bMulti-Hatch Pass"
