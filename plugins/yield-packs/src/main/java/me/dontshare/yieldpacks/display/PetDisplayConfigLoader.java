@@ -1,5 +1,6 @@
 package me.dontshare.yieldpacks.display;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -15,7 +16,7 @@ public final class PetDisplayConfigLoader {
     }
 
     public PetDisplayConfig load() {
-        plugin.saveResource("pet-display.yml", false);
+        BundledConfig.sync(plugin, "pet-display.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), "pet-display.yml"));
 
         return new PetDisplayConfig(

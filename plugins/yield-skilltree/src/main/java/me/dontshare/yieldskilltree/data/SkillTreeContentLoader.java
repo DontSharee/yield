@@ -1,5 +1,6 @@
 package me.dontshare.yieldskilltree.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -28,7 +29,7 @@ public final class SkillTreeContentLoader {
         Map<String, SkillTree> trees = new LinkedHashMap<>();
         for (String treeId : TREE_IDS) {
             String fileName = treeId + ".yml";
-            plugin.saveResource(fileName, false);
+            BundledConfig.sync(plugin, fileName);
             File file = new File(plugin.getDataFolder(), fileName);
             YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
             SkillTree tree = loadTree(treeId, config);

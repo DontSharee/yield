@@ -1,5 +1,6 @@
 package me.dontshare.yieldlootboxes.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -24,7 +25,7 @@ public final class LootboxContentLoader {
     }
 
     public Map<String, LootboxDefinition> load() {
-        plugin.saveResource("lootboxes.yml", false);
+        BundledConfig.sync(plugin, "lootboxes.yml");
         File file = new File(plugin.getDataFolder(), "lootboxes.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 

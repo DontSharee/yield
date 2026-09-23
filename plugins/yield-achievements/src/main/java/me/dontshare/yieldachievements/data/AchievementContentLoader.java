@@ -1,5 +1,6 @@
 package me.dontshare.yieldachievements.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -25,7 +26,7 @@ public final class AchievementContentLoader {
     }
 
     public Map<String, AchievementDefinition> load() {
-        plugin.saveResource("achievements.yml", false);
+        BundledConfig.sync(plugin, "achievements.yml");
         File file = new File(plugin.getDataFolder(), "achievements.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 

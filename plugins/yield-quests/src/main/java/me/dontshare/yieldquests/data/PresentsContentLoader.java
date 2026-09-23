@@ -1,5 +1,6 @@
 package me.dontshare.yieldquests.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -25,7 +26,7 @@ public final class PresentsContentLoader {
     }
 
     public PresentsContent load() {
-        plugin.saveResource("daily.yml", false);
+        BundledConfig.sync(plugin, "daily.yml");
         File file = new File(plugin.getDataFolder(), "daily.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 

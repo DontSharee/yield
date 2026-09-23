@@ -1,5 +1,6 @@
 package me.dontshare.yieldpacks.enchant;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.data.Rarity;
@@ -91,7 +92,7 @@ public final class EnchantMarketService {
     }
 
     public void reload() {
-        plugin.saveResource("enchant-market.yml", false);
+        BundledConfig.sync(plugin, "enchant-market.yml");
         YamlConfiguration yaml = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), "enchant-market.yml"));
         Map<String, Double> weights = new LinkedHashMap<>();
         ConfigurationSection weightSection = yaml.getConfigurationSection("rarity-weights");

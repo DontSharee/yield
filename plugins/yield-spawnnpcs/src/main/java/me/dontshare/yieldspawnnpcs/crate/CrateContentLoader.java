@@ -1,5 +1,6 @@
 package me.dontshare.yieldspawnnpcs.crate;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import me.dontshare.yieldcore.packet.PacketEntityManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -29,7 +30,7 @@ public final class CrateContentLoader {
     }
 
     public Map<String, CrateDefinition> load() {
-        plugin.saveResource("crates.yml", false);
+        BundledConfig.sync(plugin, "crates.yml");
         File file = new File(plugin.getDataFolder(), "crates.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 

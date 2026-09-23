@@ -1,5 +1,6 @@
 package me.dontshare.yieldtutorial.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -26,7 +27,7 @@ public final class TutorialContentLoader {
     }
 
     public TutorialContent load() {
-        plugin.saveResource("tutorial.yml", false);
+        BundledConfig.sync(plugin, "tutorial.yml");
         File file = new File(plugin.getDataFolder(), "tutorial.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 

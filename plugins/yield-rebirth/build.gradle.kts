@@ -1,4 +1,4 @@
-version = "0.3.0"
+version = "0.3.1"
 
 dependencies {
     // Not transitive from yield-packs' own compileOnly dependency on it -

@@ -1,5 +1,6 @@
 package me.dontshare.yieldmining.forge;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -22,7 +23,7 @@ public final class ForgeContentLoader {
 
     /** Sorted rarest-first (lowest odds of hitting = highest one-in), so a roll can check tiers in that order and let the rarest one that hits win. */
     public List<SpecialOreTier> load() {
-        plugin.saveResource("special-ore-tiers.yml", false);
+        BundledConfig.sync(plugin, "special-ore-tiers.yml");
         File file = new File(plugin.getDataFolder(), "special-ore-tiers.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 

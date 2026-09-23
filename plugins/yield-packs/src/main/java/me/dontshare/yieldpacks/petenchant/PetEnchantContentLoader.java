@@ -1,5 +1,6 @@
 package me.dontshare.yieldpacks.petenchant;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import me.dontshare.yieldcore.packet.PacketEntityManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -40,7 +41,7 @@ public final class PetEnchantContentLoader {
     }
 
     public PetEnchantContent load() {
-        plugin.saveResource("pet-enchants.yml", false);
+        BundledConfig.sync(plugin, "pet-enchants.yml");
         File file = new File(plugin.getDataFolder(), "pet-enchants.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 

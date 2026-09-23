@@ -1,5 +1,6 @@
 package me.dontshare.yieldleaderboards.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -30,7 +31,7 @@ public final class LeaderboardContentLoader {
     }
 
     private Map<String, StatDefinition> loadStats() {
-        plugin.saveResource("stats.yml", false);
+        BundledConfig.sync(plugin, "stats.yml");
         File file = new File(plugin.getDataFolder(), "stats.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 
@@ -63,7 +64,7 @@ public final class LeaderboardContentLoader {
     }
 
     private Map<String, LeaderboardDefinition> loadLeaderboards(Map<String, StatDefinition> stats) {
-        plugin.saveResource("leaderboards.yml", false);
+        BundledConfig.sync(plugin, "leaderboards.yml");
         File file = new File(plugin.getDataFolder(), "leaderboards.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 

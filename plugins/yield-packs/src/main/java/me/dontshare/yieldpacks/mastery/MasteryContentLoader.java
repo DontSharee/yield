@@ -1,5 +1,6 @@
 package me.dontshare.yieldpacks.mastery;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -24,7 +25,7 @@ public final class MasteryContentLoader {
     }
 
     public MasteryConfig load() {
-        plugin.saveResource("masteries.yml", false);
+        BundledConfig.sync(plugin, "masteries.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), "masteries.yml"));
 
         double base = config.getDouble("level-curve.base", 50);

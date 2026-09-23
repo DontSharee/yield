@@ -1,5 +1,6 @@
 package me.dontshare.yieldleveling.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -15,7 +16,7 @@ public final class PlayerLevelingContentLoader {
     }
 
     public PlayerLevelingConfig load() {
-        plugin.saveResource("player-leveling.yml", false);
+        BundledConfig.sync(plugin, "player-leveling.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), "player-leveling.yml"));
 
         double base = config.getDouble("level-curve.base", 100);

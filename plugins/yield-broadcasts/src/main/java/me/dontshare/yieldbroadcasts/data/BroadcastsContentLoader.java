@@ -1,5 +1,6 @@
 package me.dontshare.yieldbroadcasts.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -40,7 +41,7 @@ public final class BroadcastsContentLoader {
     }
 
     public BroadcastsContent load() {
-        plugin.saveResource("broadcasts.yml", false);
+        BundledConfig.sync(plugin, "broadcasts.yml");
         File file = new File(plugin.getDataFolder(), "broadcasts.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 

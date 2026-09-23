@@ -1,5 +1,6 @@
 package me.dontshare.yieldpackstations.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import me.dontshare.yieldcore.packet.PacketEntityManager;
 import me.dontshare.yieldpacks.data.PackRegistry;
 import me.dontshare.yieldzones.data.ZoneDefinition;
@@ -51,7 +52,7 @@ public final class PackStationContentLoader {
     }
 
     public PackStationContent load() {
-        plugin.saveResource("pack-stations.yml", false);
+        BundledConfig.sync(plugin, "pack-stations.yml");
         File file = new File(plugin.getDataFolder(), "pack-stations.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 

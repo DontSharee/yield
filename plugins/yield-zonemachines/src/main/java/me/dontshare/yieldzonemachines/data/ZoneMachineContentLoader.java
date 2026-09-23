@@ -1,5 +1,6 @@
 package me.dontshare.yieldzonemachines.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import me.dontshare.yieldcore.packet.PacketEntityManager;
 import me.dontshare.yieldzones.data.ZoneDefinition;
 import org.bukkit.Bukkit;
@@ -32,7 +33,7 @@ public final class ZoneMachineContentLoader {
     }
 
     public ZoneMachineContent load() {
-        plugin.saveResource("zone-machines.yml", false);
+        BundledConfig.sync(plugin, "zone-machines.yml");
         File file = new File(plugin.getDataFolder(), "zone-machines.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 

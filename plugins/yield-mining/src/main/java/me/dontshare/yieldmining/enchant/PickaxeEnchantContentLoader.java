@@ -1,5 +1,6 @@
 package me.dontshare.yieldmining.enchant;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -25,7 +26,7 @@ public final class PickaxeEnchantContentLoader {
     }
 
     public Map<String, PickaxeEnchantDefinition> load() {
-        plugin.saveResource("pickaxe-enchants.yml", false);
+        BundledConfig.sync(plugin, "pickaxe-enchants.yml");
         File file = new File(plugin.getDataFolder(), "pickaxe-enchants.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 

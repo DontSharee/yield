@@ -1,5 +1,6 @@
 package me.dontshare.yieldpacks.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import me.dontshare.yieldcore.text.Formatting;
 import me.dontshare.yieldpacks.fusion.FusionTier;
 import me.dontshare.yieldpacks.pity.PityTier;
@@ -40,7 +41,7 @@ public final class PackContentLoader {
     }
 
     public ContentSnapshot load() {
-        plugin.saveResource("packs.yml", false);
+        BundledConfig.sync(plugin, "packs.yml");
         File file = new File(plugin.getDataFolder(), "packs.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 

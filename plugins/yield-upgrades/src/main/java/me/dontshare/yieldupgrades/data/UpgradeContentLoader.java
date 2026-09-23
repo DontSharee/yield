@@ -1,5 +1,6 @@
 package me.dontshare.yieldupgrades.data;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import me.dontshare.yieldcore.packet.PacketEntityManager;
 import me.dontshare.yieldzones.data.ZoneDefinition;
 import org.bukkit.Bukkit;
@@ -35,7 +36,7 @@ public final class UpgradeContentLoader {
     }
 
     public UpgradeContent load() {
-        plugin.saveResource("upgrades.yml", false);
+        BundledConfig.sync(plugin, "upgrades.yml");
         File file = new File(plugin.getDataFolder(), "upgrades.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 

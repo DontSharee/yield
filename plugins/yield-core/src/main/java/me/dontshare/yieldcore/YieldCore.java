@@ -1,5 +1,6 @@
 package me.dontshare.yieldcore;
 
+import me.dontshare.yieldcore.config.BundledConfig;
 import com.github.retrooper.packetevents.PacketEvents;
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import io.papermc.paper.command.brigadier.Commands;
@@ -135,7 +136,7 @@ public final class YieldCore extends JavaPlugin {
         CommandManager.register(this, SpawnCommand.spawn(spawnService), "Teleport to spawn");
         CommandManager.register(this, SpawnCommand.setSpawn(spawnService), "Set the server's spawn point to your current location");
 
-        saveResource("home.yml", false);
+        BundledConfig.sync(this, "home.yml");
         homeService = new HomeService(profileStore, YamlConfiguration.loadConfiguration(new File(getDataFolder(), "home.yml")));
         CommandManager.register(this, HomeCommand.sethome(homeService), "Set a named home at your current location");
         CommandManager.register(this, HomeCommand.home(homeService), "Teleport to one of your homes");
