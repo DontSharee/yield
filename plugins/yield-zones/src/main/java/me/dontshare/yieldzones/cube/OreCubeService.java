@@ -115,6 +115,8 @@ public final class OreCubeService implements Listener {
     private final Map<UUID, ZoneDefinition> currentZone = new ConcurrentHashMap<>();
     /** The cube a tap flush already labelled with its exact number - see {@link #applyTap}. */
     private final Map<UUID, OreCube> quietIndicatorFor = new ConcurrentHashMap<>();
+    private static final long HIT_SOUND_GAP_MILLIS = 120L;
+    private final Map<UUID, Long> lastHitSoundAt = new ConcurrentHashMap<>();
     private final Map<UUID, List<OreCube>> cubesByPlayer = new ConcurrentHashMap<>();
     private final Map<UUID, AtomicInteger> pendingByPlayer = new ConcurrentHashMap<>();
     // Every in-flight (not yet landed) fall's id, per player - lets leaveZone/
@@ -1045,9 +1047,12 @@ public final class OreCubeService implements Listener {
         // plays it - see that field's own javadoc on why a plain per-
         // invocation gate isn't enough.
         boolean isOutermostFlush = flushingPlayers.add(player.getUniqueId());
-        if (isOutermostFlush) {
-            playHitImpactSound(player, player.getLocation());
-            playAttackSound(player, player.getLocation());
+        if (isOutermostFlush && hitSoundReady(player.getUniqueId())) {
+            // At the cube being hit, not at the player - the player hears
+            // the fight where it is, and hears it quieter the further off.
+            Location soundAt = queued.keySet().iterator().next().center();
+            playHitImpactSound(player, soundAt);
+            playAttackSound(player, soundAt);
         }
         try {
             for (Map.Entry<OreCube, PendingDamage> entry : queued.entrySet()) {
@@ -1125,14 +1130,31 @@ public final class OreCubeService implements Listener {
     }
 
     /** The impact "thwack" - deliberately separate from {@link #showHitImpact}'s particle, and from {@link #playAttackSound}'s own squish, so {@link #flushDamage} can gate each of this method's own single call per player-tick without touching the per-cube visuals. */
+    /**
+     * At most one pair of hit sounds per {@link #HIT_SOUND_GAP_MILLIS} per
+     * player. A squad spread over several cubes, taps and kill-triggered
+     * retargets can each flush in the same moment; without a floor on the
+     * gap those stacked into a machine-gun of hit sounds that sped up as
+     * the fight did.
+     */
+    private boolean hitSoundReady(UUID playerId) {
+        long now = System.currentTimeMillis();
+        Long last = lastHitSoundAt.get(playerId);
+        if (last != null && now - last < HIT_SOUND_GAP_MILLIS) {
+            return false;
+        }
+        lastHitSoundAt.put(playerId, now);
+        return true;
+    }
+
     private void playHitImpactSound(Player viewer, Location at) {
-        viewer.playSound(at, Sound.BLOCK_STONE_HIT, 0.5f, 1.2f);
+        viewer.playSound(at, Sound.BLOCK_STONE_HIT, 0.3f, 1.2f);
     }
 
     /** Once per targeted cube per tick - not once per contributing pet, even though several pets landing a hit on the same cube in the same tick is the common case. */
     private void playAttackSound(Player viewer, Location center) {
         float pitch = 1.2f + ThreadLocalRandom.current().nextFloat() * 0.2f;
-        viewer.playSound(center, Sound.ENTITY_SLIME_SQUISH_SMALL, 0.35f, pitch);
+        viewer.playSound(center, Sound.ENTITY_SLIME_SQUISH_SMALL, 0.2f, pitch);
     }
 
     /**
@@ -1147,7 +1169,7 @@ public final class OreCubeService implements Listener {
         Location center = target.center();
         Component text = Text.parse("<gradient:#FF5555:#FFAA00><bold>CRIT!</bold></gradient>");
         spawnFloatingText(player, center, text, 10, 16);
-        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 0.5f, 1f);
+        player.playSound(target.center(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 0.35f, 1f);
         player.spawnParticle(Particle.CRIT, center, 12, 0.25, 0.25, 0.25, 0.3);
     }
 
@@ -1166,7 +1188,9 @@ public final class OreCubeService implements Listener {
         if (whole <= 0) {
             // Nothing to flush for this cube, but the click still lands.
             playHitSquish(player, cube);
-            playHitImpactSound(player, player.getLocation());
+            if (hitSoundReady(player.getUniqueId())) {
+                playHitImpactSound(player, cube.center());
+            }
         }
         quietIndicatorFor.put(player.getUniqueId(), cube);
         try {
@@ -1683,6 +1707,7 @@ public final class OreCubeService implements Listener {
         spawnedHealthBarIds.remove(player.getUniqueId());
         pendingSummary.remove(player.getUniqueId());
         lastSummaryAtMillis.remove(player.getUniqueId());
+        lastHitSoundAt.remove(player.getUniqueId());
     }
 
     private CubeTier rollTier(ZoneDefinition zone, PackPlayerProfile profile) {

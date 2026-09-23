@@ -275,7 +275,7 @@ public final class UpgradeStationDisplay {
 
         String template = atCap
                 ? "<#4BD9FF><bold><name></bold></#4BD9FF>\n&7Level &f<level> &7/ &f<cap>\n&6&lMAXED AT THIS STATION"
-                : "<#4BD9FF><bold><name></bold></#4BD9FF>\n&7Level &f<level> &7/ &f<cap>\n&7Cost: &a$<cost>";
+                : "<#4BD9FF><bold><name></bold></#4BD9FF>\n&7Level &f<level> &7/ &f<cap>\n&7Cost: &b<cost> &7diamonds";
 
         return Text.parse(template,
                 Placeholder.unparsed("name", Formatting.stripLeadingColorCodes(station.type().displayName())),

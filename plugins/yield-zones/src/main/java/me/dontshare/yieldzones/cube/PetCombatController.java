@@ -101,6 +101,9 @@ public final class PetCombatController implements Listener {
 
     // CLOSEST/STRONGEST/WEAKEST - the whole squad's shared target. Player-level state, no per-pet identity needed.
     /** Whether auto-attack was on for each player's last tick - how switching it off is noticed. See {@link #tickPlayer}. */
+    /** Players whose tick is running right now, and those who asked for another one meanwhile - see {@link #tickPlayer}. */
+    private final java.util.Set<UUID> tickingPlayers = ConcurrentHashMap.newKeySet();
+    private final java.util.Set<UUID> retickRequested = ConcurrentHashMap.newKeySet();
     private final Map<UUID, Boolean> lastAutoAttackOn = new ConcurrentHashMap<>();
     private final Map<UUID, OreCube> sharedTargetByPlayer = new ConcurrentHashMap<>();
     // SINGLE - one independent target per pet instance, and where the next click's pet comes from.
@@ -306,6 +309,31 @@ public final class PetCombatController implements Listener {
      * extra damage.
      */
     private void tickPlayer(Player player) {
+        UUID tickingId = player.getUniqueId();
+        // Never re-entered: a kill inside this tick's damage flush fires
+        // OreCubeKilledEvent, whose handler asks for another tick - run
+        // inline, that tick could kill again and nest again, a chain that
+        // grew with how many cubes the squad was spread over. A kill mid-
+        // tick queues exactly one follow-up for the next server tick.
+        if (!tickingPlayers.add(tickingId)) {
+            retickRequested.add(tickingId);
+            return;
+        }
+        try {
+            tickPlayerInner(player);
+        } finally {
+            tickingPlayers.remove(tickingId);
+        }
+        if (retickRequested.remove(tickingId)) {
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (player.isOnline()) {
+                    tickPlayer(player);
+                }
+            });
+        }
+    }
+
+    private void tickPlayerInner(Player player) {
         if (worldBossService.isEngaged(player)) {
             // A world boss owns this player's pets right now - see
             // WorldBossService#isEngaged. Deferring entirely (not just
@@ -353,6 +381,7 @@ public final class PetCombatController implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         UUID id = event.getPlayer().getUniqueId();
+        retickRequested.remove(id);
         lastAutoAttackOn.remove(id);
         sharedTargetByPlayer.remove(id);
         singleTargetsByPet.remove(id);

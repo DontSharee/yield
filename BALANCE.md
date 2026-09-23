@@ -725,6 +725,16 @@ roughly +20% at ~40 kills a minute, Beacon Aura +10%, Stonewall +30% damage
 for anyone standing still (most of the time, for an idle grinder), Deep
 Roots up to +40% (2% x 20 zones), Soul Link +50% once past 50K kills.
 
+### Upgrades are bought with diamonds
+
+The upgrade stations charge diamonds (upgrades.yml has the curve: 1.18x a
+level for Coin/Damage Boost, tracking diamond income's ~2.3x a zone). That
+puts them in competition with zone unlocks, which also cost diamonds. The
+sim, with players putting 15% / 30% / 50% of the diamonds they earn into
+upgrades and the rest into unlocks: Genesis at 11.9h / 11.6h / 11.35h,
+against ~11.4h before - the ladder is barely moved whichever way players
+lean.
+
 ## 3. The pacing curve
 
 The unlock ladder is a uniform **~4× per zone**, every step a round number.

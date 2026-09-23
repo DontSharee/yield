@@ -70,10 +70,11 @@ public final class UpgradeService {
             return Result.ALREADY_AT_CAP;
         }
         BigInteger cost = BigInteger.valueOf(costFor(station.type(), level));
-        if (profile.getCoins().compareTo(cost) < 0) {
+        // Paid in diamonds, not coins - see upgrades.yml.
+        if (profile.getDiamonds().compareTo(cost) < 0) {
             return Result.CANT_AFFORD;
         }
-        profile.setCoins(profile.getCoins().subtract(cost));
+        profile.setDiamonds(profile.getDiamonds().subtract(cost));
         upgradeStore.getOrCreate(player.getUniqueId()).getLevels().put(station.type().id(), level + 1);
         store.save(player.getUniqueId());
         upgradeStore.save(player.getUniqueId());
@@ -93,7 +94,7 @@ public final class UpgradeService {
             return false;
         }
         BigInteger cost = BigInteger.valueOf(costFor(station.type(), level));
-        return profile.getCoins().compareTo(cost) >= 0;
+        return profile.getDiamonds().compareTo(cost) >= 0;
     }
 
     // --- Effect queries, each consumed by another plugin's own composable registry (see YieldUpgrades#onEnable) ---

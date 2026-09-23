@@ -16,12 +16,14 @@
 # many small, frequent purchases, unlike the rarer big milestone jumps
 # player/pet leveling uses a power curve for).
 #
-# BALANCE - cost-growth is 1.28, not the old 1.12. Coin income climbs ~4x
-# per zone (see zones.yml), so at 1.12 every station was fully maxed out
-# within an hour and then contributed nothing for the rest of the game. At
-# 1.28, buying a type out to whichever cap the current zone offers costs
-# roughly one zone-stay's spare income for the WHOLE ladder - the stations
-# stay a live coin sink from Meadow to Genesis Core.
+# BALANCE - upgrades are paid in DIAMONDS, not coins. Diamond income grows
+# about 2.3x a zone (zones.yml's diamond-value ladder), and a type's cap
+# climbs 10 levels per station zone - one every two zones, ~5.3x the
+# diamonds - so the common types grow 1.18x a level (1.18^10 ~ 5.2): the
+# next ten levels always cost about what the next two zones pay. Coin and
+# Damage Boost start at 1 diamond and reach ~13M at level 100, next to
+# Genesis Core's own 15M diamond unlock. The rarer, stronger types start
+# higher and climb faster over their short ladders.
 #
 # The other half of that is the "stations:" list at the bottom. There used
 # to be exactly five stations, all in Meadow, all capped at level 10 - so
@@ -37,8 +39,8 @@ types:
     effect: COIN_MULTIPLIER
     value-per-level: 0.01      # +1% coins per level
     max-level: 100
-    cost-base: 60
-    cost-growth: 1.28
+    cost-base: 1
+    cost-growth: 1.18
   # id stays "gem_boost" - it's the literal key persisted per-player in
   # PackPlayerProfile#getUpgradeLevels, so renaming it here would orphan
   # every existing player's already-purchased levels in this upgrade.
@@ -49,32 +51,32 @@ types:
     chance-per-level: 0.001    # +0.1% diamond drop chance per level
     flat-per-level: 0.02       # +0.02 flat diamonds per level (rounded at payout)
     max-level: 100
-    cost-base: 90
-    cost-growth: 1.28
+    cost-base: 2
+    cost-growth: 1.18
   damage_boost:
     display-name: "&cDamage Boost"
     icon: IRON_SWORD
     effect: DAMAGE_MULTIPLIER
     value-per-level: 0.01      # +1% damage per level
     max-level: 100
-    cost-base: 60
-    cost-growth: 1.28
+    cost-base: 1
+    cost-growth: 1.18
   rebirth_boost:
     display-name: "&dRebirth Boost"
     icon: NETHER_STAR
     effect: REBIRTH_GRANT_MULTIPLIER
     value-per-level: 0.01      # +1% bonus EFFECTIVE rebirths granted per rebirth, per level
     max-level: 50
-    cost-base: 400
-    cost-growth: 1.3
+    cost-base: 5
+    cost-growth: 1.2
   speed_boost:
     display-name: "&aSpeed Boost"
     icon: SUGAR
     effect: PLAYER_SPEED
     value-per-level: 0.002     # added directly to walk speed (vanilla base 0.2) per level
     max-level: 20
-    cost-base: 250
-    cost-growth: 1.22
+    cost-base: 3
+    cost-growth: 1.2
   # More cubes on the floor at once is the single strongest quality-of-life
   # buy in the game (it removes waiting entirely), so it is priced like it.
   cube_cap_boost:
@@ -83,16 +85,16 @@ types:
     effect: CUBE_CAP_BONUS
     value-per-level: 1        # +1 concurrent cube slot per level (zones ship with a base of 10)
     max-level: 10
-    cost-base: 1200
-    cost-growth: 1.55
+    cost-base: 15
+    cost-growth: 1.5
   cube_luck_boost:
     display-name: "&dLucky Cubes"
     icon: NAUTILUS_SHELL
     effect: CUBE_BONUS_CHANCE
     value-per-level: 0.002    # +0.2% chance per level, added to every zone's golden/diamond cube-bonus roll
     max-level: 25
-    cost-base: 600
-    cost-growth: 1.4
+    cost-base: 8
+    cost-growth: 1.3
   # This one directly shortens the 1-second squad retarget that sets the
   # floor on kill speed - at max level it cuts ~30% off every cube's time.
   # Priced as the most expensive thing on the wall for exactly that reason.
@@ -102,8 +104,8 @@ types:
     effect: AUTO_SWITCH_SPEED
     value-per-level: 0.05     # +5% faster Auto Mode target-switching per level
     max-level: 10
-    cost-base: 1500
-    cost-growth: 1.6
+    cost-base: 20
+    cost-growth: 1.5
 
 # Stations sit on each zone's own real floor (Y 98, see zones.yml) just
 # inside the entrance, spread across the zone's width so they don't crowd
