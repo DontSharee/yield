@@ -46,6 +46,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
+import org.bukkit.util.BoundingBox;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -569,6 +570,15 @@ public final class OreCubeService implements Listener {
      * from its config; there's no need to ask the real world at all.
      */
     private static final int SPAWN_COLUMN_RETRY_ATTEMPTS = 30;
+    /**
+     * No cube may be chosen within this many blocks of its owner - the same
+     * idea as vanilla never spawning a hostile mob right next to a player.
+     * Measured horizontally from the player to the NEAREST edge of the
+     * cube's footprint, so a 2x2x2 boss block keeps the same gap from you
+     * as a one-block stone cube does, rather than 5 blocks from a centre
+     * that is already a block closer.
+     */
+    private static final double MIN_SPAWN_DISTANCE = 5.0;
 
     /**
      * Two of this player's own cubes landing on the exact same column used
@@ -599,12 +609,20 @@ public final class OreCubeService implements Listener {
         // than overhanging into whatever borders it. A zone too narrow for
         // that falls back to the full width.
         int inset = tier.giant() && region.maxX() - region.minX() >= 2 && region.maxZ() - region.minZ() >= 2 ? 1 : 0;
-        for (int attempt = 0; attempt < SPAWN_COLUMN_RETRY_ATTEMPTS; attempt++) {
+        boolean found = false;
+        for (int attempt = 0; attempt < SPAWN_COLUMN_RETRY_ATTEMPTS && !found; attempt++) {
             x = ThreadLocalRandom.current().nextInt(region.minX() + inset, region.maxX() - inset + 1);
             z = ThreadLocalRandom.current().nextInt(region.minZ() + inset, region.maxZ() - inset + 1);
-            if (!isColumnOccupied(playerId, x, z, tier.giant())) {
-                break;
-            }
+            found = !isColumnOccupied(playerId, x, z, tier.giant()) && !tooCloseToOwner(player, x, z, tier.size());
+        }
+        if (!found) {
+            // Never fall back to a bad column. This used to spawn on the
+            // last roll anyway, which is how two cubes ended up sharing a
+            // column; now it would also be how one landed on the player.
+            // Skipping is safe: the cube count is still short, so the
+            // top-up in tick() tries again four ticks later, by which time
+            // the player has usually moved.
+            return;
         }
         int groundY = region.minY();
         double spawnY = groundY + FALL_HEIGHT_BLOCKS;
@@ -659,6 +677,35 @@ public final class OreCubeService implements Listener {
      * occupied too - otherwise a big safe could land flush against a normal
      * cube and the two models would render through each other.
      */
+    /** Whether column (x, z) is inside the owner's no-spawn radius - see {@link #MIN_SPAWN_DISTANCE}. */
+    private boolean tooCloseToOwner(Player player, int x, int z, float size) {
+        Location at = player.getLocation();
+        double half = size / 2.0;
+        double dx = Math.max(0.0, Math.abs(at.getX() - (x + 0.5)) - half);
+        double dz = Math.max(0.0, Math.abs(at.getZ() - (z + 0.5)) - half);
+        return dx * dx + dz * dz < MIN_SPAWN_DISTANCE * MIN_SPAWN_DISTANCE;
+    }
+
+    /**
+     * Whether a cube landing at {@code landedAt} would come down on its
+     * owner - their hitbox against the cube's full body.
+     * <p>
+     * The scan keeps new cubes {@link #MIN_SPAWN_DISTANCE} away, but a
+     * cube falls for over a second and a sprinting player covers more than
+     * that, so where they are when it LANDS is checked too. An ordinary
+     * cube's landing column is already blocked by its fake barrier from
+     * the moment the fall starts; a giant's overhang is not, so this is
+     * what stops a big safe or a boss block (and its collision box)
+     * appearing around someone who walked under it.
+     */
+    private boolean landsOnOwner(Player player, Location landedAt, float size) {
+        double minX = landedAt.getBlockX() + 0.5 - size / 2.0;
+        double minZ = landedAt.getBlockZ() + 0.5 - size / 2.0;
+        BoundingBox body = new BoundingBox(minX, landedAt.getBlockY(), minZ,
+                minX + size, landedAt.getBlockY() + size, minZ + size);
+        return player.getWorld().equals(landedAt.getWorld()) && player.getBoundingBox().overlaps(body);
+    }
+
     private boolean isColumnOccupied(UUID playerId, int x, int z, boolean giant) {
         for (OreCube cube : cubesByPlayer.getOrDefault(playerId, List.of())) {
             int reach = giant || cube.tier().giant() ? 1 : 0;
@@ -716,6 +763,14 @@ public final class OreCubeService implements Listener {
         if (!owner.isOnline() || !zone.equals(currentZone.get(owner.getUniqueId()))) {
             owner.sendBlockChange(landedAt, AIR_DATA);
             PacketEntityManager.destroyEntity(owner, blockEntityId);
+            return;
+        }
+        if (landsOnOwner(owner, landedAt, tier.size())) {
+            // Never lands on the player: this one is withdrawn and a fresh
+            // cube is scanned for against where they are NOW.
+            owner.sendBlockChange(landedAt, AIR_DATA);
+            PacketEntityManager.destroyEntity(owner, blockEntityId);
+            spawnCubeFor(owner, zone);
             return;
         }
         int textEntityId = PacketEntityManager.nextEntityId();

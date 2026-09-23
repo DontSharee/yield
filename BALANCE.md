@@ -236,6 +236,17 @@ Legendaries a run, a real loss of power that making books rare never
 called for. The pacing model doesn't simulate enchants, so none of this
 moves the ladder times above.
 
+**No cube lands on you.** Like vanilla never spawning a hostile mob right
+next to a player, a cube's column is never chosen within **5 blocks** of its
+owner, measured to the nearest edge of the cube, so a boss block keeps the
+same gap as a stone cube. A fall lasts over a second and a sprint covers
+more than 5 blocks in that time, so where the player stands when it lands
+is checked too. If they're inside its footprint, that cube is withdrawn
+and a new one is scanned against where they are now. The scan no longer
+falls back to a bad column after 30 misses; it skips that spawn, and the
+top-up retries four ticks later. Modelled in the smallest zone with a full
+load of cubes it never had to (0 in 20,000), averaging 1.1 tries.
+
 **Giants are solid.** The fake barrier under a cube is one block, so on its
 own a 1.5 safe let you walk a quarter-block in and a boss block half a
 block. Each giant also spawns an invisible, owner-only shulker scaled to
