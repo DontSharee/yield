@@ -19,7 +19,7 @@
 # ~4x per zone instead of ~2x; at 1.12 a mid-game player could buy hundreds
 # of rebirths in a single sitting and the multiplier stopped meaning
 # anything.
-base-cost: 4000
+base-cost: 400000
 growth: 1.14
 # The permanent coin-income bonus per rebirth, e.g. 0.05 = +5% per rebirth
 # (rebirth 20 = +100% coins, rebirth 100 = +500%). See RebirthService#coinMultiplier.

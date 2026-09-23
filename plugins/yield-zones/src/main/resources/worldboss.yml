@@ -42,8 +42,8 @@ bosses:
     max-hp: 3600000
     check-interval-minutes: 10
     spawn-chance: 0.5
-    reward-coins: 25000
-    reward-diamonds: 150
+    reward-coins: 2500000
+    reward-diamonds: 1500
     despawn-after-minutes: 30
 
   hollow_colossus:
@@ -55,8 +55,8 @@ bosses:
     max-hp: 3600000000
     check-interval-minutes: 15
     spawn-chance: 0.5
-    reward-coins: 25000000
-    reward-diamonds: 4500
+    reward-coins: 2500000000
+    reward-diamonds: 45000
     despawn-after-minutes: 30
 
   barren_warden:
@@ -68,8 +68,8 @@ bosses:
     max-hp: 1050000000000
     check-interval-minutes: 20
     spawn-chance: 0.5
-    reward-coins: 25000000000
-    reward-diamonds: 220000
+    reward-coins: 2500000000000
+    reward-diamonds: 2200000
     despawn-after-minutes: 45
 
   astral_devourer:
@@ -81,6 +81,6 @@ bosses:
     max-hp: 312000000000000
     check-interval-minutes: 30
     spawn-chance: 0.5
-    reward-coins: 20000000000000
-    reward-diamonds: 10000000
+    reward-coins: 2000000000000000
+    reward-diamonds: 100000000
     despawn-after-minutes: 60

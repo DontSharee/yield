@@ -44,12 +44,12 @@ steps:
       - "Head into a zone - that's where the action is."
     completes-on: ENTER_ZONE
     goal: 1
-    reward-coins: 500
+    reward-coins: 50000
   - id: send_pet
     label: "Kill 3 cubes"
     dialogue:
       - "See that falling cube? Left-click it, then send your pet at it - pets don't fight on their own until you tell them to."
     completes-on: KILL_CUBE
     goal: 3
-    reward-coins: 1000
-    reward-diamonds: 1
+    reward-coins: 100000
+    reward-diamonds: 10

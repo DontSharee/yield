@@ -33,7 +33,7 @@ public final class BagStorageService {
     public static final int SLOTS_PER_UPGRADE = 50;
     public static final int MAX_UPGRADES = 20;
     /** The first upgrade's price; each one after costs twice the last. */
-    public static final long BASE_UPGRADE_COST_DIAMONDS = 25L;
+    public static final long BASE_UPGRADE_COST_DIAMONDS = 250L;
     public static final String INFINITE_PERMISSION = "yieldpacks.storage.infinite";
 
     public enum UpgradeResult { SUCCESS, MAXED, INFINITE, TOO_POOR }

@@ -30,7 +30,7 @@ public final class PetEnchantContentLoader {
     }
 
     private static final double DEFAULT_UNIQUE_WEIGHT = 9.0;
-    private static final long DEFAULT_DIAMOND_COST = 50L;
+    private static final long DEFAULT_DIAMOND_COST = 500L;
 
     private final JavaPlugin plugin;
     private final Logger logger;

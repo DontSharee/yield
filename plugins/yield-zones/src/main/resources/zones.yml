@@ -26,11 +26,11 @@
 # BALANCE - read this before touching any number below.
 #
 # Every zone is built from ONE headline number: its tier-1 coin value. The
-# ladder runs 10 -> 25 -> 65 -> 175 -> 450 -> 1.2K -> ... -> 675M, roughly
+# ladder runs 1K -> 2.5K -> 6.5K -> 17.5K -> 45K -> 120K -> ... -> 67.5B, roughly
 # 2.6x per zone, and it is deliberately made of round numbers so a player
 # can read the jump at a glance. Everything else is a fixed ratio off it:
 #
-#   tier-1 max-hp        4x the tier-1 coin value (softer for zones 1-5,
+#   tier-1 max-hp        40x the tier-1 coin value (softer for zones 1-5,
 #                        where a brand-new player is still fighting with
 #                        one starter pet)
 #   tier-2               3x hp,  4x coins,  3x xp,  3x diamonds, weight 25
@@ -221,9 +221,9 @@ zones:
     # tier-1 is the headline number; tier-2/3 are fixed ratios off it
     # (see this file's own BALANCE header).
     cube-tiers:
-      - { material: STONE, max-hp: 12000, coin-value: 10, diamond-value: 1, xp-value: 20, weight: 100 }
-      - { material: COPPER_BLOCK, max-hp: 36000, coin-value: 40, diamond-value: 3, xp-value: 60, weight: 25 }
-      - { material: IRON_BLOCK, max-hp: 84000, coin-value: 120, diamond-value: 8, xp-value: 160, weight: 5 }
+      - { material: STONE, max-hp: 12000, coin-value: 1000, diamond-value: 10, xp-value: 20, weight: 100 }
+      - { material: COPPER_BLOCK, max-hp: 36000, coin-value: 4000, diamond-value: 30, xp-value: 60, weight: 25 }
+      - { material: IRON_BLOCK, max-hp: 84000, coin-value: 12000, diamond-value: 80, xp-value: 160, weight: 5 }
     # Independent of which tier gets rolled above - every spawned cube also
     # rolls each of these on its own. If more than one hits at once, the
     # highest multiplier wins. "color" must be one of vanilla's 16 named
@@ -250,8 +250,8 @@ zones:
       material: CHEST
       weight: 0.6
       max-hp: 120000
-      coin-value: 600
-      diamond-value: 25
+      coin-value: 60000
+      diamond-value: 250
       xp-value: 300
       reward-pack: zone_meadow_pack
       reward-pack-amount: 8
@@ -268,15 +268,15 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: SNOW_BLOCK, max-hp: 60000, coin-value: 25, diamond-value: 2, xp-value: 25, weight: 100 }
-      - { material: PACKED_ICE, max-hp: 180000, coin-value: 100, diamond-value: 6, xp-value: 75, weight: 25 }
-      - { material: BLUE_ICE, max-hp: 420000, coin-value: 300, diamond-value: 16, xp-value: 200, weight: 5 }
+      - { material: SNOW_BLOCK, max-hp: 60000, coin-value: 2500, diamond-value: 20, xp-value: 25, weight: 100 }
+      - { material: PACKED_ICE, max-hp: 180000, coin-value: 10000, diamond-value: 60, xp-value: 75, weight: 25 }
+      - { material: BLUE_ICE, max-hp: 420000, coin-value: 30000, diamond-value: 160, xp-value: 200, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
       max-hp: 600000
-      coin-value: 1500
-      diamond-value: 50
+      coin-value: 150000
+      diamond-value: 500
       xp-value: 375
       reward-pack: zone_frostpeak_pack
       reward-pack-amount: 8
@@ -291,8 +291,8 @@ zones:
     # none of which this server has any source for, so every zone past
     # this one was permanently unbuyable.
     unlock:
-      coins: 4000
-      diamonds: 4
+      coins: 400000
+      diamonds: 40
     walls:
       - { material: LIGHT_BLUE_STAINED_GLASS, corner-one: [21, 98, 127.5], corner-two: [-21, 133, 127.5] }
     teleport: [0, 99, 145, 0, 0]
@@ -305,15 +305,15 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: COBBLESTONE, max-hp: 200000, coin-value: 65, diamond-value: 4, xp-value: 31, weight: 100 }
-      - { material: IRON_BLOCK, max-hp: 600000, coin-value: 260, diamond-value: 12, xp-value: 93, weight: 25 }
-      - { material: RAW_IRON_BLOCK, max-hp: 1400000, coin-value: 780, diamond-value: 32, xp-value: 248, weight: 5 }
+      - { material: COBBLESTONE, max-hp: 200000, coin-value: 6500, diamond-value: 40, xp-value: 31, weight: 100 }
+      - { material: IRON_BLOCK, max-hp: 600000, coin-value: 26000, diamond-value: 120, xp-value: 93, weight: 25 }
+      - { material: RAW_IRON_BLOCK, max-hp: 1400000, coin-value: 78000, diamond-value: 320, xp-value: 248, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
       max-hp: 2000000
-      coin-value: 3900
-      diamond-value: 100
+      coin-value: 390000
+      diamond-value: 1000
       xp-value: 465
       reward-pack: zone_iron_foothills_pack
       reward-pack-amount: 8
@@ -321,8 +321,8 @@ zones:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
     unlock:
-      coins: 10000
-      diamonds: 7
+      coins: 1000000
+      diamonds: 70
     walls:
       - { material: GRAY_STAINED_GLASS, corner-one: [21, 98, 221.5], corner-two: [-21, 133, 221.5] }
     teleport: [0, 99, 239, 0, 0]
@@ -335,15 +335,15 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: NETHERRACK, max-hp: 600000, coin-value: 175, diamond-value: 7, xp-value: 39, weight: 100 }
-      - { material: GOLD_BLOCK, max-hp: 1800000, coin-value: 700, diamond-value: 21, xp-value: 117, weight: 25 }
-      - { material: MAGMA_BLOCK, max-hp: 4200000, coin-value: 2100, diamond-value: 56, xp-value: 312, weight: 5 }
+      - { material: NETHERRACK, max-hp: 600000, coin-value: 17500, diamond-value: 70, xp-value: 39, weight: 100 }
+      - { material: GOLD_BLOCK, max-hp: 1800000, coin-value: 70000, diamond-value: 210, xp-value: 117, weight: 25 }
+      - { material: MAGMA_BLOCK, max-hp: 4200000, coin-value: 210000, diamond-value: 560, xp-value: 312, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
       max-hp: 6000000
-      coin-value: 10500
-      diamond-value: 175
+      coin-value: 1050000
+      diamond-value: 1750
       xp-value: 585
       reward-pack: zone_sulfur_flats_pack
       reward-pack-amount: 8
@@ -351,8 +351,8 @@ zones:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
     unlock:
-      coins: 40000
-      diamonds: 15
+      coins: 4000000
+      diamonds: 150
     walls:
       - { material: YELLOW_STAINED_GLASS, corner-one: [21, 98, 315.5], corner-two: [-21, 133, 315.5] }
     teleport: [0, 99, 333, 0, 0]
@@ -365,15 +365,15 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: BASALT, max-hp: 1700000, coin-value: 450, diamond-value: 13, xp-value: 49, weight: 100 }
-      - { material: BLACKSTONE, max-hp: 5100000, coin-value: 1800, diamond-value: 39, xp-value: 147, weight: 25 }
-      - { material: MAGMA_BLOCK, max-hp: 11900000, coin-value: 5400, diamond-value: 104, xp-value: 392, weight: 5 }
+      - { material: BASALT, max-hp: 1700000, coin-value: 45000, diamond-value: 130, xp-value: 49, weight: 100 }
+      - { material: BLACKSTONE, max-hp: 5100000, coin-value: 180000, diamond-value: 390, xp-value: 147, weight: 25 }
+      - { material: MAGMA_BLOCK, max-hp: 11900000, coin-value: 540000, diamond-value: 1040, xp-value: 392, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
       max-hp: 17000000
-      coin-value: 27000
-      diamond-value: 325
+      coin-value: 2700000
+      diamond-value: 3250
       xp-value: 735
       reward-pack: zone_scorched_wastes_pack
       reward-pack-amount: 8
@@ -381,8 +381,8 @@ zones:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
     unlock:
-      coins: 125000
-      diamonds: 35
+      coins: 12500000
+      diamonds: 350
     walls:
       - { material: RED_STAINED_GLASS, corner-one: [21, 98, 409.5], corner-two: [-21, 133, 409.5] }
     teleport: [0, 99, 427, 0, 0]
@@ -395,15 +395,15 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: CALCITE, max-hp: 4800000, coin-value: 1200, diamond-value: 25, xp-value: 61, weight: 100 }
-      - { material: AMETHYST_BLOCK, max-hp: 14400000, coin-value: 4800, diamond-value: 75, xp-value: 183, weight: 25 }
-      - { material: DRIPSTONE_BLOCK, max-hp: 33600000, coin-value: 14400, diamond-value: 200, xp-value: 488, weight: 5 }
+      - { material: CALCITE, max-hp: 4800000, coin-value: 120000, diamond-value: 250, xp-value: 61, weight: 100 }
+      - { material: AMETHYST_BLOCK, max-hp: 14400000, coin-value: 480000, diamond-value: 750, xp-value: 183, weight: 25 }
+      - { material: DRIPSTONE_BLOCK, max-hp: 33600000, coin-value: 1440000, diamond-value: 2000, xp-value: 488, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
       max-hp: 48000000
-      coin-value: 72000
-      diamond-value: 625
+      coin-value: 7200000
+      diamond-value: 6250
       xp-value: 915
       reward-pack: zone_crystal_caverns_pack
       reward-pack-amount: 8
@@ -411,8 +411,8 @@ zones:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
     unlock:
-      coins: 600000
-      diamonds: 80
+      coins: 60000000
+      diamonds: 800
     walls:
       - { material: PURPLE_STAINED_GLASS, corner-one: [21, 98, 503.5], corner-two: [-21, 133, 503.5] }
     teleport: [0, 99, 521, 0, 0]
@@ -425,15 +425,15 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: DEEPSLATE, max-hp: 12000000, coin-value: 3000, diamond-value: 45, xp-value: 76, weight: 100 }
-      - { material: DEEPSLATE_DIAMOND_ORE, max-hp: 36000000, coin-value: 12000, diamond-value: 135, xp-value: 228, weight: 25 }
-      - { material: DIAMOND_BLOCK, max-hp: 84000000, coin-value: 36000, diamond-value: 360, xp-value: 608, weight: 5 }
+      - { material: DEEPSLATE, max-hp: 12000000, coin-value: 300000, diamond-value: 450, xp-value: 76, weight: 100 }
+      - { material: DEEPSLATE_DIAMOND_ORE, max-hp: 36000000, coin-value: 1200000, diamond-value: 1350, xp-value: 228, weight: 25 }
+      - { material: DIAMOND_BLOCK, max-hp: 84000000, coin-value: 3600000, diamond-value: 3600, xp-value: 608, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
       max-hp: 120000000
-      coin-value: 180000
-      diamond-value: 1125
+      coin-value: 18000000
+      diamond-value: 11250
       xp-value: 1140
       reward-pack: zone_diamond_hollow_pack
       reward-pack-amount: 8
@@ -441,8 +441,8 @@ zones:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
     unlock:
-      coins: 3000000
-      diamonds: 200
+      coins: 300000000
+      diamonds: 2000
     walls:
       - { material: CYAN_STAINED_GLASS, corner-one: [21, 98, 597.5], corner-two: [-21, 133, 597.5] }
     teleport: [0, 99, 615, 0, 0]
@@ -455,15 +455,15 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: DEEPSLATE, max-hp: 32000000, coin-value: 8000, diamond-value: 90, xp-value: 95, weight: 100 }
-      - { material: DEEPSLATE_EMERALD_ORE, max-hp: 96000000, coin-value: 32000, diamond-value: 270, xp-value: 285, weight: 25 }
-      - { material: EMERALD_BLOCK, max-hp: 224000000, coin-value: 96000, diamond-value: 720, xp-value: 760, weight: 5 }
+      - { material: DEEPSLATE, max-hp: 32000000, coin-value: 800000, diamond-value: 900, xp-value: 95, weight: 100 }
+      - { material: DEEPSLATE_EMERALD_ORE, max-hp: 96000000, coin-value: 3200000, diamond-value: 2700, xp-value: 285, weight: 25 }
+      - { material: EMERALD_BLOCK, max-hp: 224000000, coin-value: 9600000, diamond-value: 7200, xp-value: 760, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
       max-hp: 320000000
-      coin-value: 480000
-      diamond-value: 2250
+      coin-value: 48000000
+      diamond-value: 22500
       xp-value: 1425
       reward-pack: zone_emerald_depths_pack
       reward-pack-amount: 8
@@ -471,8 +471,8 @@ zones:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
     unlock:
-      coins: 12500000
-      diamonds: 450
+      coins: 1250000000
+      diamonds: 4500
     walls:
       - { material: GREEN_STAINED_GLASS, corner-one: [21, 98, 691.5], corner-two: [-21, 133, 691.5] }
     teleport: [0, 99, 709, 0, 0]
@@ -485,15 +485,15 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: BLACKSTONE, max-hp: 80000000, coin-value: 20000, diamond-value: 170, xp-value: 120, weight: 100 }
-      - { material: OBSIDIAN, max-hp: 240000000, coin-value: 80000, diamond-value: 510, xp-value: 360, weight: 25 }
-      - { material: CRYING_OBSIDIAN, max-hp: 560000000, coin-value: 240000, diamond-value: 1360, xp-value: 960, weight: 5 }
+      - { material: BLACKSTONE, max-hp: 80000000, coin-value: 2000000, diamond-value: 1700, xp-value: 120, weight: 100 }
+      - { material: OBSIDIAN, max-hp: 240000000, coin-value: 8000000, diamond-value: 5100, xp-value: 360, weight: 25 }
+      - { material: CRYING_OBSIDIAN, max-hp: 560000000, coin-value: 24000000, diamond-value: 13600, xp-value: 960, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
       max-hp: 800000000
-      coin-value: 1200000
-      diamond-value: 4250
+      coin-value: 120000000
+      diamond-value: 42500
       xp-value: 1800
       reward-pack: zone_obsidian_rift_pack
       reward-pack-amount: 8
@@ -501,8 +501,8 @@ zones:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
     unlock:
-      coins: 60000000
-      diamonds: 1100
+      coins: 6000000000
+      diamonds: 11000
     walls:
       - { material: BLACK_STAINED_GLASS, corner-one: [21, 98, 785.5], corner-two: [-21, 133, 785.5] }
     teleport: [0, 99, 803, 0, 0]
@@ -515,15 +515,15 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: OBSIDIAN, max-hp: 200000000, coin-value: 50000, diamond-value: 320, xp-value: 150, weight: 100 }
-      - { material: CRYING_OBSIDIAN, max-hp: 600000000, coin-value: 200000, diamond-value: 960, xp-value: 450, weight: 25 }
-      - { material: NETHERITE_BLOCK, max-hp: 1400000000, coin-value: 600000, diamond-value: 2560, xp-value: 1200, weight: 5 }
+      - { material: OBSIDIAN, max-hp: 200000000, coin-value: 5000000, diamond-value: 3200, xp-value: 150, weight: 100 }
+      - { material: CRYING_OBSIDIAN, max-hp: 600000000, coin-value: 20000000, diamond-value: 9600, xp-value: 450, weight: 25 }
+      - { material: NETHERITE_BLOCK, max-hp: 1400000000, coin-value: 60000000, diamond-value: 25600, xp-value: 1200, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
       max-hp: 2000000000
-      coin-value: 3000000
-      diamond-value: 8000
+      coin-value: 300000000
+      diamond-value: 80000
       xp-value: 2250
       reward-pack: zone_void_expanse_pack
       reward-pack-amount: 8
@@ -531,8 +531,8 @@ zones:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
     unlock:
-      coins: 300000000
-      diamonds: 2700
+      coins: 30000000000
+      diamonds: 27000
     walls:
       - { material: PURPLE_STAINED_GLASS, corner-one: [21, 98, 879.5], corner-two: [-21, 133, 879.5] }
     teleport: [0, 99, 897, 0, 0]
@@ -545,15 +545,15 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: ANCIENT_DEBRIS, max-hp: 520000000, coin-value: 130000, diamond-value: 600, xp-value: 185, weight: 100 }
-      - { material: NETHERITE_BLOCK, max-hp: 1560000000, coin-value: 520000, diamond-value: 1800, xp-value: 555, weight: 25 }
-      - { material: RESPAWN_ANCHOR, max-hp: 3640000000, coin-value: 1560000, diamond-value: 4800, xp-value: 1480, weight: 5 }
+      - { material: ANCIENT_DEBRIS, max-hp: 520000000, coin-value: 13000000, diamond-value: 6000, xp-value: 185, weight: 100 }
+      - { material: NETHERITE_BLOCK, max-hp: 1560000000, coin-value: 52000000, diamond-value: 18000, xp-value: 555, weight: 25 }
+      - { material: RESPAWN_ANCHOR, max-hp: 3640000000, coin-value: 156000000, diamond-value: 48000, xp-value: 1480, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
       max-hp: 5200000000
-      coin-value: 7800000
-      diamond-value: 15000
+      coin-value: 780000000
+      diamond-value: 150000
       xp-value: 2775
       reward-pack: zone_netherite_wastes_pack
       reward-pack-amount: 8
@@ -561,8 +561,8 @@ zones:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
     unlock:
-      coins: 1200000000
-      diamonds: 6000
+      coins: 120000000000
+      diamonds: 60000
     walls:
       - { material: BLACK_STAINED_GLASS, corner-one: [21, 98, 973.5], corner-two: [-21, 133, 973.5] }
     teleport: [0, 99, 991, 0, 0]
@@ -575,15 +575,15 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: COBBLED_DEEPSLATE, max-hp: 1360000000, coin-value: 340000, diamond-value: 1150, xp-value: 230, weight: 100 }
-      - { material: ANCIENT_DEBRIS, max-hp: 4080000000, coin-value: 1360000, diamond-value: 3450, xp-value: 690, weight: 25 }
-      - { material: CHISELED_DEEPSLATE, max-hp: 9520000000, coin-value: 4080000, diamond-value: 9200, xp-value: 1840, weight: 5 }
+      - { material: COBBLED_DEEPSLATE, max-hp: 1360000000, coin-value: 34000000, diamond-value: 11500, xp-value: 230, weight: 100 }
+      - { material: ANCIENT_DEBRIS, max-hp: 4080000000, coin-value: 136000000, diamond-value: 34500, xp-value: 690, weight: 25 }
+      - { material: CHISELED_DEEPSLATE, max-hp: 9520000000, coin-value: 408000000, diamond-value: 92000, xp-value: 1840, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
       max-hp: 13600000000
-      coin-value: 20400000
-      diamond-value: 28750
+      coin-value: 2040000000
+      diamond-value: 287500
       xp-value: 3450
       reward-pack: zone_ancient_ruins_pack
       reward-pack-amount: 8
@@ -591,8 +591,8 @@ zones:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
     unlock:
-      coins: 5000000000
-      diamonds: 15000
+      coins: 500000000000
+      diamonds: 150000
     walls:
       - { material: GRAY_STAINED_GLASS, corner-one: [21, 98, 1067.5], corner-two: [-21, 133, 1067.5] }
     teleport: [0, 99, 1085, 0, 0]
@@ -605,15 +605,15 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: END_STONE, max-hp: 3500000000, coin-value: 875000, diamond-value: 2200, xp-value: 290, weight: 100 }
-      - { material: END_STONE_BRICKS, max-hp: 10500000000, coin-value: 3500000, diamond-value: 6600, xp-value: 870, weight: 25 }
-      - { material: PURPUR_BLOCK, max-hp: 24500000000, coin-value: 10500000, diamond-value: 17600, xp-value: 2320, weight: 5 }
+      - { material: END_STONE, max-hp: 3500000000, coin-value: 87500000, diamond-value: 22000, xp-value: 290, weight: 100 }
+      - { material: END_STONE_BRICKS, max-hp: 10500000000, coin-value: 350000000, diamond-value: 66000, xp-value: 870, weight: 25 }
+      - { material: PURPUR_BLOCK, max-hp: 24500000000, coin-value: 1050000000, diamond-value: 176000, xp-value: 2320, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
       max-hp: 35000000000
-      coin-value: 52500000
-      diamond-value: 55000
+      coin-value: 5250000000
+      diamond-value: 550000
       xp-value: 4350
       reward-pack: zone_end_barrens_pack
       reward-pack-amount: 8
@@ -621,8 +621,8 @@ zones:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
     unlock:
-      coins: 25000000000
-      diamonds: 35000
+      coins: 2500000000000
+      diamonds: 350000
     walls:
       - { material: YELLOW_STAINED_GLASS, corner-one: [21, 98, 1161.5], corner-two: [-21, 133, 1161.5] }
     teleport: [0, 99, 1179, 0, 0]
@@ -635,15 +635,15 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: PURPUR_BLOCK, max-hp: 9000000000, coin-value: 2250000, diamond-value: 4200, xp-value: 360, weight: 100 }
-      - { material: PURPUR_PILLAR, max-hp: 27000000000, coin-value: 9000000, diamond-value: 12600, xp-value: 1080, weight: 25 }
-      - { material: SHULKER_BOX, max-hp: 63000000000, coin-value: 27000000, diamond-value: 33600, xp-value: 2880, weight: 5 }
+      - { material: PURPUR_BLOCK, max-hp: 9000000000, coin-value: 225000000, diamond-value: 42000, xp-value: 360, weight: 100 }
+      - { material: PURPUR_PILLAR, max-hp: 27000000000, coin-value: 900000000, diamond-value: 126000, xp-value: 1080, weight: 25 }
+      - { material: SHULKER_BOX, max-hp: 63000000000, coin-value: 2700000000, diamond-value: 336000, xp-value: 2880, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
       max-hp: 90000000000
-      coin-value: 135000000
-      diamond-value: 105000
+      coin-value: 13500000000
+      diamond-value: 1050000
       xp-value: 5400
       reward-pack: zone_purpur_spires_pack
       reward-pack-amount: 8
@@ -651,8 +651,8 @@ zones:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
     unlock:
-      coins: 100000000000
-      diamonds: 85000
+      coins: 10000000000000
+      diamonds: 850000
     walls:
       - { material: MAGENTA_STAINED_GLASS, corner-one: [21, 98, 1255.5], corner-two: [-21, 133, 1255.5] }
     teleport: [0, 99, 1273, 0, 0]
@@ -665,15 +665,15 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: END_STONE, max-hp: 23000000000, coin-value: 5800000, diamond-value: 8000, xp-value: 450, weight: 100 }
-      - { material: PURPUR_BLOCK, max-hp: 69000000000, coin-value: 23200000, diamond-value: 24000, xp-value: 1350, weight: 25 }
-      - { material: BEACON, max-hp: 161000000000, coin-value: 69600000, diamond-value: 64000, xp-value: 3600, weight: 5 }
+      - { material: END_STONE, max-hp: 23000000000, coin-value: 580000000, diamond-value: 80000, xp-value: 450, weight: 100 }
+      - { material: PURPUR_BLOCK, max-hp: 69000000000, coin-value: 2320000000, diamond-value: 240000, xp-value: 1350, weight: 25 }
+      - { material: BEACON, max-hp: 161000000000, coin-value: 6960000000, diamond-value: 640000, xp-value: 3600, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
       max-hp: 230000000000
-      coin-value: 348000000
-      diamond-value: 200000
+      coin-value: 34800000000
+      diamond-value: 2000000
       xp-value: 6750
       reward-pack: zone_celestial_sanctum_pack
       reward-pack-amount: 8
@@ -681,8 +681,8 @@ zones:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
     unlock:
-      coins: 400000000000
-      diamonds: 200000
+      coins: 40000000000000
+      diamonds: 2000000
     walls:
       - { material: WHITE_STAINED_GLASS, corner-one: [21, 98, 1349.5], corner-two: [-21, 133, 1349.5] }
     teleport: [0, 99, 1367, 0, 0]
@@ -695,15 +695,15 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: GLOWSTONE, max-hp: 60000000000, coin-value: 15000000, diamond-value: 15000, xp-value: 560, weight: 100 }
-      - { material: SEA_LANTERN, max-hp: 180000000000, coin-value: 60000000, diamond-value: 45000, xp-value: 1680, weight: 25 }
-      - { material: BEACON, max-hp: 420000000000, coin-value: 180000000, diamond-value: 120000, xp-value: 4480, weight: 5 }
+      - { material: GLOWSTONE, max-hp: 60000000000, coin-value: 1500000000, diamond-value: 150000, xp-value: 560, weight: 100 }
+      - { material: SEA_LANTERN, max-hp: 180000000000, coin-value: 6000000000, diamond-value: 450000, xp-value: 1680, weight: 25 }
+      - { material: BEACON, max-hp: 420000000000, coin-value: 18000000000, diamond-value: 1200000, xp-value: 4480, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
       max-hp: 600000000000
-      coin-value: 900000000
-      diamond-value: 375000
+      coin-value: 90000000000
+      diamond-value: 3750000
       xp-value: 8400
       reward-pack: zone_starlight_fields_pack
       reward-pack-amount: 8
@@ -711,8 +711,8 @@ zones:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
     unlock:
-      coins: 1500000000000
-      diamonds: 450000
+      coins: 150000000000000
+      diamonds: 4500000
     walls:
       - { material: LIGHT_BLUE_STAINED_GLASS, corner-one: [21, 98, 1443.5], corner-two: [-21, 133, 1443.5] }
     teleport: [0, 99, 1461, 0, 0]
@@ -725,15 +725,15 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: OBSIDIAN, max-hp: 152000000000, coin-value: 38000000, diamond-value: 29000, xp-value: 700, weight: 100 }
-      - { material: NETHERITE_BLOCK, max-hp: 456000000000, coin-value: 152000000, diamond-value: 87000, xp-value: 2100, weight: 25 }
-      - { material: BEACON, max-hp: 1064000000000, coin-value: 456000000, diamond-value: 232000, xp-value: 5600, weight: 5 }
+      - { material: OBSIDIAN, max-hp: 152000000000, coin-value: 3800000000, diamond-value: 290000, xp-value: 700, weight: 100 }
+      - { material: NETHERITE_BLOCK, max-hp: 456000000000, coin-value: 15200000000, diamond-value: 870000, xp-value: 2100, weight: 25 }
+      - { material: BEACON, max-hp: 1064000000000, coin-value: 45600000000, diamond-value: 2320000, xp-value: 5600, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
       max-hp: 1520000000000
-      coin-value: 2280000000
-      diamond-value: 725000
+      coin-value: 228000000000
+      diamond-value: 7250000
       xp-value: 10500
       reward-pack: zone_cosmic_abyss_pack
       reward-pack-amount: 8
@@ -741,8 +741,8 @@ zones:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
     unlock:
-      coins: 6000000000000
-      diamonds: 1100000
+      coins: 600000000000000
+      diamonds: 11000000
     walls:
       - { material: BLACK_STAINED_GLASS, corner-one: [21, 98, 1537.5], corner-two: [-21, 133, 1537.5] }
     teleport: [0, 99, 1555, 0, 0]
@@ -755,15 +755,15 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: NETHERITE_BLOCK, max-hp: 400000000000, coin-value: 100000000, diamond-value: 55000, xp-value: 880, weight: 100 }
-      - { material: ANCIENT_DEBRIS, max-hp: 1200000000000, coin-value: 400000000, diamond-value: 165000, xp-value: 2640, weight: 25 }
-      - { material: BEACON, max-hp: 2800000000000, coin-value: 1200000000, diamond-value: 440000, xp-value: 7040, weight: 5 }
+      - { material: NETHERITE_BLOCK, max-hp: 400000000000, coin-value: 10000000000, diamond-value: 550000, xp-value: 880, weight: 100 }
+      - { material: ANCIENT_DEBRIS, max-hp: 1200000000000, coin-value: 40000000000, diamond-value: 1650000, xp-value: 2640, weight: 25 }
+      - { material: BEACON, max-hp: 2800000000000, coin-value: 120000000000, diamond-value: 4400000, xp-value: 7040, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
       max-hp: 4000000000000
-      coin-value: 6000000000
-      diamond-value: 1375000
+      coin-value: 600000000000
+      diamond-value: 13750000
       xp-value: 13200
       reward-pack: zone_eternal_forge_pack
       reward-pack-amount: 8
@@ -771,8 +771,8 @@ zones:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
     unlock:
-      coins: 25000000000000
-      diamonds: 2600000
+      coins: 2500000000000000
+      diamonds: 26000000
     walls:
       - { material: ORANGE_STAINED_GLASS, corner-one: [21, 98, 1631.5], corner-two: [-21, 133, 1631.5] }
     teleport: [0, 99, 1649, 0, 0]
@@ -785,15 +785,15 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: AMETHYST_BLOCK, max-hp: 1040000000000, coin-value: 260000000, diamond-value: 105000, xp-value: 1100, weight: 100 }
-      - { material: DIAMOND_BLOCK, max-hp: 3120000000000, coin-value: 1040000000, diamond-value: 315000, xp-value: 3300, weight: 25 }
-      - { material: BEACON, max-hp: 7280000000000, coin-value: 3120000000, diamond-value: 840000, xp-value: 8800, weight: 5 }
+      - { material: AMETHYST_BLOCK, max-hp: 1040000000000, coin-value: 26000000000, diamond-value: 1050000, xp-value: 1100, weight: 100 }
+      - { material: DIAMOND_BLOCK, max-hp: 3120000000000, coin-value: 104000000000, diamond-value: 3150000, xp-value: 3300, weight: 25 }
+      - { material: BEACON, max-hp: 7280000000000, coin-value: 312000000000, diamond-value: 8400000, xp-value: 8800, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
       max-hp: 10400000000000
-      coin-value: 15600000000
-      diamond-value: 2625000
+      coin-value: 1560000000000
+      diamond-value: 26250000
       xp-value: 16500
       reward-pack: zone_astral_peak_pack
       reward-pack-amount: 8
@@ -801,8 +801,8 @@ zones:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
     unlock:
-      coins: 100000000000000
-      diamonds: 6000000
+      coins: 10000000000000000
+      diamonds: 60000000
     walls:
       - { material: PINK_STAINED_GLASS, corner-one: [21, 98, 1725.5], corner-two: [-21, 133, 1725.5] }
     teleport: [0, 99, 1743, 0, 0]
@@ -815,15 +815,15 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 10
     cube-tiers:
-      - { material: DIAMOND_BLOCK, max-hp: 2700000000000, coin-value: 675000000, diamond-value: 200000, xp-value: 1400, weight: 100 }
-      - { material: EMERALD_BLOCK, max-hp: 8100000000000, coin-value: 2700000000, diamond-value: 600000, xp-value: 4200, weight: 25 }
-      - { material: BEACON, max-hp: 18900000000000, coin-value: 8100000000, diamond-value: 1600000, xp-value: 11200, weight: 5 }
+      - { material: DIAMOND_BLOCK, max-hp: 2700000000000, coin-value: 67500000000, diamond-value: 2000000, xp-value: 1400, weight: 100 }
+      - { material: EMERALD_BLOCK, max-hp: 8100000000000, coin-value: 270000000000, diamond-value: 6000000, xp-value: 4200, weight: 25 }
+      - { material: BEACON, max-hp: 18900000000000, coin-value: 810000000000, diamond-value: 16000000, xp-value: 11200, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
       max-hp: 27000000000000
-      coin-value: 40500000000
-      diamond-value: 5000000
+      coin-value: 4050000000000
+      diamond-value: 50000000
       xp-value: 21000
       reward-pack: zone_genesis_core_pack
       reward-pack-amount: 8
@@ -831,8 +831,8 @@ zones:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
     unlock:
-      coins: 400000000000000
-      diamonds: 15000000
+      coins: 40000000000000000
+      diamonds: 150000000
     walls:
       - { material: WHITE_STAINED_GLASS, corner-one: [21, 98, 1819.5], corner-two: [-21, 133, 1819.5] }
     teleport: [0, 99, 1837, 0, 0]
@@ -864,15 +864,15 @@ zones:
     respawn-delay-seconds: 3
     max-concurrent-cubes: 12
     cube-tiers:
-      - { material: CARVED_PUMPKIN, max-hp: 40000, coin-value: 150, diamond-value: 1, xp-value: 60, weight: 100 }
-      - { material: JACK_O_LANTERN, max-hp: 120000, coin-value: 600, diamond-value: 3, xp-value: 180, weight: 25 }
-      - { material: SOUL_LANTERN, max-hp: 280000, coin-value: 1800, diamond-value: 8, xp-value: 480, weight: 5 }
+      - { material: CARVED_PUMPKIN, max-hp: 40000, coin-value: 15000, diamond-value: 10, xp-value: 60, weight: 100 }
+      - { material: JACK_O_LANTERN, max-hp: 120000, coin-value: 60000, diamond-value: 30, xp-value: 180, weight: 25 }
+      - { material: SOUL_LANTERN, max-hp: 280000, coin-value: 180000, diamond-value: 80, xp-value: 480, weight: 5 }
     treasure:
       material: CHEST
       weight: 0.6
       max-hp: 400000
-      coin-value: 9000
-      diamond-value: 25
+      coin-value: 900000
+      diamond-value: 250
       xp-value: 900
       reward-pack: event_halloween_egg
       reward-pack-amount: 3

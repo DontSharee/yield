@@ -26,55 +26,55 @@ ores:
     drop-material: COAL
     drop-min: 1
     drop-max: 2
-    coin-reward: 120
+    coin-reward: 12000
     xp: 3
     regen-seconds: 20
   copper_ore:
     drop-material: RAW_COPPER
     drop-min: 2
     drop-max: 5
-    coin-reward: 160
+    coin-reward: 16000
     xp: 4
     regen-seconds: 25
   iron_ore:
     drop-material: RAW_IRON
     drop-min: 1
     drop-max: 1
-    coin-reward: 240
+    coin-reward: 24000
     xp: 6
     regen-seconds: 30
   redstone_ore:
     drop-material: REDSTONE
     drop-min: 4
     drop-max: 5
-    coin-reward: 320
+    coin-reward: 32000
     xp: 8
     regen-seconds: 35
   lapis_ore:
     drop-material: LAPIS_LAZULI
     drop-min: 4
     drop-max: 9
-    coin-reward: 360
+    coin-reward: 36000
     xp: 8
     regen-seconds: 35
   gold_ore:
     drop-material: RAW_GOLD
     drop-min: 1
     drop-max: 1
-    coin-reward: 500
+    coin-reward: 50000
     xp: 10
     regen-seconds: 45
   diamond_ore:
     drop-material: DIAMOND
     drop-min: 1
     drop-max: 1
-    coin-reward: 1200
+    coin-reward: 120000
     xp: 25
     regen-seconds: 90
   emerald_ore:
     drop-material: EMERALD
     drop-min: 1
     drop-max: 1
-    coin-reward: 1500
+    coin-reward: 150000
     xp: 30
     regen-seconds: 100

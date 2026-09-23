@@ -46,21 +46,21 @@ categories:
       display-name: "&aCube Crusher I"
       action: KILL_CUBE
       goal: 10
-      reward-coins: 25000
-      reward-diamonds: 10
+      reward-coins: 2500000
+      reward-diamonds: 100
     medium:
       display-name: "&6Cube Crusher II"
       action: KILL_CUBE
       goal: 30
-      reward-coins: 120000
-      reward-diamonds: 40
+      reward-coins: 12000000
+      reward-diamonds: 400
       reward-credits: 5
     hard:
       display-name: "&cCube Crusher III"
       action: KILL_CUBE
       goal: 75
-      reward-coins: 400000
-      reward-diamonds: 120
+      reward-coins: 40000000
+      reward-diamonds: 1200
       reward-credits: 15
 
   economy:
@@ -70,21 +70,21 @@ categories:
       display-name: "&aEgg Hatcher I"
       action: OPEN_PACK
       goal: 5
-      reward-coins: 25000
-      reward-diamonds: 10
+      reward-coins: 2500000
+      reward-diamonds: 100
     medium:
       display-name: "&6Egg Hatcher II"
       action: OPEN_PACK
       goal: 15
-      reward-coins: 120000
-      reward-diamonds: 40
+      reward-coins: 12000000
+      reward-diamonds: 400
       reward-credits: 5
     hard:
       display-name: "&cEgg Hatcher III"
       action: OPEN_PACK
       goal: 40
-      reward-coins: 400000
-      reward-diamonds: 120
+      reward-coins: 40000000
+      reward-diamonds: 1200
       reward-credits: 15
 
   collection:
@@ -94,21 +94,21 @@ categories:
       display-name: "&aFusion Starter"
       action: FUSE_PET
       goal: 1
-      reward-coins: 30000
-      reward-diamonds: 10
+      reward-coins: 3000000
+      reward-diamonds: 100
     medium:
       display-name: "&6Fusion Adept"
       action: FUSE_PET
       goal: 3
-      reward-coins: 150000
-      reward-diamonds: 40
+      reward-coins: 15000000
+      reward-diamonds: 400
       reward-credits: 5
     hard:
       display-name: "&cFusion Master"
       action: FUSE_PET
       goal: 8
-      reward-coins: 500000
-      reward-diamonds: 150
+      reward-coins: 50000000
+      reward-diamonds: 1500
       reward-credits: 15
       reward-pet: diamond_wolf
 
@@ -119,19 +119,19 @@ categories:
       display-name: "&aLevel Chaser I"
       action: LEVEL_UP_PET
       goal: 5
-      reward-coins: 25000
-      reward-diamonds: 10
+      reward-coins: 2500000
+      reward-diamonds: 100
     medium:
       display-name: "&6Level Chaser II"
       action: LEVEL_UP_PET
       goal: 15
-      reward-coins: 120000
-      reward-diamonds: 40
+      reward-coins: 12000000
+      reward-diamonds: 400
       reward-credits: 5
     hard:
       display-name: "&cLevel Chaser III"
       action: LEVEL_UP_PET
       goal: 40
-      reward-coins: 400000
-      reward-diamonds: 120
+      reward-coins: 40000000
+      reward-diamonds: 1200
       reward-credits: 15

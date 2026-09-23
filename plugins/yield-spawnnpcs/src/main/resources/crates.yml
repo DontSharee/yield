@@ -28,8 +28,8 @@ crates:
     key-drop-chance: 0.05
     location: [spawn, -22, 99, 100, 90, 0]
     pool:
-      - { type: flat-coins, weight: 60, amount: 5000 }
-      - { type: flat-diamonds, weight: 25, amount: 3 }
+      - { type: flat-coins, weight: 60, amount: 500000 }
+      - { type: flat-diamonds, weight: 25, amount: 30 }
       - { type: pet, weight: 12, pet-item: golden_retriever }
       - { type: pet, weight: 3, pet-item: diamond_wolf }
 
@@ -39,8 +39,8 @@ crates:
     key-drop-chance: 0.015
     location: [spawn, -19.5, 99, 100, 90, 0]
     pool:
-      - { type: flat-coins, weight: 55, amount: 20000 }
-      - { type: flat-diamonds, weight: 30, amount: 8 }
+      - { type: flat-coins, weight: 55, amount: 2000000 }
+      - { type: flat-diamonds, weight: 30, amount: 80 }
       - { type: pet, weight: 12, pet-item: star_dragon }
       - { type: pet, weight: 3, pet-item: phoenix_hatchling }
 
@@ -50,7 +50,7 @@ crates:
     key-drop-chance: 0.004
     location: [spawn, -17, 99, 100, 90, 0]
     pool:
-      - { type: flat-coins, weight: 45, amount: 75000 }
-      - { type: flat-diamonds, weight: 35, amount: 20 }
+      - { type: flat-coins, weight: 45, amount: 7500000 }
+      - { type: flat-diamonds, weight: 35, amount: 200 }
       - { type: pet, weight: 15, pet-item: void_serpent }
       - { type: pet, weight: 5, pet-item: celestial_griffin }

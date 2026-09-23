@@ -7,6 +7,18 @@ and which knob to turn when something feels wrong.
 Run `/admin zones reload`, `/admin packs reload`, etc. after editing any of
 the files named below — none of this needs a restart.
 
+### Units (read first)
+
+Every value was rescaled at once so hits and payouts feel big: pet damage
+and every cube/boss HP **×1000**, every coin amount (payouts, prices, cost
+formulas, rewards, coin-earned goals) **×100**, every diamond amount
+**×10**. Ratios, and therefore pacing, did not change — the sim reads the
+same 10.9h to Genesis Core before and after. The worked examples in the
+prose below still quote the old units in places; multiply by those three
+factors to read them against the config files. Rescaling again is the same
+move: scale one currency everywhere it is denominated, never just one side
+of it.
+
 ---
 
 ## 1. The combat model

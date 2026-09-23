@@ -38,38 +38,38 @@ categories:
     icon: IRON_PICKAXE
     trigger: KILL_CUBE
     tiers:
-      - { goal: 250, reward-coins: 15000, reward-diamonds: 10, reward-credits: 5 }
-      - { goal: 2500, reward-coins: 250000, reward-diamonds: 60, reward-credits: 10, reward-potion: POTION_LUCK_2_600 }
-      - { goal: 15000, reward-coins: 8000000, reward-diamonds: 800, reward-credits: 25, reward-potion: POTION_DAMAGE_2_900 }
-      - { goal: 75000, reward-coins: 400000000, reward-diamonds: 20000, reward-credits: 50, reward-potion: POTION_LUCK_3_1800 }
-      - { goal: 300000, reward-coins: 30000000000, reward-diamonds: 500000, reward-credits: 150, reward-potion: POTION_COINS_3_3600 }
+      - { goal: 250, reward-coins: 1500000, reward-diamonds: 100, reward-credits: 5 }
+      - { goal: 2500, reward-coins: 25000000, reward-diamonds: 600, reward-credits: 10, reward-potion: POTION_LUCK_2_600 }
+      - { goal: 15000, reward-coins: 800000000, reward-diamonds: 8000, reward-credits: 25, reward-potion: POTION_DAMAGE_2_900 }
+      - { goal: 75000, reward-coins: 40000000000, reward-diamonds: 200000, reward-credits: 50, reward-potion: POTION_LUCK_3_1800 }
+      - { goal: 300000, reward-coins: 3000000000000, reward-diamonds: 5000000, reward-credits: 150, reward-potion: POTION_COINS_3_3600 }
 
   coins_earned:
     display-name: "&6Coins Earned"
     icon: SUNFLOWER
     trigger: EARN_COINS
     tiers:
-      - { goal: 250000, reward-coins: 25000, reward-diamonds: 10, reward-credits: 5 }
-      - { goal: 50000000, reward-coins: 5000000, reward-diamonds: 250, reward-credits: 10 }
-      - { goal: 25000000000, reward-coins: 2500000000, reward-diamonds: 25000, reward-credits: 25 }
-      - { goal: 10000000000000, reward-coins: 1000000000000, reward-diamonds: 2000000, reward-credits: 75 }
+      - { goal: 25000000, reward-coins: 2500000, reward-diamonds: 100, reward-credits: 5 }
+      - { goal: 5000000000, reward-coins: 500000000, reward-diamonds: 2500, reward-credits: 10 }
+      - { goal: 2500000000000, reward-coins: 250000000000, reward-diamonds: 250000, reward-credits: 25 }
+      - { goal: 1000000000000000, reward-coins: 100000000000000, reward-diamonds: 20000000, reward-credits: 75 }
 
   packs_opened:
     display-name: "&fEggs Hatched"
     icon: CHEST
     trigger: OPEN_PACK
     tiers:
-      - { goal: 50, reward-coins: 10000, reward-diamonds: 10, reward-credits: 5 }
-      - { goal: 500, reward-coins: 1500000, reward-diamonds: 200, reward-credits: 10 }
-      - { goal: 3000, reward-coins: 750000000, reward-diamonds: 15000, reward-credits: 25 }
-      - { goal: 15000, reward-coins: 150000000000, reward-diamonds: 1000000, reward-credits: 75 }
+      - { goal: 50, reward-coins: 1000000, reward-diamonds: 100, reward-credits: 5 }
+      - { goal: 500, reward-coins: 150000000, reward-diamonds: 2000, reward-credits: 10 }
+      - { goal: 3000, reward-coins: 75000000000, reward-diamonds: 150000, reward-credits: 25 }
+      - { goal: 15000, reward-coins: 15000000000000, reward-diamonds: 10000000, reward-credits: 75 }
 
   rebirths:
     display-name: "&bRebirths"
     icon: NETHER_STAR
     trigger: REBIRTH
     tiers:
-      - { goal: 10, reward-coins: 50000, reward-diamonds: 25, reward-credits: 5 }
-      - { goal: 50, reward-coins: 10000000, reward-diamonds: 500, reward-credits: 10 }
-      - { goal: 125, reward-coins: 5000000000, reward-diamonds: 50000, reward-credits: 50 }
-      - { goal: 250, reward-coins: 500000000000, reward-diamonds: 1500000, reward-credits: 150 }
+      - { goal: 10, reward-coins: 5000000, reward-diamonds: 250, reward-credits: 5 }
+      - { goal: 50, reward-coins: 1000000000, reward-diamonds: 5000, reward-credits: 10 }
+      - { goal: 125, reward-coins: 500000000000, reward-diamonds: 500000, reward-credits: 50 }
+      - { goal: 250, reward-coins: 50000000000000, reward-diamonds: 15000000, reward-credits: 150 }

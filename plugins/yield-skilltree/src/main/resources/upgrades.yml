@@ -51,7 +51,7 @@ nodes:
     # type of the lane's first node, so keep one type per column and
     # keep nodes inside slots 10-16 / 19-25 / 28-34 / 37-43.
     max-level: 10
-    cost-formula: "2000 * <level>^2.5"
+    cost-formula: "200000 * <level>^2.5"
     value-formula: "0.05 * <level>"
     type: ROLL_SPEED_MULTIPLIER
   luck_boost:
@@ -60,7 +60,7 @@ nodes:
     slot: 10
     requires: []
     max-level: 5
-    cost-formula: "5000 * <level>^3"
+    cost-formula: "500000 * <level>^3"
     value-formula: "0.03 * <level>"
     type: LUCK_MULTIPLIER
   coin_boost:
@@ -69,7 +69,7 @@ nodes:
     slot: 16
     requires: []
     max-level: 5
-    cost-formula: "20000 * <level>^3.5"
+    cost-formula: "2000000 * <level>^3.5"
     value-formula: "0.1 * <level>"
     type: COIN_MULTIPLIER
   greater_luck:
@@ -78,7 +78,7 @@ nodes:
     slot: 19
     requires: [luck_boost]
     max-level: 5
-    cost-formula: "500000 * <level>^3.5"
+    cost-formula: "50000000 * <level>^3.5"
     value-formula: "0.04 * <level>"
     type: LUCK_MULTIPLIER
   pet_slot:
@@ -87,7 +87,7 @@ nodes:
     slot: 13
     requires: [roll_speed]
     max-level: 4
-    cost-formula: "3750 * 4^<level>"
+    cost-formula: "375000 * 4^<level>"
     value-formula: "<level>"
     type: EQUIP_SLOTS
   golden_touch:
@@ -96,7 +96,7 @@ nodes:
     slot: 25
     requires: [coin_boost]
     max-level: 5
-    cost-formula: "2000000 * <level>^3.5"
+    cost-formula: "200000000 * <level>^3.5"
     value-formula: "0.08 * <level>"
     type: COIN_MULTIPLIER
   fortune_seeker:
@@ -105,7 +105,7 @@ nodes:
     slot: 28
     requires: [greater_luck]
     max-level: 5
-    cost-formula: "50000000 * <level>^3.5"
+    cost-formula: "5000000000 * <level>^3.5"
     value-formula: "0.05 * <level>"
     type: LUCK_MULTIPLIER
   swift_rolling:
@@ -114,7 +114,7 @@ nodes:
     slot: 21
     requires: [pet_slot]
     max-level: 8
-    cost-formula: "2000000 * <level>^3"
+    cost-formula: "200000000 * <level>^3"
     value-formula: "0.04 * <level>"
     type: ROLL_SPEED_MULTIPLIER
   second_pet_slot:
@@ -123,7 +123,7 @@ nodes:
     slot: 22
     requires: [pet_slot, coin_boost]
     max-level: 3
-    cost-formula: "1000000 * 6^<level>"
+    cost-formula: "100000000 * 6^<level>"
     value-formula: "<level>"
     type: EQUIP_SLOTS
   pet_damage:
@@ -132,7 +132,7 @@ nodes:
     slot: 14
     requires: [coin_boost]
     max-level: 6
-    cost-formula: "1000000 * <level>^3.5"
+    cost-formula: "100000000 * <level>^3.5"
     value-formula: "0.03 * <level>"
     type: DAMAGE_MULTIPLIER
   midas_blessing:
@@ -141,7 +141,7 @@ nodes:
     slot: 34
     requires: [golden_touch]
     max-level: 5
-    cost-formula: "2000000000 * <level>^3.5"
+    cost-formula: "200000000000 * <level>^3.5"
     value-formula: "0.06 * <level>"
     type: COIN_MULTIPLIER
   hyper_rolling:
@@ -150,7 +150,7 @@ nodes:
     slot: 30
     requires: [swift_rolling]
     max-level: 5
-    cost-formula: "200000000 * <level>^3.5"
+    cost-formula: "20000000000 * <level>^3.5"
     value-formula: "0.03 * <level>"
     type: ROLL_SPEED_MULTIPLIER
   third_pet_slot:
@@ -159,7 +159,7 @@ nodes:
     slot: 31
     requires: [second_pet_slot]
     max-level: 2
-    cost-formula: "50000000 * 8^<level>"
+    cost-formula: "5000000000 * 8^<level>"
     value-formula: "<level>"
     type: EQUIP_SLOTS
   berserker:
@@ -168,7 +168,7 @@ nodes:
     slot: 23
     requires: [pet_damage]
     max-level: 6
-    cost-formula: "20000000 * <level>^3.5"
+    cost-formula: "2000000000 * <level>^3.5"
     value-formula: "0.03 * <level>"
     type: DAMAGE_MULTIPLIER
   rampage:
@@ -177,7 +177,7 @@ nodes:
     slot: 32
     requires: [berserker]
     max-level: 5
-    cost-formula: "200000000 * <level>^3.5"
+    cost-formula: "20000000000 * <level>^3.5"
     value-formula: "0.04 * <level>"
     type: DAMAGE_MULTIPLIER
   fourth_pet_slot:
@@ -186,6 +186,6 @@ nodes:
     slot: 40
     requires: [third_pet_slot, midas_blessing]
     max-level: 1
-    cost-formula: "50000000000"
+    cost-formula: "5000000000000"
     value-formula: "<level>"
     type: EQUIP_SLOTS

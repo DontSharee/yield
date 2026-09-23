@@ -31,7 +31,7 @@ enchants:
     max-level: 5000
     rebirth-requirement: 0
     cost-currency: DIAMONDS
-    cost-formula: "0.5 * (level ^ 1.125) * (1.0003 ^ level)"
+    cost-formula: "5 * (level ^ 1.125) * (1.0003 ^ level)"
     boost-formula: "1.0001 * level"
     chance-formula: "100"
     mastery: false

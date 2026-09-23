@@ -67,16 +67,16 @@ pool:
     goal: 250
     reward-stars: 6
   earn_coins_small:
-    display-name: "Earn 5,000 Coins"
+    display-name: "Earn 500,000 Coins"
     icon: GOLD_INGOT
     action: EARN_COINS
-    goal: 5000
+    goal: 500000
     reward-stars: 2
   earn_coins_big:
-    display-name: "Earn 25,000 Coins"
+    display-name: "Earn 2,500,000 Coins"
     icon: GOLD_BLOCK
     action: EARN_COINS
-    goal: 25000
+    goal: 2500000
     reward-stars: 5
   enter_zones:
     display-name: "Enter 3 Zones"

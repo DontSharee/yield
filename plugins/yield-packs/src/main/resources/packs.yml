@@ -1678,7 +1678,7 @@ packs:
   starter_pack:
     display-name: "&fStarter Egg"
     material: DRAGON_EGG
-    coin-cost: 25
+    coin-cost: 2500
     diamond-cost: 0
     sort: 0
     shop-weight: 100
@@ -1705,7 +1705,7 @@ packs:
   common_pack:
     display-name: "&7Common Egg"
     material: DRAGON_EGG
-    coin-cost: 1000
+    coin-cost: 100000
     diamond-cost: 0
     sort: 1
     shop-weight: 90
@@ -1730,7 +1730,7 @@ packs:
   uncommon_pack:
     display-name: "&aUncommon Egg"
     material: DRAGON_EGG
-    coin-cost: 15000
+    coin-cost: 1500000
     diamond-cost: 0
     sort: 2
     shop-weight: 40
@@ -1754,7 +1754,7 @@ packs:
   value_pack:
     display-name: "&eValue Egg"
     material: DRAGON_EGG
-    coin-cost: 150000
+    coin-cost: 15000000
     diamond-cost: 0
     sort: 3
     shop-weight: 20
@@ -1780,8 +1780,8 @@ packs:
   rare_pack:
     display-name: "&9Rare Egg"
     material: DRAGON_EGG
-    coin-cost: 3000000
-    diamond-cost: 100
+    coin-cost: 300000000
+    diamond-cost: 1000
     sort: 4
     shop-weight: 15
     shop-luck-exponent: 0.6
@@ -1803,8 +1803,8 @@ packs:
   jackpot_pack:
     display-name: "&d&lJackpot Egg"
     material: DRAGON_EGG
-    coin-cost: 40000000
-    diamond-cost: 750
+    coin-cost: 4000000000
+    diamond-cost: 7500
     sort: 5
     shop-weight: 3
     shop-luck-exponent: 1.0
@@ -1827,8 +1827,8 @@ packs:
   epic_pack:
     display-name: "&5Epic Egg"
     material: DRAGON_EGG
-    coin-cost: 400000000
-    diamond-cost: 4000
+    coin-cost: 40000000000
+    diamond-cost: 40000
     sort: 6
     shop-weight: 6
     shop-luck-exponent: 0.8
@@ -1850,8 +1850,8 @@ packs:
   legendary_pack:
     display-name: "&6&lLegendary Egg"
     material: DRAGON_EGG
-    coin-cost: 4000000000
-    diamond-cost: 25000
+    coin-cost: 400000000000
+    diamond-cost: 250000
     sort: 7
     shop-weight: 2
     shop-luck-exponent: 1.0
@@ -1873,8 +1873,8 @@ packs:
   mythic_pack:
     display-name: "&d&lMythic Egg"
     material: DRAGON_EGG
-    coin-cost: 40000000000
-    diamond-cost: 150000
+    coin-cost: 4000000000000
+    diamond-cost: 1500000
     sort: 8
     shop-weight: 0.5
     shop-luck-exponent: 1.3
@@ -1900,8 +1900,8 @@ packs:
   titan_pack:
     display-name: "&b&lTitan Egg"
     material: DRAGON_EGG
-    coin-cost: 150000000000
-    diamond-cost: 400000
+    coin-cost: 15000000000000
+    diamond-cost: 4000000
     sort: 9
     shop-weight: 0.05
     shop-luck-exponent: 1.6
@@ -1929,7 +1929,7 @@ packs:
   zone_meadow_pack:
     display-name: "&aMeadow Egg"
     material: DRAGON_EGG
-    coin-cost: 50
+    coin-cost: 5000
     diamond-cost: 0
     sort: 100
     shop-weight: 0
@@ -1950,7 +1950,7 @@ packs:
   zone_frostpeak_pack:
     display-name: "&bFrostpeak Egg"
     material: DRAGON_EGG
-    coin-cost: 100
+    coin-cost: 10000
     diamond-cost: 0
     sort: 101
     shop-weight: 0
@@ -1971,7 +1971,7 @@ packs:
   zone_iron_foothills_pack:
     display-name: "&7Iron Foothills Egg"
     material: DRAGON_EGG
-    coin-cost: 300
+    coin-cost: 30000
     diamond-cost: 0
     sort: 102
     shop-weight: 0
@@ -1992,7 +1992,7 @@ packs:
   zone_sulfur_flats_pack:
     display-name: "&eSulfur Flats Egg"
     material: DRAGON_EGG
-    coin-cost: 700
+    coin-cost: 70000
     diamond-cost: 0
     sort: 103
     shop-weight: 0
@@ -2013,7 +2013,7 @@ packs:
   zone_scorched_wastes_pack:
     display-name: "&cScorched Wastes Egg"
     material: DRAGON_EGG
-    coin-cost: 2000
+    coin-cost: 200000
     diamond-cost: 0
     sort: 104
     shop-weight: 0
@@ -2034,7 +2034,7 @@ packs:
   zone_crystal_caverns_pack:
     display-name: "&dCrystal Caverns Egg"
     material: DRAGON_EGG
-    coin-cost: 9000
+    coin-cost: 900000
     diamond-cost: 0
     sort: 105
     shop-weight: 0
@@ -2055,7 +2055,7 @@ packs:
   zone_diamond_hollow_pack:
     display-name: "&bDiamond Hollow Egg"
     material: DRAGON_EGG
-    coin-cost: 30000
+    coin-cost: 3000000
     diamond-cost: 0
     sort: 106
     shop-weight: 0
@@ -2076,7 +2076,7 @@ packs:
   zone_emerald_depths_pack:
     display-name: "&2Emerald Depths Egg"
     material: DRAGON_EGG
-    coin-cost: 100000
+    coin-cost: 10000000
     diamond-cost: 0
     sort: 107
     shop-weight: 0
@@ -2097,7 +2097,7 @@ packs:
   zone_obsidian_rift_pack:
     display-name: "&8Obsidian Rift Egg"
     material: DRAGON_EGG
-    coin-cost: 450000
+    coin-cost: 45000000
     diamond-cost: 0
     sort: 108
     shop-weight: 0
@@ -2118,7 +2118,7 @@ packs:
   zone_void_expanse_pack:
     display-name: "&5Void Expanse Egg"
     material: DRAGON_EGG
-    coin-cost: 2000000
+    coin-cost: 200000000
     diamond-cost: 0
     sort: 109
     shop-weight: 0
@@ -2139,7 +2139,7 @@ packs:
   zone_netherite_wastes_pack:
     display-name: "&4Netherite Wastes Egg"
     material: DRAGON_EGG
-    coin-cost: 8000000
+    coin-cost: 800000000
     diamond-cost: 0
     sort: 110
     shop-weight: 0
@@ -2160,7 +2160,7 @@ packs:
   zone_ancient_ruins_pack:
     display-name: "&8Ancient Ruins Egg"
     material: DRAGON_EGG
-    coin-cost: 30000000
+    coin-cost: 3000000000
     diamond-cost: 0
     sort: 111
     shop-weight: 0
@@ -2181,7 +2181,7 @@ packs:
   zone_end_barrens_pack:
     display-name: "&eEnd Barrens Egg"
     material: DRAGON_EGG
-    coin-cost: 100000000
+    coin-cost: 10000000000
     diamond-cost: 0
     sort: 112
     shop-weight: 0
@@ -2202,7 +2202,7 @@ packs:
   zone_purpur_spires_pack:
     display-name: "&dPurpur Spires Egg"
     material: DRAGON_EGG
-    coin-cost: 300000000
+    coin-cost: 30000000000
     diamond-cost: 0
     sort: 113
     shop-weight: 0
@@ -2223,7 +2223,7 @@ packs:
   zone_celestial_sanctum_pack:
     display-name: "&eCelestial Sanctum Egg"
     material: DRAGON_EGG
-    coin-cost: 1000000000
+    coin-cost: 100000000000
     diamond-cost: 0
     sort: 114
     shop-weight: 0
@@ -2244,7 +2244,7 @@ packs:
   zone_starlight_fields_pack:
     display-name: "&bStarlight Fields Egg"
     material: DRAGON_EGG
-    coin-cost: 3000000000
+    coin-cost: 300000000000
     diamond-cost: 0
     sort: 115
     shop-weight: 0
@@ -2265,7 +2265,7 @@ packs:
   zone_cosmic_abyss_pack:
     display-name: "&5Cosmic Abyss Egg"
     material: DRAGON_EGG
-    coin-cost: 10000000000
+    coin-cost: 1000000000000
     diamond-cost: 0
     sort: 116
     shop-weight: 0
@@ -2286,7 +2286,7 @@ packs:
   zone_eternal_forge_pack:
     display-name: "&6Eternal Forge Egg"
     material: DRAGON_EGG
-    coin-cost: 30000000000
+    coin-cost: 3000000000000
     diamond-cost: 0
     sort: 117
     shop-weight: 0
@@ -2307,7 +2307,7 @@ packs:
   zone_astral_peak_pack:
     display-name: "&dAstral Peak Egg"
     material: DRAGON_EGG
-    coin-cost: 100000000000
+    coin-cost: 10000000000000
     diamond-cost: 0
     sort: 118
     shop-weight: 0
@@ -2328,7 +2328,7 @@ packs:
   zone_genesis_core_pack:
     display-name: "&eGenesis Core Egg"
     material: DRAGON_EGG
-    coin-cost: 300000000000
+    coin-cost: 30000000000000
     diamond-cost: 0
     sort: 119
     shop-weight: 0

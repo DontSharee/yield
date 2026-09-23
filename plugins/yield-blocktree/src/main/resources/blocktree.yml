@@ -110,16 +110,16 @@ blocks:
     tiers:
       - goal: 14
         effects:
-          - { type: flat-coins, value: 2 }
+          - { type: flat-coins, value: 200 }
       - goal: 41
         effects:
-          - { type: flat-coins, value: 5 }
+          - { type: flat-coins, value: 500 }
       - goal: 100
         effects:
-          - { type: flat-coins, value: 10 }
+          - { type: flat-coins, value: 1000 }
       - goal: 210
         effects:
-          - { type: flat-coins, value: 20 }
+          - { type: flat-coins, value: 2000 }
           - { type: unlock-shard-drop, value: 0.01, data: CRIT_CHANCE }
       - goal: 550
         effects:
@@ -142,16 +142,16 @@ blocks:
     tiers:
       - goal: 3
         effects:
-          - { type: flat-coins, value: 10 }
+          - { type: flat-coins, value: 1000 }
       - goal: 10
         effects:
-          - { type: flat-coins, value: 20 }
+          - { type: flat-coins, value: 2000 }
       - goal: 26
         effects:
-          - { type: flat-coins, value: 40 }
+          - { type: flat-coins, value: 4000 }
       - goal: 51
         effects:
-          - { type: flat-coins, value: 80 }
+          - { type: flat-coins, value: 8000 }
       - goal: 140
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -172,16 +172,16 @@ blocks:
     tiers:
       - goal: 7
         effects:
-          - { type: flat-coins, value: 65 }
+          - { type: flat-coins, value: 6500 }
       - goal: 20
         effects:
-          - { type: flat-coins, value: 130 }
+          - { type: flat-coins, value: 13000 }
       - goal: 50
         effects:
-          - { type: flat-coins, value: 260 }
+          - { type: flat-coins, value: 26000 }
       - goal: 100
         effects:
-          - { type: flat-coins, value: 520 }
+          - { type: flat-coins, value: 52000 }
       - goal: 270
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -202,16 +202,16 @@ blocks:
     tiers:
       - goal: 21
         effects:
-          - { type: flat-coins, value: 6 }
+          - { type: flat-coins, value: 600 }
       - goal: 62
         effects:
-          - { type: flat-coins, value: 12 }
+          - { type: flat-coins, value: 1200 }
       - goal: 160
         effects:
-          - { type: flat-coins, value: 25 }
+          - { type: flat-coins, value: 2500 }
       - goal: 310
         effects:
-          - { type: flat-coins, value: 50 }
+          - { type: flat-coins, value: 5000 }
       - goal: 830
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -230,16 +230,16 @@ blocks:
     tiers:
       - goal: 5
         effects:
-          - { type: flat-coins, value: 25 }
+          - { type: flat-coins, value: 2500 }
       - goal: 16
         effects:
-          - { type: flat-coins, value: 50 }
+          - { type: flat-coins, value: 5000 }
       - goal: 39
         effects:
-          - { type: flat-coins, value: 100 }
+          - { type: flat-coins, value: 10000 }
       - goal: 78
         effects:
-          - { type: flat-coins, value: 200 }
+          - { type: flat-coins, value: 20000 }
       - goal: 210
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -258,16 +258,16 @@ blocks:
     tiers:
       - goal: 1
         effects:
-          - { type: flat-coins, value: 75 }
+          - { type: flat-coins, value: 7500 }
       - goal: 3
         effects:
-          - { type: flat-coins, value: 150 }
+          - { type: flat-coins, value: 15000 }
       - goal: 8
         effects:
-          - { type: flat-coins, value: 300 }
+          - { type: flat-coins, value: 30000 }
       - goal: 16
         effects:
-          - { type: flat-coins, value: 600 }
+          - { type: flat-coins, value: 60000 }
       - goal: 41
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -286,16 +286,16 @@ blocks:
     tiers:
       - goal: 24
         effects:
-          - { type: flat-coins, value: 16 }
+          - { type: flat-coins, value: 1600 }
       - goal: 72
         effects:
-          - { type: flat-coins, value: 32 }
+          - { type: flat-coins, value: 3200 }
       - goal: 180
         effects:
-          - { type: flat-coins, value: 65 }
+          - { type: flat-coins, value: 6500 }
       - goal: 360
         effects:
-          - { type: flat-coins, value: 130 }
+          - { type: flat-coins, value: 13000 }
       - goal: 960
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -314,16 +314,16 @@ blocks:
     tiers:
       - goal: 1
         effects:
-          - { type: flat-coins, value: 200 }
+          - { type: flat-coins, value: 20000 }
       - goal: 4
         effects:
-          - { type: flat-coins, value: 390 }
+          - { type: flat-coins, value: 39000 }
       - goal: 9
         effects:
-          - { type: flat-coins, value: 780 }
+          - { type: flat-coins, value: 78000 }
       - goal: 18
         effects:
-          - { type: flat-coins, value: 1600 }
+          - { type: flat-coins, value: 160000 }
       - goal: 48
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -342,16 +342,16 @@ blocks:
     tiers:
       - goal: 26
         effects:
-          - { type: flat-coins, value: 44 }
+          - { type: flat-coins, value: 4400 }
       - goal: 79
         effects:
-          - { type: flat-coins, value: 88 }
+          - { type: flat-coins, value: 8800 }
       - goal: 200
         effects:
-          - { type: flat-coins, value: 180 }
+          - { type: flat-coins, value: 18000 }
       - goal: 400
         effects:
-          - { type: flat-coins, value: 350 }
+          - { type: flat-coins, value: 35000 }
       - goal: 1100
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -370,16 +370,16 @@ blocks:
     tiers:
       - goal: 7
         effects:
-          - { type: flat-coins, value: 180 }
+          - { type: flat-coins, value: 18000 }
       - goal: 20
         effects:
-          - { type: flat-coins, value: 350 }
+          - { type: flat-coins, value: 35000 }
       - goal: 50
         effects:
-          - { type: flat-coins, value: 700 }
+          - { type: flat-coins, value: 70000 }
       - goal: 99
         effects:
-          - { type: flat-coins, value: 1400 }
+          - { type: flat-coins, value: 140000 }
       - goal: 260
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -398,16 +398,16 @@ blocks:
     tiers:
       - goal: 3
         effects:
-          - { type: flat-coins, value: 520 }
+          - { type: flat-coins, value: 52000 }
       - goal: 9
         effects:
-          - { type: flat-coins, value: 1000 }
+          - { type: flat-coins, value: 100000 }
       - goal: 22
         effects:
-          - { type: flat-coins, value: 5400 }
+          - { type: flat-coins, value: 540000 }
       - goal: 45
         effects:
-          - { type: flat-coins, value: 11000 }
+          - { type: flat-coins, value: 1100000 }
       - goal: 120
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -426,16 +426,16 @@ blocks:
     tiers:
       - goal: 33
         effects:
-          - { type: flat-coins, value: 110 }
+          - { type: flat-coins, value: 11000 }
       - goal: 100
         effects:
-          - { type: flat-coins, value: 220 }
+          - { type: flat-coins, value: 22000 }
       - goal: 250
         effects:
-          - { type: flat-coins, value: 450 }
+          - { type: flat-coins, value: 45000 }
       - goal: 500
         effects:
-          - { type: flat-coins, value: 900 }
+          - { type: flat-coins, value: 90000 }
       - goal: 1300
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -454,16 +454,16 @@ blocks:
     tiers:
       - goal: 68
         effects:
-          - { type: flat-coins, value: 450 }
+          - { type: flat-coins, value: 45000 }
       - goal: 200
         effects:
-          - { type: flat-coins, value: 10000 }
+          - { type: flat-coins, value: 1000000 }
       - goal: 510
         effects:
-          - { type: flat-coins, value: 20000 }
+          - { type: flat-coins, value: 2000000 }
       - goal: 1000
         effects:
-          - { type: flat-coins, value: 40000 }
+          - { type: flat-coins, value: 4000000 }
       - goal: 2700
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -482,16 +482,16 @@ blocks:
     tiers:
       - goal: 41
         effects:
-          - { type: flat-coins, value: 300 }
+          - { type: flat-coins, value: 30000 }
       - goal: 120
         effects:
-          - { type: flat-coins, value: 600 }
+          - { type: flat-coins, value: 60000 }
       - goal: 310
         effects:
-          - { type: flat-coins, value: 1200 }
+          - { type: flat-coins, value: 120000 }
       - goal: 620
         effects:
-          - { type: flat-coins, value: 2400 }
+          - { type: flat-coins, value: 240000 }
       - goal: 1600
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -510,16 +510,16 @@ blocks:
     tiers:
       - goal: 710
         effects:
-          - { type: flat-coins, value: 65000000 }
+          - { type: flat-coins, value: 6500000000 }
       - goal: 2100
         effects:
-          - { type: flat-coins, value: 130000000 }
+          - { type: flat-coins, value: 13000000000 }
       - goal: 5400
         effects:
-          - { type: flat-coins, value: 260000000 }
+          - { type: flat-coins, value: 26000000000 }
       - goal: 11000
         effects:
-          - { type: flat-coins, value: 520000000 }
+          - { type: flat-coins, value: 52000000000 }
       - goal: 29000
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -538,16 +538,16 @@ blocks:
     tiers:
       - goal: 2
         effects:
-          - { type: flat-coins, value: 3600 }
+          - { type: flat-coins, value: 360000 }
       - goal: 6
         effects:
-          - { type: flat-coins, value: 7200 }
+          - { type: flat-coins, value: 720000 }
       - goal: 15
         effects:
-          - { type: flat-coins, value: 14000 }
+          - { type: flat-coins, value: 1400000 }
       - goal: 31
         effects:
-          - { type: flat-coins, value: 29000 }
+          - { type: flat-coins, value: 2900000 }
       - goal: 82
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -566,16 +566,16 @@ blocks:
     tiers:
       - goal: 92
         effects:
-          - { type: flat-coins, value: 750 }
+          - { type: flat-coins, value: 75000 }
       - goal: 280
         effects:
-          - { type: flat-coins, value: 1500 }
+          - { type: flat-coins, value: 150000 }
       - goal: 690
         effects:
-          - { type: flat-coins, value: 8000 }
+          - { type: flat-coins, value: 800000 }
       - goal: 1400
         effects:
-          - { type: flat-coins, value: 16000 }
+          - { type: flat-coins, value: 1600000 }
       - goal: 3700
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -595,16 +595,16 @@ blocks:
     tiers:
       - goal: 12
         effects:
-          - { type: flat-coins, value: 3000 }
+          - { type: flat-coins, value: 300000 }
       - goal: 37
         effects:
-          - { type: flat-coins, value: 6000 }
+          - { type: flat-coins, value: 600000 }
       - goal: 93
         effects:
-          - { type: flat-coins, value: 12000 }
+          - { type: flat-coins, value: 1200000 }
       - goal: 190
         effects:
-          - { type: flat-coins, value: 24000 }
+          - { type: flat-coins, value: 2400000 }
       - goal: 490
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -624,16 +624,16 @@ blocks:
     tiers:
       - goal: 180
         effects:
-          - { type: flat-coins, value: 260000000 }
+          - { type: flat-coins, value: 26000000000 }
       - goal: 530
         effects:
-          - { type: flat-coins, value: 520000000 }
+          - { type: flat-coins, value: 52000000000 }
       - goal: 1300
         effects:
-          - { type: flat-coins, value: 1000000000 }
+          - { type: flat-coins, value: 100000000000 }
       - goal: 2700
         effects:
-          - { type: flat-coins, value: 1400000000 }
+          - { type: flat-coins, value: 140000000000 }
       - goal: 7100
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -652,16 +652,16 @@ blocks:
     tiers:
       - goal: 11
         effects:
-          - { type: flat-coins, value: 8000 }
+          - { type: flat-coins, value: 800000 }
       - goal: 32
         effects:
-          - { type: flat-coins, value: 16000 }
+          - { type: flat-coins, value: 1600000 }
       - goal: 81
         effects:
-          - { type: flat-coins, value: 32000 }
+          - { type: flat-coins, value: 3200000 }
       - goal: 160
         effects:
-          - { type: flat-coins, value: 64000 }
+          - { type: flat-coins, value: 6400000 }
       - goal: 430
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -680,16 +680,16 @@ blocks:
     tiers:
       - goal: 2
         effects:
-          - { type: flat-coins, value: 24000 }
+          - { type: flat-coins, value: 2400000 }
       - goal: 6
         effects:
-          - { type: flat-coins, value: 48000 }
+          - { type: flat-coins, value: 4800000 }
       - goal: 16
         effects:
-          - { type: flat-coins, value: 96000 }
+          - { type: flat-coins, value: 9600000 }
       - goal: 32
         effects:
-          - { type: flat-coins, value: 5400000000 }
+          - { type: flat-coins, value: 540000000000 }
       - goal: 86
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -709,16 +709,16 @@ blocks:
     tiers:
       - goal: 450
         effects:
-          - { type: flat-coins, value: 12000 }
+          - { type: flat-coins, value: 1200000 }
       - goal: 1300
         effects:
-          - { type: flat-coins, value: 19000000 }
+          - { type: flat-coins, value: 1900000000 }
       - goal: 3400
         effects:
-          - { type: flat-coins, value: 38000000 }
+          - { type: flat-coins, value: 3800000000 }
       - goal: 6700
         effects:
-          - { type: flat-coins, value: 76000000 }
+          - { type: flat-coins, value: 7600000000 }
       - goal: 18000
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -738,16 +738,16 @@ blocks:
     tiers:
       - goal: 17
         effects:
-          - { type: flat-coins, value: 60000 }
+          - { type: flat-coins, value: 6000000 }
       - goal: 52
         effects:
-          - { type: flat-coins, value: 100000 }
+          - { type: flat-coins, value: 10000000 }
       - goal: 130
         effects:
-          - { type: flat-coins, value: 200000 }
+          - { type: flat-coins, value: 20000000 }
       - goal: 260
         effects:
-          - { type: flat-coins, value: 400000 }
+          - { type: flat-coins, value: 40000000 }
       - goal: 700
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -767,16 +767,16 @@ blocks:
     tiers:
       - goal: 620
         effects:
-          - { type: flat-coins, value: 38000000 }
+          - { type: flat-coins, value: 3800000000 }
       - goal: 1800
         effects:
-          - { type: flat-coins, value: 50000000 }
+          - { type: flat-coins, value: 5000000000 }
       - goal: 4600
         effects:
-          - { type: flat-coins, value: 100000000 }
+          - { type: flat-coins, value: 10000000000 }
       - goal: 9200
         effects:
-          - { type: flat-coins, value: 200000000 }
+          - { type: flat-coins, value: 20000000000 }
       - goal: 25000
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -796,16 +796,16 @@ blocks:
     tiers:
       - goal: 240
         effects:
-          - { type: flat-coins, value: 32000 }
+          - { type: flat-coins, value: 3200000 }
       - goal: 720
         effects:
-          - { type: flat-coins, value: 65000 }
+          - { type: flat-coins, value: 6500000 }
       - goal: 1800
         effects:
-          - { type: flat-coins, value: 400000000 }
+          - { type: flat-coins, value: 40000000000 }
       - goal: 3600
         effects:
-          - { type: flat-coins, value: 800000000 }
+          - { type: flat-coins, value: 80000000000 }
       - goal: 9500
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -824,16 +824,16 @@ blocks:
     tiers:
       - goal: 4
         effects:
-          - { type: flat-coins, value: 390000 }
+          - { type: flat-coins, value: 39000000 }
       - goal: 13
         effects:
-          - { type: flat-coins, value: 780000 }
+          - { type: flat-coins, value: 78000000 }
       - goal: 33
         effects:
-          - { type: flat-coins, value: 1600000 }
+          - { type: flat-coins, value: 160000000 }
       - goal: 65
         effects:
-          - { type: flat-coins, value: 3100000 }
+          - { type: flat-coins, value: 310000000 }
       - goal: 170
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -852,16 +852,16 @@ blocks:
     tiers:
       - goal: 110
         effects:
-          - { type: flat-coins, value: 85000 }
+          - { type: flat-coins, value: 8500000 }
       - goal: 330
         effects:
-          - { type: flat-coins, value: 170000 }
+          - { type: flat-coins, value: 17000000 }
       - goal: 820
         effects:
-          - { type: flat-coins, value: 340000 }
+          - { type: flat-coins, value: 34000000 }
       - goal: 1600
         effects:
-          - { type: flat-coins, value: 680000 }
+          - { type: flat-coins, value: 68000000 }
       - goal: 4400
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -880,16 +880,16 @@ blocks:
     tiers:
       - goal: 5
         effects:
-          - { type: flat-coins, value: 1000000 }
+          - { type: flat-coins, value: 100000000 }
       - goal: 16
         effects:
-          - { type: flat-coins, value: 2000000 }
+          - { type: flat-coins, value: 200000000 }
       - goal: 41
         effects:
-          - { type: flat-coins, value: 4100000 }
+          - { type: flat-coins, value: 410000000 }
       - goal: 82
         effects:
-          - { type: flat-coins, value: 8200000 }
+          - { type: flat-coins, value: 820000000 }
       - goal: 220
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -909,16 +909,16 @@ blocks:
     tiers:
       - goal: 390
         effects:
-          - { type: flat-coins, value: 220000 }
+          - { type: flat-coins, value: 22000000 }
       - goal: 1200
         effects:
-          - { type: flat-coins, value: 440000 }
+          - { type: flat-coins, value: 44000000 }
       - goal: 2900
         effects:
-          - { type: flat-coins, value: 5800000 }
+          - { type: flat-coins, value: 580000000 }
       - goal: 5900
         effects:
-          - { type: flat-coins, value: 12000000 }
+          - { type: flat-coins, value: 1200000000 }
       - goal: 16000
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -937,16 +937,16 @@ blocks:
     tiers:
       - goal: 37
         effects:
-          - { type: flat-coins, value: 880000 }
+          - { type: flat-coins, value: 88000000 }
       - goal: 110
         effects:
-          - { type: flat-coins, value: 1800000 }
+          - { type: flat-coins, value: 180000000 }
       - goal: 270
         effects:
-          - { type: flat-coins, value: 3500000 }
+          - { type: flat-coins, value: 350000000 }
       - goal: 550
         effects:
-          - { type: flat-coins, value: 7000000 }
+          - { type: flat-coins, value: 700000000 }
       - goal: 1500
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -966,16 +966,16 @@ blocks:
     tiers:
       - goal: 250
         effects:
-          - { type: flat-coins, value: 560000 }
+          - { type: flat-coins, value: 56000000 }
       - goal: 760
         effects:
-          - { type: flat-coins, value: 1100000 }
+          - { type: flat-coins, value: 110000000 }
       - goal: 1900
         effects:
-          - { type: flat-coins, value: 2200000 }
+          - { type: flat-coins, value: 220000000 }
       - goal: 3800
         effects:
-          - { type: flat-coins, value: 46000000 }
+          - { type: flat-coins, value: 4600000000 }
       - goal: 10000
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -994,16 +994,16 @@ blocks:
     tiers:
       - goal: 46
         effects:
-          - { type: flat-coins, value: 2200000 }
+          - { type: flat-coins, value: 220000000 }
       - goal: 140
         effects:
-          - { type: flat-coins, value: 4500000 }
+          - { type: flat-coins, value: 450000000 }
       - goal: 340
         effects:
-          - { type: flat-coins, value: 9000000 }
+          - { type: flat-coins, value: 900000000 }
       - goal: 690
         effects:
-          - { type: flat-coins, value: 18000000 }
+          - { type: flat-coins, value: 1800000000 }
       - goal: 1800
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -1022,16 +1022,16 @@ blocks:
     tiers:
       - goal: 9
         effects:
-          - { type: flat-coins, value: 6800000 }
+          - { type: flat-coins, value: 680000000 }
       - goal: 28
         effects:
-          - { type: flat-coins, value: 14000000 }
+          - { type: flat-coins, value: 1400000000 }
       - goal: 69
         effects:
-          - { type: flat-coins, value: 27000000 }
+          - { type: flat-coins, value: 2700000000 }
       - goal: 140
         effects:
-          - { type: flat-coins, value: 54000000 }
+          - { type: flat-coins, value: 5400000000 }
       - goal: 370
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -1050,16 +1050,16 @@ blocks:
     tiers:
       - goal: 110
         effects:
-          - { type: flat-coins, value: 17000000 }
+          - { type: flat-coins, value: 1700000000 }
       - goal: 320
         effects:
-          - { type: flat-coins, value: 230000000 }
+          - { type: flat-coins, value: 23000000000 }
       - goal: 790
         effects:
-          - { type: flat-coins, value: 3100000000 }
+          - { type: flat-coins, value: 310000000000 }
       - goal: 1600
         effects:
-          - { type: flat-coins, value: 16000000000 }
+          - { type: flat-coins, value: 1600000000000 }
       - goal: 4200
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -1078,16 +1078,16 @@ blocks:
     tiers:
       - goal: 280
         effects:
-          - { type: flat-coins, value: 3800000 }
+          - { type: flat-coins, value: 380000000 }
       - goal: 840
         effects:
-          - { type: flat-coins, value: 7500000 }
+          - { type: flat-coins, value: 750000000 }
       - goal: 2100
         effects:
-          - { type: flat-coins, value: 15000000 }
+          - { type: flat-coins, value: 1500000000 }
       - goal: 4200
         effects:
-          - { type: flat-coins, value: 30000000 }
+          - { type: flat-coins, value: 3000000000 }
       - goal: 11000
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -1106,16 +1106,16 @@ blocks:
     tiers:
       - goal: 70
         effects:
-          - { type: flat-coins, value: 15000000 }
+          - { type: flat-coins, value: 1500000000 }
       - goal: 210
         effects:
-          - { type: flat-coins, value: 30000000 }
+          - { type: flat-coins, value: 3000000000 }
       - goal: 530
         effects:
-          - { type: flat-coins, value: 60000000 }
+          - { type: flat-coins, value: 6000000000 }
       - goal: 1100
         effects:
-          - { type: flat-coins, value: 120000000 }
+          - { type: flat-coins, value: 12000000000 }
       - goal: 2800
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -1134,16 +1134,16 @@ blocks:
     tiers:
       - goal: 18
         effects:
-          - { type: flat-coins, value: 300000 }
+          - { type: flat-coins, value: 30000000 }
       - goal: 53
         effects:
-          - { type: flat-coins, value: 170000000 }
+          - { type: flat-coins, value: 17000000000 }
       - goal: 130
         effects:
-          - { type: flat-coins, value: 6000000000 }
+          - { type: flat-coins, value: 600000000000 }
       - goal: 260
         effects:
-          - { type: flat-coins, value: 81000000000 }
+          - { type: flat-coins, value: 8100000000000 }
       - goal: 700
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -1162,16 +1162,16 @@ blocks:
     tiers:
       - goal: 16
         effects:
-          - { type: flat-coins, value: 360000 }
+          - { type: flat-coins, value: 36000000 }
       - goal: 47
         effects:
-          - { type: flat-coins, value: 81000000 }
+          - { type: flat-coins, value: 8100000000 }
       - goal: 120
         effects:
-          - { type: flat-coins, value: 7200000000 }
+          - { type: flat-coins, value: 720000000000 }
       - goal: 240
         effects:
-          - { type: flat-coins, value: 97000000000 }
+          - { type: flat-coins, value: 9700000000000 }
       - goal: 630
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -1190,16 +1190,16 @@ blocks:
     tiers:
       - goal: 1
         effects:
-          - { type: flat-coins, value: 600000 }
+          - { type: flat-coins, value: 60000000 }
       - goal: 4
         effects:
-          - { type: flat-coins, value: 350000000 }
+          - { type: flat-coins, value: 35000000000 }
       - goal: 9
         effects:
-          - { type: flat-coins, value: 12000000000 }
+          - { type: flat-coins, value: 1200000000000 }
       - goal: 18
         effects:
-          - { type: flat-coins, value: 160000000000 }
+          - { type: flat-coins, value: 16000000000000 }
       - goal: 47
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -1218,16 +1218,16 @@ blocks:
     tiers:
       - goal: 280
         effects:
-          - { type: flat-coins, value: 38 }
+          - { type: flat-coins, value: 3800 }
       - goal: 820
         effects:
-          - { type: flat-coins, value: 75 }
+          - { type: flat-coins, value: 7500 }
       - goal: 1600
         effects:
-          - { type: flat-coins, value: 150 }
+          - { type: flat-coins, value: 15000 }
       - goal: 2800
         effects:
-          - { type: flat-coins, value: 300 }
+          - { type: flat-coins, value: 30000 }
       - goal: 4100
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -1246,16 +1246,16 @@ blocks:
     tiers:
       - goal: 70
         effects:
-          - { type: flat-coins, value: 150 }
+          - { type: flat-coins, value: 15000 }
       - goal: 210
         effects:
-          - { type: flat-coins, value: 300 }
+          - { type: flat-coins, value: 30000 }
       - goal: 420
         effects:
-          - { type: flat-coins, value: 600 }
+          - { type: flat-coins, value: 60000 }
       - goal: 700
         effects:
-          - { type: flat-coins, value: 1200 }
+          - { type: flat-coins, value: 120000 }
       - goal: 1000
         effects:
           - { type: block-coin-multiplier, value: 0.10 }
@@ -1274,16 +1274,16 @@ blocks:
     tiers:
       - goal: 14
         effects:
-          - { type: flat-coins, value: 450 }
+          - { type: flat-coins, value: 45000 }
       - goal: 42
         effects:
-          - { type: flat-coins, value: 900 }
+          - { type: flat-coins, value: 90000 }
       - goal: 84
         effects:
-          - { type: flat-coins, value: 1800 }
+          - { type: flat-coins, value: 180000 }
       - goal: 140
         effects:
-          - { type: flat-coins, value: 3600 }
+          - { type: flat-coins, value: 360000 }
       - goal: 210
         effects:
           - { type: block-coin-multiplier, value: 0.10 }

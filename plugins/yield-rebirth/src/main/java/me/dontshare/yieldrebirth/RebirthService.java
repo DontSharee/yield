@@ -41,7 +41,7 @@ public final class RebirthService {
     public RebirthService(PlayerDataStore<PackPlayerProfile> playerStore, FileConfiguration config,
                            Function<PackPlayerProfile, Double> grantMultiplier) {
         this.playerStore = playerStore;
-        this.baseCost = config.getDouble("base-cost", 2_500);
+        this.baseCost = config.getDouble("base-cost", 250_000);
         this.growth = config.getDouble("growth", 1.12);
         this.coinBonusPerRebirth = config.getDouble("coin-bonus-per-rebirth", 0.05);
         this.grantMultiplier = grantMultiplier;

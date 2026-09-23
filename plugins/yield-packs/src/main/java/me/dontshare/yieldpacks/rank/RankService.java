@@ -31,8 +31,8 @@ public final class RankService {
     private static final double DIAMOND_BONUS_PER_RANK = 0.02;
 
     /** Placeholder linear reward formulas for the one-time per-rank claim - trivially retunable later. */
-    private static final long REWARD_COINS_PER_RANK = 250L;
-    private static final long REWARD_DIAMONDS_PER_RANK = 10L;
+    private static final long REWARD_COINS_PER_RANK = 25_000L;
+    private static final long REWARD_DIAMONDS_PER_RANK = 100L;
 
     private final PlayerDataStore<PackPlayerProfile> store;
 

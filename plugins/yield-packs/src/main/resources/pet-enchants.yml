@@ -29,7 +29,7 @@ economy:
   # few minutes of diamond income. It deliberately stops being a real cost
   # later on: the good outcomes here are rare Uniques, and the intended
   # late-game behaviour is to sit at the table and re-roll for them.
-  diamond-cost: 1500
+  diamond-cost: 15000
   unique-weight-each: 9
 
 commons:
