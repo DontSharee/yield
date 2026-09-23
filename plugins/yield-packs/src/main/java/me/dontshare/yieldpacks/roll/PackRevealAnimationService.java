@@ -15,6 +15,7 @@ import me.dontshare.yieldpacks.item.ItemIconFactory;
 import me.dontshare.yieldpacks.pity.PityService;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -26,10 +27,13 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.UUID;
@@ -90,7 +94,7 @@ public final class PackRevealAnimationService {
     private record ReelContext(Player player, UUID playerId, int[] itemIds, int[] textIds,
                                 List<ItemDefinition> sequence, TierConfig tierConfig, Map<String, Double> oddsByItemId,
                                 long rollCountBeforeThisRoll, double speedMultiplier, boolean spawnEntities,
-                                BukkitTask[] trackingTaskHolder) {
+                                BukkitTask[] trackingTaskHolder, Runnable onRevealed) {
     }
 
     private final JavaPlugin plugin;
@@ -119,13 +123,15 @@ public final class PackRevealAnimationService {
      * the reel existed to manufacture suspense around a single unknown, and
      * an egg that shakes before it cracks does that better and means it.
      */
+    /** {@code onRevealed} runs once, the moment the reel lands on the pet - see PackOpenService#finish. */
     public void playCompactReel(Player player, PackDefinition pack, ItemDefinition finalItem, double luckMultiplier,
-                                 long rollCountBeforeThisRoll) {
-        start(player, pack, finalItem, luckMultiplier, rollCountBeforeThisRoll, 1.0, false);
+                                 long rollCountBeforeThisRoll, Runnable onRevealed) {
+        start(player, pack, finalItem, luckMultiplier, rollCountBeforeThisRoll, 1.0, false, onRevealed);
     }
 
     private void start(Player player, PackDefinition pack, ItemDefinition finalItem, double luckMultiplier,
-                        long rollCountBeforeThisRoll, double speedMultiplier, boolean spawnEntities) {
+                        long rollCountBeforeThisRoll, double speedMultiplier, boolean spawnEntities,
+                        Runnable onRevealed) {
         Rarity finalRarity = rarityRegistry.get().find(finalItem.rarityId()).orElse(null);
         TierConfig tierConfig = configFor(tierFor(finalRarity));
 
@@ -182,7 +188,7 @@ public final class PackRevealAnimationService {
                 Placeholder.unparsed("suffix", pityService.renderProgressSuffix(rollCountBeforeThisRoll))));
 
         ReelContext ctx = new ReelContext(player, playerId, itemIds, textIds, sequence, tierConfig, oddsByItemId,
-                rollCountBeforeThisRoll, Math.max(0.05, speedMultiplier), spawnEntities, trackingTaskHolder);
+                rollCountBeforeThisRoll, Math.max(0.05, speedMultiplier), spawnEntities, trackingTaskHolder, onRevealed);
         if (spawnEntities) {
             trackingTaskHolder[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> track(ctx), 0L, TRACK_INTERVAL_TICKS);
         }
@@ -313,6 +319,7 @@ public final class PackRevealAnimationService {
     private void land(ReelContext ctx) {
         Player player = ctx.player();
         TierConfig cfg = ctx.tierConfig();
+        ctx.onRevealed().run();
 
         if (ctx.spawnEntities()) {
             PacketEntityManager.beginBundle(player);
@@ -421,8 +428,13 @@ public final class PackRevealAnimationService {
 
     /** Eggs per row before wrapping - 6 keeps a full 24x hatch to four readable rows rather than one wall. */
     private static final int HATCH_COLUMNS = 6;
-    /** How long the eggs wobble before they crack. */
-    private static final int SHAKE_TICKS = 26;
+    /**
+     * How long the eggs wobble before they crack. Must stay under the hatch
+     * cooldown (packs.yml open-cooldown-seconds, 20 ticks): at 26 it was
+     * longer, so anyone hatching steadily or on auto started the next batch
+     * before the last one cracked - and never saw a pet come out at all.
+     */
+    private static final int SHAKE_TICKS = 14;
     /** One wobble every this many ticks - each is interpolated across the gap, so the egg is always moving. */
     private static final int WOBBLE_INTERVAL = 4;
     private static final float WOBBLE_DEGREES = 14f;
@@ -433,8 +445,49 @@ public final class PackRevealAnimationService {
     /** How much larger a special pet ends up than an ordinary one. */
     private static final float SPECIAL_PET_SCALE_MULTIPLIER = 1.9f;
 
+    /**
+     * One hatch in flight. {@code labelOffsets} is how far above each slot's
+     * centre its name sits - per slot, and rewritten at the crack, because
+     * an egg, a pet and an enlarged special pet are three different sizes
+     * and a label pinned to the egg's size floats over the first and sinks
+     * into the last. {@code pop} holds the rare pull currently doing its
+     * pop-to-screen, if any (see {@link #advancePop}).
+     */
     private record HatchContext(Player player, UUID playerId, int count, int[] itemIds, int[] textIds,
-                                 List<PackRollService.RollResult> rolls, BukkitTask[] trackingTaskHolder) {
+                                 List<PackRollService.RollResult> rolls, BukkitTask[] trackingTaskHolder,
+                                 double[] labelOffsets, boolean rareAnimation, Runnable onRevealed,
+                                 RarePop[] pop, boolean[] cracked) {
+    }
+
+    /**
+     * Whether this player's hatch on screen still hasn't shown them what
+     * they got - its eggs haven't cracked, or a rare pull is mid-pop. A
+     * new hatch must wait for that rather than replace it: replacing before
+     * the crack is how steady and auto hatching showed nothing but shaking
+     * eggs, and replacing mid-pop cuts off the best moment in the game. It
+     * never blocks longer than one shake, or one pop on a rare pull.
+     */
+    public boolean isRevealPending(UUID playerId) {
+        HatchContext ctx = activeHatches.get(playerId);
+        return ctx != null && ctx.player().isOnline() && (!ctx.cracked()[0] || ctx.pop()[0] != null);
+    }
+
+    /** The one special pull in a batch that gets the pop-to-screen moment, and how far through it is. */
+    private static final class RarePop {
+        private final int slot;
+        private final PackRollService.RollResult roll;
+        private final float restScale;
+        private final float popScale;
+        private final Component label;
+        private int elapsed;
+
+        private RarePop(int slot, PackRollService.RollResult roll, float restScale, float popScale, Component label) {
+            this.slot = slot;
+            this.roll = roll;
+            this.restScale = restScale;
+            this.popScale = popScale;
+            this.label = label;
+        }
     }
 
     /**
@@ -445,7 +498,9 @@ public final class PackRevealAnimationService {
      * expects eggs to keep popping. Refusing a hatch while the last one is
      * still fading would cap the whole game at one batch per animation -
      * slower than the cooldown that is supposed to be the limit - so a new
-     * hatch clears the old one off the screen instead. Every scheduled step
+     * hatch clears the old one off the screen instead, as soon as the old
+     * one has cracked (see {@link #isRevealPending}): replacing it any
+     * earlier means the player never sees what they hatched. Every scheduled step
      * below re-checks that its own context is still the live one before it
      * touches a packet, which is what makes a replaced hatch stop dead
      * rather than despawning entities the new one is using.
@@ -480,9 +535,18 @@ public final class PackRevealAnimationService {
      * spawning another, which keeps a 24x hatch at 24 entities instead of
      * 48 and makes the swap land on exactly the tick the crack does.
      */
+    /**
+     * @param rareAnimation whether a special pull gets the pop-to-screen
+     *                      moment - the player's /settings choice
+     * @param onRevealed    runs exactly once, the tick the eggs crack - the
+     *                      moment the player finds out what they got, so
+     *                      the chat summary and the rare-pull broadcast wait
+     *                      for it rather than giving the reveal away
+     */
     public void playHatch(Player player, PackDefinition pack, List<PackRollService.RollResult> rolls,
-                           double luckMultiplier, long rollCountBefore) {
+                           double luckMultiplier, long rollCountBefore, boolean rareAnimation, Runnable onRevealed) {
         if (rolls.isEmpty()) {
+            onRevealed.run();
             return;
         }
         int count = rolls.size();
@@ -501,6 +565,8 @@ public final class PackRevealAnimationService {
         ItemStack egg = iconFactory.headOrFallback(pack.headDatabaseId(), pack.material());
         float eggScale = eggScaleFor(count);
         Location[] slots = hatchSlotLocations(player, count);
+        double[] labelOffsets = new double[count];
+        Arrays.fill(labelOffsets, labelOffsetFor(egg, eggScale));
         PacketEntityManager.beginBundle(player);
         for (int i = 0; i < count; i++) {
             ItemDisplayManager.spawn(player, itemIds[i], slots[i]);
@@ -512,17 +578,17 @@ public final class PackRevealAnimationService {
             // Spawned empty and filled at the moment the eggs crack - the
             // name is the thing the player is waiting for, so showing it
             // over an unhatched egg would give the whole reveal away.
-            TextDisplayManager.spawn(player, textIds[i], slots[i].clone().add(0, labelHeight(eggScale), 0));
+            TextDisplayManager.spawn(player, textIds[i], slots[i].clone().add(0, labelOffsets[i], 0));
             TextDisplayManager.setBillboard(player, textIds[i], TextDisplayManager.Billboard.VERTICAL);
             TextDisplayManager.setBackgroundColor(player, textIds[i], 0x00000000);
             TextDisplayManager.setStyle(player, textIds[i], true, false, false, TextDisplayManager.Alignment.CENTER);
-            TextDisplayManager.setScale(player, textIds[i], labelScale(eggScale), labelScale(eggScale), labelScale(eggScale));
             TextDisplayManager.setInterpolation(player, textIds[i], 0, TRACK_INTERVAL_TICKS, TRACK_INTERVAL_TICKS);
         }
         PacketEntityManager.endBundle(player);
 
         BukkitTask[] trackingTaskHolder = new BukkitTask[1];
-        HatchContext ctx = new HatchContext(player, playerId, count, itemIds, textIds, rolls, trackingTaskHolder);
+        HatchContext ctx = new HatchContext(player, playerId, count, itemIds, textIds, rolls, trackingTaskHolder,
+                labelOffsets, rareAnimation, onRevealed, new RarePop[1], new boolean[1]);
         activeHatches.put(playerId, ctx);
         trackingTaskHolder[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> trackHatch(ctx), 0L, TRACK_INTERVAL_TICKS);
 
@@ -530,8 +596,11 @@ public final class PackRevealAnimationService {
         scheduleShake(ctx, slots);
         Bukkit.getScheduler().runTaskLater(plugin, () -> crackAll(ctx), SHAKE_TICKS);
 
-        // Long enough to read a full grid, and longer for a bigger one.
-        long holdTicks = SHAKE_TICKS + 35L + 8L * Math.min(6, count);
+        // Long enough to read a full grid, and longer for a bigger one -
+        // plus the whole pop-to-screen if a rare pull is going to do one.
+        boolean popPlanned = rareAnimation && rolls.stream().anyMatch(roll ->
+                isSpecial(roll, rarityRegistry.get().find(roll.item().rarityId()).orElse(null)));
+        long holdTicks = SHAKE_TICKS + 35L + 8L * Math.min(6, count) + (popPlanned ? POP_TOTAL_TICKS : 0);
         Bukkit.getScheduler().runTaskLater(plugin, () -> despawnHatch(ctx), holdTicks);
         // Same layout PackActionBarService and the compact reel both use -
         // only the leftmost segment changes while a hatch plays, so the
@@ -542,25 +611,57 @@ public final class PackRevealAnimationService {
                 Placeholder.unparsed("suffix", pityService.renderProgressSuffix(rollCountBefore))));
     }
 
+    /** Vanilla draws a text display at 1/40 block per font pixel at scale 1 - the same size as a nametag. */
+    private static final double TEXT_BLOCKS_PER_PIXEL = 1.0 / 40.0;
+    private static final float LABEL_MAX_SCALE = 0.6f;
+    private static final float LABEL_MIN_SCALE = 0.3f;
+    /** Clear air between the top of what's in a slot and the bottom of its name. */
+    private static final double LABEL_GAP = 0.06;
+
     /**
-     * Just clear of the egg at this scale, so the name sits on top of the
-     * shell rather than inside it. Scales with the egg for the same reason
-     * {@link #labelScale} does - a fixed height leaves a gap over a small
-     * egg and swallows the label on a big one.
+     * How tall this item's model is in an item display at scale 1: a head
+     * is an 8-pixel cube, half a block; a flat or block item fills its
+     * whole 16 pixels, a full block.
      */
-    private double labelHeight(float eggScale) {
-        return eggScale * 0.85 + 0.12;
+    private static double modelHeight(ItemStack item) {
+        Material type = item.getType();
+        return type == Material.PLAYER_HEAD || type == Material.PLAYER_WALL_HEAD ? 0.5 : 1.0;
     }
 
     /**
-     * Text displays render at a fixed pixel size regardless of how big the
-     * thing they label is, so a 24x hatch had nametags nearly as wide as
-     * the eggs under them, overlapping each other into an unreadable band.
-     * Scaling them with the egg keeps the label the same size RELATIVE to
-     * its own egg at every count.
+     * How far above a slot's centre its name goes: just over the top of
+     * whatever is actually displayed there. Item displays are centred on
+     * their position, so that top is half the rendered height up.
+     * <p>
+     * This used to be {@code eggScale x 0.85 + 0.12} for every slot, always
+     * - roughly half a block of empty air over a small egg, more over the
+     * smaller pet that replaced it, and INSIDE a special pet enlarged past
+     * the egg's size.
      */
-    private float labelScale(float eggScale) {
-        return Math.max(0.45f, eggScale * 0.95f);
+    private static double labelOffsetFor(ItemStack item, float scale) {
+        return modelHeight(item) * scale / 2.0 + LABEL_GAP;
+    }
+
+    /**
+     * The biggest label scale (capped at {@link #LABEL_MAX_SCALE}) at which
+     * this pull's name still fits inside its own slot.
+     * <p>
+     * The old label scaled only with the egg, around 0.8 - a bold
+     * "Sovereign Stag" at that size is about two blocks wide over eggs 1.2
+     * blocks apart, so neighbouring names ran into each other. Fitting each
+     * label to the slot spacing from the name's own width keeps every
+     * name inside its column at every batch size.
+     */
+    private static float labelScaleFor(String name, long oneIn, double spacing) {
+        int namePx = name.length() * 7;
+        int oddsPx = ("(1 in " + Formatting.format((double) oneIn) + ")").length() * 6;
+        double widestBlocks = Math.max(1, Math.max(namePx, oddsPx)) * TEXT_BLOCKS_PER_PIXEL;
+        double fit = spacing * 0.92 / widestBlocks;
+        return (float) Math.max(LABEL_MIN_SCALE, Math.min(LABEL_MAX_SCALE, fit));
+    }
+
+    private double slotSpacing(int count) {
+        return eggScaleFor(count) * 1.45;
     }
 
     /** Wobbles every egg back and forth until the cracks start - each step interpolates across the gap, so they are never still. */
@@ -600,12 +701,21 @@ public final class PackRevealAnimationService {
      * goes to without anyone having to read a single label.
      */
     private void crackAll(HatchContext ctx) {
+        // Before the liveness check, on purpose: a hatch replaced by the
+        // next one, or a player who walked off, still hatched those pets,
+        // and whatever waits on the reveal (the chat summary, the broadcast,
+        // quest progress) must still happen - exactly once.
+        ctx.onRevealed().run();
+        ctx.cracked()[0] = true;
         Player player = ctx.player();
         if (!isLive(ctx)) {
             return;
         }
         Location[] slots = hatchSlotLocations(player, ctx.count());
         float petScale = eggScaleFor(ctx.count()) * 0.75f;
+        double spacing = slotSpacing(ctx.count());
+        int popSlot = ctx.rareAnimation() ? rarePopSlot(ctx) : -1;
+        RarePop pop = null;
 
         PackRollService.RollResult best = ctx.rolls().stream()
                 .max(Comparator.comparingLong(PackRollService.RollResult::oneIn))
@@ -619,15 +729,28 @@ public final class PackRevealAnimationService {
             boolean special = isSpecial(roll, rarity);
             float scale = special ? petScale * SPECIAL_PET_SCALE_MULTIPLIER : petScale;
 
+            ItemStack icon = iconFactory.baseIcon(roll.item()).build();
             ItemDisplayManager.setInterpolation(player, ctx.itemIds()[slot], 0, 3, 3);
-            ItemDisplayManager.setItem(player, ctx.itemIds()[slot], iconFactory.baseIcon(roll.item()).build());
+            ItemDisplayManager.setItem(player, ctx.itemIds()[slot], icon);
             ItemDisplayManager.setScale(player, ctx.itemIds()[slot], scale, scale, scale);
             ItemDisplayManager.setRotation(player, ctx.itemIds()[slot], 0f, facingYawTowardPlayer(slots[slot], player));
             if (special) {
                 ItemDisplayManager.setGlowColor(player, ctx.itemIds()[slot], glowColorFor(rarity));
                 ItemDisplayManager.setGlowing(player, ctx.itemIds()[slot], true);
             }
-            TextDisplayManager.setText(player, ctx.textIds()[slot], hatchSlotLabel(roll));
+            ctx.labelOffsets()[slot] = labelOffsetFor(icon, scale);
+            float labelScale = labelScaleFor(Formatting.stripLeadingColorCodes(roll.item().displayName()), roll.oneIn(), spacing);
+            TextDisplayManager.setInterpolation(player, ctx.textIds()[slot], 0, 3, 3);
+            TextDisplayManager.setScale(player, ctx.textIds()[slot], labelScale, labelScale, labelScale);
+            PacketEntityManager.teleportEntity(player, ctx.textIds()[slot], slots[slot].clone().add(0, ctx.labelOffsets()[slot], 0));
+            if (slot == popSlot) {
+                // Its name is held back until it lands back in its slot -
+                // while it's in the player's face the title card is the name.
+                float popScale = (float) (POP_VISIBLE_BLOCKS / modelHeight(icon));
+                pop = new RarePop(slot, roll, scale, popScale, hatchSlotLabel(roll));
+            } else {
+                TextDisplayManager.setText(player, ctx.textIds()[slot], hatchSlotLabel(roll));
+            }
         }
         PacketEntityManager.endBundle(player);
 
@@ -646,6 +769,7 @@ public final class PackRevealAnimationService {
 
         player.playSound(player.getLocation(), Sound.ENTITY_TURTLE_EGG_BREAK, 0.8f, 1.1f);
         player.playSound(player.getLocation(), bestCfg.sound(), 0.9f, bestCfg.pitch());
+        ctx.pop()[0] = pop;
     }
 
     /**
@@ -678,11 +802,171 @@ public final class PackRevealAnimationService {
             return;
         }
         Location[] slots = hatchSlotLocations(player, ctx.count());
-        double labelHeight = labelHeight(eggScaleFor(ctx.count()));
+        RarePop pop = ctx.pop()[0];
         for (int i = 0; i < ctx.count(); i++) {
-            PacketEntityManager.teleportEntity(player, ctx.itemIds()[i], slots[i]);
-            PacketEntityManager.teleportEntity(player, ctx.textIds()[i], slots[i].clone().add(0, labelHeight, 0));
+            if (pop == null || i != pop.slot) {
+                PacketEntityManager.teleportEntity(player, ctx.itemIds()[i], slots[i]);
+            }
+            PacketEntityManager.teleportEntity(player, ctx.textIds()[i], slots[i].clone().add(0, ctx.labelOffsets()[i], 0));
         }
+        if (pop != null) {
+            advancePop(ctx, pop, slots);
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // The rare pull: shake, pop into the player's face, land back
+    // ------------------------------------------------------------------
+
+    /** Ticks the rare pet rattles in its slot, growing, before it launches. */
+    private static final int POP_SHAKE_TICKS = 10;
+    /** Ticks it takes to fly from its slot into the player's view. */
+    private static final int POP_IN_TICKS = 5;
+    /** Ticks it hangs in front of the player's face, spinning. */
+    private static final int POP_HOLD_TICKS = 16;
+    /** Ticks it takes to drop back into its slot. */
+    private static final int POP_OUT_TICKS = 6;
+    private static final int POP_TOTAL_TICKS = POP_SHAKE_TICKS + POP_IN_TICKS + POP_HOLD_TICKS + POP_OUT_TICKS;
+    /** How far in front of the eyes it hangs - close enough to fill a good chunk of the screen. */
+    private static final double POP_DISTANCE = 1.15;
+    /** How tall it renders while in the player's face, whatever its model - about half a block at arm's length. */
+    private static final double POP_VISIBLE_BLOCKS = 0.55;
+    private static final float POP_SHAKE_DEGREES = 22f;
+
+    /** The special pull worth the pop - the rarest one if there are several - or -1 if the batch has none. */
+    private int rarePopSlot(HatchContext ctx) {
+        int best = -1;
+        for (int slot = 0; slot < ctx.count(); slot++) {
+            PackRollService.RollResult roll = ctx.rolls().get(slot);
+            if (!isSpecial(roll, rarityRegistry.get().find(roll.item().rarityId()).orElse(null))) {
+                continue;
+            }
+            if (best == -1 || roll.oneIn() > ctx.rolls().get(best).oneIn()) {
+                best = slot;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * One tick of the rare pull's moment. Driven by the hatch's own
+     * tracking task rather than scheduled steps, so the pet follows the
+     * player's head every tick of it - it is IN their face even if they
+     * turn - and a replaced hatch stops it dead with everything else.
+     * <ol>
+     *   <li><b>Shake</b> - it rattles hard in its slot and swells, with a
+     *       rising chime: something is happening.</li>
+     *   <li><b>Pop</b> - it launches into the middle of the player's view,
+     *       with the title card and the whole sound stack on the same
+     *       tick.</li>
+     *   <li><b>Hold</b> - it hangs there, spinning and breathing, long
+     *       enough to see what it is and not so long it is in the way.</li>
+     *   <li><b>Land</b> - it drops back into its slot at its glowing
+     *       special size, and only now shows its name label.</li>
+     * </ol>
+     */
+    private void advancePop(HatchContext ctx, RarePop pop, Location[] slots) {
+        Player player = ctx.player();
+        int entityId = ctx.itemIds()[pop.slot];
+        int t = pop.elapsed++;
+        Location slot = slots[pop.slot];
+        Location face = facePoint(player);
+        float growScale = pop.restScale * 1.25f;
+
+        Location at;
+        float scale;
+        float pitch = 0f;
+        float yaw;
+        if (t < POP_SHAKE_TICKS) {
+            at = slot;
+            scale = pop.restScale + (growScale - pop.restScale) * t / (float) POP_SHAKE_TICKS;
+            boolean left = (t / 2) % 2 == 0;
+            yaw = facingYawTowardPlayer(slot, player) + (left ? -POP_SHAKE_DEGREES : POP_SHAKE_DEGREES);
+            pitch = left ? -10f : 10f;
+            if (t % 2 == 0) {
+                player.playSound(player.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.9f, 0.8f + t * 0.1f);
+            }
+        } else if (t < POP_SHAKE_TICKS + POP_IN_TICKS) {
+            if (t == POP_SHAKE_TICKS) {
+                celebrate(player, pop, face);
+            }
+            double k = easeOut((t - POP_SHAKE_TICKS + 1) / (double) POP_IN_TICKS);
+            at = lerp(slot, face, k);
+            scale = (float) (growScale + (pop.popScale - growScale) * k);
+            yaw = facingYawTowardPlayer(at, player);
+        } else if (t < POP_SHAKE_TICKS + POP_IN_TICKS + POP_HOLD_TICKS) {
+            int held = t - POP_SHAKE_TICKS - POP_IN_TICKS;
+            at = face;
+            scale = (float) (pop.popScale * (1.0 + 0.05 * Math.sin(held * 0.7)));
+            yaw = facingYawTowardPlayer(face, player) + held * 12f;
+            if (held % 5 == 0) {
+                player.spawnParticle(Particle.END_ROD, face, 6, 0.35, 0.35, 0.35, 0.02);
+            }
+        } else if (t < POP_TOTAL_TICKS) {
+            double k = easeOut((t - (POP_TOTAL_TICKS - POP_OUT_TICKS) + 1) / (double) POP_OUT_TICKS);
+            at = lerp(face, slot, k);
+            scale = (float) (pop.popScale + (pop.restScale - pop.popScale) * k);
+            yaw = facingYawTowardPlayer(at, player);
+        } else {
+            // Landed: settle into its slot for good and show its name.
+            ItemDisplayManager.setInterpolation(player, entityId, 0, 2, 2);
+            ItemDisplayManager.setScale(player, entityId, pop.restScale, pop.restScale, pop.restScale);
+            ItemDisplayManager.setRotation(player, entityId, 0f, facingYawTowardPlayer(slot, player));
+            PacketEntityManager.teleportEntity(player, entityId, slot);
+            TextDisplayManager.setText(player, ctx.textIds()[pop.slot], pop.label);
+            player.playSound(player.getLocation(), Sound.BLOCK_AMETHYST_CLUSTER_PLACE, 0.8f, 1.4f);
+            player.spawnParticle(Particle.TOTEM_OF_UNDYING, slot, 20, 0.3, 0.3, 0.3, 0.1);
+            ctx.pop()[0] = null;
+            return;
+        }
+        ItemDisplayManager.setInterpolation(player, entityId, 0, 1, 1);
+        ItemDisplayManager.setScale(player, entityId, scale, scale, scale);
+        ItemDisplayManager.setRotation(player, entityId, pitch, yaw);
+        PacketEntityManager.teleportEntity(player, entityId, at);
+    }
+
+    /**
+     * The launch: a title card in the pull's own colour, and every sound
+     * that says "you got something" at once - fanfare, level-up, a
+     * firework - plus a burst around the pet as it arrives.
+     */
+    private void celebrate(Player player, RarePop pop, Location face) {
+        ItemDefinition item = pop.roll.item();
+        Rarity rarity = rarityRegistry.get().find(item.rarityId()).orElse(null);
+        String hex = rarity != null ? rarity.colorHex() : "#FFD700";
+        String headline = item.huge() ? "HUGE" : rarity != null
+                ? Formatting.stripLeadingColorCodes(rarity.displayName()).toUpperCase(Locale.ROOT) : "RARE";
+        player.showTitle(Title.title(
+                Text.parse("<" + hex + "><bold>✦ " + headline + " ✦</bold></" + hex + ">"),
+                Text.parse("<white><name></white> <gray>(1 in <n>)</gray>",
+                        Placeholder.unparsed("name", Formatting.stripLeadingColorCodes(item.displayName())),
+                        Placeholder.unparsed("n", Formatting.format((double) pop.roll.oneIn()))),
+                Title.Times.times(Duration.ZERO, Duration.ofMillis(1100), Duration.ofMillis(300))));
+        player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1.1f);
+        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.2f);
+        player.playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_LARGE_BLAST, 0.9f, 1f);
+        player.playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_TWINKLE, 0.8f, 1.2f);
+        player.spawnParticle(Particle.TOTEM_OF_UNDYING, face, 45, 0.5, 0.5, 0.5, 0.35);
+        player.spawnParticle(Particle.FIREWORK, face, 25, 0.4, 0.4, 0.4, 0.12);
+    }
+
+    /** Dead centre of the player's view, {@link #POP_DISTANCE} out - pitch included, so looking down still puts it in front of them. */
+    private static Location facePoint(Player player) {
+        Location eye = player.getEyeLocation();
+        return eye.clone().add(eye.getDirection().multiply(POP_DISTANCE));
+    }
+
+    private static Location lerp(Location from, Location to, double k) {
+        return new Location(from.getWorld(),
+                from.getX() + (to.getX() - from.getX()) * k,
+                from.getY() + (to.getY() - from.getY()) * k,
+                from.getZ() + (to.getZ() - from.getZ()) * k);
+    }
+
+    /** Fast then settling - a pop, not a slide. */
+    private static double easeOut(double k) {
+        double clamped = Math.max(0.0, Math.min(1.0, k));
+        return 1.0 - (1.0 - clamped) * (1.0 - clamped);
     }
 
     /** The scheduled end of a hatch - a no-op if a newer one already replaced it. */
@@ -744,7 +1028,7 @@ public final class PackRevealAnimationService {
      */
     private Location[] hatchSlotLocations(Player player, int count) {
         float scale = eggScaleFor(count);
-        double spacing = scale * 1.45;
+        double spacing = slotSpacing(count);
         int columns = columnsFor(count);
         int rows = (count + columns - 1) / columns;
 

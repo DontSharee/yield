@@ -32,8 +32,14 @@ public final class SendModeCommand {
                 ctx.getSource().getSender().sendMessage(Text.parse("<gray>Players only.</gray>"));
                 return Command.SINGLE_SUCCESS;
             }
+            // The Bag toggle has always checked this; the command never did,
+            // so "/sendmode auto" handed out the bought Auto Send perk free.
+            if (sendMode == SendMode.AUTO && !player.hasPermission(SendMode.AUTO_PERMISSION)) {
+                player.sendMessage(Text.parse("<red>Auto Send is a perk - get it at /buy.</red>"));
+                return Command.SINGLE_SUCCESS;
+            }
             PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
-            profile.setSendMode(sendMode);
+            profile.setAutoAttack(sendMode == SendMode.AUTO);
             store.save(player.getUniqueId());
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.4f);
             player.sendMessage(Text.parse("<green>Send mode set to " + literal + ".</green>"));

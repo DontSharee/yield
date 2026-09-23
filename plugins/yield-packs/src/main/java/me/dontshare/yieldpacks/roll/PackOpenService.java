@@ -12,11 +12,18 @@ import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -37,7 +44,7 @@ import java.util.function.Supplier;
  * not); that is why everything up to {@link #UNGATED_TIER_CAP} is free and
  * only the top 24x rung sits behind {@link #MULTI_OPEN_PERMISSION}.
  */
-public final class PackOpenService {
+public final class PackOpenService implements Listener {
 
     /** The permission the 24x rung needs - granted by the {@code multi_open_pass} gamepass (see yield-achievements' store.yml), same "bare permission node, no ownership registry" shape as {@code yieldpacks.autofuse}/{@code yieldpacks.automode}. */
     public static final String MULTI_OPEN_PERMISSION = "yieldpacks.multiopen";
@@ -146,6 +153,7 @@ public final class PackOpenService {
 
     /** Runs the auto-hatch loop at roughly the cooldown's own cadence. */
     public void start() {
+        Bukkit.getPluginManager().registerEvents(this, plugin);
         long intervalTicks = Math.max(1L, content.get().shop().openCooldownMillis() / 50L);
         Bukkit.getScheduler().runTaskTimer(plugin, this::autoHatchTick, intervalTicks, intervalTicks);
     }
@@ -180,7 +188,8 @@ public final class PackOpenService {
     public boolean readyToHatch(Player player) {
         PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
         long cooldownMillis = Math.round(content.get().shop().openCooldownMillis() / cooldownMultiplier(profile));
-        return System.currentTimeMillis() - lastHatchAtMillis.getOrDefault(player.getUniqueId(), 0L) >= cooldownMillis;
+        return System.currentTimeMillis() - lastHatchAtMillis.getOrDefault(player.getUniqueId(), 0L) >= cooldownMillis
+                && !revealService.isRevealPending(player.getUniqueId());
     }
 
     /** @param charge false when the caller has already taken payment in a currency this service knows nothing about - see {@code PackStationService.AlternateCharge}. */
@@ -194,6 +203,12 @@ public final class PackOpenService {
         long cooldownMillis = Math.round(content.get().shop().openCooldownMillis() / cooldownMultiplier(profile));
         long now = System.currentTimeMillis();
         if (now - lastHatchAtMillis.getOrDefault(player.getUniqueId(), 0L) < cooldownMillis) {
+            return PackRollService.PurchaseResult.failure(null);
+        }
+        // The last batch hasn't been shown yet - see
+        // PackRevealAnimationService#isRevealPending. Silent, like the
+        // cooldown: the station just takes the hatch a moment later.
+        if (revealService.isRevealPending(player.getUniqueId())) {
             return PackRollService.PurchaseResult.failure(null);
         }
 
@@ -236,16 +251,71 @@ public final class PackOpenService {
         // shown during the reveal must reflect where the count stood BEFORE
         // this batch.
         long rollCountBefore = profile.getRollCount() - result.rolls().size();
+        Runnable reveal = pendingReveal(player, () -> {
+            sendSummary(player, packId, result);
+            Bukkit.getPluginManager().callEvent(new PackOpenedEvent(player, packId, result.rolls()));
+        });
         if (profile.isRollAnimationEnabled()) {
-            revealService.playHatch(player, pack, result.rolls(), result.luckMultiplier(), rollCountBefore);
+            revealService.playHatch(player, pack, result.rolls(), result.luckMultiplier(), rollCountBefore,
+                    profile.isRarePetAnimationEnabled(), reveal);
         } else if (result.rolls().size() == 1) {
             // Animations off still means the action bar cycles the real
             // odds and the pity bar - never silence.
             revealService.playCompactReel(player, pack, result.rolls().get(0).item(),
-                    result.luckMultiplier(), rollCountBefore);
+                    result.luckMultiplier(), rollCountBefore, reveal);
+        } else {
+            reveal.run();
         }
-        sendSummary(player, packId, result);
-        Bukkit.getPluginManager().callEvent(new PackOpenedEvent(player, packId, result.rolls()));
+    }
+
+    /**
+     * Hatches whose reveal hasn't happened yet, per player - see
+     * {@link #pendingReveal}.
+     */
+    private final Map<UUID, List<Runnable>> pendingReveals = new ConcurrentHashMap<>();
+
+    /**
+     * Wraps what a hatch announces - the chat summary and the
+     * {@link PackOpenedEvent} the rare-pull broadcast, quests, the tutorial
+     * and the event plugin all hang off - so it happens once, at the
+     * reveal, not the instant the eggs were paid for. Sent immediately, it
+     * told the player (and, through the broadcast, the whole server) what
+     * was in the eggs while they were still shaking.
+     * <p>
+     * If the player logs off before their eggs crack, the reveal is flushed
+     * on the way out (see {@link #onQuit}) rather than later: after a quit
+     * the player's data is saved and unloaded, and a listener calling
+     * getOrCreate then would cache a blank profile the autosave could
+     * write over the real one. Flushing first keeps the progress without
+     * that risk.
+     */
+    private Runnable pendingReveal(Player player, Runnable announce) {
+        UUID id = player.getUniqueId();
+        AtomicBoolean done = new AtomicBoolean();
+        Runnable[] self = new Runnable[1];
+        self[0] = () -> {
+            if (!done.compareAndSet(false, true)) {
+                return;
+            }
+            List<Runnable> pending = pendingReveals.get(id);
+            if (pending != null) {
+                pending.remove(self[0]);
+            }
+            announce.run();
+        };
+        pendingReveals.computeIfAbsent(id, k -> new CopyOnWriteArrayList<>()).add(self[0]);
+        return self[0];
+    }
+
+    /** LOWEST, so it runs before any plugin's store saves and unloads this player - see {@link #pendingReveal}. */
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onQuit(PlayerQuitEvent event) {
+        List<Runnable> pending = pendingReveals.remove(event.getPlayer().getUniqueId());
+        if (pending != null) {
+            for (Runnable reveal : pending) {
+                reveal.run();
+            }
+        }
     }
 
     private void sendSummary(Player player, String packId, PackRollService.PurchaseResult result) {

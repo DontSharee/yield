@@ -78,9 +78,9 @@ public final class BagGui {
     }
 
     private static final String ACCENT = "<#4BD9FF>";
-    private static final String AUTO_MODE_PERMISSION = "yieldpacks.automode";
+    private static final String AUTO_MODE_PERMISSION = SendMode.AUTO_PERMISSION;
     /** Kept in sync with yield-zones' own PetCombatController#PREMIUM_AUTO_MODE_PERMISSION (no compile-time link between the two modules - see YieldPacks' composable-provider pattern for why). */
-    private static final String PREMIUM_AUTO_MODE_PERMISSION = "yieldpacks.automode.premium";
+    private static final String PREMIUM_AUTO_MODE_PERMISSION = SendMode.PREMIUM_AUTO_PERMISSION;
 
     private final PlayerDataStore<PackPlayerProfile> store;
     private final Supplier<ItemRegistry> itemRegistry;
@@ -399,7 +399,7 @@ public final class BagGui {
             return;
         }
         PackPlayerProfile profile = store.getOrCreate(player.getUniqueId());
-        profile.setSendMode(profile.getSendMode() == SendMode.AUTO ? SendMode.MANUAL : SendMode.AUTO);
+        profile.setAutoAttack(profile.getSendMode() != SendMode.AUTO);
         store.save(player.getUniqueId());
         open(player);
     }
@@ -417,7 +417,9 @@ public final class BagGui {
                 .name(MenuLore.buttonName(ACCENT, "AUTO SEND: " + (auto ? "ON" : "OFF") + (premium ? " &6[Premium]" : "")));
         MenuLore.button(
                 "settings",
-                premium
+                !auto
+                        ? List.of(" &7Off: no pet fights until you", " &7click a cube - level 10 pets", " &7included.")
+                        : premium
                         ? List.of(" &7Pets fight fully hands-off,", " &7re-engaging 2x faster after", " &7each kill (Premium tier).")
                         : List.of(" &7Pets fight fully hands-off,", " &7re-engaging on a cooldown", " &7after each kill. &6/buy&7 Premium", " &7Auto Send to speed that up."),
                 ACCENT,

@@ -43,12 +43,23 @@ public final class PackPlayerProfile implements PlayerRecord {
     private int claimedRank;
     private boolean autoOpenEnabled;
     private boolean rollAnimationEnabled = true;
+    /** Whether a rare pull gets the shake-and-pop-to-screen moment when it hatches - /settings. */
+    private boolean rarePetAnimationEnabled = true;
     private PetVisibility petVisibility = PetVisibility.ALL;
     /** Every pet this player has ever obtained - equipped or sitting in storage, this IS the Bag's whole inventory. Each is a real, permanent instance with its own level/XP (see {@link PetInstance}) - never lost on unequip. */
     private List<PetInstance> pets = new ArrayList<>();
     /** Ordered instance ids from {@link #pets} currently equipped - equip-slot order, same role {@code equippedItemIds} used to play before the per-instance migration. */
     private List<UUID> equippedPetIds = new ArrayList<>();
     private SendMode sendMode = SendMode.MANUAL;
+    /**
+     * True once the player has explicitly switched auto-attack OFF. A
+     * level-10 pet's AUTO_ATTACK milestone makes it fight on its own
+     * regardless of send mode - that is how a free player gets any
+     * auto-attack at all - but it must not override a player who turned
+     * auto-attack off: before this flag existed, the switch "didn't work"
+     * the moment a squad hit level 10.
+     */
+    private boolean autoAttackOff;
     private AttackMode attackMode = AttackMode.SINGLE;
     private Map<String, Set<String>> packCollectionProgress = new HashMap<>();
     private Map<String, Long> lastObtainedAt = new HashMap<>();
@@ -218,6 +229,14 @@ public final class PackPlayerProfile implements PlayerRecord {
         this.rollAnimationEnabled = rollAnimationEnabled;
     }
 
+    public boolean isRarePetAnimationEnabled() {
+        return rarePetAnimationEnabled;
+    }
+
+    public void setRarePetAnimationEnabled(boolean rarePetAnimationEnabled) {
+        this.rarePetAnimationEnabled = rarePetAnimationEnabled;
+    }
+
     /** What this player personally sees of equipped-pet displays - toggled with /petvisibility. */
     public PetVisibility getPetVisibility() {
         return petVisibility;
@@ -319,6 +338,23 @@ public final class PackPlayerProfile implements PlayerRecord {
 
     public void setSendMode(SendMode sendMode) {
         this.sendMode = sendMode;
+    }
+
+    public boolean isAutoAttackOff() {
+        return autoAttackOff;
+    }
+
+    public void setAutoAttackOff(boolean autoAttackOff) {
+        this.autoAttackOff = autoAttackOff;
+    }
+
+    /**
+     * The one switch: ON is full Auto Send, OFF is nothing fighting on its
+     * own - milestone pets included - until the player clicks a cube.
+     */
+    public void setAutoAttack(boolean on) {
+        this.sendMode = on ? SendMode.AUTO : SendMode.MANUAL;
+        this.autoAttackOff = !on;
     }
 
     /** Only consulted while {@link #getSendMode()} is MANUAL - toggled from the Settings GUI, not a command. */

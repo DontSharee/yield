@@ -15,6 +15,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Comparator;
@@ -87,7 +88,7 @@ public final class PetCombatController implements Listener {
      */
     private static final long BASE_AUTO_SWITCH_COOLDOWN_TICKS = 20L;
     /** The paid tier - twice as fast as Free's own current (upgrade-adjusted) switch-cooldown, softcapped at {@link #PREMIUM_AUTO_SWITCH_FLOOR_TICKS} so it can never bypass the cooldown entirely regardless of stacked upgrades. */
-    private static final String PREMIUM_AUTO_MODE_PERMISSION = "yieldpacks.automode.premium";
+    private static final String PREMIUM_AUTO_MODE_PERMISSION = SendMode.PREMIUM_AUTO_PERMISSION;
     private static final double PREMIUM_AUTO_SWITCH_MULTIPLIER = 2.0;
     private static final long PREMIUM_AUTO_SWITCH_FLOOR_TICKS = 4L;
     private static final long FREE_AUTO_SWITCH_FLOOR_TICKS = 8L;
@@ -98,6 +99,8 @@ public final class PetCombatController implements Listener {
     private final WorldBossService worldBossService;
 
     // CLOSEST/STRONGEST/WEAKEST - the whole squad's shared target. Player-level state, no per-pet identity needed.
+    /** The send mode each player's last tick ran under - how an AUTO to MANUAL switch is noticed. See {@link #tickPlayer}. */
+    private final Map<UUID, SendMode> lastSendMode = new ConcurrentHashMap<>();
     private final Map<UUID, OreCube> sharedTargetByPlayer = new ConcurrentHashMap<>();
     // SINGLE - one independent target per pet instance, and where the next click's pet comes from.
     private final Map<UUID, Map<UUID, OreCube>> singleTargetsByPet = new ConcurrentHashMap<>();
@@ -294,6 +297,15 @@ public final class PetCombatController implements Listener {
         }
         List<OreCube> live = cubeService.liveCubes(player);
 
+        // Switching auto-attack OFF must stop the fight, not just stop the
+        // NEXT one: AUTO leaves its auto-picked cube as the player's
+        // target, and MANUAL would otherwise keep the whole squad on it
+        // until it died. A cube the player then clicks is theirs again.
+        SendMode previous = lastSendMode.put(player.getUniqueId(), profile.getSendMode());
+        if (previous == SendMode.AUTO && profile.getSendMode() == SendMode.MANUAL) {
+            recallAll(player);
+        }
+
         if (profile.getSendMode() == SendMode.AUTO) {
             tickShared(player, profile, profile.getAutoTargetMode(), equipped, live);
         } else if (profile.getAttackMode() == AttackMode.SINGLE) {
@@ -305,6 +317,16 @@ public final class PetCombatController implements Listener {
         // into one damage indicator/kill per targeted cube now that every
         // slot has had a chance to attack.
         cubeService.flushDamage(player);
+    }
+
+    /** Everything here is per-session - cubes don't outlive a visit - so none of it should outlive the player either. */
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        UUID id = event.getPlayer().getUniqueId();
+        lastSendMode.remove(id);
+        sharedTargetByPlayer.remove(id);
+        singleTargetsByPet.remove(id);
+        cooldownsByPet.remove(id);
     }
 
     /** Immediately recomputes this player's targeting/formation state the instant one of their cubes dies, instead of waiting for the next scheduled tick - see {@link #tickPlayer}. */
@@ -388,7 +410,7 @@ public final class PetCombatController implements Listener {
             }
             if (target == null && !live.isEmpty()) {
                 PetInstance pet = profile.findPet(petId).orElse(null);
-                if (pet != null && leveling.hasMilestone(pet, MilestoneEffect.AUTO_ATTACK)) {
+                if (pet != null && milestoneAutoAttacks(profile, pet)) {
                     target = closest(player, live);
                 }
             }
@@ -465,7 +487,7 @@ public final class PetCombatController implements Listener {
         for (UUID petId : equipped) {
             PetInstance pet = profile.findPet(petId).orElse(null);
             OreCube target = null;
-            if (pet != null && leveling.hasMilestone(pet, MilestoneEffect.AUTO_ATTACK)) {
+            if (pet != null && milestoneAutoAttacks(profile, pet)) {
                 target = closest(player, live);
             } else if (sharedTarget != null) {
                 target = sharedTarget;
@@ -551,6 +573,18 @@ public final class PetCombatController implements Listener {
             }
         }
         return best;
+    }
+
+    /**
+     * Whether a pet's level-10 AUTO_ATTACK milestone lets it pick its own
+     * cube. It does - that is how a free player, without the bought Auto
+     * Send, gets any hands-off fighting - EXCEPT once the player has
+     * switched auto-attack off: an off switch that half the squad ignored
+     * was the bug.
+     */
+    private boolean milestoneAutoAttacks(PackPlayerProfile profile, PetInstance pet) {
+        return !profile.isAutoAttackOff()
+                && packs.getPetLevelingService().hasMilestone(pet, MilestoneEffect.AUTO_ATTACK);
     }
 
     /**
