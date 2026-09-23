@@ -2,7 +2,7 @@ package me.dontshare.yieldpacks.player;
 
 /**
  * Whether equipped pets fight on their own, or only when the player sends
- * them - set via /sendmode or the Bag toggle. Free for everyone: pets
+ * them - set via /sendmode or the /settings toggle. Free for everyone: pets
  * fighting on their own is the baseline, as in Pet Simulator 99.
  * {@link PackPlayerProfile#isAutoAttackOn()} is what combat reads.
  */

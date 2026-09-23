@@ -205,6 +205,10 @@ public final class OreCubeService implements Listener {
     private final Map<String, Function<PackPlayerProfile, Integer>> extraCubeCapProviders = new ConcurrentHashMap<>();
     /** Additive boost to every configured {@link CubeBonus}'s own chance (golden/diamond) - see rollBonus. */
     private final Map<String, Function<PackPlayerProfile, Double>> cubeBonusChanceBoostProviders = new ConcurrentHashMap<>();
+    /** Per-tier spawn weight factors (e.g. "treasure chests twice as often") - multiplied together, 1.0 = unchanged. */
+    private final Map<String, BiFunction<PackPlayerProfile, CubeTier, Double>> spawnWeightMultiplierProviders = new ConcurrentHashMap<>();
+    /** Factors on a zone's respawn delay - multiplied together, below 1.0 respawns faster. */
+    private final Map<String, Function<PackPlayerProfile, Double>> respawnDelayMultiplierProviders = new ConcurrentHashMap<>();
 
     public void registerFlatCoinBonusProvider(String key, BiFunction<PackPlayerProfile, Material, Long> provider) {
         flatCoinBonusProviders.put(key, provider);
@@ -236,6 +240,36 @@ public final class OreCubeService implements Listener {
 
     public void unregisterDiamondChanceBoostProvider(String key) {
         diamondChanceBoostProviders.remove(key);
+    }
+
+    public void registerSpawnWeightMultiplierProvider(String key, BiFunction<PackPlayerProfile, CubeTier, Double> provider) {
+        spawnWeightMultiplierProviders.put(key, provider);
+    }
+
+    public void unregisterSpawnWeightMultiplierProvider(String key) {
+        spawnWeightMultiplierProviders.remove(key);
+    }
+
+    public void registerRespawnDelayMultiplierProvider(String key, Function<PackPlayerProfile, Double> provider) {
+        respawnDelayMultiplierProviders.put(key, provider);
+    }
+
+    public void unregisterRespawnDelayMultiplierProvider(String key) {
+        respawnDelayMultiplierProviders.remove(key);
+    }
+
+    private double respawnDelayMultiplier(UUID playerId) {
+        PackPlayerProfile profile = packs.getPlayerStore().getCached(playerId);
+        double factor = 1.0;
+        if (profile != null) {
+            for (Function<PackPlayerProfile, Double> provider : respawnDelayMultiplierProviders.values()) {
+                Double value = provider.apply(profile);
+                if (value != null) {
+                    factor *= Math.max(0.0, value);
+                }
+            }
+        }
+        return factor;
     }
 
     public void registerExtraCubeCapProvider(String key, Function<PackPlayerProfile, Integer> provider) {
@@ -606,7 +640,7 @@ public final class OreCubeService implements Listener {
      * source rather than papering over the symptom.
      */
     private void spawnCubeFor(Player player, ZoneDefinition zone) {
-        CubeTier tier = rollTier(zone);
+        CubeTier tier = rollTier(zone, packs.getPlayerStore().getCached(player.getUniqueId()));
         ZoneRegion region = zone.region();
         UUID playerId = player.getUniqueId();
         int x = 0;
@@ -884,6 +918,11 @@ public final class OreCubeService implements Listener {
     }
 
     /** Every cube currently live for this player - the pool {@code PetCombatController} picks a target from. */
+    /** The zone this player's cubes are spawning in right now, or null outside every zone. */
+    public ZoneDefinition currentZoneOf(Player player) {
+        return currentZone.get(player.getUniqueId());
+    }
+
     public List<OreCube> liveCubes(Player player) {
         return cubesByPlayer.getOrDefault(player.getUniqueId(), List.of());
     }
@@ -1305,7 +1344,7 @@ public final class OreCubeService implements Listener {
             if (player.isOnline() && zone.equals(currentZone.get(player.getUniqueId()))) {
                 spawnCubeFor(player, zone);
             }
-        }, Math.max(1L, zone.respawnDelayMillis() / 50L));
+        }, Math.max(1L, Math.round(zone.respawnDelayMillis() * respawnDelayMultiplier(player.getUniqueId()) / 50.0)));
     }
 
     private void payOut(Player player, CubeTier tier, CubeBonus bonus, Location cubeCenter, Set<UUID> contributingInstanceIds) {
@@ -1359,7 +1398,7 @@ public final class OreCubeService implements Listener {
         showEarningsIndicator(player, cubeCenter, coins, diamondsEarned, combo.count());
         announceCombo(player, cubeCenter, combo);
         queueSummary(player, coins, diamondsEarned);
-        Bukkit.getPluginManager().callEvent(new OreCubeKilledEvent(player, tier, coins, diamondsEarned));
+        Bukkit.getPluginManager().callEvent(new OreCubeKilledEvent(player, tier, coins, diamondsEarned, bonusMultiplier));
         // Refresh the sidebar immediately - coins/diamonds/level/damage all just
         // changed, and waiting up to a second for the periodic tick makes
         // the payout feel laggy rather than instant.
@@ -1400,9 +1439,9 @@ public final class OreCubeService implements Listener {
             player.sendMessage(Text.parse(
                     "<red><bold>SLAYING SUMMARY</bold></red>  <gray>last <minutes>m</gray>\n" +
                             "<dark_gray>EARNINGS</dark_gray>\n" +
-                            "<gray>│</gray> <gold>Gold: <yellow><coins></yellow></gold>\n" +
-                            "<gray>│</gray> <aqua>Diamonds: <white><diamonds></white></aqua>\n" +
-                            "<gray>│</gray> <red>Kills: <white>x<kills></white></red>",
+                            "<gray>│ Gold: </gray><yellow><coins></yellow>\n" +
+                            "<gray>│ Diamonds: </gray><aqua><diamonds></aqua>\n" +
+                            "<gray>│ Kills: </gray><red>x<kills></red>",
                     Placeholder.unparsed("minutes", String.valueOf(elapsedMinutes)),
                     Placeholder.unparsed("coins", Formatting.format(stats.coins())),
                     Placeholder.unparsed("diamonds", Formatting.format(stats.diamonds())),
@@ -1618,8 +1657,20 @@ public final class OreCubeService implements Listener {
         lastSummaryAtMillis.remove(player.getUniqueId());
     }
 
-    private CubeTier rollTier(ZoneDefinition zone) {
-        return WeightedRandom.pick(zone.cubeTiers(), CubeTier::weight);
+    private CubeTier rollTier(ZoneDefinition zone, PackPlayerProfile profile) {
+        if (profile == null || spawnWeightMultiplierProviders.isEmpty()) {
+            return WeightedRandom.pick(zone.cubeTiers(), CubeTier::weight);
+        }
+        return WeightedRandom.pick(zone.cubeTiers(), tier -> {
+            double weight = tier.weight();
+            for (BiFunction<PackPlayerProfile, CubeTier, Double> provider : spawnWeightMultiplierProviders.values()) {
+                Double value = provider.apply(profile, tier);
+                if (value != null) {
+                    weight *= Math.max(0.0, value);
+                }
+            }
+            return weight;
+        });
     }
 
     private YieldCore core() {

@@ -83,6 +83,7 @@ public final class BlockTreeAdminCommand {
         profile.getProgress().remove(material.name());
         profile.getClaimedTiers().removeIf(k -> k.startsWith(material.name() + ":"));
         store.save(target.getUniqueId());
+        JavaPlugin.getPlugin(YieldBlockTree.class).getBlockTreeService().invalidatePerks(target.getUniqueId());
         ctx.getSource().getSender().sendMessage(Text.parse("<green>Reset " + target.getName() + "'s " + material.name() + " blocktree progress.</green>"));
         return Command.SINGLE_SUCCESS;
     }

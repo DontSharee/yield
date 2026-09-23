@@ -7,6 +7,7 @@ import me.dontshare.yieldauctionhouse.store.AuctionListingStore;
 import me.dontshare.yieldcore.database.DatabaseManager;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.item.ItemSerialization;
@@ -58,15 +59,12 @@ public final class AuctionMyListingsGui {
 
     private void render(Player player, List<AuctionListing> listings) {
         var builder = Gui.builder(TOTAL_ROWS, "My Listings");
-        builder.fill(IntStream.range(CONTENT_END, TOTAL_ROWS * 9).filter(s -> s != BACK_SLOT), GuiIcons.filler());
+        builder.fill(IntStream.range(CONTENT_START, TOTAL_ROWS * 9).filter(s -> s != BACK_SLOT), GuiIcons.filler());
 
-        int slot = CONTENT_START;
-        for (AuctionListing listing : listings) {
-            if (slot >= CONTENT_END) {
-                break;
-            }
-            builder.item(slot, buildIcon(listing), (clicker, event) -> cancel(clicker, listing));
-            slot++;
+        int[] slots = GuiLayout.centered(0, Math.min(listings.size(), GuiLayout.capacity(5)));
+        for (int i = 0; i < slots.length; i++) {
+            AuctionListing listing = listings.get(i);
+            builder.item(slots[i], buildIcon(listing), (clicker, event) -> cancel(clicker, listing));
         }
 
         builder.item(BACK_SLOT, buildBackButton(), (clicker, event) -> {

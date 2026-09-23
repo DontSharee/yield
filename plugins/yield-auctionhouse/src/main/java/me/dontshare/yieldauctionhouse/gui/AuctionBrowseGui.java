@@ -14,6 +14,7 @@ import me.dontshare.yieldauctionhouse.store.AuctionListingStore;
 import me.dontshare.yieldcore.database.DatabaseManager;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.gui.Page;
 import me.dontshare.yieldcore.item.ItemBuilder;
@@ -59,7 +60,7 @@ public final class AuctionBrowseGui {
     private static final int PREV_SLOT = 45;
     private static final int CURRENCY_FILTER_SLOT = 47;
     private static final int MY_LISTINGS_SLOT = 49;
-    private static final int COLLECTION_BOX_SLOT = 50;
+    private static final int COLLECTION_BOX_SLOT = 51;
     private static final int NEXT_SLOT = 53;
     private static final String ACCENT = "<#4BD9FF>";
 
@@ -136,12 +137,13 @@ public final class AuctionBrowseGui {
         pageIndex.put(id, page.index());
 
         var builder = Gui.builder(TOTAL_ROWS, "Auction House");
-        builder.fill(IntStream.range(0, TOTAL_ROWS * 9).filter(s -> !CONTENT_SLOTS.contains(s) && s < 45), GuiIcons.filler());
+        builder.fill(IntStream.range(0, 45), GuiIcons.filler());
         List<AuctionListing> items = page.items();
+        int[] contentSlots = GuiLayout.centered(1, page.items().size());
         for (int i = 0; i < items.size(); i++) {
             AuctionListing listing = items.get(i);
             ItemStack item = ItemSerialization.deserialize(listing.serializedItem());
-            builder.item(CONTENT_SLOTS.get(i), buildIcon(listing, item), (clicker, event) -> confirmPurchase(clicker, listing, item));
+            builder.item(contentSlots[i], buildIcon(listing, item), (clicker, event) -> confirmPurchase(clicker, listing, item));
         }
 
         builder.item(PREV_SLOT, GuiIcons.pageArrow(false, page.hasPrevious()),

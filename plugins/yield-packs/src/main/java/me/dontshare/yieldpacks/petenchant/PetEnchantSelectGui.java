@@ -3,6 +3,7 @@ package me.dontshare.yieldpacks.petenchant;
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.gui.Page;
 import me.dontshare.yieldcore.item.ItemBuilder;
@@ -40,7 +41,8 @@ import java.util.stream.IntStream;
 public final class PetEnchantSelectGui {
 
     private static final int TOTAL_ROWS = 6;
-    private static final int GRID_SIZE = 36; // rows 2-5, slots 9-44
+    /** Four centred rows of seven under the top border - see GuiLayout. */
+    private static final int GRID_SIZE = GuiLayout.capacity(4);
     private static final int BACK_SLOT = 49;
     private static final String ACCENT = MenuLore.ACCENT;
 
@@ -86,9 +88,10 @@ public final class PetEnchantSelectGui {
         builder.fill(IntStream.range(0, TOTAL_ROWS * 9), GuiIcons.filler());
 
         List<PetInstance> items = page.items();
+        int[] contentSlots = GuiLayout.centered(1, items.size());
         for (int i = 0; i < items.size(); i++) {
             PetInstance pet = items.get(i);
-            builder.item(9 + i, buildIcon(profile, pet), (clicker, e) -> {
+            builder.item(contentSlots[i], buildIcon(profile, pet), (clicker, e) -> {
                 PackPlayerProfile clickerProfile = store.getOrCreate(clicker.getUniqueId());
                 enchantService.select(clicker, clickerProfile, pet.getInstanceId());
                 store.save(clicker.getUniqueId());

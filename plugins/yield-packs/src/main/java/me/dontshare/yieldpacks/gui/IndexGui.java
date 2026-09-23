@@ -4,6 +4,7 @@ import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiBuilder;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.gui.Page;
 import me.dontshare.yieldcore.item.ItemBuilder;
@@ -54,6 +55,8 @@ public final class IndexGui {
 
     private static final String ACCENT = "<#4BD9FF>";
     private static final int CONTENT_SLOTS = 45;
+    /** Five centred rows of seven inside the border - see GuiLayout. */
+    private static final int PAGE_SIZE = GuiLayout.capacity(5);
     private static final int PREV_SLOT = 45;
     private static final int HUGE_SLOT = 47;
     private static final int HEADER_SLOT = 49;
@@ -88,13 +91,14 @@ public final class IndexGui {
         Map<String, Integer> owned = ownedCounts(profile);
         double luckPercent = (luckService.totalLuckMultiplier(profile) - 1.0) * 100;
 
-        Page<ItemDefinition> page = Page.of(pets, pageIndex.getOrDefault(player.getUniqueId(), 0), CONTENT_SLOTS);
+        Page<ItemDefinition> page = Page.of(pets, pageIndex.getOrDefault(player.getUniqueId(), 0), PAGE_SIZE);
         GuiBuilder builder = Gui.builder(6, "Index (+" + Math.round(luckPercent) + "% luck)");
+        builder.fill(IntStream.range(0, CONTENT_SLOTS), GuiIcons.filler());
+        int[] contentSlots = GuiLayout.centered(0, page.items().size());
         int slot = 0;
         for (ItemDefinition pet : page.items()) {
-            builder.item(slot++, buildIcon(pet, owned.getOrDefault(pet.id(), 0)));
+            builder.item(contentSlots[slot++], buildIcon(pet, owned.getOrDefault(pet.id(), 0)));
         }
-        builder.fill(IntStream.range(slot, CONTENT_SLOTS), GuiIcons.filler());
         builder.fill(IntStream.range(CONTENT_SLOTS, 54)
                 .filter(s -> s != PREV_SLOT && s != HUGE_SLOT && s != HEADER_SLOT
                         && s != CLOSE_SLOT && s != NEXT_SLOT), GuiIcons.filler());
@@ -146,7 +150,7 @@ public final class IndexGui {
                 List.of(" &7Every pet in the game, and", " &7which ones you've found.",
                         " &7Collect a whole egg's pets", " &7for &a+5% &7luck."),
                 ACCENT,
-                List.of("Found: &f" + found + "/" + pets.size())
+                List.of("Found: " + MenuLore.progress(found, pets.size()))
         ).forEach(builder::lore);
         return builder.hideAttributes().build();
     }

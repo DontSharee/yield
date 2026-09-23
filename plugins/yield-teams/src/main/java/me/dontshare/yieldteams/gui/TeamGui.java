@@ -3,6 +3,7 @@ package me.dontshare.yieldteams.gui;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiBuilder;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.Formatting;
@@ -72,8 +73,9 @@ public final class TeamGui {
         }
 
         List<java.util.UUID> members = team.getMemberIds();
-        for (int i = 0; i < members.size() && MEMBER_START_SLOT + i < 45; i++) {
-            builder.item(MEMBER_START_SLOT + i, buildMemberIcon(team, members.get(i)));
+        int[] slots = GuiLayout.centered(MEMBER_START_SLOT / 9, Math.min(members.size(), GuiLayout.capacity(4)));
+        for (int i = 0; i < slots.length; i++) {
+            builder.item(slots[i], buildMemberIcon(team, members.get(i)));
         }
 
         guiManager.open(viewer, builder.build());

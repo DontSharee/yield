@@ -3,6 +3,7 @@ package me.dontshare.yieldzones.gui;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiBuilder;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.Formatting;
@@ -51,18 +52,18 @@ public final class FastTravelGui {
     public void open(Player player) {
         List<ZoneDefinition> list = new ArrayList<>(zones.get().values());
         // Border top + bottom rows, however many middle rows the zone count actually needs (capped at a full 6-row chest).
-        int middleRows = Math.max(1, (int) Math.ceil(list.size() / 9.0));
+        int middleRows = Math.max(1, (int) Math.ceil(Math.min(list.size(), GuiLayout.capacity(4)) / (double) GuiLayout.INNER_WIDTH));
         int rows = Math.max(ROWS, Math.min(6, middleRows + 2));
         GuiBuilder builder = Gui.builder(rows, "Fast Travel")
                 .fill(IntStream.range(0, 9), GuiIcons.filler())
                 .fill(IntStream.range((rows - 1) * 9, rows * 9), GuiIcons.filler())
                 .item((rows - 1) * 9 + 4, GuiIcons.closeButton(), (clicker, event) -> clicker.closeInventory());
 
-        int slot = GRID_START;
-        for (ZoneDefinition zone : list) {
-            if (slot >= (rows - 1) * 9) {
-                break;
-            }
+        // Seven to a row inside the border, each row centred - see GuiLayout.
+        int[] slots = GuiLayout.centered(GRID_START / 9, Math.min(list.size(), GuiLayout.capacity(rows - 2)));
+        for (int i = 0; i < slots.length; i++) {
+            ZoneDefinition zone = list.get(i);
+            int slot = slots[i];
             boolean unlocked = lockService.isUnlocked(player, zone);
             // A zone can be shut for reasons that have nothing to do with
             // paying for it - the Haunted Hollow only exists while its event
@@ -81,7 +82,6 @@ public final class FastTravelGui {
                     purchaseGui.open(clicker, zone);
                 }
             });
-            slot++;
         }
 
         guiManager.open(player, builder.build());

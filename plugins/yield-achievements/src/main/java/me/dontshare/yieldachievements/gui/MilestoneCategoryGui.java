@@ -7,6 +7,7 @@ import me.dontshare.yieldachievements.potion.PotionDefinition;
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.gui.Page;
 import me.dontshare.yieldcore.item.ItemBuilder;
@@ -37,7 +38,8 @@ public final class MilestoneCategoryGui {
 
     private static final int TOTAL_ROWS = 6;
     private static final int CONTENT_ROWS = TOTAL_ROWS - 1;
-    private static final int PAGE_SIZE = CONTENT_ROWS * 9;
+    /** Centred rows of seven inside the border - see GuiLayout. */
+    private static final int PAGE_SIZE = GuiLayout.capacity(CONTENT_ROWS);
     private static final int PREV_SLOT = 45;
     private static final int BACK_SLOT = 47;
     private static final int CLOSE_SLOT = 49;
@@ -78,10 +80,12 @@ public final class MilestoneCategoryGui {
 
         var builder = Gui.builder(TOTAL_ROWS, category.displayName());
         List<MilestoneTier> items = page.items();
+        builder.fill(IntStream.range(0, 45), GuiIcons.filler());
+        int[] contentSlots = GuiLayout.centered(0, items.size());
         for (int i = 0; i < items.size(); i++) {
             int tierIndex = baseIndex + i;
             MilestoneTier tier = items.get(i);
-            builder.item(i, buildTierIcon(profile, category, tier, tierIndex), (clicker, e) -> handleClick(clicker, categoryId, tierIndex));
+            builder.item(contentSlots[i], buildTierIcon(profile, category, tier, tierIndex), (clicker, e) -> handleClick(clicker, categoryId, tierIndex));
         }
         builder.fill(IntStream.range(45, 54).filter(s -> s != PREV_SLOT && s != BACK_SLOT && s != CLOSE_SLOT && s != NEXT_SLOT), GuiIcons.filler());
         builder.item(PREV_SLOT, GuiIcons.pageArrow(false, page.hasPrevious()), (clicker, e) -> turnPage(clicker, categoryId, -1));
@@ -160,7 +164,7 @@ public final class MilestoneCategoryGui {
         ItemBuilder builder = ItemBuilder.of(material).name("&f" + category.displayName() + " &8- &fTier " + (tierIndex + 1));
         List<String> data = new ArrayList<>();
         data.add("Goal: &f" + Formatting.format((double) tier.goal()));
-        data.add("Progress: &f" + Formatting.format((double) progress) + " &7/ &f" + Formatting.format((double) tier.goal()));
+        data.add("Progress: " + MenuLore.progress(progress, tier.goal()));
         data.add("");
         if (tier.rewardCoins().signum() > 0) {
             data.add("Coins: &6" + Formatting.format(tier.rewardCoins()));

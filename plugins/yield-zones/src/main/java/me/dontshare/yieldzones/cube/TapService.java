@@ -73,6 +73,17 @@ public final class TapService implements Listener {
     private final Map<UUID, Long> lastTapKillAt = new ConcurrentHashMap<>();
     private final Map<String, BiFunction<Player, PackPlayerProfile, Double>> multiplierProviders = new ConcurrentHashMap<>();
     private final Map<String, BiFunction<Player, PackPlayerProfile, Double>> powerProviders = new ConcurrentHashMap<>();
+    private final Map<String, TapListener> tapListeners = new ConcurrentHashMap<>();
+
+    /**
+     * Told about every tap that landed, after its damage is queued and
+     * before it is flushed - so anything a listener queues on top (an echo
+     * onto another cube, a lucky extra strike) lands in the same flush.
+     */
+    @FunctionalInterface
+    public interface TapListener {
+        void onTap(Player player, PackPlayerProfile profile, OreCube cube, long damage);
+    }
     /** Players whose taps should do nothing right now - a world boss fight owns their attention. */
     private Predicate<Player> paused = player -> false;
 
@@ -105,6 +116,14 @@ public final class TapService implements Listener {
      * weapon is one. The highest answer from every provider wins; nothing
      * can take a tap below {@link #BARE_TAP_POWER}.
      */
+    public void registerTapListener(String key, TapListener listener) {
+        tapListeners.put(key, listener);
+    }
+
+    public void unregisterTapListener(String key) {
+        tapListeners.remove(key);
+    }
+
     public void registerTapPowerProvider(String key, BiFunction<Player, PackPlayerProfile, Double> provider) {
         powerProviders.put(key, provider);
     }
@@ -190,6 +209,9 @@ public final class TapService implements Listener {
             }
         }
         cubes.queueDamage(player, cube, damage, null);
+        for (TapListener listener : tapListeners.values()) {
+            listener.onTap(player, profile, cube, damage);
+        }
         cubes.flushDamage(player);
         return true;
     }

@@ -29,6 +29,7 @@ import me.dontshare.yieldcore.player.PlayerProfileManager;
 import me.dontshare.yieldcore.restrictions.GameplayRestrictionsListener;
 import me.dontshare.yieldcore.scoreboard.ScoreboardManager;
 import me.dontshare.yieldcore.scoreboard.YieldScoreboardDisplay;
+import me.dontshare.yieldcore.trash.TrashCommand;
 import me.dontshare.yieldcore.spawn.SpawnCommand;
 import me.dontshare.yieldcore.spawn.SpawnService;
 import me.dontshare.yieldcore.teleport.BackCommand;
@@ -49,6 +50,7 @@ public final class YieldCore extends JavaPlugin {
     private static final long AUTOSAVE_INTERVAL_TICKS = 20L * 60 * 2; // 2 minutes
 
     private ListenerManager listenerManager;
+    private TrashCommand trashCommand;
     private DatabaseManager databaseManager;
     private ScoreboardManager scoreboardManager;
     private PlaceholderRegistry placeholderRegistry;
@@ -150,6 +152,10 @@ public final class YieldCore extends JavaPlugin {
         listenerManager.register(backLocationService);
         CommandManager.register(this, BackCommand.build(backLocationService), "Teleport to where you last teleported from (or died)");
 
+        trashCommand = new TrashCommand();
+        listenerManager.register(trashCommand);
+        CommandManager.register(this, trashCommand.node(), "Open a bin - anything left in it when you close it is deleted", List.of("disposal"));
+
         CommandManager.register(this, YieldCommand.build(this), "Yield admin commands", List.of("yld"));
         CommandManager.register(this, AdminCommands.gamemode("gmc", GameMode.CREATIVE), "Set gamemode to creative");
         CommandManager.register(this, AdminCommands.gamemode("gms", GameMode.SURVIVAL), "Set gamemode to survival");
@@ -182,6 +188,9 @@ public final class YieldCore extends JavaPlugin {
         // without this, a restart or /reload destroys those items outright.
         if (guiManager != null) {
             guiManager.closeAll();
+        }
+        if (trashCommand != null) {
+            trashCommand.closeAll();
         }
         // Async tasks aren't guaranteed to finish during shutdown, so the
         // final save has to block rather than rely on the normal async path.

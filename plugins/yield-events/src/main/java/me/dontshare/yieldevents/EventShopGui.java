@@ -3,6 +3,7 @@ package me.dontshare.yieldevents;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiBuilder;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.Formatting;
@@ -67,14 +68,13 @@ public final class EventShopGui {
         }
         GuiBuilder builder = Gui.builder(6,
                 Formatting.stripLeadingColorCodes(event.displayName()) + " Shop");
-        int slot = 0;
-        for (EventShopEntry entry : event.shop()) {
-            if (slot >= ENTRY_SLOTS) {
-                break;
-            }
-            builder.item(slot++, buildEntryIcon(player, event, entry), (clicker, e) -> buy(clicker, event, entry));
+        builder.fill(IntStream.range(0, ENTRY_SLOTS), GuiIcons.filler());
+        List<EventShopEntry> shop = event.shop();
+        int[] slots = GuiLayout.centered(0, Math.min(shop.size(), GuiLayout.capacity(5)));
+        for (int i = 0; i < slots.length; i++) {
+            EventShopEntry entry = shop.get(i);
+            builder.item(slots[i], buildEntryIcon(player, event, entry), (clicker, e) -> buy(clicker, event, entry));
         }
-        builder.fill(IntStream.range(slot, ENTRY_SLOTS), GuiIcons.filler());
         builder.fill(IntStream.range(ENTRY_SLOTS, 54)
                 .filter(s -> s != BACK_SLOT && s != HEADER_SLOT && s != CLOSE_SLOT), GuiIcons.filler());
         if (questGui != null) {
@@ -135,7 +135,7 @@ public final class EventShopGui {
         // plainly even when there is plenty - a shelf that only mentions a
         // limit once it is gone has told the player too late.
         if (!entry.unlimited()) {
-            lore.add("&7Stock: &f" + left + "&7/&f" + entry.limit());
+            lore.add("&7Stock: " + MenuLore.progress(left, entry.limit()));
         }
         lore.add("");
         lore.add(soldOut ? "&8Sold out" : affordable ? "&8[CLICK] &fTo Buy" : "&cYou can't afford this yet.");

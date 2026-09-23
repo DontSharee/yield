@@ -3,6 +3,7 @@ package me.dontshare.yieldpacks.mastery;
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.Formatting;
@@ -32,9 +33,12 @@ import java.util.stream.IntStream;
 public final class MasteryGui {
 
     private static final int TOTAL_ROWS = 6;
-    private static final int[] TRACK_SLOTS = {2, 3, 4, 5};
+    /** One per track, centred in the top row - see GuiLayout. */
+    private static final int[] TRACK_SLOTS = GuiLayout.centeredRow(0, MasteryType.values().length);
     private static final int HEADER_SLOT = 13;
-    private static final List<Integer> PERK_SLOTS = IntStream.range(18, 45).boxed().toList();
+    /** Rows 2-4: the area perks are drawn into, and how many fit on a page (three centred rows of seven). */
+    private static final List<Integer> PERK_AREA = IntStream.range(18, 45).boxed().toList();
+    private static final int PERKS_PER_PAGE = GuiLayout.capacity(3);
     private static final int PREV_SLOT = 45;
     private static final int CLOSE_SLOT = 49;
     private static final int NEXT_SLOT = 53;
@@ -97,22 +101,21 @@ public final class MasteryGui {
         gui.set(HEADER_SLOT, buildHeaderIcon(profile, type), null);
 
         List<MasteryPerk> perks = service.allPerks(type);
-        int page = Math.min(Math.max(0, pageIndex.getOrDefault(player.getUniqueId(), 0)), Math.max(0, (perks.size() - 1) / PERK_SLOTS.size()));
+        int page = Math.min(Math.max(0, pageIndex.getOrDefault(player.getUniqueId(), 0)), Math.max(0, (perks.size() - 1) / PERKS_PER_PAGE));
         pageIndex.put(player.getUniqueId(), page);
-        int start = page * PERK_SLOTS.size();
+        int start = page * PERKS_PER_PAGE;
+        int shown = Math.max(0, Math.min(PERKS_PER_PAGE, perks.size() - start));
 
-        for (int i = 0; i < PERK_SLOTS.size(); i++) {
-            int perkIndex = start + i;
-            if (perkIndex < perks.size()) {
-                MasteryPerk perk = perks.get(perkIndex);
-                gui.set(PERK_SLOTS.get(i), buildPerkIcon(profile, type, perk), null);
-            } else {
-                gui.set(PERK_SLOTS.get(i), GuiIcons.filler(), null);
-            }
+        for (int slot : PERK_AREA) {
+            gui.set(slot, GuiIcons.filler(), null);
+        }
+        int[] slots = GuiLayout.centered(PERK_AREA.get(0) / 9, shown);
+        for (int i = 0; i < shown; i++) {
+            gui.set(slots[i], buildPerkIcon(profile, type, perks.get(start + i)), null);
         }
 
         boolean hasPrevious = page > 0;
-        boolean hasNext = start + PERK_SLOTS.size() < perks.size();
+        boolean hasNext = start + PERKS_PER_PAGE < perks.size();
         gui.set(PREV_SLOT, GuiIcons.pageArrow(false, hasPrevious), (clicker, e) -> turnPage(clicker, -1));
         gui.set(NEXT_SLOT, GuiIcons.pageArrow(true, hasNext), (clicker, e) -> turnPage(clicker, 1));
     }
@@ -137,7 +140,7 @@ public final class MasteryGui {
                 MenuLore.ACCENT,
                 List.of(
                         "Level: &f" + level,
-                        "Progress: &f" + Formatting.format(into) + " &7/ &f" + Formatting.format(needed) + " &7xp"
+                        "Progress: " + MenuLore.progress(into, needed) + " &7xp"
                 )
         ).forEach(builder::lore);
         return builder.hideAttributes().build();

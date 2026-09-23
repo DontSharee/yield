@@ -3,6 +3,7 @@ package me.dontshare.yieldpacks.gui;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiBuilder;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
@@ -26,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Supplier;
-import java.util.stream.IntStream;
 
 /**
  * What a player sees when they right-click an egg: everything that can come
@@ -43,10 +43,13 @@ import java.util.stream.IntStream;
 public final class HatchMenuGui {
 
     private static final String ACCENT = "<#4BD9FF>";
+    /** Rows 0-3: the drops, centred seven to a row (see GuiLayout). */
     private static final int DROP_SLOTS = 36;
-    private static final int TIER_ROW = 45;
-    private static final int AUTO_SLOT = 50;
-    private static final int CLOSE_SLOT = 53;
+    /** Row 4: the chase pet in the middle with the hatch buttons either side of it. */
+    private static final int CHASE_SLOT = 40;
+    private static final int[] TIER_SLOTS = {38, 39, 41, 42};
+    private static final int AUTO_SLOT = 45;
+    private static final int CLOSE_SLOT = 49;
 
     private final Supplier<PackContentLoader.ContentSnapshot> content;
     private final GuiManager guiManager;
@@ -80,22 +83,17 @@ public final class HatchMenuGui {
                 rollService.oddsFor(egg, rollService.displayLuckFor(player)));
         drops.sort(Comparator.comparingDouble(PackRollService.WeightedOdds::probability).reversed());
 
-        int slot = 0;
-        for (PackRollService.WeightedOdds drop : drops) {
-            if (slot >= DROP_SLOTS) {
-                break;
-            }
-            builder.item(slot++, buildDropIcon(drop));
+        builder.fill(GuiLayout.all(6), GuiIcons.filler());
+        int[] dropSlots = GuiLayout.centered(0, Math.min(drops.size(), GuiLayout.capacity(DROP_SLOTS / 9)));
+        for (int i = 0; i < dropSlots.length; i++) {
+            builder.item(dropSlots[i], buildDropIcon(drops.get(i)));
         }
-        builder.fill(IntStream.range(slot, DROP_SLOTS), GuiIcons.filler());
-        builder.fill(IntStream.range(DROP_SLOTS, 54).filter(s -> s < TIER_ROW || s > TIER_ROW + 3)
-                .filter(s -> s != CLOSE_SLOT && s != AUTO_SLOT && s != DROP_SLOTS + 4), GuiIcons.filler());
 
-        builder.item(DROP_SLOTS + 4, buildChaseIcon(egg, player));
+        builder.item(CHASE_SLOT, buildChaseIcon(egg, player));
         int[] tiers = PackOpenService.HATCH_TIERS;
-        for (int i = 0; i < tiers.length; i++) {
+        for (int i = 0; i < tiers.length && i < TIER_SLOTS.length; i++) {
             int count = tiers[i];
-            builder.item(TIER_ROW + i, buildTierIcon(egg, player, count),
+            builder.item(TIER_SLOTS[i], buildTierIcon(egg, player, count),
                     (clicker, event) -> hatch(clicker, egg, count));
         }
         builder.item(AUTO_SLOT, buildAutoIcon(player), (clicker, event) -> toggleAuto(clicker, egg.id()));

@@ -26,7 +26,9 @@ public enum BlockTreeEffectType {
     DIAMOND_CHANCE_BOOST,
     PROGRESS_MULTIPLIER,
     /** Block-scoped - permanently unlocks a chance for THIS block's own cube kills to drop a Shard of the type named in {@link BlockTreeEffect#data} ("DAMAGE"/"COINS"/"DIAMONDS" - see yield-packs' ShardType), "value" being that base drop chance. See BlockTreeService#shardDropChance. */
-    UNLOCK_SHARD_DROP;
+    UNLOCK_SHARD_DROP,
+    /** A one-of-a-kind top-of-tree reward - {@link BlockTreeEffect#data} names the {@link BlockPerk}, "value" is the number it runs on. See BlockPerkService. */
+    PERK;
 
     /** Parses blocktree.yml's kebab-case "type" strings (e.g. "flat-coins") into this enum. */
     public static BlockTreeEffectType parse(String raw) {

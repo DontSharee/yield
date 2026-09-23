@@ -4,6 +4,7 @@ import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiBuilder;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.gui.Page;
 import me.dontshare.yieldcore.item.ItemBuilder;
@@ -48,9 +49,12 @@ public final class HugeIndexGui {
 
     private static final String ACCENT = "<#FFD700>";
     private static final int CONTENT_SLOTS = 45;
+    /** Four centred rows of seven under the header - see GuiLayout. */
+    private static final int PAGE_SIZE = GuiLayout.capacity(4);
     private static final int PREV_SLOT = 45;
-    private static final int HEADER_SLOT = 49;
-    private static final int CLOSE_SLOT = 48;
+    /** Top-centre, above the grid - the bottom bar is just the arrows and Close. */
+    private static final int HEADER_SLOT = 4;
+    private static final int CLOSE_SLOT = 49;
     private static final int NEXT_SLOT = 53;
 
     private final Supplier<PackContentLoader.ContentSnapshot> content;
@@ -72,13 +76,14 @@ public final class HugeIndexGui {
         List<ItemDefinition> huges = allHuges();
         Map<String, Integer> owned = ownedCounts(profile);
 
-        Page<ItemDefinition> page = Page.of(huges, pageIndex.getOrDefault(player.getUniqueId(), 0), CONTENT_SLOTS);
+        Page<ItemDefinition> page = Page.of(huges, pageIndex.getOrDefault(player.getUniqueId(), 0), PAGE_SIZE);
         GuiBuilder builder = Gui.builder(6, "Huge Index");
+        builder.fill(IntStream.range(0, CONTENT_SLOTS), GuiIcons.filler());
+        int[] contentSlots = GuiLayout.centered(1, page.items().size());
         int slot = 0;
         for (ItemDefinition huge : page.items()) {
-            builder.item(slot++, buildIcon(huge, owned.getOrDefault(huge.id(), 0)));
+            builder.item(contentSlots[slot++], buildIcon(huge, owned.getOrDefault(huge.id(), 0)));
         }
-        builder.fill(IntStream.range(slot, CONTENT_SLOTS), GuiIcons.filler());
         builder.fill(IntStream.range(CONTENT_SLOTS, 54)
                 .filter(s -> s != PREV_SLOT && s != HEADER_SLOT && s != CLOSE_SLOT && s != NEXT_SLOT), GuiIcons.filler());
         builder.item(PREV_SLOT, GuiIcons.pageArrow(false, page.hasPrevious()), (clicker, e) -> turnPage(clicker, -1));
@@ -123,7 +128,7 @@ public final class HugeIndexGui {
                 List.of(" &7Huges replace a normal roll", " &7from &fany pack&7, at random.",
                         " &7Their damage scales off your", " &7best pet, so they never", " &7go out of date."),
                 ACCENT,
-                List.of("Found: &f" + found + "/" + huges.size(),
+                List.of("Found: " + MenuLore.progress(found, huges.size()),
                         "Base odds: &f1 in " + Formatting.format(chance > 0 ? Math.round(1.0 / chance) : 0))
         ).forEach(builder::lore);
         return builder.hideAttributes().build();

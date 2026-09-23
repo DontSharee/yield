@@ -3,6 +3,7 @@ package me.dontshare.yieldteams.gui;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiBuilder;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.Formatting;
@@ -44,8 +45,8 @@ public final class TeamLeaderboardGui {
         teamStore.all().forEach(ranked::add);
         ranked.sort(Comparator.comparing(Team::getTrophyBalance).reversed());
 
-        int gridSlots = Math.min(ranked.size(), MAX_ROWS * 9);
-        int middleRows = Math.max(1, (int) Math.ceil(gridSlots / 9.0));
+        int gridSlots = Math.min(ranked.size(), GuiLayout.capacity(MAX_ROWS));
+        int middleRows = Math.max(1, (int) Math.ceil(gridSlots / (double) GuiLayout.INNER_WIDTH));
         int rows = Math.min(6, middleRows + 2);
 
         GuiBuilder builder = Gui.builder(rows, "Team Leaderboard")
@@ -54,10 +55,11 @@ public final class TeamLeaderboardGui {
                 .item(INFO_SLOT, buildInfoIcon(ranked.size()))
                 .item((rows - 1) * 9 + 4, GuiIcons.closeButton(), (clicker, event) -> clicker.closeInventory());
 
-        for (int i = 0; i < ranked.size() && GRID_START + i < (rows - 1) * 9; i++) {
+        int[] slots = GuiLayout.centered(GRID_START / 9, gridSlots);
+        for (int i = 0; i < slots.length; i++) {
             Team team = ranked.get(i);
             int rank = i + 1;
-            builder.item(GRID_START + i, buildTeamIcon(team, rank), (clicker, event) -> teamGui.open(clicker, team));
+            builder.item(slots[i], buildTeamIcon(team, rank), (clicker, event) -> teamGui.open(clicker, team));
         }
 
         guiManager.open(player, builder.build());

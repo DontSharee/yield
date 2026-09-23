@@ -3,6 +3,7 @@ package me.dontshare.yieldteams.gui;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiBuilder;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.Formatting;
@@ -55,9 +56,10 @@ public final class TeamUpgradeGui {
                 .item(31, GuiIcons.closeButton(), (clicker, event) -> clicker.closeInventory());
 
         List<TeamUpgrade> upgrades = new ArrayList<>(content.get().upgrades().values());
-        for (int i = 0; i < upgrades.size() && GRID_START + i < 27; i++) {
+        int[] slots = GuiLayout.centered(GRID_START / 9, Math.min(upgrades.size(), GuiLayout.capacity(2)));
+        for (int i = 0; i < slots.length; i++) {
             TeamUpgrade upgrade = upgrades.get(i);
-            builder.item(GRID_START + i, buildUpgradeIcon(team, upgrade), (clicker, event) -> attemptBuy(clicker, upgrade.id()));
+            builder.item(slots[i], buildUpgradeIcon(team, upgrade), (clicker, event) -> attemptBuy(clicker, upgrade.id()));
         }
 
         guiManager.open(player, builder.build());
@@ -97,7 +99,7 @@ public final class TeamUpgradeGui {
         }
 
         List<String> data = new ArrayList<>(List.of(
-                "&7Level: &f" + level + " &7/ &f" + upgrade.maxLevel(),
+                "&7Level: " + MenuLore.progress(level, upgrade.maxLevel()),
                 "&7Effect: &a+" + Formatting.format(level * upgrade.valuePerLevel() * 100) + "%"
         ));
         if (maxed) {

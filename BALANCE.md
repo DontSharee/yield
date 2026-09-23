@@ -683,6 +683,41 @@ one-per-player pity buy purchasable again.
 
 ---
 
+## 2f. Blocktrees — one per block, one perk per tree
+
+Every block a cube can be has a tree: the 39 ladder blocks, the treasure
+chest, the big safe, the boss block and Haunted Hollow's three (42 total).
+Goals come from the pacing sim's own break counts (`gen_blocktree.py`
+replays verify.py and counts every material): tier 1 is ~10% of one pass
+down the ladder, tier 4 ~1.5 passes, tier 7 ~25 passes. Event blocks count
+whole events instead (tier 7 is about two Halloweens), since their zone is
+only open for one.
+
+Tiers 1-4 pay flat coins per break, sized 0.25x / 0.5x / 1x / 2x of that
+block's own coin value in the zone where a first pass reaches the goal, so
+a flat bonus is never a rounding error or a jackpot for where you actually
+are when you claim it. Tiers 5-6 are +10% / +25% on that block. The shard
+unlocks from the old trees are kept where they were.
+
+Tier 7 is the tree's perk, and no two trees share one. Eight are the old
+plain stats, now named (Foundation, Conductor, Iron Will, Hatchery,
+Obsidian Fury, Trinity, Ender Sight, Chorus Luck). The other 34 are
+mechanics: Midas Touch (1% of kills pay 10x), Shadow Clone (5% pay twice),
+High Tide (first kill each minute pays 10x), Stonewall (+30% damage while
+standing still), Beacon Aura (+10% coins shared with everyone within 16
+blocks), Echo (10% of taps hit every cube), Warlord (+100% damage for 5 min
+after a boss kill), Relic Hunter (big safes and boss blocks twice as
+often), Extra Hand (+1 equip slot), Enchanter's Gift (+1 enchant slot),
+and so on - blocktree.yml lists them all with what their value means.
+
+What they cost the pacing: nothing on a first pass. Tier 7 is ~25 passes
+of a block, which no first-pass player reaches, so the 11.4h genesis time
+stands. They are what a camping or rebirthing player works toward. The
+averages once you have them: Midas +9% coins, Shadow Clone +5%, High Tide
+roughly +20% at ~40 kills a minute, Beacon Aura +10%, Stonewall +30% damage
+for anyone standing still (most of the time, for an idle grinder), Deep
+Roots up to +40% (2% x 20 zones), Soul Link +50% once past 50K kills.
+
 ## 3. The pacing curve
 
 The unlock ladder is a uniform **~4× per zone**, every step a round number.

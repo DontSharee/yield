@@ -147,7 +147,7 @@ public final class SkillTreeGui {
 
         ItemBuilder builder = ItemBuilder.of(node.material()).name(node.displayName());
         List<String> data = new ArrayList<>();
-        data.add("&7Level: &f" + level + " &7/ &f" + node.maxLevel());
+        data.add("&7Level: " + MenuLore.progress(level, node.maxLevel()));
         if (maxed) {
             data.add("&a&lMAXED!");
             MenuLore.info("skill", List.of(), ACCENT, data).forEach(builder::lore);

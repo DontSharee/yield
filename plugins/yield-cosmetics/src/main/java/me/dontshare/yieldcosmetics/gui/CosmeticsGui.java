@@ -3,6 +3,7 @@ package me.dontshare.yieldcosmetics.gui;
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.gui.Page;
 import me.dontshare.yieldcore.item.ItemBuilder;
@@ -38,7 +39,8 @@ public final class CosmeticsGui {
 
     private static final String ACCENT = "<#4BD9FF>";
     private static final int TOTAL_ROWS = 6;
-    private static final int PAGE_SIZE = 36; // rows 2-5
+    /** Four centred rows of seven under the tabs - see GuiLayout. */
+    private static final int PAGE_SIZE = GuiLayout.capacity(4);
     private static final int[] TAB_SLOTS = {2, 4, 6};
 
     private final PlayerDataStore<CosmeticProfile> store;
@@ -84,10 +86,11 @@ public final class CosmeticsGui {
 
         String equippedId = category.equippedId(profile);
         List<Cosmetic> pageItems = page.items();
+        int[] contentSlots = GuiLayout.centered(1, pageItems.size());
         for (int i = 0; i < pageItems.size(); i++) {
             Cosmetic cosmetic = pageItems.get(i);
             boolean equipped = cosmetic.id().equals(equippedId);
-            builder.item(9 + i, buildCosmeticIcon(player, cosmetic, equipped),
+            builder.item(contentSlots[i], buildCosmeticIcon(player, cosmetic, equipped),
                     (clicker, event) -> attemptEquip(clicker, category, cosmetic, equipped));
         }
 

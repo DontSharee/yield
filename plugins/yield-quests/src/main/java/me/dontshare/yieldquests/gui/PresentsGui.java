@@ -30,7 +30,8 @@ public final class PresentsGui {
 
     private static final String ACCENT = "<#4BD9FF>";
     private static final int INFO_SLOT = 4;
-    private static final int[] GRID_SLOTS = {10, 11, 12, 13, 14, 19, 20, 21, 22, 23};
+    /** Two rows of five, each centred on the middle column. */
+    private static final int[] GRID_SLOTS = {11, 12, 13, 14, 15, 20, 21, 22, 23, 24};
     private static final int CLOSE_SLOT = 31;
 
     private final PresentsService presentsService;
@@ -110,7 +111,7 @@ public final class PresentsGui {
         } else {
             builder.name("&7&lLOCKED PRESENT");
             List<String> lockedData = new java.util.ArrayList<>(data);
-            lockedData.add("&cUnlocks in: &f" + presentsService.minutesUntilUnlock(player, index) + "m");
+            lockedData.add("&7Unlocks in: &c" + presentsService.minutesUntilUnlock(player, index) + "m");
             MenuLore.info("present", List.of(), "&7", lockedData).forEach(builder::lore);
         }
         return builder.hideAttributes().build();

@@ -163,7 +163,7 @@ public final class RankupGui {
         }
         ItemBuilder builder = ItemBuilder.of(quest.icon()).name("&f&l" + name);
         MenuLore.info("rankquest", List.of(), ACCENT, List.of(
-                "Progress: &f" + Math.min(quest.progress(), quest.goal()) + " &7/ &f" + quest.goal(),
+                "Progress: " + MenuLore.progress(Math.min(quest.progress(), quest.goal()), quest.goal()),
                 "Reward: &d" + Formatting.format(quest.rewardStars()) + " Stars"
         )).forEach(builder::lore);
         return builder.hideAttributes().build();

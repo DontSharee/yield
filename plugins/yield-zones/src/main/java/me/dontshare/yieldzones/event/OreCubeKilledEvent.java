@@ -20,12 +20,23 @@ public final class OreCubeKilledEvent extends Event {
     private final CubeTier tier;
     private final long coinsEarned;
     private final long diamondsEarned;
+    private final double bonusMultiplier;
 
     public OreCubeKilledEvent(Player player, CubeTier tier, long coinsEarned, long diamondsEarned) {
+        this(player, tier, coinsEarned, diamondsEarned, 1.0);
+    }
+
+    /** {@code bonusMultiplier} is the golden/diamond cube multiplier already inside {@code coinsEarned} - 1.0 for a plain cube. */
+    public OreCubeKilledEvent(Player player, CubeTier tier, long coinsEarned, long diamondsEarned, double bonusMultiplier) {
         this.player = player;
         this.tier = tier;
         this.coinsEarned = coinsEarned;
         this.diamondsEarned = diamondsEarned;
+        this.bonusMultiplier = bonusMultiplier;
+    }
+
+    public double getBonusMultiplier() {
+        return bonusMultiplier;
     }
 
     public Player getPlayer() {

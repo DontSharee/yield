@@ -1,8 +1,10 @@
 package me.dontshare.yieldtools.gui;
 
+import me.dontshare.yieldcore.text.MenuLore;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiBuilder;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.gui.Page;
 import me.dontshare.yieldcore.item.ItemBuilder;
@@ -24,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.IntStream;
 
 /**
  * /tools (/weapons) - the whole weapon path, a page at a time.
@@ -40,12 +41,15 @@ import java.util.stream.IntStream;
  */
 public final class ToolsGui {
 
-    private static final int CONTENT_SLOTS = 45;
-    private static final int PREV_SLOT = 45;
-    private static final int CLOSE_SLOT = 48;
-    private static final int HEADER_SLOT = 49;
-    private static final int BUY_MAX_SLOT = 50;
-    private static final int NEXT_SLOT = 53;
+    /** Four centred rows of seven inside the border (see GuiLayout). */
+    private static final int CONTENT_SLOTS = GuiLayout.capacity(4);
+    private static final int CONTENT_FIRST_ROW = 1;
+    /** The top row carries the header and Buy Max, either side of its middle. */
+    private static final int HEADER_SLOT = 3;
+    private static final int BUY_MAX_SLOT = 5;
+    private static final int PREV_SLOT = 48;
+    private static final int CLOSE_SLOT = 49;
+    private static final int NEXT_SLOT = 50;
 
     private final ToolService tools;
     private final YieldPacks packs;
@@ -76,16 +80,20 @@ public final class ToolsGui {
         BigInteger coins = profile.getCoins();
         Page<ToolDefinition> page = Page.of(path, pageIndex.getOrDefault(player.getUniqueId(), 0), CONTENT_SLOTS);
 
-        GuiBuilder builder = Gui.builder(6, "Weapons");
-        int slot = 0;
-        for (ToolDefinition tool : page.items()) {
-            builder.item(slot++, weaponIcon(player, profile, tool, owned, coins), (clicker, e) -> clicked(clicker, tool));
+        GuiBuilder builder = Gui.builder(6, page.totalPages() > 1
+                ? "Weapons (" + (page.index() + 1) + "/" + page.totalPages() + ")" : "Weapons");
+        builder.fill(GuiLayout.all(6), GuiIcons.filler());
+        int[] slots = GuiLayout.centered(CONTENT_FIRST_ROW, page.items().size());
+        for (int i = 0; i < slots.length; i++) {
+            ToolDefinition tool = page.items().get(i);
+            builder.item(slots[i], weaponIcon(player, profile, tool, owned, coins), (clicker, e) -> clicked(clicker, tool));
         }
-        builder.fill(IntStream.range(slot, CONTENT_SLOTS), GuiIcons.filler());
-        builder.fill(IntStream.range(CONTENT_SLOTS, 54).filter(s -> s != PREV_SLOT && s != CLOSE_SLOT
-                && s != HEADER_SLOT && s != BUY_MAX_SLOT && s != NEXT_SLOT), GuiIcons.filler());
-        builder.item(PREV_SLOT, GuiIcons.pageArrow(false, page.hasPrevious()), (clicker, e) -> turnPage(clicker, -1));
-        builder.item(NEXT_SLOT, GuiIcons.pageArrow(true, page.hasNext()), (clicker, e) -> turnPage(clicker, 1));
+        if (page.hasPrevious()) {
+            builder.item(PREV_SLOT, GuiIcons.pageArrow(false, true), (clicker, e) -> turnPage(clicker, -1));
+        }
+        if (page.hasNext()) {
+            builder.item(NEXT_SLOT, GuiIcons.pageArrow(true, true), (clicker, e) -> turnPage(clicker, 1));
+        }
         builder.item(CLOSE_SLOT, GuiIcons.closeButton(), (clicker, e) -> clicker.closeInventory());
         builder.item(HEADER_SLOT, headerIcon(player, profile));
         builder.item(BUY_MAX_SLOT, buyMaxIcon(player, coins), (clicker, e) -> buyMax(clicker));
@@ -178,7 +186,7 @@ public final class ToolsGui {
                 .lore("&7Tap damage: &f" + Formatting.format((double) taps.tapDamageAt(player, profile, power))
                         + " &8(" + Formatting.format(power) + "x)")
                 .lore("")
-                .lore("&7Owned: &f" + (tools.ownedIndex(player) + 1) + "&7/&f" + tools.all().size())
+                .lore("&7Owned: " + MenuLore.progress(tools.ownedIndex(player) + 1, tools.all().size()))
                 .hideAttributes()
                 .build();
     }

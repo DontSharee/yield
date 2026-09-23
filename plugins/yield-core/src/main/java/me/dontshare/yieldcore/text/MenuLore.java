@@ -10,7 +10,8 @@ import java.util.List;
  * (closing a GUI, changing sort, opening another screen, etc.) get a
  * "[CLICK]" name suffix and end with an underlined call to action; plain
  * informational/display items just
- * end with accent-colored "│ Label: value" data lines instead; a two-action
+ * end with "│ Label: value" data lines instead (accent tick, gray label,
+ * coloured value - see {@link #progress} for progress values); a two-action
  * item (e.g. a pet icon - left-click does one thing, right-click another)
  * uses {@link #dualAction} instead of either.
  */
@@ -115,10 +116,26 @@ public final class MenuLore {
         return lore;
     }
 
+    /**
+     * The tick carries the accent; the text after it always starts gray, so
+     * a "Label: &fvalue" line reads as a gray label and a coloured value no
+     * matter which screen built it. A line that opens with its own colour
+     * code still overrides the gray.
+     */
     private static void addDataLines(List<String> lore, String accentHex, List<String> dataLines) {
         for (String line : dataLines) {
-            lore.add(line.isEmpty() ? "" : accentHex + SEPARATOR + " " + line);
+            lore.add(line.isEmpty() ? "" : accentHex + SEPARATOR + " &7" + line);
         }
+    }
+
+    /**
+     * The one way a "how far along" value is written server-wide:
+     * {@code &a<current> &8/ &c<needed>} - green for what you have, red for
+     * what it takes. Use as the value half of a data line, e.g.
+     * {@code "Progress: " + MenuLore.progress(12, 100)}.
+     */
+    public static String progress(double current, double needed) {
+        return "&a" + Formatting.format(current) + " &8/ &c" + Formatting.format(needed);
     }
 
     /** {@code &8<small-caps category>} - dark gray, small-caps, matching every other administrative/category label server-wide. */

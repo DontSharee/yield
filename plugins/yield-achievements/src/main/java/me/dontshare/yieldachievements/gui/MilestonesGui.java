@@ -6,6 +6,7 @@ import me.dontshare.yieldachievements.data.MilestoneTier;
 import me.dontshare.yieldcore.database.PlayerDataStore;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.Formatting;
@@ -28,7 +29,6 @@ public final class MilestonesGui {
 
     private static final int TOTAL_ROWS = 6;
     private static final int CLOSE_SLOT = 49;
-    private static final int CATEGORY_START_SLOT = 10;
 
     private final Supplier<Map<String, MilestoneCategory>> content;
     private final PlayerDataStore<PackPlayerProfile> store;
@@ -51,13 +51,14 @@ public final class MilestonesGui {
         builder.fill(java.util.stream.IntStream.range(45, 54).filter(s -> s != CLOSE_SLOT), GuiIcons.filler());
         builder.item(CLOSE_SLOT, GuiIcons.closeButton(), (clicker, e) -> clicker.closeInventory());
 
-        int slot = CATEGORY_START_SLOT;
-        for (MilestoneCategory category : content.get().values()) {
-            if (slot >= 45) {
-                break;
-            }
-            builder.item(slot, buildCategoryIcon(profile, category), (clicker, e) -> categoryGui.open(clicker, category.id()));
-            slot++;
+        // Centred seven to a row under a border row, so a handful of
+        // categories sit in the middle instead of hugging the left edge.
+        builder.fill(java.util.stream.IntStream.range(0, 45), GuiIcons.filler());
+        List<MilestoneCategory> categories = new java.util.ArrayList<>(content.get().values());
+        int[] slots = GuiLayout.centered(1, Math.min(categories.size(), GuiLayout.capacity(4)));
+        for (int i = 0; i < slots.length; i++) {
+            MilestoneCategory category = categories.get(i);
+            builder.item(slots[i], buildCategoryIcon(profile, category), (clicker, e) -> categoryGui.open(clicker, category.id()));
         }
 
         guiManager.open(player, builder.build());
@@ -81,7 +82,7 @@ public final class MilestonesGui {
                 .name(MenuLore.buttonName(MenuLore.ACCENT, category.displayName().toUpperCase(java.util.Locale.ROOT)));
         List<String> data = new ArrayList<>();
         data.add("Progress: &f" + Formatting.format((double) progress));
-        data.add("Tiers Claimed: &f" + claimed + " &7/ &f" + category.tiers().size());
+        data.add("Tiers Claimed: " + MenuLore.progress(claimed, category.tiers().size()));
         if (readyToClaim > 0) {
             data.add("&a" + readyToClaim + " tier(s) ready to claim!");
         }

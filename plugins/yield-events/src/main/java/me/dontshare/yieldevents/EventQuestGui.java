@@ -3,6 +3,7 @@ package me.dontshare.yieldevents;
 import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiBuilder;
 import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiLayout;
 import me.dontshare.yieldcore.gui.GuiManager;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.Formatting;
@@ -59,15 +60,13 @@ public final class EventQuestGui {
         }
         GuiBuilder builder = Gui.builder(6, Formatting.stripLeadingColorCodes(event.displayName()));
         List<EventQuest> quests = event.quests();
-        int slot = 0;
-        for (EventQuest quest : quests) {
-            if (slot >= QUEST_SLOTS) {
-                break;
-            }
-            builder.item(slot++, buildQuestIcon(player, event, quest),
+        builder.fill(IntStream.range(0, QUEST_SLOTS), GuiIcons.filler());
+        int[] slots = GuiLayout.centered(0, Math.min(quests.size(), GuiLayout.capacity(5)));
+        for (int i = 0; i < slots.length; i++) {
+            EventQuest quest = quests.get(i);
+            builder.item(slots[i], buildQuestIcon(player, event, quest),
                     (clicker, e) -> claim(clicker, event, quest));
         }
-        builder.fill(IntStream.range(slot, QUEST_SLOTS), GuiIcons.filler());
         builder.fill(IntStream.range(QUEST_SLOTS, 54)
                 .filter(s -> s != SHOP_SLOT && s != HEADER_SLOT && s != CLOSE_SLOT), GuiIcons.filler());
         // Hidden when the event sells nothing, rather than shown as an
@@ -117,8 +116,7 @@ public final class EventQuestGui {
                 .name(MenuLore.buttonName("<" + event.color() + ">", quest.displayName()));
         List<String> lore = new ArrayList<>(quest.description());
         lore.add("");
-        lore.add("&7Progress: &f" + Formatting.format((double) Math.min(progress, quest.target()))
-                + "&7/&f" + Formatting.format((double) quest.target()));
+        lore.add("&7Progress: " + MenuLore.progress(Math.min(progress, quest.target()), quest.target()));
         lore.add("");
         lore.add("&7Rewards:");
         if (quest.rewardCandy() > 0) {

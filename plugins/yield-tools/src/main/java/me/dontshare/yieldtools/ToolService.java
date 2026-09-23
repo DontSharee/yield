@@ -1,7 +1,6 @@
 package me.dontshare.yieldtools;
 
 import me.dontshare.yieldcore.database.PlayerDataStore;
-import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import me.dontshare.yieldtools.data.ToolDefinition;
@@ -49,13 +48,15 @@ public final class ToolService {
     /**
      * How far down the path this player is, clamped to the path as it is
      * now - a tools.yml that lost entries must not leave anyone pointing
-     * past its end.
+     * past its end. Never below 0: every player owns the first weapon from
+     * the moment they join, so there is no "no weapon yet" state.
      */
     public int ownedIndex(Player player) {
-        return Math.min(store.getOrCreate(player.getUniqueId()).getOwnedIndex(), tools.get().size() - 1);
+        int owned = store.getOrCreate(player.getUniqueId()).getOwnedIndex();
+        return Math.max(0, Math.min(owned, tools.get().size() - 1));
     }
 
-    /** The best tool this player owns, or null if none yet. */
+    /** The best tool this player owns - null only if tools.yml is empty. */
     public ToolDefinition current(Player player) {
         int index = ownedIndex(player);
         return index < 0 ? null : tools.get().get(index);
@@ -131,27 +132,24 @@ public final class ToolService {
         return bought;
     }
 
-    /** Admin: put a player at a point on the path directly - -1 for none. */
+    /** Admin: put a player at a point on the path directly - 0 is the starting weapon. */
     public void setOwned(Player player, int index) {
-        store.getOrCreate(player.getUniqueId()).setOwnedIndex(Math.max(-1, Math.min(index, tools.get().size() - 1)));
+        store.getOrCreate(player.getUniqueId()).setOwnedIndex(Math.max(0, Math.min(index, tools.get().size() - 1)));
         store.save(player.getUniqueId());
         refreshItem(player);
     }
 
     /**
-     * Makes sure the player is carrying exactly one tool item: their best.
-     * An upgrade swaps it in the same slot it was in, so a player who moved
-     * their tool keeps it where they put it; with none carried it goes in
-     * {@link #TOOL_SLOT}, or the first free slot if that's taken.
+     * Makes sure the player is carrying exactly one tool item, their best,
+     * in {@link #TOOL_SLOT} - the slot it is pinned to (see ToolListener).
+     * Whatever else is sitting in that slot is moved to a free slot first,
+     * or dropped at the player's feet if there is none, so the weapon never
+     * silently fails to appear.
      */
     public void refreshItem(Player player) {
         PlayerInventory inventory = player.getInventory();
-        int slot = -1;
         for (int i = 0; i < inventory.getSize(); i++) {
             if (toolItem.isTool(inventory.getItem(i))) {
-                if (slot == -1) {
-                    slot = i;
-                }
                 inventory.setItem(i, null);
             }
         }
@@ -159,14 +157,11 @@ public final class ToolService {
         if (tool == null) {
             return;
         }
-        if (slot == -1) {
-            ItemStack inToolSlot = inventory.getItem(TOOL_SLOT);
-            slot = inToolSlot == null || inToolSlot.getType().isAir() ? TOOL_SLOT : inventory.firstEmpty();
+        ItemStack occupant = inventory.getItem(TOOL_SLOT);
+        inventory.setItem(TOOL_SLOT, toolItem.create(tool));
+        if (occupant != null && !occupant.getType().isAir()) {
+            inventory.addItem(occupant).values()
+                    .forEach(leftover -> player.getWorld().dropItemNaturally(player.getLocation(), leftover));
         }
-        if (slot == -1) {
-            player.sendMessage(Text.parse("<gray>Your inventory is full - make room, then open <white>/tools</white> to get your tool back.</gray>"));
-            return;
-        }
-        inventory.setItem(slot, toolItem.create(tool));
     }
 }
