@@ -129,8 +129,10 @@ public final class YieldZones extends JavaPlugin {
                 return;
             }
             PackPlayerProfile profile = packs.getPlayerStore().getCached(clicker.getUniqueId());
-            boolean sendOneAtATime = profile != null && !profile.isAutoAttackOn()
-                    && profile.getAttackMode() == AttackMode.SINGLE;
+            // Single Send sends one pet per click, with or without Auto
+            // Attack (with it, the rest of the squad is spread over the
+            // other cubes - see PetCombatController#tickAutoSpread).
+            boolean sendOneAtATime = profile != null && profile.getAttackMode() == AttackMode.SINGLE;
             if (sendOneAtATime) {
                 combatController.assignNextPetTo(clicker, cube);
             } else {
