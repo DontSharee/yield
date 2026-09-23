@@ -146,7 +146,6 @@ public final class EventContentLoader {
             entries.add(new EventShopEntry(
                     entryId,
                     s.getString("display-name", entryId),
-                    s.getStringList("description"),
                     material,
                     Math.max(1, s.getLong("price", 1)),
                     Math.max(0, s.getInt("limit", 0)),

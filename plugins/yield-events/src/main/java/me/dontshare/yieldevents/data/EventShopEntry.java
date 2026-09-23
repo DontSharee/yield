@@ -23,7 +23,7 @@ import java.util.List;
  * {@link EventQuest}): every reward type already has an admin command, and
  * a seasonal shelf changes every year and should not need code to.
  */
-public record EventShopEntry(String id, String displayName, List<String> description, Material material,
+public record EventShopEntry(String id, String displayName, Material material,
                               long price, int limit, List<String> commands) {
 
     /** Whether this entry restocks forever. */

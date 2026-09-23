@@ -122,8 +122,9 @@ public final class EventShopGui {
 
         ItemBuilder builder = ItemBuilder.of(soldOut ? Material.GRAY_DYE : entry.material())
                 .name(MenuLore.buttonName("<" + event.color() + ">", entry.displayName()));
-        List<String> lore = new ArrayList<>(entry.description());
-        lore.add("");
+        // Generated facts only - what it gives, what it costs, how many are
+        // left. No per-item blurb: every shop entry reads the same way.
+        List<String> lore = new ArrayList<>();
         lore.add("&7You get:");
         for (String command : entry.commands()) {
             lore.add(" &8- &d" + RewardText.describeCommand(command));

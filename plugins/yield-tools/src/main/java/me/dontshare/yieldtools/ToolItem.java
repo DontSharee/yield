@@ -24,16 +24,17 @@ public final class ToolItem {
     }
 
     public ItemStack create(ToolDefinition tool) {
-        ItemBuilder builder = ItemBuilder.of(tool.material())
+        // Always the player's CURRENT weapon, so it always glows - the same
+        // mark it wears in the menu.
+        return ItemBuilder.of(tool.material())
                 .name(tool.displayName())
                 .tag(key, PersistentDataType.STRING, tool.id())
                 .unbreakable(true)
-                .hideAttributes();
-        tool.description().forEach(builder::lore);
-        builder.lore("");
-        builder.lore("&7Taps: &ax" + Formatting.format(tool.tapMultiplier()) + " &7damage while held");
-        builder.lore("&8Right-click to open /tools");
-        return builder.build();
+                .enchant(org.bukkit.enchantments.Enchantment.UNBREAKING, 1)
+                .lore("&7Damage: &f" + Formatting.format(tool.power()) + "x &7pet power")
+                .lore("&8Right-click for /tools")
+                .hideAttributes()
+                .build();
     }
 
     public boolean isTool(ItemStack item) {

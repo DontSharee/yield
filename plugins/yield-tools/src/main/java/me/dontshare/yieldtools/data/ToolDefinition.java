@@ -2,9 +2,12 @@ package me.dontshare.yieldtools.data;
 
 import org.bukkit.Material;
 
-import java.util.List;
-
-/** One tool on the path - see tools.yml. {@code index} is its position on the path, 0 for the first. */
-public record ToolDefinition(int index, String id, String displayName, Material material, double tapMultiplier,
-                             long costCoins, List<String> description) {
+/**
+ * One weapon on the path - see tools.yml. {@code index} is its position on
+ * the path, 0 for the first; {@code power} is what a tap deals while it's
+ * held, as a multiple of pet power. No description: every weapon shows the
+ * same generated stats, so the path reads as one consistent list.
+ */
+public record ToolDefinition(int index, String id, String displayName, Material material, double power,
+                             long costCoins) {
 }

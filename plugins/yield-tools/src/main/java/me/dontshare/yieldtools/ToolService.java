@@ -68,18 +68,19 @@ public final class ToolService {
     }
 
     /**
-     * What this player's taps are multiplied by right now: their best
-     * tool's multiplier if they are holding it, and nothing otherwise. A
-     * tool is hand-held on purpose - putting it away puts the bonus away.
-     * It is the player's OWN best tool that counts, whatever tool item is
-     * in their hand, so a stray copy is worth nothing (see ToolItem).
+     * The share of pet power this player's taps deal right now: their best
+     * weapon's power if they are holding it, and null (bare hands, see
+     * TapService#BARE_TAP_POWER) otherwise. A weapon is hand-held on
+     * purpose - putting it away puts the bonus away. It is the player's OWN
+     * best weapon that counts, whatever weapon item is in their hand, so a
+     * stray copy is worth nothing (see ToolItem).
      */
-    public double tapMultiplier(Player player) {
+    public Double tapPower(Player player) {
         ToolDefinition tool = current(player);
         if (tool == null || !toolItem.isTool(player.getInventory().getItemInMainHand())) {
-            return 1.0;
+            return null;
         }
-        return tool.tapMultiplier();
+        return tool.power();
     }
 
     /** Buys the next tool on the path if the player can afford it. */

@@ -4,14 +4,15 @@ import me.dontshare.yieldcore.gui.Gui;
 import me.dontshare.yieldcore.gui.GuiBuilder;
 import me.dontshare.yieldcore.gui.GuiIcons;
 import me.dontshare.yieldcore.gui.GuiManager;
+import me.dontshare.yieldcore.gui.Page;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.Formatting;
-import me.dontshare.yieldcore.text.MenuLore;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import me.dontshare.yieldtools.ToolService;
 import me.dontshare.yieldtools.data.ToolDefinition;
+import me.dontshare.yieldzones.cube.TapService;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -20,159 +21,166 @@ import org.bukkit.inventory.ItemStack;
 
 import java.math.BigInteger;
 import java.util.List;
-import java.util.function.ToLongFunction;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
 /**
- * /tools - the whole path at once: what you have, the one you can buy
- * next, and everything after it, so the next few are always in view as
- * something to aim for.
+ * /tools (/weapons) - the whole weapon path, a page at a time.
  * <p>
- * Buy Next buys one; Buy Max buys as far as your coins reach. The path is
- * the only order there is, so neither ever has to ask which tool.
+ * The weapons ARE the buttons: click the next one to buy it. Your current
+ * weapon glows; the ones you own are marked; the one you can buy says its
+ * price; everything past it is locked until the one before it is yours.
+ * Every entry shows the same three facts - damage, price, state - and
+ * nothing else, so 120 weapons read as one list rather than 120 blurbs.
+ * <p>
+ * It opens on the page with your next weapon on it, because that is the
+ * only one you can do anything with.
  */
 public final class ToolsGui {
 
-    private static final String ACCENT = "<#4BD9FF>";
-    private static final int ROWS = 6;
-    private static final int HEADER_SLOT = 4;
-    private static final int BUY_NEXT_SLOT = 47;
-    private static final int CLOSE_SLOT = 49;
-    private static final int BUY_MAX_SLOT = 51;
-    /** The inner 7x3 of the chest - room for 21 tools. */
-    private static final int[] PATH_SLOTS = {
-            10, 11, 12, 13, 14, 15, 16,
-            19, 20, 21, 22, 23, 24, 25,
-            28, 29, 30, 31, 32, 33, 34};
+    private static final int CONTENT_SLOTS = 45;
+    private static final int PREV_SLOT = 45;
+    private static final int CLOSE_SLOT = 48;
+    private static final int HEADER_SLOT = 49;
+    private static final int BUY_MAX_SLOT = 50;
+    private static final int NEXT_SLOT = 53;
 
     private final ToolService tools;
     private final YieldPacks packs;
     private final GuiManager guiManager;
-    /** What one tap deals right now, bare-handed - supplied by yield-zones' TapService. */
-    private final ToLongFunction<Player> bareTapDamage;
+    private final TapService taps;
+    private final Map<UUID, Integer> pageIndex = new ConcurrentHashMap<>();
 
-    public ToolsGui(ToolService tools, YieldPacks packs, GuiManager guiManager, ToLongFunction<Player> bareTapDamage) {
+    public ToolsGui(ToolService tools, YieldPacks packs, GuiManager guiManager, TapService taps) {
         this.tools = tools;
         this.packs = packs;
         this.guiManager = guiManager;
-        this.bareTapDamage = bareTapDamage;
+        this.taps = taps;
     }
 
+    /** Opens on the page holding the player's next weapon. */
     public void open(Player player) {
-        // Also how a player whose inventory was full gets their tool back.
+        int focus = Math.max(0, tools.ownedIndex(player) + 1);
+        pageIndex.put(player.getUniqueId(), Math.min(focus, Math.max(0, tools.all().size() - 1)) / CONTENT_SLOTS);
+        render(player);
+    }
+
+    private void render(Player player) {
+        // Also how a player whose inventory was full gets their weapon back.
         tools.refreshItem(player);
         List<ToolDefinition> path = tools.all();
         int owned = tools.ownedIndex(player);
-        BigInteger coins = packs.getPlayerStore().getOrCreate(player.getUniqueId()).getCoins();
+        PackPlayerProfile profile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
+        BigInteger coins = profile.getCoins();
+        Page<ToolDefinition> page = Page.of(path, pageIndex.getOrDefault(player.getUniqueId(), 0), CONTENT_SLOTS);
 
-        GuiBuilder builder = Gui.builder(ROWS, "Tools");
-        builder.fill(IntStream.range(0, ROWS * 9), GuiIcons.filler());
-        for (int i = 0; i < path.size() && i < PATH_SLOTS.length; i++) {
-            builder.item(PATH_SLOTS[i], pathIcon(path.get(i), owned, coins));
+        GuiBuilder builder = Gui.builder(6, "Weapons");
+        int slot = 0;
+        for (ToolDefinition tool : page.items()) {
+            builder.item(slot++, weaponIcon(player, profile, tool, owned, coins), (clicker, e) -> clicked(clicker, tool));
         }
-        builder.item(HEADER_SLOT, headerIcon(player));
-        builder.item(BUY_NEXT_SLOT, buyNextIcon(player, coins), (clicker, e) -> buyNext(clicker));
-        builder.item(BUY_MAX_SLOT, buyMaxIcon(player, coins), (clicker, e) -> buyMax(clicker));
+        builder.fill(IntStream.range(slot, CONTENT_SLOTS), GuiIcons.filler());
+        builder.fill(IntStream.range(CONTENT_SLOTS, 54).filter(s -> s != PREV_SLOT && s != CLOSE_SLOT
+                && s != HEADER_SLOT && s != BUY_MAX_SLOT && s != NEXT_SLOT), GuiIcons.filler());
+        builder.item(PREV_SLOT, GuiIcons.pageArrow(false, page.hasPrevious()), (clicker, e) -> turnPage(clicker, -1));
+        builder.item(NEXT_SLOT, GuiIcons.pageArrow(true, page.hasNext()), (clicker, e) -> turnPage(clicker, 1));
         builder.item(CLOSE_SLOT, GuiIcons.closeButton(), (clicker, e) -> clicker.closeInventory());
+        builder.item(HEADER_SLOT, headerIcon(player, profile));
+        builder.item(BUY_MAX_SLOT, buyMaxIcon(player, coins), (clicker, e) -> buyMax(clicker));
         guiManager.open(player, builder.build());
     }
 
-    private void buyNext(Player player) {
-        ToolDefinition next = tools.next(player);
-        switch (tools.buyNext(player)) {
-            case SUCCESS -> celebrate(player, next, 1);
-            case TOO_POOR -> {
-                player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
-                player.sendMessage(Text.parse("<gray>You need <price> coins for that.</gray>",
-                        Placeholder.unparsed("price", Formatting.format(BigInteger.valueOf(next.costCoins())))));
-            }
-            case MAXED -> player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
+    private void turnPage(Player player, int delta) {
+        int pages = Math.max(1, (tools.all().size() + CONTENT_SLOTS - 1) / CONTENT_SLOTS);
+        int next = Math.max(0, Math.min(pages - 1, pageIndex.getOrDefault(player.getUniqueId(), 0) + delta));
+        pageIndex.put(player.getUniqueId(), next);
+        render(player);
+    }
+
+    /** Clicking the next weapon buys it; clicking anything else explains why it can't be. */
+    private void clicked(Player player, ToolDefinition tool) {
+        int owned = tools.ownedIndex(player);
+        if (tool.index() <= owned) {
+            return;
         }
-        open(player);
+        if (tool.index() > owned + 1) {
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
+            player.sendMessage(Text.parse("<gray>Unlock the weapon before it first.</gray>"));
+            return;
+        }
+        if (tools.buyNext(player) == ToolService.BuyResult.SUCCESS) {
+            celebrate(player, tool, 1);
+        } else {
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
+            player.sendMessage(Text.parse("<gray>You need <price> coins for that.</gray>",
+                    Placeholder.unparsed("price", Formatting.format(BigInteger.valueOf(tool.costCoins())))));
+        }
+        render(player);
     }
 
     private void buyMax(Player player) {
         int bought = tools.buyMax(player);
         if (bought == 0) {
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
-        } else {
-            celebrate(player, tools.current(player), bought);
+            render(player);
+            return;
         }
+        celebrate(player, tools.current(player), bought);
+        // Jump to where the path now stands, not wherever they were browsing.
         open(player);
     }
 
     private void celebrate(Player player, ToolDefinition tool, int count) {
         player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_USE, 0.6f, 1.4f);
         player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.7f, 1.2f);
-        String what = count == 1 ? "Unlocked" : "Unlocked " + count + " tools - now holding";
-        player.sendMessage(Text.parse("<#4BD9FF>⚒</#4BD9FF> <gray>" + what + "</gray> <tool><gray>!</gray> "
-                        + "<dark_gray>Hold it to tap harder.</dark_gray>",
-                Placeholder.component("tool", Text.parse(tool.displayName()))));
+        String what = count == 1 ? "Unlocked" : "Unlocked " + count + " weapons - now holding";
+        player.sendMessage(Text.parse("<#4BD9FF>⚔</#4BD9FF> <gray>" + what + "</gray> <weapon><gray>.</gray>",
+                Placeholder.component("weapon", Text.parse(tool.displayName()))));
     }
 
-    private ItemStack pathIcon(ToolDefinition tool, int owned, BigInteger coins) {
+    private ItemStack weaponIcon(Player player, PackPlayerProfile profile, ToolDefinition tool, int owned,
+                                 BigInteger coins) {
+        boolean current = tool.index() == owned;
         boolean isOwned = tool.index() <= owned;
-        boolean isCurrent = tool.index() == owned;
         boolean isNext = tool.index() == owned + 1;
+        BigInteger cost = BigInteger.valueOf(tool.costCoins());
+
         String name = isOwned || isNext ? tool.displayName() : "&8" + Formatting.stripLeadingColorCodes(tool.displayName());
         ItemBuilder builder = ItemBuilder.of(tool.material()).name(name);
-        tool.description().forEach(builder::lore);
+        builder.lore("&7Damage: &f" + Formatting.format(tool.power()) + "x &7pet power &8("
+                + Formatting.format((double) taps.tapDamageAt(player, profile, tool.power())) + ")");
+        if (!isOwned) {
+            builder.lore("&7Cost: &e" + Formatting.format(cost) + " &7coins");
+        }
         builder.lore("");
-        builder.lore("&7Taps: &ax" + Formatting.format(tool.tapMultiplier()) + " &7damage while held");
-        if (isCurrent) {
-            builder.lore("");
-            builder.lore("&a&lEQUIPPED &7- your best tool");
+        if (current) {
+            builder.lore("&aEquipped");
             builder.enchant(org.bukkit.enchantments.Enchantment.UNBREAKING, 1);
         } else if (isOwned) {
-            builder.lore("");
             builder.lore("&8Owned");
+        } else if (isNext) {
+            builder.lore(coins.compareTo(cost) >= 0 ? "&8[CLICK] &fTo Buy" : "&cYou can't afford this yet.");
         } else {
-            BigInteger cost = BigInteger.valueOf(tool.costCoins());
-            builder.lore("&7Cost: &e" + Formatting.format(cost) + " &7coins");
-            builder.lore("");
-            if (isNext) {
-                builder.lore(coins.compareTo(cost) >= 0 ? "&8Use Buy Next below" : "&cYou can't afford this yet.");
-            } else {
-                builder.lore("&8Unlock the tool before it first.");
-            }
+            builder.lore("&8Locked");
         }
         return builder.hideAttributes().build();
     }
 
-    private ItemStack headerIcon(Player player) {
+    private ItemStack headerIcon(Player player, PackPlayerProfile profile) {
         ToolDefinition current = tools.current(player);
-        long bare = bareTapDamage.applyAsLong(player);
-        double multiplier = current == null ? 1.0 : current.tapMultiplier();
-        ItemBuilder builder = ItemBuilder.of(current == null ? Material.BARRIER : current.material())
-                .name(MenuLore.infoName(ACCENT, "TOOLS"));
-        MenuLore.info("tools", List.of(
-                        " &7Every click on a cube is a tap.",
-                        " &7Hold your tool and your taps",
-                        " &7hit harder. Each tool needs",
-                        " &7the one before it."),
-                ACCENT,
-                List.of("Holding: " + (current == null ? "&7nothing yet" : current.displayName()),
-                        "Tap damage: &f" + Formatting.format(Math.round(bare * multiplier))
-                                + (current == null ? "" : " &8(x" + Formatting.format(multiplier) + ")")))
-                .forEach(builder::lore);
-        return builder.hideAttributes().build();
-    }
-
-    private ItemStack buyNextIcon(Player player, BigInteger coins) {
-        ToolDefinition next = tools.next(player);
-        if (next == null) {
-            return ItemBuilder.of(Material.NETHER_STAR).name(MenuLore.buttonName(ACCENT, "ALL TOOLS OWNED"))
-                    .lore("&7You're at the end of the path.").hideAttributes().build();
-        }
-        BigInteger cost = BigInteger.valueOf(next.costCoins());
-        boolean affordable = coins.compareTo(cost) >= 0;
-        ItemBuilder builder = ItemBuilder.of(affordable ? Material.LIME_DYE : Material.GRAY_DYE)
-                .name(MenuLore.buttonName(ACCENT, "BUY NEXT"));
-        builder.lore("&7Next: " + next.displayName());
-        builder.lore("&7Cost: &e" + Formatting.format(cost) + " &7coins");
-        builder.lore("");
-        builder.lore(affordable ? "&8[CLICK] &fTo Buy" : "&cYou can't afford this yet.");
-        return builder.hideAttributes().build();
+        double power = current == null ? TapService.BARE_TAP_POWER : current.power();
+        return ItemBuilder.of(current == null ? Material.BARRIER : current.material())
+                .name("<#4BD9FF><bold>WEAPONS</bold>")
+                .lore("&7Holding: " + (current == null ? "&7bare hands" : current.displayName()))
+                .lore("&7Pet power: &f" + Formatting.format(taps.petPower(profile)))
+                .lore("&7Tap damage: &f" + Formatting.format((double) taps.tapDamageAt(player, profile, power))
+                        + " &8(" + Formatting.format(power) + "x)")
+                .lore("")
+                .lore("&7Owned: &f" + (tools.ownedIndex(player) + 1) + "&7/&f" + tools.all().size())
+                .hideAttributes()
+                .build();
     }
 
     /** Shows exactly how far Buy Max would get before it is pressed - no surprise spending. */
@@ -180,8 +188,8 @@ public final class ToolsGui {
         List<ToolDefinition> path = tools.all();
         int index = tools.ownedIndex(player);
         BigInteger left = coins;
-        int count = 0;
         BigInteger spend = BigInteger.ZERO;
+        int count = 0;
         while (index + 1 < path.size()) {
             BigInteger cost = BigInteger.valueOf(path.get(index + 1).costCoins());
             if (left.compareTo(cost) < 0) {
@@ -193,12 +201,11 @@ public final class ToolsGui {
             count++;
         }
         ItemBuilder builder = ItemBuilder.of(count > 0 ? Material.EMERALD_BLOCK : Material.GRAY_DYE)
-                .name(MenuLore.buttonName(ACCENT, "BUY MAX"));
+                .name("<#4BD9FF><bold>BUY MAX</bold>");
         if (count == 0) {
-            builder.lore(tools.next(player) == null ? "&7You own every tool." : "&cYou can't afford the next tool yet.");
+            builder.lore(tools.next(player) == null ? "&7You own every weapon." : "&cYou can't afford the next weapon yet.");
         } else {
-            builder.lore("&7Buys &f" + count + " &7tool" + (count == 1 ? "" : "s") + ", up to "
-                    + path.get(index).displayName());
+            builder.lore("&7Buys &f" + count + " &7weapon" + (count == 1 ? "" : "s") + ", up to " + path.get(index).displayName());
             builder.lore("&7Total: &e" + Formatting.format(spend) + " &7coins");
             builder.lore("");
             builder.lore("&8[CLICK] &fTo Buy");

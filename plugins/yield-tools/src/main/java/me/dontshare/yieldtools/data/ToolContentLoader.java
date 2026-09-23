@@ -46,9 +46,8 @@ public final class ToolContentLoader {
                     id,
                     s.getString("display-name", id),
                     material,
-                    Math.max(1.0, s.getDouble("tap-multiplier", 1.0)),
-                    Math.max(0L, s.getLong("cost-coins", 0L)),
-                    List.copyOf(s.getStringList("description"))));
+                    Math.max(0.0, s.getDouble("power", 0.0)),
+                    Math.max(0L, s.getLong("cost-coins", 0L))));
         }
         return tools;
     }
