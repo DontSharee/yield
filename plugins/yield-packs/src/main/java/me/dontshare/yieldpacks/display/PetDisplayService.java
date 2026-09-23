@@ -192,9 +192,9 @@ public final class PetDisplayService {
             if (viewer == null) {
                 continue;
             }
-            ItemDisplayManager.setInterpolation(viewer, instance.itemEntityId(), 0, LUNGE_TICKS, LUNGE_TICKS);
+            ItemDisplayManager.setPositionInterpolation(viewer, instance.itemEntityId(), LUNGE_TICKS);
             PacketEntityManager.teleportEntity(viewer, instance.itemEntityId(), lunge);
-            TextDisplayManager.setInterpolation(viewer, instance.textEntityId(), 0, LUNGE_TICKS, LUNGE_TICKS);
+            TextDisplayManager.setPositionInterpolation(viewer, instance.textEntityId(), LUNGE_TICKS);
             PacketEntityManager.teleportEntity(viewer, instance.textEntityId(), lunge.clone().add(0, 0.4, 0));
         }
     }
@@ -710,15 +710,15 @@ public final class PetDisplayService {
             // "pausing" before the next update - the main cause of pet
             // movement looking less smooth than it should.
             if (resetInterpolation) {
-                ItemDisplayManager.setInterpolation(viewer, instance.itemEntityId(), 0, ticks, ticks);
-                TextDisplayManager.setInterpolation(viewer, instance.textEntityId(), 0, ticks, ticks);
+                ItemDisplayManager.setPositionInterpolation(viewer, instance.itemEntityId(), ticks);
+                TextDisplayManager.setPositionInterpolation(viewer, instance.textEntityId(), ticks);
             }
             PacketEntityManager.teleportEntity(viewer, instance.itemEntityId(), pos);
             PacketEntityManager.teleportEntity(viewer, instance.textEntityId(), pos.clone().add(0, 0.4, 0));
             // Tracks a live-updating yaw, so it goes out whenever that yaw
             // actually moved - which, for a player standing still, it doesn't.
             if (yawChanged) {
-                ItemDisplayManager.setRotation(viewer, instance.itemEntityId(), config.pitchDegrees(), yaws.get(i));
+                ItemDisplayManager.setRotationInterpolated(viewer, instance.itemEntityId(), config.pitchDegrees(), yaws.get(i), ticks);
             }
         }
         PacketEntityManager.endBundle(viewer);

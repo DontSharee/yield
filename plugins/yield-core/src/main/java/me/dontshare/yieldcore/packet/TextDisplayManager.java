@@ -116,6 +116,11 @@ public final class TextDisplayManager {
      * as a visible stepped "snap" once per update rather than a continuous
      * glide.
      */
+    /** Only the position glide time - see ItemDisplayManager#setPositionInterpolation for why the delay field is left alone. */
+    public static void setPositionInterpolation(Player viewer, int entityId, int ticks) {
+        sendMetadata(viewer, entityId, new EntityData<>(10, EntityDataTypes.INT, ticks));
+    }
+
     public static void setInterpolation(Player viewer, int entityId, int delayTicks, int transformDurationTicks, int positionDurationTicks) {
         sendMetadata(viewer, entityId,
                 new EntityData<>(8, EntityDataTypes.INT, delayTicks),

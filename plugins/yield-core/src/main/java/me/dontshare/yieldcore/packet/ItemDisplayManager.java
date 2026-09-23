@@ -109,6 +109,30 @@ public final class ItemDisplayManager {
                 new EntityData<>(10, EntityDataTypes.INT, positionDurationTicks));
     }
 
+    /**
+     * Only how long a position change takes to glide - leaves the
+     * transformation interpolation alone. Setting the delay field (index 8)
+     * restarts the transformation interpolation on the client, and a
+     * restart with nothing new to interpolate toward replays the rotation
+     * from wherever the client last started one - a pet visibly spinning
+     * round on every attack lunge.
+     */
+    public static void setPositionInterpolation(Player viewer, int entityId, int ticks) {
+        sendMetadata(viewer, entityId, new EntityData<>(10, EntityDataTypes.INT, ticks));
+    }
+
+    /**
+     * {@link #setRotation} as a smooth turn: the new rotation and a fresh
+     * interpolation start go out in ONE packet, so the client turns from
+     * what it is showing right now to the new facing over {@code ticks}.
+     */
+    public static void setRotationInterpolated(Player viewer, int entityId, float pitchDegrees, float yawDegrees, int ticks) {
+        sendMetadata(viewer, entityId,
+                new EntityData<>(8, EntityDataTypes.INT, 0),
+                new EntityData<>(9, EntityDataTypes.INT, ticks),
+                new EntityData<>(13, EntityDataTypes.QUATERNION, rotationOf(pitchDegrees, yawDegrees)));
+    }
+
     /** Angle in radians, rotating around the Y axis (a "spin in place"). */
     public static void setYRotation(Player viewer, int entityId, double radians) {
         float halfAngle = (float) (radians / 2.0);
@@ -128,6 +152,10 @@ public final class ItemDisplayManager {
      * changes rather than once at spawn.
      */
     public static void setRotation(Player viewer, int entityId, float pitchDegrees, float yawDegrees) {
+        sendMetadata(viewer, entityId, new EntityData<>(13, EntityDataTypes.QUATERNION, rotationOf(pitchDegrees, yawDegrees)));
+    }
+
+    private static Quaternion4f rotationOf(float pitchDegrees, float yawDegrees) {
         double halfPitch = Math.toRadians(pitchDegrees) / 2.0;
         // Negated: a quaternion's positive rotation around +Y is
         // counterclockwise viewed from above, but Minecraft yaw increases
@@ -140,8 +168,7 @@ public final class ItemDisplayManager {
         float sy = (float) Math.sin(halfYaw);
         float cy = (float) Math.cos(halfYaw);
         // Quaternion product yaw(Y) * pitch(X): yaw applied after pitch.
-        Quaternion4f rotation = new Quaternion4f(cy * sp, sy * cp, -sy * sp, cy * cp);
-        sendMetadata(viewer, entityId, new EntityData<>(13, EntityDataTypes.QUATERNION, rotation));
+        return new Quaternion4f(cy * sp, sy * cp, -sy * sp, cy * cp);
     }
 
     private static void sendMetadata(Player viewer, int entityId, EntityData<?>... data) {
