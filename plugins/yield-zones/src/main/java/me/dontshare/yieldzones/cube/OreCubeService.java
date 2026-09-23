@@ -113,6 +113,8 @@ public final class OreCubeService implements Listener {
     private final ComboService comboService = new ComboService();
 
     private final Map<UUID, ZoneDefinition> currentZone = new ConcurrentHashMap<>();
+    /** The cube a tap flush already labelled with its exact number - see {@link #applyTap}. */
+    private final Map<UUID, OreCube> quietIndicatorFor = new ConcurrentHashMap<>();
     private final Map<UUID, List<OreCube>> cubesByPlayer = new ConcurrentHashMap<>();
     private final Map<UUID, AtomicInteger> pendingByPlayer = new ConcurrentHashMap<>();
     // Every in-flight (not yet landed) fall's id, per player - lets leaveZone/
@@ -1052,7 +1054,9 @@ public final class OreCubeService implements Listener {
                 OreCube cube = entry.getKey();
                 long amount = entry.getValue().amount();
                 Location center = cube.center();
-                showDamageIndicator(player, center, amount);
+                if (!cube.equals(quietIndicatorFor.get(player.getUniqueId()))) {
+                    showDamageIndicator(player, center, amount);
+                }
                 showHitImpact(player, center);
                 boolean dead = cube.damage(amount);
                 if (dead) {
@@ -1148,6 +1152,30 @@ public final class OreCubeService implements Listener {
     }
 
     /** "-<amount>" in red, floating up from a randomized spot near the cube so simultaneous hits from several pets don't overlap. */
+    /**
+     * A tap on {@code cube}: {@code whole} is the HP it actually takes (tap
+     * damage keeps its fraction between clicks - see TapService), {@code
+     * shown} the exact amount the player dealt, which is what the floating
+     * number says. The flush that applies {@code whole} doesn't add a
+     * second, rounded number of its own for this cube.
+     */
+    public void applyTap(Player player, OreCube cube, long whole, double shown) {
+        Component text = Text.parse("<#FF3B3B>-<amount></#FF3B3B>", Placeholder.unparsed("amount", Formatting.format(shown)));
+        spawnFloatingText(player, cube.center(), text, DAMAGE_INDICATOR_RISE_TICKS, DAMAGE_INDICATOR_LIFETIME_TICKS);
+        queueDamage(player, cube, whole, null);
+        if (whole <= 0) {
+            // Nothing to flush for this cube, but the click still lands.
+            playHitSquish(player, cube);
+            playHitImpactSound(player, player.getLocation());
+        }
+        quietIndicatorFor.put(player.getUniqueId(), cube);
+        try {
+            flushDamage(player);
+        } finally {
+            quietIndicatorFor.remove(player.getUniqueId());
+        }
+    }
+
     private void showDamageIndicator(Player viewer, Location center, long amount) {
         Component text = Text.parse("<#FF3B3B>-<amount></#FF3B3B>", Placeholder.unparsed("amount", Formatting.format(amount)));
         spawnFloatingText(viewer, center, text, DAMAGE_INDICATOR_RISE_TICKS, DAMAGE_INDICATOR_LIFETIME_TICKS);

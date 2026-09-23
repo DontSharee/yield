@@ -277,7 +277,14 @@ public final class WorldBossService implements Listener {
 
     /** Also called from {@code YieldZones}' cube click handler - clicking a regular cube while boss-engaged switches your pets back over, rather than staying locked onto the boss with no way out short of walking {@link #ENGAGE_RANGE} away. */
     public void disengage(Player player) {
-        engagedBossIdByPlayer.remove(player.getUniqueId());
+        // A no-op unless a boss really has this player's pets: every cube
+        // click comes through here, and clearing the pets' attack target on
+        // each one snapped the squad back to the player until the next
+        // combat tick sent it out again - pets bouncing back and forth
+        // under a spam-click.
+        if (engagedBossIdByPlayer.remove(player.getUniqueId()) == null) {
+            return;
+        }
         cooldownsByPetByPlayer.remove(player.getUniqueId());
         packs.getPetDisplayService().clearAttackTarget(player);
     }

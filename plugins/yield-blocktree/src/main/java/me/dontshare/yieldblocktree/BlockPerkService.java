@@ -250,7 +250,7 @@ public final class BlockPerkService implements Listener {
 
     // ---- taps ----
 
-    private void onTap(Player player, PackPlayerProfile profile, OreCube cube, long damage) {
+    private void onTap(Player player, PackPlayerProfile profile, OreCube cube, double damage) {
         UUID id = player.getUniqueId();
         ThreadLocalRandom random = ThreadLocalRandom.current();
         var cubes = zones.getCubeService();
@@ -264,7 +264,7 @@ public final class BlockPerkService implements Listener {
         if (echo > 0 && random.nextDouble() < echo) {
             for (OreCube other : cubes.liveCubes(player)) {
                 if (other != cube) {
-                    cubes.queueDamage(player, other, damage, null);
+                    cubes.queueDamage(player, other, Math.round(damage), null);
                 }
             }
             player.playSound(player.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 0.4f, 1.8f);
