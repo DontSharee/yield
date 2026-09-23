@@ -183,20 +183,20 @@ public final class BagGui {
             });
         }
 
-        // Row 6: controls, evenly spaced with close dead-center - sort and
-        // Equip Best either side of it, page arrows in the corners.
+        // Row 6: page arrows either side of Close, sort and Equip Best in
+        // the corners - the same 45/47/49/51/53 bar as every other menu.
         // Fusing is only reachable at its own tier-locked physical machine
         // (see yield-zonemachines), and fight settings live in /settings.
-        builder.fill(IntStream.of(46, 48, 51, 52), GuiIcons.filler());
-        builder.item(45, GuiIcons.pageArrow(false, storagePage.hasPrevious()),
+        builder.fill(IntStream.of(46, 48, 50, 52), GuiIcons.filler());
+        builder.item(47, GuiIcons.pageArrow(false, storagePage.hasPrevious()),
                 (clicker, event) -> turnPage(clicker, storagePageIndex, storagePage, -1));
-        builder.item(47, sortButton.buildIcon(player), (clicker, event) -> {
+        builder.item(45, sortButton.buildIcon(player), (clicker, event) -> {
             sortButton.cycle(clicker);
             open(clicker);
         });
         builder.item(49, GuiIcons.closeButton(), (clicker, event) -> clicker.closeInventory());
-        builder.item(50, buildEquipBestButton(), (clicker, event) -> equipBest(clicker));
-        builder.item(53, GuiIcons.pageArrow(true, storagePage.hasNext()),
+        builder.item(53, buildEquipBestButton(), (clicker, event) -> equipBest(clicker));
+        builder.item(51, GuiIcons.pageArrow(true, storagePage.hasNext()),
                 (clicker, event) -> turnPage(clicker, storagePageIndex, storagePage, 1));
 
         guiManager.open(player, builder.build());

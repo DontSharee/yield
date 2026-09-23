@@ -34,9 +34,9 @@ import java.util.stream.IntStream;
 public final class EventQuestGui {
 
     private static final int QUEST_SLOTS = 45;
-    private static final int SHOP_SLOT = 45;
+    private static final int SHOP_SLOT = 47;
     private static final int HEADER_SLOT = 49;
-    private static final int CLOSE_SLOT = 53;
+    private static final int CLOSE_SLOT = 51;
 
     private final GuiManager guiManager;
     private final EventService eventService;
@@ -114,26 +114,28 @@ public final class EventQuestGui {
 
         ItemBuilder builder = ItemBuilder.of(material)
                 .name(MenuLore.buttonName("<" + event.color() + ">", quest.displayName()));
-        List<String> lore = new ArrayList<>(quest.description());
-        lore.add("");
-        lore.add("&7Progress: " + MenuLore.progress(Math.min(progress, quest.target()), quest.target()));
-        lore.add("");
-        lore.add("&7Rewards:");
+        String accent = "<" + event.color() + ">";
+        List<String> data = new ArrayList<>();
+        data.add("Progress: " + MenuLore.progress(Math.min(progress, quest.target()), quest.target()));
         if (quest.rewardCandy() > 0) {
-            lore.add(" &8- &e" + Formatting.format((double) quest.rewardCandy()) + " " + event.currencyName());
+            data.add("Reward: &e" + Formatting.format((double) quest.rewardCandy()) + " " + event.currencyName());
         }
         if (quest.rewardCoins() > 0) {
-            lore.add(" &8- &a$" + Formatting.format((double) quest.rewardCoins()));
+            data.add("Reward: &6" + Formatting.format((double) quest.rewardCoins()) + " &7coins");
         }
         if (quest.rewardDiamonds() > 0) {
-            lore.add(" &8- &b" + Formatting.format((double) quest.rewardDiamonds()) + " diamonds");
+            data.add("Reward: &b" + Formatting.format((double) quest.rewardDiamonds()) + " &7diamonds");
         }
         for (String command : quest.commands()) {
-            lore.add(" &8- &d" + RewardText.describeCommand(command));
+            data.add("Reward: &d" + RewardText.describeCommand(command));
         }
-        lore.add("");
-        lore.add(claimed ? "&8Already claimed" : complete ? "&8[CLICK] &fTo Claim" : "&cNot finished yet");
-        lore.forEach(builder::lore);
+        if (complete && !claimed) {
+            MenuLore.button("event quest", quest.description(), accent, data, "Click to claim").forEach(builder::lore);
+        } else {
+            List<String> description = new ArrayList<>(quest.description());
+            description.add(claimed ? "&8Already claimed." : "&cNot finished yet.");
+            MenuLore.info("event quest", description, accent, data).forEach(builder::lore);
+        }
         return builder.hideAttributes().build();
     }
 

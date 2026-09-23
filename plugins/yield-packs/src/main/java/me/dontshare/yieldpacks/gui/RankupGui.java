@@ -45,11 +45,11 @@ public final class RankupGui {
     private static final int MAX_PAGES_AHEAD = 5;
     private static final int QUEST_TITLE_SLOT = 1;
     private static final int[] QUEST_SLOTS = {3, 4, 5};
-    private static final int PREV_SLOT = 45;
-    private static final int CLAIM_SLOT = 47;
+    private static final int PREV_SLOT = 47;
+    private static final int CLAIM_SLOT = 45;
     private static final int CLOSE_SLOT = 49;
-    private static final int HEADER_SLOT = 51;
-    private static final int NEXT_SLOT = 53;
+    private static final int HEADER_SLOT = 53;
+    private static final int NEXT_SLOT = 51;
 
     private final PlayerDataStore<PackPlayerProfile> store;
     private final GuiManager guiManager;
@@ -154,14 +154,14 @@ public final class RankupGui {
     private ItemStack buildQuestIcon(RankQuestView quest) {
         String name = Formatting.stripLeadingColorCodes(quest.displayName());
         if (quest.completed()) {
-            ItemBuilder builder = ItemBuilder.of(Material.LIME_DYE).name("&a&l" + name + " &a[Done]");
+            ItemBuilder builder = ItemBuilder.of(Material.LIME_DYE).name(MenuLore.name("&a", name) + " &7[Done]");
             MenuLore.info("rankquest", List.of(), "<green>", List.of(
                     "Reward: &d" + Formatting.format(quest.rewardStars()) + " Stars",
                     "Waiting on the other 2..."
             )).forEach(builder::lore);
             return builder.hideAttributes().build();
         }
-        ItemBuilder builder = ItemBuilder.of(quest.icon()).name("&f&l" + name);
+        ItemBuilder builder = ItemBuilder.of(quest.icon()).name(MenuLore.name("&f", name));
         MenuLore.info("rankquest", List.of(), ACCENT, List.of(
                 "Progress: " + MenuLore.progress(Math.min(quest.progress(), quest.goal()), quest.goal()),
                 "Reward: &d" + Formatting.format(quest.rewardStars()) + " Stars"
@@ -190,7 +190,7 @@ public final class RankupGui {
 
         if (!reached) {
             ItemBuilder builder = ItemBuilder.of(Material.GRAY_STAINED_GLASS_PANE)
-                    .name("&7&lRank " + Formatting.toRoman(rank) + " &8[Locked]");
+                    .name(MenuLore.name("&7", "Rank") + " &7[" + Formatting.toRoman(rank) + "] &8Locked");
             MenuLore.info("rank", List.of(
                     " &7Multiplier: &b" + Formatting.format(multiplier) + "x",
                     " &7Reward: &6" + Formatting.format(rewardCoins) + " coins&7, &b" + Formatting.format(rewardDiamonds) + " diamonds"
@@ -200,7 +200,7 @@ public final class RankupGui {
         if (claimed) {
             boolean current = rank == currentRank;
             ItemBuilder builder = ItemBuilder.of(current ? Material.LIME_CONCRETE : Material.GREEN_STAINED_GLASS_PANE)
-                    .name("&a&lRank " + Formatting.toRoman(rank));
+                    .name(MenuLore.name("&a", "Rank") + " &7[" + Formatting.toRoman(rank) + "]");
             MenuLore.info("rank", List.of(), "<green>", List.of(
                     "&7Multiplier: &b" + Formatting.format(multiplier) + "x",
                     current ? "&7Your current rank." : "&7Reward claimed."
@@ -208,7 +208,7 @@ public final class RankupGui {
             return builder.hideAttributes().build();
         }
         ItemBuilder builder = ItemBuilder.of(Material.YELLOW_STAINED_GLASS_PANE)
-                .name("&e&lRank " + Formatting.toRoman(rank) + " &7[Unclaimed]");
+                .name(MenuLore.name("&e", "Rank") + " &7[" + Formatting.toRoman(rank) + "] &eUnclaimed");
         MenuLore.button(
                 "rank",
                 List.of(

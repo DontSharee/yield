@@ -94,10 +94,10 @@ public final class CosmeticsGui {
                     (clicker, event) -> attemptEquip(clicker, category, cosmetic, equipped));
         }
 
-        builder.fill(IntStream.of(46, 47, 48, 50, 51, 52), GuiIcons.filler());
-        builder.item(45, GuiIcons.pageArrow(false, page.hasPrevious()), (clicker, event) -> turnPage(clicker, category, page, -1));
+        builder.fill(IntStream.of(45, 46, 48, 50, 52, 53), GuiIcons.filler());
+        builder.item(47, GuiIcons.pageArrow(false, page.hasPrevious()), (clicker, event) -> turnPage(clicker, category, page, -1));
         builder.item(49, GuiIcons.closeButton(), (clicker, event) -> clicker.closeInventory());
-        builder.item(53, GuiIcons.pageArrow(true, page.hasNext()), (clicker, event) -> turnPage(clicker, category, page, 1));
+        builder.item(51, GuiIcons.pageArrow(true, page.hasNext()), (clicker, event) -> turnPage(clicker, category, page, 1));
 
         guiManager.open(player, builder.build());
     }

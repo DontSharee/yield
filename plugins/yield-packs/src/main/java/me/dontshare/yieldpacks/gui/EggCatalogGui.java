@@ -41,11 +41,11 @@ public final class EggCatalogGui {
     private static final int CONTENT_SLOTS = 45;
     /** Four centred rows of seven under the header - see GuiLayout. */
     private static final int PAGE_SIZE = GuiLayout.capacity(4);
-    private static final int PREV_SLOT = 45;
+    private static final int PREV_SLOT = 47;
     /** Top-centre, above the grid - the bottom bar is just the arrows and Close. */
     private static final int HEADER_SLOT = 4;
     private static final int CLOSE_SLOT = 49;
-    private static final int NEXT_SLOT = 53;
+    private static final int NEXT_SLOT = 51;
 
     private final Supplier<PackContentLoader.ContentSnapshot> content;
     private final GuiManager guiManager;
@@ -93,14 +93,11 @@ public final class EggCatalogGui {
     }
 
     private ItemStack buildIcon(PackDefinition egg, Player viewer) {
-        ItemBuilder builder = ItemBuilder.of(Material.DRAGON_EGG).name(MenuLore.buttonName(ACCENT, egg.displayName()));
-        List<String> lore = new ArrayList<>();
-        lore.add("&8" + Formatting.fancyFont(whereToHatch(egg)));
-        lore.add("");
-        lore.addAll(oddsLore.lines(egg, viewer));
-        lore.add("");
-        lore.add("&7Cost: " + PackOddsLore.costLine(egg, 1));
-        lore.forEach(builder::lore);
+        ItemBuilder builder = ItemBuilder.of(Material.DRAGON_EGG).name(egg.displayName());
+        List<String> data = new ArrayList<>(oddsLore.lines(egg, viewer));
+        data.add("");
+        data.add("Cost: " + PackOddsLore.costLine(egg, 1));
+        MenuLore.info(whereToHatch(egg), List.of(), ACCENT, data).forEach(builder::lore);
         return builder.hideAttributes().build();
     }
 

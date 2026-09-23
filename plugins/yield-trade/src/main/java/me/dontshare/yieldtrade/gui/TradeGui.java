@@ -1,5 +1,6 @@
 package me.dontshare.yieldtrade.gui;
 
+import me.dontshare.yieldcore.text.MenuLore;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldtrade.session.TradeSession;
 import net.kyori.adventure.text.Component;
@@ -99,7 +100,7 @@ public final class TradeGui implements InventoryHolder {
         inventory.setItem(PARTNER_STATUS_SLOT, partnerStatus());
         inventory.setItem(INFO_SLOT, infoIcon());
         inventory.setItem(CANCEL_SLOT, ItemBuilder.of(Material.BARRIER)
-                .name("<red><bold>Cancel Trade</bold>")
+                .name(MenuLore.name("&c", "Cancel Trade"))
                 .lore(List.of(" ", "<gray>Closes the trade and", "<gray>returns everything offered."))
                 .hideAttributes()
                 .build());
@@ -135,13 +136,13 @@ public final class TradeGui implements InventoryHolder {
         if (session.getState() == TradeSession.State.CONFIRMING) {
             int seconds = Math.max(0, (session.getConfirmTicksRemaining() + 19) / 20);
             return ItemBuilder.of(Material.CLOCK)
-                    .name("<green><bold>Trading in " + seconds + "s</bold>")
+                    .name(MenuLore.name("&a", "Trading in " + seconds + "s"))
                     .lore(List.of(" ", "<gray>Both players accepted.", "<gray>Touching anything cancels it."))
                     .hideAttributes()
                     .build();
         }
         return ItemBuilder.of(Material.BOOK)
-                .name("<#4BD9FF><bold>How to Trade</bold>")
+                .name(MenuLore.name(MenuLore.ACCENT, "How to Trade"))
                 .lore(List.of(
                         " ",
                         "<gray>Click an item in your inventory",

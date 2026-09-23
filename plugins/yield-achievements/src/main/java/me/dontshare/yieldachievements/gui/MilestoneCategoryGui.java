@@ -40,10 +40,10 @@ public final class MilestoneCategoryGui {
     private static final int CONTENT_ROWS = TOTAL_ROWS - 1;
     /** Centred rows of seven inside the border - see GuiLayout. */
     private static final int PAGE_SIZE = GuiLayout.capacity(CONTENT_ROWS);
-    private static final int PREV_SLOT = 45;
-    private static final int BACK_SLOT = 47;
+    private static final int PREV_SLOT = 47;
+    private static final int BACK_SLOT = 45;
     private static final int CLOSE_SLOT = 49;
-    private static final int NEXT_SLOT = 53;
+    private static final int NEXT_SLOT = 51;
 
     private final Supplier<Map<String, MilestoneCategory>> content;
     private final PlayerDataStore<PackPlayerProfile> store;
@@ -157,11 +157,11 @@ public final class MilestoneCategoryGui {
         String stateLabel = switch (state) {
             case INCOMPLETE -> "&cLocked";
             case IN_PROGRESS -> "&eIn Progress";
-            case COMPLETE_UNCLAIMED -> "&a&lReady to Claim!";
+            case COMPLETE_UNCLAIMED -> "&aReady to claim";
             case CLAIMED -> "&7Claimed";
         };
 
-        ItemBuilder builder = ItemBuilder.of(material).name("&f" + category.displayName() + " &8- &fTier " + (tierIndex + 1));
+        ItemBuilder builder = ItemBuilder.of(material).name(MenuLore.name("&f", Formatting.stripLeadingColorCodes(category.displayName())) + " &7[" + Formatting.toRoman(tierIndex + 1) + "]");
         List<String> data = new ArrayList<>();
         data.add("Goal: &f" + Formatting.format((double) tier.goal()));
         data.add("Progress: " + MenuLore.progress(progress, tier.goal()));
@@ -183,8 +183,12 @@ public final class MilestoneCategoryGui {
                 data.add("Potion: &fx" + multiplierLabel + " " + potion.stat().name().replace('_', ' '));
             }
         }
-        MenuLore.info("milestone", List.of(), MenuLore.ACCENT, data).forEach(builder::lore);
-        builder.lore("").lore(stateLabel);
+        data.add("Status: " + stateLabel);
+        if (state == MilestoneService.TierState.COMPLETE_UNCLAIMED) {
+            MenuLore.button("milestone", List.of(), MenuLore.ACCENT, data, "Click to claim").forEach(builder::lore);
+        } else {
+            MenuLore.info("milestone", List.of(), MenuLore.ACCENT, data).forEach(builder::lore);
+        }
         if (state == MilestoneService.TierState.COMPLETE_UNCLAIMED) {
             builder.enchant(Enchantment.UNBREAKING, 1);
         }

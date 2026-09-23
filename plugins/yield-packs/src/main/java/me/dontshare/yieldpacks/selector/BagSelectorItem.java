@@ -1,6 +1,7 @@
 package me.dontshare.yieldpacks.selector;
 
 import me.dontshare.yieldcore.item.ItemBuilder;
+import me.dontshare.yieldcore.text.MenuLore;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
@@ -18,8 +19,10 @@ public final class BagSelectorItem {
 
     public ItemStack create() {
         return ItemBuilder.of(Material.CHEST)
-                .name("<#4BD9FF><bold>Bag</bold>")
-                .lore("&7Click: &fOpen your Bag")
+                .name(MenuLore.name(MenuLore.ACCENT, "Pet Bag"))
+                .lore("&8" + me.dontshare.yieldcore.text.Formatting.fancyFont("player item"))
+                .lore("")
+                .lore("&8Click to open your pets")
                 .tag(key, PersistentDataType.BYTE, (byte) 1)
                 .hideAttributes()
                 .build();

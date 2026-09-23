@@ -27,8 +27,9 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * One block's 7-tier ladder, three rows tall: the block itself on top, its
- * seven tiers centred across the middle row, back and close underneath.
+ * One block's 7-tier ladder, three rows tall: back in the corner and the
+ * block itself in the middle of the top row, its seven tiers centred
+ * across the middle row, close underneath.
  * Red = locked, yellow = in progress, lime = complete (glowing if not yet
  * claimed - click to claim). The seventh tier is the tree's one-of-a-kind
  * reward and gets a nether star and its own name instead of a pane.
@@ -38,8 +39,8 @@ public final class BlockTreeCategoryGui {
     private static final int TOTAL_ROWS = 3;
     private static final int HEADER_SLOT = 4;
     private static final int TIER_ROW = 1;
-    private static final int BACK_SLOT = 21;
-    private static final int CLOSE_SLOT = 23;
+    private static final int BACK_SLOT = 0;
+    private static final int CLOSE_SLOT = 22;
 
     private final Supplier<Map<Material, BlockTreeDefinition>> content;
     private final PlayerDataStore<PackPlayerProfile> store;
@@ -79,7 +80,7 @@ public final class BlockTreeCategoryGui {
             builder.item(slots[i], buildTierIcon(profile, material, def, tiers.get(i), tierIndex),
                     (clicker, e) -> handleClick(clicker, material, tierIndex));
         }
-        builder.item(BACK_SLOT, buildBackButton(), (clicker, e) -> {
+        builder.item(BACK_SLOT, GuiIcons.backButton("the block list"), (clicker, e) -> {
             if (hubGui != null) {
                 hubGui.open(clicker);
             }
@@ -142,12 +143,6 @@ public final class BlockTreeCategoryGui {
         return builder.hideAttributes().build();
     }
 
-    private ItemStack buildBackButton() {
-        ItemBuilder builder = ItemBuilder.of(Material.ARROW).name(MenuLore.buttonName(MenuLore.ACCENT, "BACK"));
-        MenuLore.button("navigation", List.of(), MenuLore.ACCENT, "Click to Go Back").forEach(builder::lore);
-        return builder.hideAttributes().build();
-    }
-
     private ItemStack buildTierIcon(PackPlayerProfile profile, Material material, BlockTreeDefinition def, BlockTreeTier tier, int tierIndex) {
         BlockTreeService.TierState state = service.stateOf(profile, material, tierIndex, tier);
         long progress = Math.min(tier.goal(), service.progressOf(profile, material));
@@ -161,23 +156,28 @@ public final class BlockTreeCategoryGui {
         String stateLabel = switch (state) {
             case INCOMPLETE -> "&cLocked";
             case IN_PROGRESS -> "&eIn Progress";
-            case COMPLETE_UNCLAIMED -> "&a&lReady to Claim!";
+            case COMPLETE_UNCLAIMED -> "&aReady to claim";
             case CLAIMED -> "&aClaimed";
         };
 
+        String tierTag = " &7[" + Formatting.toRoman(tierIndex + 1) + "]";
         String name = top
-                ? def.perkTitle() + " &8- &7Tier " + (tierIndex + 1)
-                : "&f" + Formatting.stripLeadingColorCodes(def.displayName()) + " &8- &fTier " + (tierIndex + 1);
+                ? def.perkTitle() + tierTag
+                : MenuLore.name("&f", Formatting.stripLeadingColorCodes(def.displayName())) + tierTag;
         ItemBuilder builder = ItemBuilder.of(icon).name(name);
         List<String> data = new ArrayList<>();
         data.add("Goal: &f" + Formatting.format((double) tier.goal()));
         data.add("Progress: " + MenuLore.progress(progress, tier.goal()));
+        data.add("Status: " + stateLabel);
         data.add("");
         for (BlockTreeEffect effect : tier.effects()) {
             data.add(describe(effect, def));
         }
-        MenuLore.info("blocktree", List.of(), MenuLore.ACCENT, data).forEach(builder::lore);
-        builder.lore("").lore(stateLabel);
+        if (state == BlockTreeService.TierState.COMPLETE_UNCLAIMED) {
+            MenuLore.button("blocktree tier", List.of(), MenuLore.ACCENT, data, "Click to claim").forEach(builder::lore);
+        } else {
+            MenuLore.info("blocktree tier", List.of(), MenuLore.ACCENT, data).forEach(builder::lore);
+        }
         if (state == BlockTreeService.TierState.COMPLETE_UNCLAIMED || (top && state == BlockTreeService.TierState.CLAIMED)) {
             builder.enchant(Enchantment.UNBREAKING, 1);
         }

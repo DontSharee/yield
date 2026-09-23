@@ -53,11 +53,11 @@ public final class FusionGui {
     private static final int TOTAL_ROWS = 6;
     private static final int CONTENT_START = 9;
     private static final int CONTENT_END = 45; // exclusive
-    private static final int PREV_SLOT = 45;
-    private static final int FUSE_ALL_SLOT = 47;
+    private static final int PREV_SLOT = 47;
+    private static final int FUSE_ALL_SLOT = 45;
     private static final int CLOSE_SLOT = 49;
-    private static final int AUTO_FUSE_SLOT = 51;
-    private static final int NEXT_SLOT = 53;
+    private static final int AUTO_FUSE_SLOT = 53;
+    private static final int NEXT_SLOT = 51;
     /** Four centred rows of seven between the top border and the control bar - see GuiLayout. */
     private static final int PAGE_SIZE = GuiLayout.capacity(4);
     private static final int FUSE_COST = 3;
@@ -310,14 +310,12 @@ public final class FusionGui {
         ItemBuilder builder = iconFactory.baseIcon(item).name(taggedName(item));
         MenuLore.button(
                 "fusion",
-                List.of(" &7Combine " + FUSE_COST + " of this pet", " &7into a stronger fused form."),
+                List.of("Combine " + FUSE_COST + " of this pet into a stronger form."),
                 accent,
-                "Click to Fuse"
+                List.of("Owned: " + MenuLore.progress(entry.remaining(), FUSE_COST), "Fuses Into: " + nextName),
+                "Click to fuse"
         ).forEach(builder::lore);
         return builder
-                .lore("")
-                .lore("&7Owned: " + MenuLore.progress(entry.remaining(), FUSE_COST))
-                .lore("&7Fuses into: " + nextName)
                 .amount(Math.max(1, Math.min(64, entry.remaining())))
                 .hideAttributes()
                 .build();

@@ -103,7 +103,7 @@ public final class TeamUpgradeGui {
                 "&7Effect: &a+" + Formatting.format(level * upgrade.valuePerLevel() * 100) + "%"
         ));
         if (maxed) {
-            builder.name("&a&l" + name + " &7[MAXED]");
+            builder.name(MenuLore.name("&a", name) + " &7[MAXED]");
             MenuLore.info("upgrade", List.of(), ACCENT, data).forEach(builder::lore);
             return builder.hideAttributes().build();
         }

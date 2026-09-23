@@ -1,5 +1,6 @@
 package me.dontshare.yieldmining;
 
+import me.dontshare.yieldcore.text.MenuLore;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -18,10 +19,12 @@ public final class MiningItem {
 
     public ItemStack create(Material oreMaterial) {
         return ItemBuilder.of(oreMaterial)
-                .name("<#57D9A3><bold>Mining Spot</bold></#57D9A3> <gray>(" + displayName(oreMaterial) + ")</gray>")
-                .lore("&7Place to create a packet-only")
-                .lore("&7mining spot - minable by everyone,")
-                .lore("&7never a real block.")
+                .name(MenuLore.name("<#57D9A3>", "Mining Spot") + " &7[" + displayName(oreMaterial) + "]")
+                .lore("&8" + me.dontshare.yieldcore.text.Formatting.fancyFont("admin item"))
+                .lore("")
+                .lore("&7Places a mining spot everyone can mine.")
+                .lore("")
+                .lore("&8Place to create")
                 .tag(materialKey, PersistentDataType.STRING, oreMaterial.name())
                 .build();
     }

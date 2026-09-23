@@ -39,10 +39,10 @@ import java.util.stream.IntStream;
 public final class StoreGui {
 
     private static final String ACCENT = "<#FFD700>";
-    private static final int PREV_SLOT = 45;
-    private static final int BALANCE_SLOT = 47;
+    private static final int PREV_SLOT = 47;
+    private static final int BALANCE_SLOT = 45;
     private static final int CLOSE_SLOT = 49;
-    private static final int NEXT_SLOT = 53;
+    private static final int NEXT_SLOT = 51;
     /** Rows 1-4 of the hub's shared 6-row Gui (slots 9-44, 36 slots) - row 0 belongs to {@link StoreHubGui}'s own category tabs, row 5 (45-53) is this tab's own prev/balance/close/next bar. */
     private static final int PAGE_SIZE = 36;
     private static final int ROW_OFFSET = 9;

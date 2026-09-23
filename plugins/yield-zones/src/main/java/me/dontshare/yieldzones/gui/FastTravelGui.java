@@ -94,7 +94,7 @@ public final class FastTravelGui {
             // nobody comes back for, and "closed" is the whole appeal of a
             // seasonal one.
             return ItemBuilder.of(Material.BARRIER)
-                    .name("&8&l" + name + " &7[CLOSED]")
+                    .name(MenuLore.name("&8", name) + " &7[CLOSED]")
                     .lore(MenuLore.info("zone", List.of(), "&8", List.of(closed)))
                     .hideAttributes()
                     .build();

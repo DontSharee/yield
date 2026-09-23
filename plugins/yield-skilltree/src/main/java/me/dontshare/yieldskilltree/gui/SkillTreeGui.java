@@ -125,7 +125,7 @@ public final class SkillTreeGui {
     }
 
     private ItemStack buildMaxBuyIcon() {
-        ItemBuilder builder = ItemBuilder.of(Material.EMERALD).name("<#46FF6A><bold>MAX BUY</bold>");
+        ItemBuilder builder = ItemBuilder.of(Material.EMERALD).name(MenuLore.name("<#46FF6A>", "Max Buy"));
         MenuLore.button(
                 "utility",
                 List.of(" &7Buys every level you can afford,", " &7maxing what you already own", " &7before unlocking anything new."),
@@ -141,7 +141,7 @@ public final class SkillTreeGui {
         boolean maxed = level >= node.maxLevel();
 
         if (!unlocked) {
-            ItemBuilder builder = ItemBuilder.of(Material.GRAY_DYE).name("&c&lLOCKED");
+            ItemBuilder builder = ItemBuilder.of(Material.GRAY_DYE).name(MenuLore.name("&c", "Locked"));
             return builder.lore("&7Unlock its prerequisite(s) first.").hideAttributes().build();
         }
 

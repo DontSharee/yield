@@ -178,7 +178,7 @@ public final class EnchantGui {
         String unlockHint = service.isPremiumSlot(slotIndex)
                 ? "Purchase a donor rank at /buy"
                 : "Reach " + service.rebirthsNeededFor(profile, slotIndex) + " more rebirth(s)";
-        ItemBuilder builder = ItemBuilder.of(Material.BARRIER).name("&7&lLOCKED SLOT");
+        ItemBuilder builder = ItemBuilder.of(Material.BARRIER).name(MenuLore.name("&7", "Locked Slot"));
         MenuLore.info("enchants", List.of(" &7" + unlockHint + " &7to", " &7unlock this slot."), ACCENT, List.of())
                 .forEach(builder::lore);
         return builder.hideAttributes().build();

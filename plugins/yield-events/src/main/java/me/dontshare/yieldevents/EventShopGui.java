@@ -42,9 +42,9 @@ import java.util.stream.IntStream;
 public final class EventShopGui {
 
     private static final int ENTRY_SLOTS = 45;
-    private static final int BACK_SLOT = 45;
+    private static final int BACK_SLOT = 47;
     private static final int HEADER_SLOT = 49;
-    private static final int CLOSE_SLOT = 53;
+    private static final int CLOSE_SLOT = 51;
 
     private final GuiManager guiManager;
     private final EventService eventService;
@@ -124,22 +124,25 @@ public final class EventShopGui {
                 .name(MenuLore.buttonName("<" + event.color() + ">", entry.displayName()));
         // Generated facts only - what it gives, what it costs, how many are
         // left. No per-item blurb: every shop entry reads the same way.
-        List<String> lore = new ArrayList<>();
-        lore.add("&7You get:");
+        String accent = "<" + event.color() + ">";
+        List<String> data = new ArrayList<>();
         for (String command : entry.commands()) {
-            lore.add(" &8- &d" + RewardText.describeCommand(command));
+            data.add("Gives: &d" + RewardText.describeCommand(command));
         }
-        lore.add("");
-        lore.add("&7Price: &e" + Formatting.format((double) entry.price()) + " &7" + event.currencyName());
+        data.add("Price: " + (affordable ? "&e" : "&c") + Formatting.format((double) entry.price()) + " &7" + event.currencyName());
         // Stock is the reason to buy now rather than later, so it is said
         // plainly even when there is plenty - a shelf that only mentions a
         // limit once it is gone has told the player too late.
         if (!entry.unlimited()) {
-            lore.add("&7Stock: " + MenuLore.progress(left, entry.limit()));
+            data.add("Stock: " + MenuLore.progress(left, entry.limit()));
         }
-        lore.add("");
-        lore.add(soldOut ? "&8Sold out" : affordable ? "&8[CLICK] &fTo Buy" : "&cYou can't afford this yet.");
-        lore.forEach(builder::lore);
+        if (soldOut) {
+            MenuLore.info("event shop", List.of("&8Sold out."), accent, data).forEach(builder::lore);
+        } else if (affordable) {
+            MenuLore.purchase("event shop", List.of(), accent, data, "Click to buy").forEach(builder::lore);
+        } else {
+            MenuLore.info("event shop", List.of("&cYou can't afford this yet."), accent, data).forEach(builder::lore);
+        }
         return builder.hideAttributes().build();
     }
 

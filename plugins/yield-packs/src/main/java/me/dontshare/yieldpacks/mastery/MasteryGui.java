@@ -39,9 +39,9 @@ public final class MasteryGui {
     /** Rows 2-4: the area perks are drawn into, and how many fit on a page (three centred rows of seven). */
     private static final List<Integer> PERK_AREA = IntStream.range(18, 45).boxed().toList();
     private static final int PERKS_PER_PAGE = GuiLayout.capacity(3);
-    private static final int PREV_SLOT = 45;
+    private static final int PREV_SLOT = 47;
     private static final int CLOSE_SLOT = 49;
-    private static final int NEXT_SLOT = 53;
+    private static final int NEXT_SLOT = 51;
 
     private final PlayerDataStore<PackPlayerProfile> store;
     private final MasteryService service;

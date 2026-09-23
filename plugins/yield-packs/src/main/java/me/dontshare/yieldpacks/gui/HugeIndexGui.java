@@ -51,11 +51,11 @@ public final class HugeIndexGui {
     private static final int CONTENT_SLOTS = 45;
     /** Four centred rows of seven under the header - see GuiLayout. */
     private static final int PAGE_SIZE = GuiLayout.capacity(4);
-    private static final int PREV_SLOT = 45;
+    private static final int PREV_SLOT = 47;
     /** Top-centre, above the grid - the bottom bar is just the arrows and Close. */
     private static final int HEADER_SLOT = 4;
     private static final int CLOSE_SLOT = 49;
-    private static final int NEXT_SLOT = 53;
+    private static final int NEXT_SLOT = 51;
 
     private final Supplier<PackContentLoader.ContentSnapshot> content;
     private final PlayerDataStore<PackPlayerProfile> store;

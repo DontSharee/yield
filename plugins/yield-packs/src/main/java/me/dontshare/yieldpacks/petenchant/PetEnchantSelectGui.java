@@ -99,8 +99,8 @@ public final class PetEnchantSelectGui {
             });
         }
 
-        builder.item(45, GuiIcons.pageArrow(false, page.hasPrevious()), (clicker, e) -> turnPage(clicker, page, -1));
-        builder.item(53, GuiIcons.pageArrow(true, page.hasNext()), (clicker, e) -> turnPage(clicker, page, 1));
+        builder.item(47, GuiIcons.pageArrow(false, page.hasPrevious()), (clicker, e) -> turnPage(clicker, page, -1));
+        builder.item(51, GuiIcons.pageArrow(true, page.hasNext()), (clicker, e) -> turnPage(clicker, page, 1));
         builder.item(BACK_SLOT, buildBackButton(), (clicker, e) -> tableGui.open(clicker));
 
         guiManager.open(player, builder.build());

@@ -31,7 +31,7 @@ public final class PotionItem {
                 ? String.valueOf((long) def.multiplier())
                 : String.valueOf(def.multiplier());
         ItemBuilder builder = ItemBuilder.of(Material.PLAYER_HEAD)
-                .name("<#4BD9FF><bold>" + multiplierLabel + "x " + capitalize(statLabel) + " Potion</bold>");
+                .name(MenuLore.name(MenuLore.ACCENT, multiplierLabel + "x " + capitalize(statLabel) + " Potion"));
         List<String> data = List.of(
                 "Multiplier: &fx" + multiplierLabel,
                 "Duration: &f" + Formatting.format((double) def.durationSeconds()) + "s");

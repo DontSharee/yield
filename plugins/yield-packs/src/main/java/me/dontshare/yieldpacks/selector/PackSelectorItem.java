@@ -1,8 +1,9 @@
 package me.dontshare.yieldpacks.selector;
 
 import me.dontshare.yieldcore.item.ItemBuilder;
-import me.dontshare.yieldcore.text.Formatting;
+import me.dontshare.yieldcore.text.MenuLore;
 import org.bukkit.Material;
+import java.util.List;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
@@ -20,13 +21,8 @@ public final class PackSelectorItem {
     /** {@code lastEggName} should already be plain text (no color codes) - see PackSelectorService#packName. */
     public ItemStack create(String lastEggName) {
         return ItemBuilder.of(Material.COMPASS)
-                .name("<#4BD9FF><bold>Egg Book</bold>")
-                .lore("&8" + Formatting.fancyFont("egg book"))
-                .lore("")
-                .lore("&7Click: &fBrowse every egg")
-                .lore("&7and what hatches from it.")
-                .lore("")
-                .lore("&7Last hatched: &f" + lastEggName)
+                .name(MenuLore.name(MenuLore.ACCENT, "Egg Book"))
+                .lore(MenuLore.item("player item", List.of("Last Hatched: &f" + lastEggName), "&8Click to browse every egg"))
                 .tag(key, PersistentDataType.BYTE, (byte) 1)
                 .hideAttributes()
                 .build();

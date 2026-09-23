@@ -30,9 +30,9 @@ public final class AchievementsGui {
     private static final int CONTENT_ROWS = TOTAL_ROWS - 1;
     /** Centred rows of seven inside the border - see GuiLayout. */
     private static final int PAGE_SIZE = GuiLayout.capacity(CONTENT_ROWS);
-    private static final int PREV_SLOT = 45;
+    private static final int PREV_SLOT = 47;
     private static final int CLOSE_SLOT = 49;
-    private static final int NEXT_SLOT = 53;
+    private static final int NEXT_SLOT = 51;
 
     private final Supplier<Map<String, AchievementDefinition>> content;
     private final PlayerDataStore<PackPlayerProfile> store;

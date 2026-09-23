@@ -103,13 +103,13 @@ public final class PresentsGui {
         );
 
         if (claimed) {
-            builder.name("&a&lPRESENT &7[Claimed]");
+            builder.name(MenuLore.name("&a", "Present") + " &7[Claimed]");
             MenuLore.info("present", List.of(), ACCENT, data).forEach(builder::lore);
         } else if (unlocked) {
             builder.name(MenuLore.buttonName(ACCENT, "PRESENT"));
             MenuLore.button("present", data, ACCENT, "Click to Claim").forEach(builder::lore);
         } else {
-            builder.name("&7&lLOCKED PRESENT");
+            builder.name(MenuLore.name("&7", "Locked Present"));
             List<String> lockedData = new java.util.ArrayList<>(data);
             lockedData.add("&7Unlocks in: &c" + presentsService.minutesUntilUnlock(player, index) + "m");
             MenuLore.info("present", List.of(), "&7", lockedData).forEach(builder::lore);

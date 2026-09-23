@@ -33,9 +33,9 @@ public final class BlockTreeGui {
     private static final int TOTAL_ROWS = 6;
     /** Four centred rows of seven inside the border - see GuiLayout. */
     private static final int PAGE_SIZE = GuiLayout.capacity(4);
-    private static final int PREV_SLOT = 48;
+    private static final int PREV_SLOT = 47;
     private static final int CLOSE_SLOT = 49;
-    private static final int NEXT_SLOT = 50;
+    private static final int NEXT_SLOT = 51;
 
     private final Supplier<Map<Material, BlockTreeDefinition>> content;
     private final PlayerDataStore<PackPlayerProfile> store;

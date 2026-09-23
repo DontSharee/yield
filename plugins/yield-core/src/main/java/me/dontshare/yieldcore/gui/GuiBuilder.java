@@ -110,6 +110,7 @@ public final class GuiBuilder {
         gui.setEditableSlots(editableSlots);
         gui.setEditableSlotChangeHandler(editableSlotChangeHandler);
         gui.setAllowPlayerInventoryInteraction(allowPlayerInventoryInteraction);
+        gui.applyFrame();
         return gui;
     }
 }

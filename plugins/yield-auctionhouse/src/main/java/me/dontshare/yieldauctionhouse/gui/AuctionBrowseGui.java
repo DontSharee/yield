@@ -57,11 +57,11 @@ public final class AuctionBrowseGui {
             28, 29, 30, 31, 32, 33, 34,
             37, 38, 39, 40, 41, 42, 43
     );
-    private static final int PREV_SLOT = 45;
-    private static final int CURRENCY_FILTER_SLOT = 47;
+    private static final int PREV_SLOT = 47;
+    private static final int CURRENCY_FILTER_SLOT = 45;
     private static final int MY_LISTINGS_SLOT = 49;
-    private static final int COLLECTION_BOX_SLOT = 51;
-    private static final int NEXT_SLOT = 53;
+    private static final int COLLECTION_BOX_SLOT = 53;
+    private static final int NEXT_SLOT = 51;
     private static final String ACCENT = "<#4BD9FF>";
 
     private enum CurrencyFilter {ALL, COINS, DIAMONDS, CREDITS}

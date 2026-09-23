@@ -57,11 +57,11 @@ public final class IndexGui {
     private static final int CONTENT_SLOTS = 45;
     /** Five centred rows of seven inside the border - see GuiLayout. */
     private static final int PAGE_SIZE = GuiLayout.capacity(5);
-    private static final int PREV_SLOT = 45;
-    private static final int HUGE_SLOT = 47;
-    private static final int HEADER_SLOT = 49;
-    private static final int CLOSE_SLOT = 51;
-    private static final int NEXT_SLOT = 53;
+    private static final int PREV_SLOT = 47;
+    private static final int HUGE_SLOT = 45;
+    private static final int HEADER_SLOT = 53;
+    private static final int CLOSE_SLOT = 49;
+    private static final int NEXT_SLOT = 51;
 
     private final Supplier<PackContentLoader.ContentSnapshot> content;
     private final PlayerDataStore<PackPlayerProfile> store;
