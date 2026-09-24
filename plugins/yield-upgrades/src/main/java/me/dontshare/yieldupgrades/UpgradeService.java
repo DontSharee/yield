@@ -199,6 +199,24 @@ public final class UpgradeService {
         return sumFor(profile, UpgradeEffect.DOUBLE_HIT);
     }
 
+    public int petSlotBonus(PackPlayerProfile profile) {
+        return (int) Math.round(sumFor(profile, UpgradeEffect.PET_SLOTS));
+    }
+
+    public double tripleHitBonus(PackPlayerProfile profile) {
+        return sumFor(profile, UpgradeEffect.TRIPLE_HIT);
+    }
+
+    /** A factor on the hatch cooldown, same shape as {@link #respawnDelayFactor}. */
+    public double hatchCooldownFactor(PackPlayerProfile profile) {
+        return 1.0 / multiplierFor(profile, UpgradeEffect.HATCH_SPEED);
+    }
+
+    /** Spawn-weight factor for one cube tier: only giants and treasure chests are boosted. */
+    public double rareFindWeight(PackPlayerProfile profile, me.dontshare.yieldzones.data.CubeTier tier) {
+        return tier.giant() || tier.treasure() ? multiplierFor(profile, UpgradeEffect.RARE_FINDS) : 1.0;
+    }
+
     /** {@code Σ(level * valuePerLevel)} across every type with this effect - for the additive chance/luck slots. */
     private double sumFor(PackPlayerProfile profile, UpgradeEffect effect) {
         return multiplierFor(profile, effect) - 1.0;

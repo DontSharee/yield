@@ -32,5 +32,13 @@ public enum UpgradeEffect {
     /** Cubes respawn faster: the delay is divided by {@code 1 + level * value}. */
     RESPAWN_SPEED,
     /** Additive chance for a pet hit to land a second time. */
-    DOUBLE_HIT
+    DOUBLE_HIT,
+    /** Extra equipped-pet slots (whole slots per level). */
+    PET_SLOTS,
+    /** Additive chance for a pet hit to land a third time. */
+    TRIPLE_HIT,
+    /** Faster hatching: the hatch cooldown is divided by {@code 1 + level * value}. */
+    HATCH_SPEED,
+    /** Giants and treasure chests spawn more often: their spawn weight times {@code 1 + level * value}. */
+    RARE_FINDS
 }

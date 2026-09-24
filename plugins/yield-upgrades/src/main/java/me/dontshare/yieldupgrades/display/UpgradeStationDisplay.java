@@ -306,6 +306,10 @@ public final class UpgradeStationDisplay {
             case HATCH_LUCK -> "+" + percent(value) + " Hatch Luck";
             case RESPAWN_SPEED -> "+" + percent(value) + " Cube Respawn Speed";
             case DOUBLE_HIT -> "+" + percent(value) + " Double Hit Chance";
+            case PET_SLOTS -> "+" + Math.round(value) + " Pet Slot" + (Math.round(value) == 1 ? "" : "s");
+            case TRIPLE_HIT -> "+" + percent(value) + " Triple Hit Chance";
+            case HATCH_SPEED -> "+" + percent(value) + " Hatch Speed";
+            case RARE_FINDS -> "+" + percent(value) + " Giant & Chest Spawns";
         };
     }
 

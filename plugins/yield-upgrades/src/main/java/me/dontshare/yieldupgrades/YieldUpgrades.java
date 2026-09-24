@@ -71,6 +71,10 @@ public final class YieldUpgrades extends JavaPlugin implements Listener {
         zones.getPetCombatController().registerCritChanceProvider("upgrades", upgradeService::critChanceBonus);
         zones.getPetCombatController().registerDoubleHitChanceProvider("upgrades", upgradeService::doubleHitBonus);
         zones.getTapService().registerTapMultiplierProvider("upgrades", (player, profile) -> upgradeService.tapMultiplier(profile));
+        packs.getEquipmentService().registerBonusEquipSlotsProvider("upgrades", upgradeService::petSlotBonus);
+        packs.getPackOpenService().registerCooldownMultiplierProvider("upgrades", upgradeService::hatchCooldownFactor);
+        zones.getPetCombatController().registerTripleHitChanceProvider("upgrades", upgradeService::tripleHitBonus);
+        zones.getCubeService().registerSpawnWeightMultiplierProvider("upgrades", upgradeService::rareFindWeight);
 
         Bukkit.getPluginManager().registerEvents(this, this);
         core.getAdminCommandRegistry().register(UpgradesAdminCommand.build(this));
@@ -92,6 +96,8 @@ public final class YieldUpgrades extends JavaPlugin implements Listener {
             packs.unregisterDiamondMultiplierProvider("upgrades");
             packs.unregisterAttackSpeedMultiplierProvider("upgrades");
             packs.getLuckService().unregisterExtraLuckProvider("upgrades");
+            packs.getEquipmentService().unregisterBonusEquipSlotsProvider("upgrades");
+            packs.getPackOpenService().unregisterCooldownMultiplierProvider("upgrades");
         }
         if (zones != null) {
             zones.getCubeService().unregisterDiamondChanceBoostProvider("upgrades");
@@ -102,6 +108,8 @@ public final class YieldUpgrades extends JavaPlugin implements Listener {
             zones.getPetCombatController().unregisterCritChanceProvider("upgrades");
             zones.getPetCombatController().unregisterDoubleHitChanceProvider("upgrades");
             zones.getTapService().unregisterTapMultiplierProvider("upgrades");
+            zones.getPetCombatController().unregisterTripleHitChanceProvider("upgrades");
+            zones.getCubeService().unregisterSpawnWeightMultiplierProvider("upgrades");
         }
         if (rebirth != null) {
             rebirth.unregisterGrantMultiplierProvider("upgrades");

@@ -168,10 +168,43 @@ types:
     max-level: 25
     cost-base: 60000
     cost-growth: 1.4
+  # --- The late set: zones 12-15 each add one. ---
+  pet_slots:
+    display-name: "&dExtra Pet Slot"
+    icon: LEAD
+    effect: PET_SLOTS
+    value-per-level: 1         # +1 equipped pet per level
+    max-level: 3
+    cost-base: 2000000
+    cost-growth: 5.3           # one level every two zones, about two zones of diamonds each
+  triple_hit:
+    display-name: "&4Triple Hit"
+    icon: TRIDENT
+    effect: TRIPLE_HIT
+    value-per-level: 0.001     # +0.1% chance a pet hit lands a third time, per level
+    max-level: 20
+    cost-base: 300000
+    cost-growth: 1.4
+  hatch_speed:
+    display-name: "&eHatch Speed"
+    icon: EGG
+    effect: HATCH_SPEED
+    value-per-level: 0.02      # hatching 2% faster per level
+    max-level: 20
+    cost-base: 1000000
+    cost-growth: 1.4
+  rare_finds:
+    display-name: "&6Rare Finds"
+    icon: CHEST
+    effect: RARE_FINDS
+    value-per-level: 0.03      # giants and treasure chests spawn 3% more often per level
+    max-level: 25
+    cost-base: 2000000
+    cost-growth: 1.35
 
 # Every zone has stations now, and the upgrades arrive gradually: Meadow
 # has only Coin Boost and Damage Boost, and almost every zone up to
-# Netherite Wastes adds a new type (its comment line below says which).
+# Celestial Sanctum adds a new type (its comment line below says which).
 # Coin and Damage are in every zone, their cap 5 levels higher each time
 # (the pacing sim reads those two). Every other type raises its cap every
 # second zone from the zone it arrives in, so each zone offers something
@@ -251,54 +284,68 @@ stations:
   - { zone: netherite_wastes, type: rebirth_boost, cap: 50, location: [spawn, -4, 98, 1002, 180, 0] }
   - { zone: netherite_wastes, type: hatch_luck, cap: 16, location: [spawn, 0, 98, 1002, 180, 0] }
   - { zone: netherite_wastes, type: double_hit, cap: 5, location: [spawn, 4, 98, 1002, 180, 0] }
-  # ancient_ruins (zone 12) - 6 stations
-  - { zone: ancient_ruins, type: coin_boost, cap: 65, location: [spawn, -4, 98, 1092, 180, 0] }
-  - { zone: ancient_ruins, type: damage_boost, cap: 65, location: [spawn, 0, 98, 1092, 180, 0] }
-  - { zone: ancient_ruins, type: crit_chance, cap: 25, location: [spawn, 4, 98, 1092, 180, 0] }
-  - { zone: ancient_ruins, type: diamond_multiplier, cap: 40, location: [spawn, -4, 98, 1096, 180, 0] }
-  - { zone: ancient_ruins, type: attack_speed, cap: 15, location: [spawn, 0, 98, 1096, 180, 0] }
-  - { zone: ancient_ruins, type: quick_respawn, cap: 12, location: [spawn, 4, 98, 1096, 180, 0] }
-  # end_barrens (zone 13) - 5 stations
-  - { zone: end_barrens, type: coin_boost, cap: 70, location: [spawn, -8, 98, 1186, 180, 0] }
-  - { zone: end_barrens, type: damage_boost, cap: 70, location: [spawn, -4, 98, 1186, 180, 0] }
-  - { zone: end_barrens, type: gem_boost, cap: 60, location: [spawn, 0, 98, 1186, 180, 0] }
-  - { zone: end_barrens, type: hatch_luck, cap: 24, location: [spawn, 4, 98, 1186, 180, 0] }
-  - { zone: end_barrens, type: double_hit, cap: 10, location: [spawn, 8, 98, 1186, 180, 0] }
-  # purpur_spires (zone 14) - 6 stations
-  - { zone: purpur_spires, type: coin_boost, cap: 75, location: [spawn, -4, 98, 1280, 180, 0] }
-  - { zone: purpur_spires, type: damage_boost, cap: 75, location: [spawn, 0, 98, 1280, 180, 0] }
-  - { zone: purpur_spires, type: crit_chance, cap: 30, location: [spawn, 4, 98, 1280, 180, 0] }
-  - { zone: purpur_spires, type: diamond_multiplier, cap: 50, location: [spawn, -4, 98, 1284, 180, 0] }
-  - { zone: purpur_spires, type: attack_speed, cap: 20, location: [spawn, 0, 98, 1284, 180, 0] }
-  - { zone: purpur_spires, type: quick_respawn, cap: 18, location: [spawn, 4, 98, 1284, 180, 0] }
-  # celestial_sanctum (zone 15) - 5 stations
-  - { zone: celestial_sanctum, type: coin_boost, cap: 80, location: [spawn, -8, 98, 1374, 180, 0] }
-  - { zone: celestial_sanctum, type: damage_boost, cap: 80, location: [spawn, -4, 98, 1374, 180, 0] }
-  - { zone: celestial_sanctum, type: gem_boost, cap: 70, location: [spawn, 0, 98, 1374, 180, 0] }
-  - { zone: celestial_sanctum, type: hatch_luck, cap: 32, location: [spawn, 4, 98, 1374, 180, 0] }
-  - { zone: celestial_sanctum, type: double_hit, cap: 15, location: [spawn, 8, 98, 1374, 180, 0] }
-  # starlight_fields (zone 16) - 4 stations
-  - { zone: starlight_fields, type: coin_boost, cap: 85, location: [spawn, -6, 98, 1468, 180, 0] }
-  - { zone: starlight_fields, type: damage_boost, cap: 85, location: [spawn, -2, 98, 1468, 180, 0] }
-  - { zone: starlight_fields, type: attack_speed, cap: 25, location: [spawn, 2, 98, 1468, 180, 0] }
-  - { zone: starlight_fields, type: quick_respawn, cap: 24, location: [spawn, 6, 98, 1468, 180, 0] }
-  # cosmic_abyss (zone 17) - 5 stations
-  - { zone: cosmic_abyss, type: coin_boost, cap: 90, location: [spawn, -8, 98, 1562, 180, 0] }
-  - { zone: cosmic_abyss, type: damage_boost, cap: 90, location: [spawn, -4, 98, 1562, 180, 0] }
-  - { zone: cosmic_abyss, type: gem_boost, cap: 80, location: [spawn, 0, 98, 1562, 180, 0] }
-  - { zone: cosmic_abyss, type: hatch_luck, cap: 40, location: [spawn, 4, 98, 1562, 180, 0] }
-  - { zone: cosmic_abyss, type: double_hit, cap: 20, location: [spawn, 8, 98, 1562, 180, 0] }
-  # eternal_forge (zone 18) - 4 stations
-  - { zone: eternal_forge, type: coin_boost, cap: 95, location: [spawn, -6, 98, 1656, 180, 0] }
-  - { zone: eternal_forge, type: damage_boost, cap: 95, location: [spawn, -2, 98, 1656, 180, 0] }
-  - { zone: eternal_forge, type: attack_speed, cap: 30, location: [spawn, 2, 98, 1656, 180, 0] }
-  - { zone: eternal_forge, type: quick_respawn, cap: 30, location: [spawn, 6, 98, 1656, 180, 0] }
-  # astral_peak (zone 19) - 4 stations
-  - { zone: astral_peak, type: coin_boost, cap: 100, location: [spawn, -6, 98, 1750, 180, 0] }
-  - { zone: astral_peak, type: damage_boost, cap: 100, location: [spawn, -2, 98, 1750, 180, 0] }
-  - { zone: astral_peak, type: gem_boost, cap: 90, location: [spawn, 2, 98, 1750, 180, 0] }
-  - { zone: astral_peak, type: double_hit, cap: 25, location: [spawn, 6, 98, 1750, 180, 0] }
-  # genesis_core (zone 20) - 3 stations
-  - { zone: genesis_core, type: coin_boost, cap: 105, location: [spawn, -4, 98, 1844, 180, 0] }
-  - { zone: genesis_core, type: damage_boost, cap: 105, location: [spawn, 0, 98, 1844, 180, 0] }
-  - { zone: genesis_core, type: gem_boost, cap: 100, location: [spawn, 4, 98, 1844, 180, 0] }
+  # ancient_ruins (zone 12) - 7 stations, new: Extra Pet Slot
+  - { zone: ancient_ruins, type: coin_boost, cap: 65, location: [spawn, -6, 98, 1092, 180, 0] }
+  - { zone: ancient_ruins, type: damage_boost, cap: 65, location: [spawn, -2, 98, 1092, 180, 0] }
+  - { zone: ancient_ruins, type: crit_chance, cap: 25, location: [spawn, 2, 98, 1092, 180, 0] }
+  - { zone: ancient_ruins, type: diamond_multiplier, cap: 40, location: [spawn, 6, 98, 1092, 180, 0] }
+  - { zone: ancient_ruins, type: attack_speed, cap: 15, location: [spawn, -4, 98, 1096, 180, 0] }
+  - { zone: ancient_ruins, type: quick_respawn, cap: 12, location: [spawn, 0, 98, 1096, 180, 0] }
+  - { zone: ancient_ruins, type: pet_slots, cap: 1, location: [spawn, 4, 98, 1096, 180, 0] }
+  # end_barrens (zone 13) - 6 stations, new: Triple Hit
+  - { zone: end_barrens, type: coin_boost, cap: 70, location: [spawn, -4, 98, 1186, 180, 0] }
+  - { zone: end_barrens, type: damage_boost, cap: 70, location: [spawn, 0, 98, 1186, 180, 0] }
+  - { zone: end_barrens, type: gem_boost, cap: 60, location: [spawn, 4, 98, 1186, 180, 0] }
+  - { zone: end_barrens, type: hatch_luck, cap: 24, location: [spawn, -4, 98, 1190, 180, 0] }
+  - { zone: end_barrens, type: double_hit, cap: 10, location: [spawn, 0, 98, 1190, 180, 0] }
+  - { zone: end_barrens, type: triple_hit, cap: 5, location: [spawn, 4, 98, 1190, 180, 0] }
+  # purpur_spires (zone 14) - 8 stations, new: Hatch Speed
+  - { zone: purpur_spires, type: coin_boost, cap: 75, location: [spawn, -6, 98, 1280, 180, 0] }
+  - { zone: purpur_spires, type: damage_boost, cap: 75, location: [spawn, -2, 98, 1280, 180, 0] }
+  - { zone: purpur_spires, type: crit_chance, cap: 30, location: [spawn, 2, 98, 1280, 180, 0] }
+  - { zone: purpur_spires, type: diamond_multiplier, cap: 50, location: [spawn, 6, 98, 1280, 180, 0] }
+  - { zone: purpur_spires, type: attack_speed, cap: 20, location: [spawn, -6, 98, 1284, 180, 0] }
+  - { zone: purpur_spires, type: quick_respawn, cap: 18, location: [spawn, -2, 98, 1284, 180, 0] }
+  - { zone: purpur_spires, type: pet_slots, cap: 2, location: [spawn, 2, 98, 1284, 180, 0] }
+  - { zone: purpur_spires, type: hatch_speed, cap: 5, location: [spawn, 6, 98, 1284, 180, 0] }
+  # celestial_sanctum (zone 15) - 7 stations, new: Rare Finds
+  - { zone: celestial_sanctum, type: coin_boost, cap: 80, location: [spawn, -6, 98, 1374, 180, 0] }
+  - { zone: celestial_sanctum, type: damage_boost, cap: 80, location: [spawn, -2, 98, 1374, 180, 0] }
+  - { zone: celestial_sanctum, type: gem_boost, cap: 70, location: [spawn, 2, 98, 1374, 180, 0] }
+  - { zone: celestial_sanctum, type: hatch_luck, cap: 32, location: [spawn, 6, 98, 1374, 180, 0] }
+  - { zone: celestial_sanctum, type: double_hit, cap: 15, location: [spawn, -4, 98, 1378, 180, 0] }
+  - { zone: celestial_sanctum, type: triple_hit, cap: 10, location: [spawn, 0, 98, 1378, 180, 0] }
+  - { zone: celestial_sanctum, type: rare_finds, cap: 10, location: [spawn, 4, 98, 1378, 180, 0] }
+  # starlight_fields (zone 16) - 6 stations
+  - { zone: starlight_fields, type: coin_boost, cap: 85, location: [spawn, -4, 98, 1468, 180, 0] }
+  - { zone: starlight_fields, type: damage_boost, cap: 85, location: [spawn, 0, 98, 1468, 180, 0] }
+  - { zone: starlight_fields, type: attack_speed, cap: 25, location: [spawn, 4, 98, 1468, 180, 0] }
+  - { zone: starlight_fields, type: quick_respawn, cap: 24, location: [spawn, -4, 98, 1472, 180, 0] }
+  - { zone: starlight_fields, type: pet_slots, cap: 3, location: [spawn, 0, 98, 1472, 180, 0] }
+  - { zone: starlight_fields, type: hatch_speed, cap: 10, location: [spawn, 4, 98, 1472, 180, 0] }
+  # cosmic_abyss (zone 17) - 7 stations
+  - { zone: cosmic_abyss, type: coin_boost, cap: 90, location: [spawn, -6, 98, 1562, 180, 0] }
+  - { zone: cosmic_abyss, type: damage_boost, cap: 90, location: [spawn, -2, 98, 1562, 180, 0] }
+  - { zone: cosmic_abyss, type: gem_boost, cap: 80, location: [spawn, 2, 98, 1562, 180, 0] }
+  - { zone: cosmic_abyss, type: hatch_luck, cap: 40, location: [spawn, 6, 98, 1562, 180, 0] }
+  - { zone: cosmic_abyss, type: double_hit, cap: 20, location: [spawn, -4, 98, 1566, 180, 0] }
+  - { zone: cosmic_abyss, type: triple_hit, cap: 15, location: [spawn, 0, 98, 1566, 180, 0] }
+  - { zone: cosmic_abyss, type: rare_finds, cap: 20, location: [spawn, 4, 98, 1566, 180, 0] }
+  # eternal_forge (zone 18) - 5 stations
+  - { zone: eternal_forge, type: coin_boost, cap: 95, location: [spawn, -8, 98, 1656, 180, 0] }
+  - { zone: eternal_forge, type: damage_boost, cap: 95, location: [spawn, -4, 98, 1656, 180, 0] }
+  - { zone: eternal_forge, type: attack_speed, cap: 30, location: [spawn, 0, 98, 1656, 180, 0] }
+  - { zone: eternal_forge, type: quick_respawn, cap: 30, location: [spawn, 4, 98, 1656, 180, 0] }
+  - { zone: eternal_forge, type: hatch_speed, cap: 15, location: [spawn, 8, 98, 1656, 180, 0] }
+  # astral_peak (zone 19) - 6 stations
+  - { zone: astral_peak, type: coin_boost, cap: 100, location: [spawn, -4, 98, 1750, 180, 0] }
+  - { zone: astral_peak, type: damage_boost, cap: 100, location: [spawn, 0, 98, 1750, 180, 0] }
+  - { zone: astral_peak, type: gem_boost, cap: 90, location: [spawn, 4, 98, 1750, 180, 0] }
+  - { zone: astral_peak, type: double_hit, cap: 25, location: [spawn, -4, 98, 1754, 180, 0] }
+  - { zone: astral_peak, type: triple_hit, cap: 20, location: [spawn, 0, 98, 1754, 180, 0] }
+  - { zone: astral_peak, type: rare_finds, cap: 25, location: [spawn, 4, 98, 1754, 180, 0] }
+  # genesis_core (zone 20) - 4 stations
+  - { zone: genesis_core, type: coin_boost, cap: 105, location: [spawn, -6, 98, 1844, 180, 0] }
+  - { zone: genesis_core, type: damage_boost, cap: 105, location: [spawn, -2, 98, 1844, 180, 0] }
+  - { zone: genesis_core, type: gem_boost, cap: 100, location: [spawn, 2, 98, 1844, 180, 0] }
+  - { zone: genesis_core, type: hatch_speed, cap: 20, location: [spawn, 6, 98, 1844, 180, 0] }
