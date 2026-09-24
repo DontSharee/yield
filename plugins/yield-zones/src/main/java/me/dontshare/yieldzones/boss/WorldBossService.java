@@ -401,7 +401,9 @@ public final class WorldBossService implements Listener {
     }
 
     private void showDamageIndicator(Player viewer, WorldBoss boss, long amount) {
-        Component text = Text.parse("<#FF3B3B>-<amount></#FF3B3B>", Placeholder.unparsed("amount", Formatting.format(amount)));
+        // Bigger and bolder than a cube's chip damage - every hit on a boss
+        // is a sliver of a huge bar, so the number carries the weight.
+        Component text = Text.parse("<bold><#FF6A2B>-<amount></#FF6A2B></bold>", Placeholder.unparsed("amount", Formatting.format(amount)));
         Location center = boss.center().clone().add(
                 ThreadLocalRandom.current().nextDouble(-1, 1), boss.definition().size() + 0.5, ThreadLocalRandom.current().nextDouble(-1, 1));
 
@@ -411,7 +413,7 @@ public final class WorldBossService implements Listener {
         TextDisplayManager.setBillboard(viewer, entityId, TextDisplayManager.Billboard.VERTICAL);
         TextDisplayManager.setBackgroundColor(viewer, entityId, 0x00000000);
         TextDisplayManager.setStyle(viewer, entityId, true, false, false, TextDisplayManager.Alignment.CENTER);
-        TextDisplayManager.setScale(viewer, entityId, 0.9f, 0.9f, 0.9f);
+        TextDisplayManager.setScale(viewer, entityId, 1.3f, 1.3f, 1.3f);
         TextDisplayManager.setText(viewer, entityId, text);
         TextDisplayManager.setInterpolation(viewer, entityId, 0, 10, 10);
         PacketEntityManager.endBundle(viewer);

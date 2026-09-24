@@ -165,12 +165,12 @@ public final class PetCombatController implements Listener {
         if (crit) {
             cubeService.playCritFlourish(player, target);
         }
-        cubeService.queueDamage(player, target, finalAmount, petId);
+        cubeService.queueDamage(player, target, finalAmount, petId, crit);
         if (random.nextDouble() < sumProviders(doubleHitChanceProviders, profile)) {
-            cubeService.queueDamage(player, target, finalAmount, petId);
+            cubeService.queueDamage(player, target, finalAmount, petId, crit);
         }
         if (random.nextDouble() < sumProviders(tripleHitChanceProviders, profile)) {
-            cubeService.queueDamage(player, target, finalAmount, petId);
+            cubeService.queueDamage(player, target, finalAmount, petId, crit);
         }
     }
 

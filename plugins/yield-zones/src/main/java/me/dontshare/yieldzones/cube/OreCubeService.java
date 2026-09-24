@@ -36,6 +36,7 @@ import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.SoundGroup;
 import org.bukkit.entity.Player;
 import io.papermc.paper.event.packet.PlayerChunkLoadEvent;
 import org.bukkit.event.EventHandler;
@@ -117,6 +118,11 @@ public final class OreCubeService implements Listener {
     private final Map<UUID, OreCube> quietIndicatorFor = new ConcurrentHashMap<>();
     private static final long HIT_SOUND_GAP_MILLIS = 120L;
     private final Map<UUID, Long> lastHitSoundAt = new ConcurrentHashMap<>();
+    /** Same floor for the kill payout chime - several cubes can die in one tick under single-send. */
+    private static final long KILL_SOUND_GAP_MILLIS = 90L;
+    private final Map<UUID, Long> lastKillSoundAt = new ConcurrentHashMap<>();
+    private static final ItemStack COIN_PARTICLE = new ItemStack(Material.GOLD_NUGGET);
+    private static final ItemStack DIAMOND_PARTICLE = new ItemStack(Material.DIAMOND);
     private final Map<UUID, List<OreCube>> cubesByPlayer = new ConcurrentHashMap<>();
     private final Map<UUID, AtomicInteger> pendingByPlayer = new ConcurrentHashMap<>();
     // Every in-flight (not yet landed) fall's id, per player - lets leaveZone/
@@ -176,15 +182,16 @@ public final class OreCubeService implements Listener {
      * One cube's accumulated damage this tick, and every pet instance that
      * contributed at least one hit - see queueDamage/flushDamage. A tap
      * adds damage with no pet behind it (a null id), so it never earns a
-     * pet kill XP it didn't fight for.
+     * pet kill XP it didn't fight for. {@code crit} is whether any of
+     * those hits was a crit, so the one combined number can say so.
      */
-    private record PendingDamage(long amount, Set<UUID> contributingInstanceIds) {
-        PendingDamage add(long moreAmount, UUID petInstanceId) {
+    private record PendingDamage(long amount, Set<UUID> contributingInstanceIds, boolean crit) {
+        PendingDamage add(long moreAmount, UUID petInstanceId, boolean moreCrit) {
             Set<UUID> merged = new HashSet<>(contributingInstanceIds);
             if (petInstanceId != null) {
                 merged.add(petInstanceId);
             }
-            return new PendingDamage(amount + moreAmount, merged);
+            return new PendingDamage(amount + moreAmount, merged, crit || moreCrit);
         }
     }
     // Defaults to the plain shared-target behavior; YieldZones overrides this
@@ -1016,12 +1023,17 @@ public final class OreCubeService implements Listener {
      * combined total exactly once.
      */
     public void queueDamage(Player player, OreCube cube, long amount, UUID petInstanceId) {
+        queueDamage(player, cube, amount, petInstanceId, false);
+    }
+
+    /** {@link #queueDamage(Player, OreCube, long, UUID)} for a hit that crit - its tick's number is drawn as a crit. */
+    public void queueDamage(Player player, OreCube cube, long amount, UUID petInstanceId, boolean crit) {
         if (amount <= 0) {
             return;
         }
         pendingDamageByPlayer.computeIfAbsent(player.getUniqueId(), k -> new HashMap<>())
-                .merge(cube, new PendingDamage(amount, petInstanceId == null ? Set.of() : Set.of(petInstanceId)),
-                        (existing, fresh) -> existing.add(fresh.amount(), petInstanceId));
+                .merge(cube, new PendingDamage(amount, petInstanceId == null ? Set.of() : Set.of(petInstanceId), crit),
+                        (existing, fresh) -> existing.add(fresh.amount(), petInstanceId, crit));
     }
 
     /** Applies every hit {@link #queueDamage} accumulated this tick, one combined damage indicator/HP update (and at most one kill/payout) per targeted cube. A no-op if the player has since left the zone entirely. */
@@ -1050,9 +1062,9 @@ public final class OreCubeService implements Listener {
         if (isOutermostFlush && hitSoundReady(player.getUniqueId())) {
             // At the cube being hit, not at the player - the player hears
             // the fight where it is, and hears it quieter the further off.
-            Location soundAt = queued.keySet().iterator().next().center();
-            playHitImpactSound(player, soundAt);
-            playAttackSound(player, soundAt);
+            OreCube loudest = queued.keySet().iterator().next();
+            playHitImpactSound(player, loudest.center(), loudest.tier().material());
+            playAttackSound(player, loudest.center());
         }
         try {
             for (Map.Entry<OreCube, PendingDamage> entry : queued.entrySet()) {
@@ -1060,7 +1072,7 @@ public final class OreCubeService implements Listener {
                 long amount = entry.getValue().amount();
                 Location center = cube.center();
                 if (!cube.equals(quietIndicatorFor.get(player.getUniqueId()))) {
-                    showDamageIndicator(player, center, amount);
+                    showDamageIndicator(player, cube, amount, entry.getValue().crit());
                 }
                 showHitImpact(player, center);
                 boolean dead = cube.damage(amount);
@@ -1147,8 +1159,14 @@ public final class OreCubeService implements Listener {
         return true;
     }
 
-    private void playHitImpactSound(Player viewer, Location at) {
-        viewer.playSound(at, Sound.BLOCK_STONE_HIT, 0.3f, 1.2f);
+    /** The block's own hit sound - ice clinks, copper rings, stone thuds - rather than stone for everything. */
+    private void playHitImpactSound(Player viewer, Location at, Material material) {
+        viewer.playSound(at, soundsOf(material).getHitSound(), 0.35f, 1.1f);
+    }
+
+    /** A cube's own block sounds - stone's for anything that somehow isn't a block, rather than throwing mid-fight. */
+    private static SoundGroup soundsOf(Material material) {
+        return (material.isBlock() ? material : Material.STONE).createBlockData().getSoundGroup();
     }
 
     /** Once per targeted cube per tick - not once per contributing pet, even though several pets landing a hit on the same cube in the same tick is the common case. */
@@ -1158,18 +1176,14 @@ public final class OreCubeService implements Listener {
     }
 
     /**
-     * A distinct, immediate flourish for a single crit roll (see {@code
-     * PetCombatController#applyDamage}) - separate from the per-tick
-     * aggregated damage number (which just shows a bigger total when a
-     * crit contributed to it, with nothing marking it as one), so a crit
-     * always gets its own unmistakable "CRIT!" moment rather than blending
-     * into a slightly-larger regular number.
+     * The sound and sparks of a single crit roll (see {@code
+     * PetCombatController#applyDamage}). The number itself is drawn as a
+     * crit - gold, starred, bigger - by that tick's damage indicator, so
+     * this no longer floats a separate "CRIT!" over the top of it.
      */
     public void playCritFlourish(Player player, OreCube target) {
         Location center = target.center();
-        Component text = Text.parse("<gradient:#FF5555:#FFAA00><bold>CRIT!</bold></gradient>");
-        spawnFloatingText(player, center, text, 10, 16);
-        player.playSound(target.center(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 0.35f, 1f);
+        player.playSound(center, Sound.ENTITY_PLAYER_ATTACK_CRIT, 0.35f, 1f);
         player.spawnParticle(Particle.CRIT, center, 12, 0.25, 0.25, 0.25, 0.3);
     }
 
@@ -1182,14 +1196,13 @@ public final class OreCubeService implements Listener {
      * second, rounded number of its own for this cube.
      */
     public void applyTap(Player player, OreCube cube, long whole, double shown) {
-        Component text = Text.parse("<#FF3B3B>-<amount></#FF3B3B>", Placeholder.unparsed("amount", Formatting.format(shown)));
-        spawnFloatingText(player, cube.center(), text, DAMAGE_INDICATOR_RISE_TICKS, DAMAGE_INDICATOR_LIFETIME_TICKS);
+        spawnDamageNumber(player, cube, shown, false);
         queueDamage(player, cube, whole, null);
         if (whole <= 0) {
             // Nothing to flush for this cube, but the click still lands.
             playHitSquish(player, cube);
             if (hitSoundReady(player.getUniqueId())) {
-                playHitImpactSound(player, cube.center());
+                playHitImpactSound(player, cube.center(), cube.tier().material());
             }
         }
         quietIndicatorFor.put(player.getUniqueId(), cube);
@@ -1200,9 +1213,49 @@ public final class OreCubeService implements Listener {
         }
     }
 
-    private void showDamageIndicator(Player viewer, Location center, long amount) {
-        Component text = Text.parse("<#FF3B3B>-<amount></#FF3B3B>", Placeholder.unparsed("amount", Formatting.format(amount)));
-        spawnFloatingText(viewer, center, text, DAMAGE_INDICATOR_RISE_TICKS, DAMAGE_INDICATOR_LIFETIME_TICKS);
+    private void showDamageIndicator(Player viewer, OreCube cube, long amount, boolean crit) {
+        spawnDamageNumber(viewer, cube, amount, crit);
+    }
+
+    /**
+     * The floating "-amount", sized and coloured by how much of the cube
+     * that hit took rather than the same small red number for everything.
+     * <p>
+     * A chip (under a tenth of the cube) is small and soft red; a real
+     * chunk is bigger and brighter; a hit that takes a third or more is
+     * big, bold and orange, and the blow that kills is bigger still. A crit
+     * is gold with a star either side, on top of whichever size it earned.
+     * Size is keyed to share of HP, not the raw number, so a zone-20 hit
+     * doesn't read as more exciting than a zone-1 one just for having more
+     * digits - what matters is how hard it hit the thing in front of you.
+     */
+    private void spawnDamageNumber(Player viewer, OreCube cube, double amount, boolean crit) {
+        long maxHp = Math.max(1L, cube.tier().maxHp());
+        double share = Math.min(1.0, amount / maxHp);
+        boolean killing = amount >= cube.currentHp();
+        float scale = (float) (0.75 + 0.85 * Math.sqrt(share));
+        if (killing) {
+            scale += 0.25f;
+        }
+        if (crit) {
+            scale *= 1.2f;
+        }
+        String number = Formatting.format(amount);
+        String markup;
+        if (crit) {
+            markup = "<bold><gradient:#FFF36B:#FFA600>✦ -<n> ✦</gradient></bold>";
+        } else if (killing || share >= 0.33) {
+            markup = "<bold><#FF8A1F>-<n></#FF8A1F></bold>";
+        } else if (share >= 0.10) {
+            markup = "<#FF3B3B>-<n></#FF3B3B>";
+        } else {
+            markup = "<#FF8080>-<n></#FF8080>";
+        }
+        Component text = Text.parse(markup, Placeholder.unparsed("n", number));
+        // Bigger numbers float a little higher and linger a little longer,
+        // so a heavy hit is still readable once the next chips land.
+        int lifetime = DAMAGE_INDICATOR_LIFETIME_TICKS + (int) Math.round((scale - 0.75f) * 8);
+        spawnFloatingText(viewer, cube.center(), text, DAMAGE_INDICATOR_RISE_TICKS, lifetime, scale, 0.7 + 0.35 * scale);
     }
 
     /**
@@ -1240,7 +1293,7 @@ public final class OreCubeService implements Listener {
     }
 
     /** "+<coins> coins" (and "+<diamonds> diamonds" only if any were earned), floating up from the cube on a kill - a combo of 2+ gets its own line, right where the player is already looking. */
-    private void showEarningsIndicator(Player viewer, Location center, long coins, int diamondsEarned, int combo) {
+    private void showEarningsIndicator(Player viewer, Location center, long coins, long diamondsEarned, int combo) {
         Component text = Text.parse("<#55FF7F>+<coins> coins</#55FF7F>", Placeholder.unparsed("coins", Formatting.format(coins)));
         if (diamondsEarned > 0) {
             text = text.append(Component.newline())
@@ -1250,7 +1303,32 @@ public final class OreCubeService implements Listener {
             text = text.append(Component.newline())
                     .append(Text.parse("<#FFAA00><bold>x<combo> COMBO!</bold></#FFAA00>", Placeholder.unparsed("combo", String.valueOf(combo))));
         }
-        spawnFloatingText(viewer, center, text, EARNINGS_INDICATOR_RISE_TICKS, EARNINGS_INDICATOR_LIFETIME_TICKS);
+        spawnFloatingText(viewer, center, text, EARNINGS_INDICATOR_RISE_TICKS, EARNINGS_INDICATOR_LIFETIME_TICKS, 1.15f, 1.2);
+    }
+
+    /**
+     * The "you got paid" moment on a kill: gold nuggets (and diamonds, when
+     * any dropped) spray out of the cube, with a coin chime and a brighter
+     * one for diamonds. Rarer cubes spray more - a giant or a treasure chest
+     * throws a real fountain - so the payout reads before the number does.
+     */
+    private void showLootBurst(Player player, CubeTier tier, Location center, boolean diamonds) {
+        int coins = tier.treasure() || tier.giant() ? 28 : tier.weight() < 10 ? 14 : 7;
+        player.spawnParticle(Particle.ITEM, center, coins, 0.25, 0.25, 0.25, 0.18, COIN_PARTICLE);
+        if (diamonds) {
+            player.spawnParticle(Particle.ITEM, center, Math.max(4, coins / 2), 0.25, 0.25, 0.25, 0.2, DIAMOND_PARTICLE);
+        }
+        long now = System.currentTimeMillis();
+        Long last = lastKillSoundAt.get(player.getUniqueId());
+        if (last != null && now - last < KILL_SOUND_GAP_MILLIS) {
+            return;
+        }
+        lastKillSoundAt.put(player.getUniqueId(), now);
+        float pitch = 1.0f + ThreadLocalRandom.current().nextFloat() * 0.4f;
+        player.playSound(center, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.3f, pitch);
+        if (diamonds) {
+            player.playSound(center, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.7f, 1.6f);
+        }
     }
 
     /**
@@ -1276,6 +1354,11 @@ public final class OreCubeService implements Listener {
 
     /** A short-lived, randomly-offset text_display that glides upward from {@code center} then despawns - the shared mechanic behind both indicators above. */
     private void spawnFloatingText(Player viewer, Location center, Component text, int riseTicks, int lifetimeTicks) {
+        spawnFloatingText(viewer, center, text, riseTicks, lifetimeTicks, 0.9f, 0.9);
+    }
+
+    private void spawnFloatingText(Player viewer, Location center, Component text, int riseTicks, int lifetimeTicks,
+                                   float scale, double rise) {
         int entityId = PacketEntityManager.nextEntityId();
         double dx = ThreadLocalRandom.current().nextDouble(-0.4, 0.4);
         double dz = ThreadLocalRandom.current().nextDouble(-0.4, 0.4);
@@ -1290,13 +1373,13 @@ public final class OreCubeService implements Listener {
                 .billboard(TextDisplayManager.Billboard.VERTICAL)
                 .backgroundColor(0x00000000)
                 .style(true, false, false, TextDisplayManager.Alignment.CENTER)
-                .scale(0.9f, 0.9f, 0.9f)
+                .scale(scale, scale, scale)
                 .text(text)
                 .interpolation(0, riseTicks, riseTicks)
                 .send(viewer, entityId);
         PacketEntityManager.endBundle(viewer);
 
-        PacketEntityManager.teleportEntity(viewer, entityId, spawnAt.clone().add(0, 0.9, 0));
+        PacketEntityManager.teleportEntity(viewer, entityId, spawnAt.clone().add(0, rise, 0));
         scheduleDespawn(viewer, entityId, lifetimeTicks);
     }
 
@@ -1369,7 +1452,7 @@ public final class OreCubeService implements Listener {
         double spread = 0.35 * cube.size();
         int count = Math.round(40 * cube.size() * cube.size());
         player.spawnParticle(Particle.BLOCK, center, count, spread, spread, spread, 0.15, cube.tier().material().createBlockData());
-        player.playSound(at, Sound.BLOCK_STONE_BREAK, 1f, 1f);
+        player.playSound(center, soundsOf(cube.tier().material()).getBreakSound(), 0.6f, 1f);
         if (cube.tier().giant()) {
             player.playSound(at, Sound.ENTITY_GENERIC_EXPLODE, 0.5f, 1.4f);
             player.spawnParticle(Particle.TOTEM_OF_UNDYING, center, 30, spread, spread, spread, 0.35);
@@ -1423,11 +1506,11 @@ public final class OreCubeService implements Listener {
         double diamondChance = 0.05 * luck + diamondChanceBoostSum(profile) + (hasGlittering ? 0.5 : 0.0);
         // The roll is a flat chance; the TIER decides how big the payout is,
         // so diamond income tracks the zone the same way coins do.
-        int diamondsEarned = guaranteedDiamond || ThreadLocalRandom.current().nextDouble() < diamondChance
-                ? (int) tier.diamondValue() : 0;
-        diamondsEarned += (int) flatBonusSum(flatDiamondBonusProviders, profile, tier.material());
+        long diamondsEarned = guaranteedDiamond || ThreadLocalRandom.current().nextDouble() < diamondChance
+                ? tier.diamondValue() : 0L;
+        diamondsEarned += flatBonusSum(flatDiamondBonusProviders, profile, tier.material());
         if (diamondsEarned > 0) {
-            diamondsEarned = (int) Math.round(diamondsEarned * packs.diamondMultiplier(profile));
+            diamondsEarned = Math.round(diamondsEarned * packs.diamondMultiplier(profile));
             profile.setDiamonds(profile.getDiamonds().add(BigInteger.valueOf(diamondsEarned)));
         }
         if (tier.treasure()) {
@@ -1448,6 +1531,7 @@ public final class OreCubeService implements Listener {
         // own chance and floor, set at load (see CubeTier#bookChance).
         packs.getEnchantService().tryDropBook(player, tier.bookChance(), luck, tier.bookMinRarity());
         showEarningsIndicator(player, cubeCenter, coins, diamondsEarned, combo.count());
+        showLootBurst(player, tier, cubeCenter, diamondsEarned > 0);
         announceCombo(player, cubeCenter, combo);
         queueSummary(player, coins, diamondsEarned);
         Bukkit.getPluginManager().callEvent(new OreCubeKilledEvent(player, tier, coins, diamondsEarned, bonusMultiplier));
@@ -1469,7 +1553,7 @@ public final class OreCubeService implements Listener {
     }
 
     /** Accumulates into the rolling 1-minute "Slaying Summary" chat block instead of messaging per-kill - see {@link #flushSummaries}. */
-    private void queueSummary(Player player, long coins, int diamonds) {
+    private void queueSummary(Player player, long coins, long diamonds) {
         pendingSummary.merge(player.getUniqueId(), new WindowStats(coins, diamonds, 1),
                 (existing, fresh) -> existing.add(fresh.coins(), fresh.diamonds()));
     }
@@ -1708,6 +1792,7 @@ public final class OreCubeService implements Listener {
         pendingSummary.remove(player.getUniqueId());
         lastSummaryAtMillis.remove(player.getUniqueId());
         lastHitSoundAt.remove(player.getUniqueId());
+        lastKillSoundAt.remove(player.getUniqueId());
     }
 
     private CubeTier rollTier(ZoneDefinition zone, PackPlayerProfile profile) {
