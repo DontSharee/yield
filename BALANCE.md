@@ -747,6 +747,24 @@ upgrades and the rest into unlocks: Genesis at 11.9h / 11.6h / 11.35h,
 against ~11.4h before - the ladder is barely moved whichever way players
 lean.
 
+### Every zone has stations, and they arrive gradually
+
+Meadow has only Coin Boost and Damage Boost. Every zone after it carries
+those two with a cap 5 levels higher (105 at Genesis Core), and nearly
+every zone through Celestial Sanctum adds a new type: Tap Power, Diamond
+Boost + Lucky Cubes, Critical Strike, Speed + Cube Capacity, Diamond
+Multiplier, Rebirth Boost + Quick Reflexes, Swift Strikes, Hatch Luck,
+Quick Respawn, Double Hit, Extra Pet Slot, Triple Hit, Hatch Speed, Rare
+Finds (in zone order). Every non-core type raises its cap every second
+zone from the zone it arrives in, so each zone shows 2-8 stations.
+
+Each new type's cost starts near what a Coin Boost level costs in the
+zone it arrives in, and each station's step of levels costs about two
+zones of diamond income. The sim with the combat types (crit, attack
+speed, double hit) maxed the moment each cap allows reaches Genesis in
+10.6h against 10.9h without them - roughly 3%, because pacing is
+income-gated, not kill-gated.
+
 ## 3. The pacing curve
 
 The unlock ladder is a uniform **~4× per zone**, every step a round number.
