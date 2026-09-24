@@ -170,6 +170,40 @@ public final class UpgradeService {
         return multiplierFor(profile, UpgradeEffect.AUTO_SWITCH_SPEED);
     }
 
+    public double tapMultiplier(PackPlayerProfile profile) {
+        return multiplierFor(profile, UpgradeEffect.TAP_DAMAGE);
+    }
+
+    public double critChanceBonus(PackPlayerProfile profile) {
+        return sumFor(profile, UpgradeEffect.CRIT_CHANCE);
+    }
+
+    public double diamondMultiplierBonus(PackPlayerProfile profile) {
+        return multiplierFor(profile, UpgradeEffect.DIAMOND_MULTIPLIER);
+    }
+
+    public double attackSpeedMultiplier(PackPlayerProfile profile) {
+        return multiplierFor(profile, UpgradeEffect.ATTACK_SPEED);
+    }
+
+    public double hatchLuckBonus(PackPlayerProfile profile) {
+        return sumFor(profile, UpgradeEffect.HATCH_LUCK);
+    }
+
+    /** A factor on the respawn delay: 30 levels at 1% is a delay divided by 1.3. */
+    public double respawnDelayFactor(PackPlayerProfile profile) {
+        return 1.0 / multiplierFor(profile, UpgradeEffect.RESPAWN_SPEED);
+    }
+
+    public double doubleHitBonus(PackPlayerProfile profile) {
+        return sumFor(profile, UpgradeEffect.DOUBLE_HIT);
+    }
+
+    /** {@code Σ(level * valuePerLevel)} across every type with this effect - for the additive chance/luck slots. */
+    private double sumFor(PackPlayerProfile profile, UpgradeEffect effect) {
+        return multiplierFor(profile, effect) - 1.0;
+    }
+
     /** {@code 1.0 + Σ(level * valuePerLevel)} across every type configured with this effect - matches RebirthService.coinMultiplier's own existing formula shape. */
     private double multiplierFor(PackPlayerProfile profile, UpgradeEffect effect) {
         double total = 1.0;

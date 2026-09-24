@@ -18,5 +18,19 @@ public enum UpgradeEffect {
     /** Additive boost to every configured cube-bonus's own chance (golden/diamond) - see OreCubeService#rollBonus. */
     CUBE_BONUS_CHANCE,
     /** Speeds up how quickly Auto Mode's pets re-engage after their shared target dies and a new one is auto-picked - see PetCombatController's own switch-cooldown, and UpgradeService#autoSwitchSpeedMultiplier. */
-    AUTO_SWITCH_SPEED
+    AUTO_SWITCH_SPEED,
+    /** Factor on every tap's damage - see TapService#tapDamageAt. */
+    TAP_DAMAGE,
+    /** Additive crit chance on every pet hit, on top of the base 10% - see PetCombatController#applyDamage. */
+    CRIT_CHANCE,
+    /** Factor on every diamond payout - the same slot ranks and potions use. */
+    DIAMOND_MULTIPLIER,
+    /** Factor on how often pets attack. */
+    ATTACK_SPEED,
+    /** Additive hatch luck, the same slot potions and completed indexes feed. */
+    HATCH_LUCK,
+    /** Cubes respawn faster: the delay is divided by {@code 1 + level * value}. */
+    RESPAWN_SPEED,
+    /** Additive chance for a pet hit to land a second time. */
+    DOUBLE_HIT
 }

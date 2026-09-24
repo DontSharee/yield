@@ -11,6 +11,7 @@ import me.dontshare.yieldpacks.YieldPacks;
 import com.github.retrooper.packetevents.util.Vector3f;
 import me.dontshare.yieldupgrades.UpgradeService;
 import me.dontshare.yieldupgrades.data.UpgradeStation;
+import me.dontshare.yieldupgrades.data.UpgradeType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
@@ -274,13 +275,41 @@ public final class UpgradeStationDisplay {
         boolean atCap = level >= effectiveCap;
 
         String template = atCap
-                ? "<#4BD9FF><bold><name></bold></#4BD9FF>\n&7Level &f<level> &7/ &f<cap>\n&6&lMAXED AT THIS STATION"
-                : "<#4BD9FF><bold><name></bold></#4BD9FF>\n&7Level &f<level> &7/ &f<cap>\n&7Cost: &b<cost> &7diamonds";
+                ? "<#4BD9FF><bold><name></bold></#4BD9FF>\n&7Level &f<level> &7/ &f<cap>\n&a<effect>\n&6&lMAXED AT THIS STATION"
+                : "<#4BD9FF><bold><name></bold></#4BD9FF>\n&7Level &f<level> &7/ &f<cap>\n&a<effect>\n&7Cost: &b<cost> &7diamonds";
 
         return Text.parse(template,
                 Placeholder.unparsed("name", Formatting.stripLeadingColorCodes(station.type().displayName())),
+                Placeholder.unparsed("effect", describe(station.type(), level)),
                 Placeholder.unparsed("level", String.valueOf(level)),
                 Placeholder.unparsed("cap", String.valueOf(effectiveCap)),
                 Placeholder.unparsed("cost", Formatting.format(upgradeService.costFor(station.type(), level))));
+    }
+
+    /** What {@code level} levels of this type are worth right now, in words - "+12% Coins". */
+    private static String describe(UpgradeType type, int level) {
+        double value = level * type.valuePerLevel();
+        return switch (type.effect()) {
+            case COIN_MULTIPLIER -> "+" + percent(value) + " Coins";
+            case DAMAGE_MULTIPLIER -> "+" + percent(value) + " Pet Damage";
+            case DIAMOND_BOOST -> "+" + percent(level * type.chancePerLevel()) + " Diamond Chance, +"
+                    + Formatting.format(level * type.flatPerLevel()) + " per Kill";
+            case REBIRTH_GRANT_MULTIPLIER -> "+" + percent(value) + " Rebirths Granted";
+            case PLAYER_SPEED -> "+" + percent(value / 0.2) + " Walk Speed";
+            case CUBE_CAP_BONUS -> "+" + Math.round(value) + " Cubes at Once";
+            case CUBE_BONUS_CHANCE -> "+" + percent(value) + " Bonus Cube Chance";
+            case AUTO_SWITCH_SPEED -> "+" + percent(value) + " Auto Retarget Speed";
+            case TAP_DAMAGE -> "+" + percent(value) + " Tap Damage";
+            case CRIT_CHANCE -> "+" + percent(value) + " Crit Chance";
+            case DIAMOND_MULTIPLIER -> "+" + percent(value) + " Diamonds";
+            case ATTACK_SPEED -> "+" + percent(value) + " Pet Attack Speed";
+            case HATCH_LUCK -> "+" + percent(value) + " Hatch Luck";
+            case RESPAWN_SPEED -> "+" + percent(value) + " Cube Respawn Speed";
+            case DOUBLE_HIT -> "+" + percent(value) + " Double Hit Chance";
+        };
+    }
+
+    private static String percent(double fraction) {
+        return Formatting.format(fraction * 100) + "%";
     }
 }

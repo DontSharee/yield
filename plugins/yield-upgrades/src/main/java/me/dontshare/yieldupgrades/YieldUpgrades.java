@@ -64,6 +64,13 @@ public final class YieldUpgrades extends JavaPlugin implements Listener {
         zones.getCubeService().registerExtraCubeCapProvider("upgrades", upgradeService::cubeCapBonus);
         zones.getCubeService().registerCubeBonusChanceBoostProvider("upgrades", upgradeService::cubeBonusChanceBonus);
         rebirth.registerGrantMultiplierProvider("upgrades", upgradeService::rebirthGrantMultiplier);
+        packs.registerDiamondMultiplierProvider("upgrades", upgradeService::diamondMultiplierBonus);
+        packs.registerAttackSpeedMultiplierProvider("upgrades", upgradeService::attackSpeedMultiplier);
+        packs.getLuckService().registerExtraLuckProvider("upgrades", upgradeService::hatchLuckBonus);
+        zones.getCubeService().registerRespawnDelayMultiplierProvider("upgrades", upgradeService::respawnDelayFactor);
+        zones.getPetCombatController().registerCritChanceProvider("upgrades", upgradeService::critChanceBonus);
+        zones.getPetCombatController().registerDoubleHitChanceProvider("upgrades", upgradeService::doubleHitBonus);
+        zones.getTapService().registerTapMultiplierProvider("upgrades", (player, profile) -> upgradeService.tapMultiplier(profile));
 
         Bukkit.getPluginManager().registerEvents(this, this);
         core.getAdminCommandRegistry().register(UpgradesAdminCommand.build(this));
@@ -82,12 +89,19 @@ public final class YieldUpgrades extends JavaPlugin implements Listener {
             packs.unregisterCoinMultiplierProvider("upgrades");
             packs.unregisterDamageMultiplierProvider("upgrades");
             packs.unregisterAutoSwitchSpeedMultiplierProvider("upgrades");
+            packs.unregisterDiamondMultiplierProvider("upgrades");
+            packs.unregisterAttackSpeedMultiplierProvider("upgrades");
+            packs.getLuckService().unregisterExtraLuckProvider("upgrades");
         }
         if (zones != null) {
             zones.getCubeService().unregisterDiamondChanceBoostProvider("upgrades");
             zones.getCubeService().unregisterFlatDiamondBonusProvider("upgrades");
             zones.getCubeService().unregisterExtraCubeCapProvider("upgrades");
             zones.getCubeService().unregisterCubeBonusChanceBoostProvider("upgrades");
+            zones.getCubeService().unregisterRespawnDelayMultiplierProvider("upgrades");
+            zones.getPetCombatController().unregisterCritChanceProvider("upgrades");
+            zones.getPetCombatController().unregisterDoubleHitChanceProvider("upgrades");
+            zones.getTapService().unregisterTapMultiplierProvider("upgrades");
         }
         if (rebirth != null) {
             rebirth.unregisterGrantMultiplierProvider("upgrades");
