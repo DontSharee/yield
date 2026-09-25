@@ -165,6 +165,12 @@ moment on the break. Worth about +1.8% income on average. Lucky Cubes boosts
 bonuses below 1% by the same *ratio* it gives golden's 5% (max: ×2, so 0.4%)
 rather than flat - a flat +5% would make rainbows 1 in 20 and add ~45%.
 
+**Piñata cubes** (0.8%, ×3, same proportional Lucky Cubes rule) pay out
+every tenth of their HP instead of every fifth, and 60% of their coins
+mid-fight rather than 35%, each payout with a pop of confetti - the fun is
+in hitting it. About +1.6% income on average; with rainbows, the rare
+bonuses together add ~3.4%.
+
 The coin ladder itself climbs ~2.6× per zone and is made of round numbers so
 the jump is readable at a glance:
 

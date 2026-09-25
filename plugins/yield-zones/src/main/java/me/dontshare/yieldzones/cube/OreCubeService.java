@@ -886,6 +886,23 @@ public final class OreCubeService implements Listener {
         return cube.bonus() != null && RAINBOW_ID.equals(cube.bonus().id());
     }
 
+    /** The piñata bonus: pays most of its (x3) worth while it's being hit, in confetti - see payChips. */
+    private static final String PINATA_ID = "pinata";
+
+    private static boolean isPinata(OreCube cube) {
+        return cube.bonus() != null && PINATA_ID.equals(cube.bonus().id());
+    }
+
+    /** Mid-fight payouts a cube makes before the break: every fifth of HP, every tenth for a piñata. */
+    private static int chipsFor(OreCube cube) {
+        return isPinata(cube) ? 9 : CHIPS_PER_CUBE;
+    }
+
+    /** The share of its coins a cube pays mid-fight - most of a piñata's. */
+    private static double chipShareFor(OreCube cube) {
+        return isPinata(cube) ? 0.6 : CHIP_SHARE;
+    }
+
     /**
      * Cycles every live rainbow cube's outline through the hue wheel. The
      * team colour its bonus glow starts with only offers sixteen fixed
@@ -1564,7 +1581,7 @@ public final class OreCubeService implements Listener {
         diamondsEarned += flatBonusSum(flatDiamondBonusProviders, profile, tier.material());
         if (diamondsEarned > 0) {
             diamondsEarned = Math.round(diamondsEarned * packs.diamondMultiplierCached(profile)
-                    * (1.0 - CHIP_SHARE * cube.chipsPaid() / CHIPS_PER_CUBE));
+                    * (1.0 - chipShareFor(cube) * cube.chipsPaid() / chipsFor(cube)));
             diamondsEarned = Math.max(1L, diamondsEarned);
         }
         long killDiamonds = diamondsEarned;
@@ -1627,8 +1644,9 @@ public final class OreCubeService implements Listener {
      */
     private void payChips(Player player, OreCube cube) {
         CubeTier tier = cube.tier();
+        int chips = chipsFor(cube);
         double lost = 1.0 - cube.currentHp() / (double) Math.max(1L, tier.maxHp());
-        int due = Math.min(CHIPS_PER_CUBE, (int) Math.floor(lost * (CHIPS_PER_CUBE + 1)));
+        int due = Math.min(chips, (int) Math.floor(lost * (chips + 1)));
         if (due <= cube.chipsPaid()) {
             return;
         }
@@ -1636,7 +1654,7 @@ public final class OreCubeService implements Listener {
         double bonusMultiplier = cube.bonus() != null ? cube.bonus().multiplier() : 1.0;
         double diamondChance = (0.05 * luckService.totalLuckMultiplierCached(profile) + diamondChanceBoostSum(profile))
                 * cube.diamondChanceMultiplier();
-        double perChip = CHIP_SHARE / CHIPS_PER_CUBE;
+        double perChip = chipShareFor(cube) / chips;
         while (cube.chipsPaid() < due) {
             long coins = Math.round(tier.coinValue() * packs.coinMultiplierCached(profile)
                     * blockCoinMultiplierSum(profile, tier.material()) * bonusMultiplier * perChip);
@@ -1644,7 +1662,25 @@ public final class OreCubeService implements Listener {
                     ? Math.max(1L, Math.round(tier.diamondValue() * packs.diamondMultiplierCached(profile) * perChip)) : 0L;
             cube.recordChip(coins, diamonds);
             dropLoot(player, cube, coins, diamonds, false);
+            if (isPinata(cube)) {
+                confetti(player, cube);
+            }
         }
+    }
+
+    private static final org.bukkit.Color[] CONFETTI = {
+            org.bukkit.Color.fromRGB(0xFF5A5A), org.bukkit.Color.fromRGB(0xFFD23F), org.bukkit.Color.fromRGB(0x5AFF7A),
+            org.bukkit.Color.fromRGB(0x5AC8FF), org.bukkit.Color.fromRGB(0xC65AFF), org.bukkit.Color.fromRGB(0xFF7AE0)};
+
+    /** A pop of multicoloured confetti and a party-horn twinkle - each piñata payout, owner-only. */
+    private void confetti(Player player, OreCube cube) {
+        Location center = cube.center();
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+        for (int i = 0; i < 4; i++) {
+            Particle.DustOptions dust = new Particle.DustOptions(CONFETTI[random.nextInt(CONFETTI.length)], 1.2f);
+            player.spawnParticle(Particle.DUST, center, 6, 0.45, 0.45, 0.45, 0, dust);
+        }
+        player.playSound(center, Sound.ENTITY_FIREWORK_ROCKET_TWINKLE, 0.35f, 1.3f + random.nextFloat() * 0.3f);
     }
 
     /** Spills {@code coins}/{@code diamonds} out of {@code cube} as collectable drops - a few for a mid-fight payout, a fountain for the kill, more for a rarer cube. */
@@ -1987,6 +2023,10 @@ public final class OreCubeService implements Listener {
 
     /** "GOLDEN x2" (small-caps, the bonus's own glow color) - shown above the HP bar on the floating nametag, and inline before it on the boss bar. */
     private Component bonusLabel(OreCube cube) {
+        if (isPinata(cube)) {
+            return Text.parse("<gradient:#FF5A5A:#FFD23F:#5AFF7A:#5AC8FF:#C65AFF><bold>" + Formatting.fancyFont("pinata") + " x"
+                    + (long) cube.bonus().multiplier() + "</bold></gradient>");
+        }
         if (isRainbow(cube)) {
             return Text.parse("<rainbow><bold>" + Formatting.fancyFont("rainbow") + " x"
                     + (long) cube.bonus().multiplier() + "</bold></rainbow>");
