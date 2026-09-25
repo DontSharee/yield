@@ -26,6 +26,10 @@ public final class OreCube {
     // Never set true for a bonus cube (its own persistent colored glow
     // already stands out).
     private boolean highlighted;
+    /** How many of the mid-fight payouts this cube has already dropped, and what they came to - the kill pays the rest. See OreCubeService#payChips. */
+    private int chipsPaid;
+    private long chippedCoins;
+    private long chippedDiamonds;
 
     public OreCube(Location location, CubeTier tier, int blockEntityId, UUID blockEntityUuid, int textEntityId, CubeBonus bonus) {
         this.location = location;
@@ -97,6 +101,24 @@ public final class OreCube {
     public boolean damage(long amount) {
         currentHp = Math.max(0, currentHp - amount);
         return currentHp <= 0;
+    }
+
+    public int chipsPaid() {
+        return chipsPaid;
+    }
+
+    public long chippedCoins() {
+        return chippedCoins;
+    }
+
+    public long chippedDiamonds() {
+        return chippedDiamonds;
+    }
+
+    public void recordChip(long coins, long diamonds) {
+        chipsPaid++;
+        chippedCoins += coins;
+        chippedDiamonds += diamonds;
     }
 
     public boolean highlighted() {

@@ -75,6 +75,7 @@ public final class YieldUpgrades extends JavaPlugin implements Listener {
         packs.getPackOpenService().registerCooldownMultiplierProvider("upgrades", upgradeService::hatchCooldownFactor);
         zones.getPetCombatController().registerTripleHitChanceProvider("upgrades", upgradeService::tripleHitBonus);
         zones.getCubeService().registerSpawnWeightMultiplierProvider("upgrades", upgradeService::rareFindWeight);
+        zones.getCubeService().getLootDrops().registerMagnetRangeProvider("upgrades", upgradeService::magnetRangeBonus);
 
         Bukkit.getPluginManager().registerEvents(this, this);
         core.getAdminCommandRegistry().register(UpgradesAdminCommand.build(this));
@@ -110,6 +111,7 @@ public final class YieldUpgrades extends JavaPlugin implements Listener {
             zones.getTapService().unregisterTapMultiplierProvider("upgrades");
             zones.getPetCombatController().unregisterTripleHitChanceProvider("upgrades");
             zones.getCubeService().unregisterSpawnWeightMultiplierProvider("upgrades");
+            zones.getCubeService().getLootDrops().unregisterMagnetRangeProvider("upgrades");
         }
         if (rebirth != null) {
             rebirth.unregisterGrantMultiplierProvider("upgrades");

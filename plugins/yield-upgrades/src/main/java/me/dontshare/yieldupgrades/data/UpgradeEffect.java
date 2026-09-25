@@ -40,5 +40,7 @@ public enum UpgradeEffect {
     /** Faster hatching: the hatch cooldown is divided by {@code 1 + level * value}. */
     HATCH_SPEED,
     /** Giants and treasure chests spawn more often: their spawn weight times {@code 1 + level * value}. */
-    RARE_FINDS
+    RARE_FINDS,
+    /** Extra blocks of coin/diamond pickup range - see LootDropService. */
+    MAGNET_RANGE
 }

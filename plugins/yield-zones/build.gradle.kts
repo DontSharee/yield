@@ -1,4 +1,4 @@
-version = "0.14.1"
+version = "0.15.0"
 
 repositories {
     maven("https://repo.codemc.io/repository/maven-releases/")

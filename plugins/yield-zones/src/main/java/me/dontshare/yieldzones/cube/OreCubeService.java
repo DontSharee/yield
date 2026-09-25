@@ -116,13 +116,9 @@ public final class OreCubeService implements Listener {
     private final Map<UUID, ZoneDefinition> currentZone = new ConcurrentHashMap<>();
     /** The cube a tap flush already labelled with its exact number - see {@link #applyTap}. */
     private final Map<UUID, OreCube> quietIndicatorFor = new ConcurrentHashMap<>();
+    private final LootDropService lootDrops;
     private static final long HIT_SOUND_GAP_MILLIS = 120L;
     private final Map<UUID, Long> lastHitSoundAt = new ConcurrentHashMap<>();
-    /** Same floor for the kill payout chime - several cubes can die in one tick under single-send. */
-    private static final long KILL_SOUND_GAP_MILLIS = 90L;
-    private final Map<UUID, Long> lastKillSoundAt = new ConcurrentHashMap<>();
-    private static final ItemStack COIN_PARTICLE = new ItemStack(Material.GOLD_NUGGET);
-    private static final ItemStack DIAMOND_PARTICLE = new ItemStack(Material.DIAMOND);
     private final Map<UUID, List<OreCube>> cubesByPlayer = new ConcurrentHashMap<>();
     private final Map<UUID, AtomicInteger> pendingByPlayer = new ConcurrentHashMap<>();
     // Every in-flight (not yet landed) fall's id, per player - lets leaveZone/
@@ -344,7 +340,13 @@ public final class OreCubeService implements Listener {
         this.zones = zones;
         this.packs = packs;
         this.luckService = packs.getLuckService();
+        this.lootDrops = new LootDropService(plugin, packs);
         Bukkit.getPluginManager().registerEvents(this, plugin);
+    }
+
+    /** The coin/diamond drops cubes spill - register magnet range providers here. */
+    public LootDropService getLootDrops() {
+        return lootDrops;
     }
 
     /** Overrides what a left-click on a landed cube does - see yield-zones' wiring, which makes this mode-aware. */
@@ -353,6 +355,7 @@ public final class OreCubeService implements Listener {
     }
 
     public void start() {
+        lootDrops.start();
         Bukkit.getScheduler().runTaskTimer(plugin, this::tick, TICK_INTERVAL, TICK_INTERVAL);
         Bukkit.getScheduler().runTaskTimer(plugin, this::flushSummaries, SUMMARY_INTERVAL, SUMMARY_INTERVAL);
         // Its own, much faster loop - the main tick()'s 1-second cadence
@@ -1079,6 +1082,7 @@ public final class OreCubeService implements Listener {
                 if (dead) {
                     killCube(player, zone, cube, entry.getValue().contributingInstanceIds());
                 } else {
+                    payChips(player, cube);
                     // The boss bar is a single, per-player HUD element - only
                     // this player's actual target should drive it, or a
                     // single-send player hitting several cubes at once would
@@ -1307,31 +1311,6 @@ public final class OreCubeService implements Listener {
     }
 
     /**
-     * The "you got paid" moment on a kill: gold nuggets (and diamonds, when
-     * any dropped) spray out of the cube, with a coin chime and a brighter
-     * one for diamonds. Rarer cubes spray more - a giant or a treasure chest
-     * throws a real fountain - so the payout reads before the number does.
-     */
-    private void showLootBurst(Player player, CubeTier tier, Location center, boolean diamonds) {
-        int coins = tier.treasure() || tier.giant() ? 28 : tier.weight() < 10 ? 14 : 7;
-        player.spawnParticle(Particle.ITEM, center, coins, 0.25, 0.25, 0.25, 0.18, COIN_PARTICLE);
-        if (diamonds) {
-            player.spawnParticle(Particle.ITEM, center, Math.max(4, coins / 2), 0.25, 0.25, 0.25, 0.2, DIAMOND_PARTICLE);
-        }
-        long now = System.currentTimeMillis();
-        Long last = lastKillSoundAt.get(player.getUniqueId());
-        if (last != null && now - last < KILL_SOUND_GAP_MILLIS) {
-            return;
-        }
-        lastKillSoundAt.put(player.getUniqueId(), now);
-        float pitch = 1.0f + ThreadLocalRandom.current().nextFloat() * 0.4f;
-        player.playSound(center, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.3f, pitch);
-        if (diamonds) {
-            player.playSound(center, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.7f, 1.6f);
-        }
-    }
-
-    /**
      * A real milestone flourish (distinct, escalating sound + particles)
      * every 10/25/50/100/250/500/1000 kills in one streak - the combo
      * counter itself is quiet the rest of the time (just the small floating
@@ -1466,7 +1445,7 @@ public final class OreCubeService implements Listener {
             hideBossBar(player);
         }
 
-        payOut(player, cube.tier(), cube.bonus(), center, contributingInstanceIds);
+        payOut(player, cube, center, contributingInstanceIds);
         // Deliberately doesn't touch the pet-display attack override here -
         // in single-send mode other pets may still be fighting different,
         // still-live cubes. PetCombatController's own next tick (a few
@@ -1482,7 +1461,9 @@ public final class OreCubeService implements Listener {
         }, Math.max(1L, Math.round(zone.respawnDelayMillis() * respawnDelayMultiplier(player.getUniqueId()) / 50.0)));
     }
 
-    private void payOut(Player player, CubeTier tier, CubeBonus bonus, Location cubeCenter, Set<UUID> contributingInstanceIds) {
+    private void payOut(Player player, OreCube cube, Location cubeCenter, Set<UUID> contributingInstanceIds) {
+        CubeTier tier = cube.tier();
+        CubeBonus bonus = cube.bonus();
         PackPlayerProfile profile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
         List<PetInstance> contributors = contributingInstanceIds.stream()
                 .map(profile::findPet).flatMap(Optional::stream).toList();
@@ -1495,7 +1476,9 @@ public final class OreCubeService implements Listener {
         double earningsBonus = leveling.earningsBonusFor(contributors);
         long coins = Math.round(tier.coinValue() * packs.coinMultiplier(profile) * blockCoinMultiplierSum(profile, tier.material())
                 * (1 + earningsBonus) * bonusMultiplier * comboMultiplier) + flatBonusSum(flatCoinBonusProviders, profile, tier.material());
-        profile.setCoins(profile.getCoins().add(BigInteger.valueOf(coins)));
+        // What the fight already dropped comes off the top: the kill pays the
+        // rest, so a cube pays the same in total however it was broken.
+        long killCoins = Math.max(0L, coins - cube.chippedCoins());
 
         boolean guaranteedDiamond = contributors.stream().anyMatch(pet -> leveling.hasMilestone(pet, MilestoneEffect.GUARANTEED_DIAMOND_DROP));
         // The Glittering Unique pet-enchant (see PetEnchantService#hasBonusDiamondDropEnchant) isn't
@@ -1510,9 +1493,15 @@ public final class OreCubeService implements Listener {
                 ? tier.diamondValue() : 0L;
         diamondsEarned += flatBonusSum(flatDiamondBonusProviders, profile, tier.material());
         if (diamondsEarned > 0) {
-            diamondsEarned = Math.round(diamondsEarned * packs.diamondMultiplier(profile));
-            profile.setDiamonds(profile.getDiamonds().add(BigInteger.valueOf(diamondsEarned)));
+            diamondsEarned = Math.round(diamondsEarned * packs.diamondMultiplier(profile)
+                    * (1.0 - CHIP_SHARE * cube.chipsPaid() / CHIPS_PER_CUBE));
+            diamondsEarned = Math.max(1L, diamondsEarned);
         }
+        long killDiamonds = diamondsEarned;
+        // For everything that counts earnings (lifetime totals, quests, the
+        // summary, blocktree perks) the cube paid its whole amount.
+        diamondsEarned += cube.chippedDiamonds();
+        dropLoot(player, cube, killCoins, killDiamonds, true);
         if (tier.treasure()) {
             grantTreasurePacks(player, profile, tier);
         }
@@ -1530,15 +1519,67 @@ public final class OreCubeService implements Listener {
         // safe, guaranteed (and at least Epic) from a boss block - the cube's
         // own chance and floor, set at load (see CubeTier#bookChance).
         packs.getEnchantService().tryDropBook(player, tier.bookChance(), luck, tier.bookMinRarity());
-        showEarningsIndicator(player, cubeCenter, coins, diamondsEarned, combo.count());
-        showLootBurst(player, tier, cubeCenter, diamondsEarned > 0);
+        showEarningsIndicator(player, cubeCenter, killCoins, killDiamonds, combo.count());
         announceCombo(player, cubeCenter, combo);
         queueSummary(player, coins, diamondsEarned);
         Bukkit.getPluginManager().callEvent(new OreCubeKilledEvent(player, tier, coins, diamondsEarned, bonusMultiplier));
-        // Refresh the sidebar immediately - coins/diamonds/level/damage all just
-        // changed, and waiting up to a second for the periodic tick makes
-        // the payout feel laggy rather than instant.
+        // Level/damage may have just changed; the balance itself updates as
+        // the drops are collected (see LootDropService).
         core().getScoreboardDisplay().refresh(player);
+    }
+
+    /** How many times a cube pays out mid-fight - every fifth of its HP, stopping short of the kill. */
+    private static final int CHIPS_PER_CUBE = 4;
+    /** The share of a cube's coins (and diamond odds) paid out mid-fight; the kill pays the rest. */
+    private static final double CHIP_SHARE = 0.35;
+
+    /**
+     * Pays whatever mid-fight payouts this cube's lost HP has earned: one at
+     * each fifth of its HP knocked off (20/40/60/80%), each a share of the
+     * cube's coins and a roll of its usual diamond chance for a share of its
+     * diamonds. They drop as loot like the kill does, just smaller - the
+     * money comes out while you're hitting it, then the big burst on the
+     * break. The kill takes whatever these paid off its own payout, so the
+     * cube's total never changes (see {@link #payOut}).
+     */
+    private void payChips(Player player, OreCube cube) {
+        CubeTier tier = cube.tier();
+        double lost = 1.0 - cube.currentHp() / (double) Math.max(1L, tier.maxHp());
+        int due = Math.min(CHIPS_PER_CUBE, (int) Math.floor(lost * (CHIPS_PER_CUBE + 1)));
+        if (due <= cube.chipsPaid()) {
+            return;
+        }
+        PackPlayerProfile profile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
+        double bonusMultiplier = cube.bonus() != null ? cube.bonus().multiplier() : 1.0;
+        double diamondChance = 0.05 * luckService.totalLuckMultiplier(profile) + diamondChanceBoostSum(profile);
+        double perChip = CHIP_SHARE / CHIPS_PER_CUBE;
+        while (cube.chipsPaid() < due) {
+            long coins = Math.round(tier.coinValue() * packs.coinMultiplier(profile)
+                    * blockCoinMultiplierSum(profile, tier.material()) * bonusMultiplier * perChip);
+            long diamonds = ThreadLocalRandom.current().nextDouble() < diamondChance
+                    ? Math.max(1L, Math.round(tier.diamondValue() * packs.diamondMultiplier(profile) * perChip)) : 0L;
+            cube.recordChip(coins, diamonds);
+            dropLoot(player, cube, coins, diamonds, false);
+        }
+    }
+
+    /** Spills {@code coins}/{@code diamonds} out of {@code cube} as collectable drops - a few for a mid-fight payout, a fountain for the kill, more for a rarer cube. */
+    private void dropLoot(Player player, OreCube cube, long coins, long diamonds, boolean kill) {
+        CubeTier tier = cube.tier();
+        int coinPieces;
+        if (!kill) {
+            coinPieces = 2;
+        } else if (tier.treasure() || tier.giant()) {
+            coinPieces = 14;
+        } else {
+            coinPieces = tier.weight() < 10 ? 8 : 5;
+        }
+        int diamondPieces = kill ? Math.max(2, coinPieces / 3) : 1;
+        Location center = cube.center();
+        double floorY = cube.location().getY();
+        double spread = cube.size() / 2.0;
+        lootDrops.spawn(player, center, floorY, spread, LootDropService.Kind.COIN, coins, coinPieces);
+        lootDrops.spawn(player, center, floorY, spread, LootDropService.Kind.DIAMOND, diamonds, diamondPieces);
     }
 
     /** Placeholder candy source for this pass (see Candy's own Javadoc) - a luck-modified roll per configured candy type on every kill. Overflow past a full inventory drops at the player's feet rather than vanishing. */
@@ -1712,6 +1753,7 @@ public final class OreCubeService implements Listener {
     }
 
     private void leaveZone(Player player) {
+        lootDrops.collectAll(player);
         currentZone.remove(player.getUniqueId());
         cancelPendingFalls(player.getUniqueId());
         List<OreCube> cubes = cubesByPlayer.remove(player.getUniqueId());
@@ -1792,7 +1834,6 @@ public final class OreCubeService implements Listener {
         pendingSummary.remove(player.getUniqueId());
         lastSummaryAtMillis.remove(player.getUniqueId());
         lastHitSoundAt.remove(player.getUniqueId());
-        lastKillSoundAt.remove(player.getUniqueId());
     }
 
     private CubeTier rollTier(ZoneDefinition zone, PackPlayerProfile profile) {

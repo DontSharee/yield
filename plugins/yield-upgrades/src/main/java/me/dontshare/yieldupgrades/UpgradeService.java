@@ -199,6 +199,10 @@ public final class UpgradeService {
         return sumFor(profile, UpgradeEffect.DOUBLE_HIT);
     }
 
+    public double magnetRangeBonus(PackPlayerProfile profile) {
+        return sumFor(profile, UpgradeEffect.MAGNET_RANGE);
+    }
+
     public int petSlotBonus(PackPlayerProfile profile) {
         return (int) Math.round(sumFor(profile, UpgradeEffect.PET_SLOTS));
     }

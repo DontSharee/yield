@@ -108,6 +108,17 @@ types:
     cost-growth: 1.5
 
 
+  # Coins and diamonds drop out of cubes and fly to you once you're this
+  # close (base 6 blocks - see LootDropService). Cheap, and early, because
+  # it's the upgrade you feel on every single kill.
+  magnet_range:
+    display-name: "&eMagnet"
+    icon: IRON_INGOT
+    effect: MAGNET_RANGE
+    value-per-level: 1         # +1 block of pickup range per level
+    max-level: 15
+    cost-base: 15
+    cost-growth: 1.74          # 3 levels per station zone, ~5.3x the diamonds each step
   # --- Arrive one zone at a time after Diamond Hollow's set (see stations:). ---
   # Costs start near what a Coin Boost level costs in the zone each one
   # arrives in, and grow so each station's step of levels costs about two
@@ -221,20 +232,22 @@ stations:
   # meadow (zone 1) - 2 stations, new: Coin Boost, Damage Boost
   - { zone: meadow, type: coin_boost, cap: 10, location: [spawn, -2, 98, 58, 180, 0] }
   - { zone: meadow, type: damage_boost, cap: 10, location: [spawn, 2, 98, 58, 180, 0] }
-  # frostpeak (zone 2) - 3 stations, new: Tap Power
-  - { zone: frostpeak, type: coin_boost, cap: 15, location: [spawn, -4, 98, 152, 180, 0] }
-  - { zone: frostpeak, type: damage_boost, cap: 15, location: [spawn, 0, 98, 152, 180, 0] }
-  - { zone: frostpeak, type: tap_power, cap: 10, location: [spawn, 4, 98, 152, 180, 0] }
+  # frostpeak (zone 2) - 4 stations, new: Magnet, Tap Power
+  - { zone: frostpeak, type: coin_boost, cap: 15, location: [spawn, -6, 98, 152, 180, 0] }
+  - { zone: frostpeak, type: damage_boost, cap: 15, location: [spawn, -2, 98, 152, 180, 0] }
+  - { zone: frostpeak, type: magnet_range, cap: 3, location: [spawn, 2, 98, 152, 180, 0] }
+  - { zone: frostpeak, type: tap_power, cap: 10, location: [spawn, 6, 98, 152, 180, 0] }
   # iron_foothills (zone 3) - 4 stations, new: Diamond Boost, Lucky Cubes
   - { zone: iron_foothills, type: coin_boost, cap: 20, location: [spawn, -6, 98, 246, 180, 0] }
   - { zone: iron_foothills, type: damage_boost, cap: 20, location: [spawn, -2, 98, 246, 180, 0] }
   - { zone: iron_foothills, type: gem_boost, cap: 10, location: [spawn, 2, 98, 246, 180, 0] }
   - { zone: iron_foothills, type: cube_luck_boost, cap: 10, location: [spawn, 6, 98, 246, 180, 0] }
-  # sulfur_flats (zone 4) - 4 stations, new: Critical Strike
-  - { zone: sulfur_flats, type: coin_boost, cap: 25, location: [spawn, -6, 98, 340, 180, 0] }
-  - { zone: sulfur_flats, type: damage_boost, cap: 25, location: [spawn, -2, 98, 340, 180, 0] }
-  - { zone: sulfur_flats, type: tap_power, cap: 20, location: [spawn, 2, 98, 340, 180, 0] }
-  - { zone: sulfur_flats, type: crit_chance, cap: 5, location: [spawn, 6, 98, 340, 180, 0] }
+  # sulfur_flats (zone 4) - 5 stations, new: Critical Strike
+  - { zone: sulfur_flats, type: coin_boost, cap: 25, location: [spawn, -8, 98, 340, 180, 0] }
+  - { zone: sulfur_flats, type: damage_boost, cap: 25, location: [spawn, -4, 98, 340, 180, 0] }
+  - { zone: sulfur_flats, type: magnet_range, cap: 6, location: [spawn, 0, 98, 340, 180, 0] }
+  - { zone: sulfur_flats, type: tap_power, cap: 20, location: [spawn, 4, 98, 340, 180, 0] }
+  - { zone: sulfur_flats, type: crit_chance, cap: 5, location: [spawn, 8, 98, 340, 180, 0] }
   # scorched_wastes (zone 5) - 6 stations, new: Speed, Cube Capacity
   - { zone: scorched_wastes, type: coin_boost, cap: 30, location: [spawn, -4, 98, 434, 180, 0] }
   - { zone: scorched_wastes, type: damage_boost, cap: 30, location: [spawn, 0, 98, 434, 180, 0] }
@@ -242,12 +255,13 @@ stations:
   - { zone: scorched_wastes, type: cube_luck_boost, cap: 20, location: [spawn, -4, 98, 438, 180, 0] }
   - { zone: scorched_wastes, type: speed_boost, cap: 10, location: [spawn, 0, 98, 438, 180, 0] }
   - { zone: scorched_wastes, type: cube_cap_boost, cap: 10, location: [spawn, 4, 98, 438, 180, 0] }
-  # crystal_caverns (zone 6) - 5 stations, new: Diamond Multiplier
-  - { zone: crystal_caverns, type: coin_boost, cap: 35, location: [spawn, -8, 98, 528, 180, 0] }
-  - { zone: crystal_caverns, type: damage_boost, cap: 35, location: [spawn, -4, 98, 528, 180, 0] }
-  - { zone: crystal_caverns, type: tap_power, cap: 30, location: [spawn, 0, 98, 528, 180, 0] }
-  - { zone: crystal_caverns, type: crit_chance, cap: 10, location: [spawn, 4, 98, 528, 180, 0] }
-  - { zone: crystal_caverns, type: diamond_multiplier, cap: 10, location: [spawn, 8, 98, 528, 180, 0] }
+  # crystal_caverns (zone 6) - 6 stations, new: Diamond Multiplier
+  - { zone: crystal_caverns, type: coin_boost, cap: 35, location: [spawn, -4, 98, 528, 180, 0] }
+  - { zone: crystal_caverns, type: damage_boost, cap: 35, location: [spawn, 0, 98, 528, 180, 0] }
+  - { zone: crystal_caverns, type: magnet_range, cap: 9, location: [spawn, 4, 98, 528, 180, 0] }
+  - { zone: crystal_caverns, type: tap_power, cap: 30, location: [spawn, -4, 98, 532, 180, 0] }
+  - { zone: crystal_caverns, type: crit_chance, cap: 10, location: [spawn, 0, 98, 532, 180, 0] }
+  - { zone: crystal_caverns, type: diamond_multiplier, cap: 10, location: [spawn, 4, 98, 532, 180, 0] }
   # diamond_hollow (zone 7) - 7 stations, new: Rebirth Boost, Quick Reflexes
   - { zone: diamond_hollow, type: coin_boost, cap: 40, location: [spawn, -6, 98, 622, 180, 0] }
   - { zone: diamond_hollow, type: damage_boost, cap: 40, location: [spawn, -2, 98, 622, 180, 0] }
@@ -256,10 +270,11 @@ stations:
   - { zone: diamond_hollow, type: speed_boost, cap: 20, location: [spawn, -4, 98, 626, 180, 0] }
   - { zone: diamond_hollow, type: rebirth_boost, cap: 20, location: [spawn, 0, 98, 626, 180, 0] }
   - { zone: diamond_hollow, type: auto_switch_speed, cap: 10, location: [spawn, 4, 98, 626, 180, 0] }
-  # emerald_depths (zone 8) - 6 stations, new: Swift Strikes
-  - { zone: emerald_depths, type: coin_boost, cap: 45, location: [spawn, -4, 98, 716, 180, 0] }
-  - { zone: emerald_depths, type: damage_boost, cap: 45, location: [spawn, 0, 98, 716, 180, 0] }
-  - { zone: emerald_depths, type: tap_power, cap: 40, location: [spawn, 4, 98, 716, 180, 0] }
+  # emerald_depths (zone 8) - 7 stations, new: Swift Strikes
+  - { zone: emerald_depths, type: coin_boost, cap: 45, location: [spawn, -6, 98, 716, 180, 0] }
+  - { zone: emerald_depths, type: damage_boost, cap: 45, location: [spawn, -2, 98, 716, 180, 0] }
+  - { zone: emerald_depths, type: magnet_range, cap: 12, location: [spawn, 2, 98, 716, 180, 0] }
+  - { zone: emerald_depths, type: tap_power, cap: 40, location: [spawn, 6, 98, 716, 180, 0] }
   - { zone: emerald_depths, type: crit_chance, cap: 15, location: [spawn, -4, 98, 720, 180, 0] }
   - { zone: emerald_depths, type: diamond_multiplier, cap: 20, location: [spawn, 0, 98, 720, 180, 0] }
   - { zone: emerald_depths, type: attack_speed, cap: 5, location: [spawn, 4, 98, 720, 180, 0] }
@@ -269,14 +284,15 @@ stations:
   - { zone: obsidian_rift, type: gem_boost, cap: 40, location: [spawn, 0, 98, 810, 180, 0] }
   - { zone: obsidian_rift, type: rebirth_boost, cap: 35, location: [spawn, 4, 98, 810, 180, 0] }
   - { zone: obsidian_rift, type: hatch_luck, cap: 8, location: [spawn, 8, 98, 810, 180, 0] }
-  # void_expanse (zone 10) - 7 stations, new: Quick Respawn
+  # void_expanse (zone 10) - 8 stations, new: Quick Respawn
   - { zone: void_expanse, type: coin_boost, cap: 55, location: [spawn, -6, 98, 904, 180, 0] }
   - { zone: void_expanse, type: damage_boost, cap: 55, location: [spawn, -2, 98, 904, 180, 0] }
-  - { zone: void_expanse, type: tap_power, cap: 50, location: [spawn, 2, 98, 904, 180, 0] }
-  - { zone: void_expanse, type: crit_chance, cap: 20, location: [spawn, 6, 98, 904, 180, 0] }
-  - { zone: void_expanse, type: diamond_multiplier, cap: 30, location: [spawn, -4, 98, 908, 180, 0] }
-  - { zone: void_expanse, type: attack_speed, cap: 10, location: [spawn, 0, 98, 908, 180, 0] }
-  - { zone: void_expanse, type: quick_respawn, cap: 6, location: [spawn, 4, 98, 908, 180, 0] }
+  - { zone: void_expanse, type: magnet_range, cap: 15, location: [spawn, 2, 98, 904, 180, 0] }
+  - { zone: void_expanse, type: tap_power, cap: 50, location: [spawn, 6, 98, 904, 180, 0] }
+  - { zone: void_expanse, type: crit_chance, cap: 20, location: [spawn, -6, 98, 908, 180, 0] }
+  - { zone: void_expanse, type: diamond_multiplier, cap: 30, location: [spawn, -2, 98, 908, 180, 0] }
+  - { zone: void_expanse, type: attack_speed, cap: 10, location: [spawn, 2, 98, 908, 180, 0] }
+  - { zone: void_expanse, type: quick_respawn, cap: 6, location: [spawn, 6, 98, 908, 180, 0] }
   # netherite_wastes (zone 11) - 6 stations, new: Double Hit
   - { zone: netherite_wastes, type: coin_boost, cap: 60, location: [spawn, -4, 98, 998, 180, 0] }
   - { zone: netherite_wastes, type: damage_boost, cap: 60, location: [spawn, 0, 98, 998, 180, 0] }

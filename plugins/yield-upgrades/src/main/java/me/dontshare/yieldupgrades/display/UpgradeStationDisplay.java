@@ -310,6 +310,7 @@ public final class UpgradeStationDisplay {
             case TRIPLE_HIT -> "+" + percent(value) + " Triple Hit Chance";
             case HATCH_SPEED -> "+" + percent(value) + " Hatch Speed";
             case RARE_FINDS -> "+" + percent(value) + " Giant & Chest Spawns";
+            case MAGNET_RANGE -> "+" + Formatting.format(value) + " Blocks Magnet Range";
         };
     }
 

@@ -180,6 +180,10 @@ public final class YieldZones extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (cubeService != null) {
+            // Loot still on the floor is paid, not lost.
+            cubeService.getLootDrops().shutdown();
+        }
         if (worldBossService != null) {
             worldBossService.shutdown();
         }

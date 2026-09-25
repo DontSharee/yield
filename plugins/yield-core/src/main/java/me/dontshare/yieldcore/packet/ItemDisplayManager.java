@@ -89,6 +89,15 @@ public final class ItemDisplayManager {
         sendMetadata(viewer, entityId, new EntityData<>(22, EntityDataTypes.INT, rgb));
     }
 
+    /**
+     * Always turns the item to face the viewer - {@code CENTER} for a flat
+     * sprite like a coin, so it reads as a coin from every side rather than
+     * a sliver edge-on. Display billboard is metadata index 15.
+     */
+    public static void setBillboardCenter(Player viewer, int entityId) {
+        sendMetadata(viewer, entityId, new EntityData<>(15, EntityDataTypes.BYTE, (byte) 3));
+    }
+
     public static void setScale(Player viewer, int entityId, float x, float y, float z) {
         sendMetadata(viewer, entityId, new EntityData<>(12, EntityDataTypes.VECTOR3F, new Vector3f(x, y, z)));
     }
