@@ -258,6 +258,7 @@ zones:
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+      - { id: rainbow, chance: 0.002, multiplier: 10.0, color: light_purple }
     teleport: [0, 99, 51, 0, 0]
 
   frostpeak:
@@ -283,6 +284,7 @@ zones:
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+      - { id: rainbow, chance: 0.002, multiplier: 10.0, color: light_purple }
     # Coins are the real gate; the diamond side-cost is small enough to
     # come along for free while grinding, and exists so diamonds have a
     # reason to be banked rather than spent the moment they land.
@@ -320,6 +322,7 @@ zones:
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+      - { id: rainbow, chance: 0.002, multiplier: 10.0, color: light_purple }
     unlock:
       coins: 1000000
       diamonds: 70
@@ -350,6 +353,7 @@ zones:
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+      - { id: rainbow, chance: 0.002, multiplier: 10.0, color: light_purple }
     unlock:
       coins: 4000000
       diamonds: 150
@@ -380,6 +384,7 @@ zones:
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+      - { id: rainbow, chance: 0.002, multiplier: 10.0, color: light_purple }
     unlock:
       coins: 12500000
       diamonds: 350
@@ -410,6 +415,7 @@ zones:
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+      - { id: rainbow, chance: 0.002, multiplier: 10.0, color: light_purple }
     unlock:
       coins: 60000000
       diamonds: 800
@@ -440,6 +446,7 @@ zones:
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+      - { id: rainbow, chance: 0.002, multiplier: 10.0, color: light_purple }
     unlock:
       coins: 300000000
       diamonds: 2000
@@ -470,6 +477,7 @@ zones:
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+      - { id: rainbow, chance: 0.002, multiplier: 10.0, color: light_purple }
     unlock:
       coins: 1250000000
       diamonds: 4500
@@ -500,6 +508,7 @@ zones:
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+      - { id: rainbow, chance: 0.002, multiplier: 10.0, color: light_purple }
     unlock:
       coins: 6000000000
       diamonds: 11000
@@ -530,6 +539,7 @@ zones:
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+      - { id: rainbow, chance: 0.002, multiplier: 10.0, color: light_purple }
     unlock:
       coins: 30000000000
       diamonds: 27000
@@ -560,6 +570,7 @@ zones:
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+      - { id: rainbow, chance: 0.002, multiplier: 10.0, color: light_purple }
     unlock:
       coins: 120000000000
       diamonds: 60000
@@ -590,6 +601,7 @@ zones:
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+      - { id: rainbow, chance: 0.002, multiplier: 10.0, color: light_purple }
     unlock:
       coins: 500000000000
       diamonds: 150000
@@ -620,6 +632,7 @@ zones:
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+      - { id: rainbow, chance: 0.002, multiplier: 10.0, color: light_purple }
     unlock:
       coins: 2500000000000
       diamonds: 350000
@@ -650,6 +663,7 @@ zones:
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+      - { id: rainbow, chance: 0.002, multiplier: 10.0, color: light_purple }
     unlock:
       coins: 10000000000000
       diamonds: 850000
@@ -680,6 +694,7 @@ zones:
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+      - { id: rainbow, chance: 0.002, multiplier: 10.0, color: light_purple }
     unlock:
       coins: 40000000000000
       diamonds: 2000000
@@ -710,6 +725,7 @@ zones:
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+      - { id: rainbow, chance: 0.002, multiplier: 10.0, color: light_purple }
     unlock:
       coins: 150000000000000
       diamonds: 4500000
@@ -740,6 +756,7 @@ zones:
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+      - { id: rainbow, chance: 0.002, multiplier: 10.0, color: light_purple }
     unlock:
       coins: 600000000000000
       diamonds: 11000000
@@ -770,6 +787,7 @@ zones:
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+      - { id: rainbow, chance: 0.002, multiplier: 10.0, color: light_purple }
     unlock:
       coins: 2500000000000000
       diamonds: 26000000
@@ -800,6 +818,7 @@ zones:
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+      - { id: rainbow, chance: 0.002, multiplier: 10.0, color: light_purple }
     unlock:
       coins: 10000000000000000
       diamonds: 60000000
@@ -830,6 +849,7 @@ zones:
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+      - { id: rainbow, chance: 0.002, multiplier: 10.0, color: light_purple }
     unlock:
       coins: 40000000000000000
       diamonds: 150000000
@@ -879,4 +899,5 @@ zones:
     cube-bonuses:
       - { id: golden, chance: 0.05, multiplier: 2.0, color: gold }
       - { id: diamond, chance: 0.01, multiplier: 3.0, color: aqua }
+      - { id: rainbow, chance: 0.002, multiplier: 10.0, color: light_purple }
     teleport: [0, 99, 1932, 0, 0]

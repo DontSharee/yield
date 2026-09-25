@@ -159,6 +159,12 @@ zone** so the zone's average diamond income is exactly what it was (Meadow:
 3.4% / 5.4% / 8.4% instead of a flat 5%); enchant books and candy get the
 factors outright, since they aren't what pacing runs on.
 
+**Rainbow cubes** are the rare bonus: 0.2% of spawns, ×10 payout, an outline
+that cycles through every colour, a landing call-out and the big rare-drop
+moment on the break. Worth about +1.8% income on average. Lucky Cubes boosts
+bonuses below 1% by the same *ratio* it gives golden's 5% (max: ×2, so 0.4%)
+rather than flat - a flat +5% would make rainbows 1 in 20 and add ~45%.
+
 The coin ladder itself climbs ~2.6× per zone and is made of round numbers so
 the jump is readable at a glance:
 

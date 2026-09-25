@@ -361,6 +361,7 @@ public final class OreCubeService implements Listener {
         // Its own, much faster loop - the main tick()'s 1-second cadence
         // would make "what am I looking at" feel laggy and behind.
         Bukkit.getScheduler().runTaskTimer(plugin, this::tickHighlights, HIGHLIGHT_TICK_INTERVAL, HIGHLIGHT_TICK_INTERVAL);
+        Bukkit.getScheduler().runTaskTimer(plugin, this::tickRainbows, 3L, 3L);
         // One sweeper for every short visual follow-up - see deferredByTick.
         Bukkit.getScheduler().runTaskTimer(plugin, this::sweepDeferred, 1L, 1L);
     }
@@ -819,7 +820,13 @@ public final class OreCubeService implements Listener {
         double boost = cubeBonusChanceBoostSum(profile);
         CubeBonus best = null;
         for (CubeBonus bonus : zone.cubeBonuses()) {
-            double chance = Math.min(1.0, bonus.chance() + boost);
+            // Lucky Cubes' boost is flat for the everyday bonuses, but a very
+            // rare one (the x10 rainbow at 0.2%) scales by the same ratio the
+            // boost gives golden's 5% instead - a flat +5% would make it a
+            // 1-in-20 cube and hand out ~45% more income.
+            double chance = Math.min(1.0, bonus.chance() >= 0.01
+                    ? bonus.chance() + boost
+                    : bonus.chance() * (1.0 + boost / 0.05));
             if (ThreadLocalRandom.current().nextDouble() < chance) {
                 if (best == null || bonus.multiplier() > best.multiplier()) {
                     best = bonus;
@@ -862,6 +869,38 @@ public final class OreCubeService implements Listener {
         if (tier.giant()) {
             spawnCollision(owner, cube);
             announceGiantLanding(owner, cube);
+        }
+        if (isRainbow(cube)) {
+            owner.sendActionBar(Text.parse("<rainbow><bold>✦ A RAINBOW CUBE LANDED! ✦</bold></rainbow>"));
+            owner.playSound(cube.center(), Sound.BLOCK_AMETHYST_BLOCK_RESONATE, 1f, 0.8f);
+            owner.playSound(cube.center(), Sound.BLOCK_NOTE_BLOCK_CHIME, 0.8f, 1.2f);
+            owner.spawnParticle(Particle.END_ROD, cube.center(), 30, 0.4, 0.6, 0.4, 0.05);
+        }
+    }
+
+    /** The bonus id for the rare ×10 cube whose outline cycles through every colour - see zones.yml's cube-bonuses. */
+    private static final String RAINBOW_ID = "rainbow";
+
+    private static boolean isRainbow(OreCube cube) {
+        return cube.bonus() != null && RAINBOW_ID.equals(cube.bonus().id());
+    }
+
+    /**
+     * Cycles every live rainbow cube's outline through the hue wheel. The
+     * team colour its bonus glow starts with only offers sixteen fixed
+     * colours; a display entity's own glow-colour override takes any RGB,
+     * so the owner's client is simply told a new one a few times a second.
+     * Only rainbow cubes are touched, and they're rare.
+     */
+    private void tickRainbows() {
+        float hue = (Bukkit.getCurrentTick() % 60) / 60f;
+        int rgb = java.awt.Color.HSBtoRGB(hue, 0.85f, 1f) & 0xFFFFFF;
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            for (OreCube cube : liveCubes(player)) {
+                if (isRainbow(cube)) {
+                    me.dontshare.yieldcore.packet.ItemDisplayManager.setGlowColor(player, cube.blockEntityId(), rgb);
+                }
+            }
         }
     }
 
@@ -1524,6 +1563,9 @@ public final class OreCubeService implements Listener {
             grantTreasurePacks(player, profile, tier);
             rareMoment(player, cube, "TREASURE", "#FFD700", 2, null);
         }
+        if (isRainbow(cube)) {
+            rareMoment(player, cube, "RAINBOW x" + (long) bonus.multiplier(), "#FF55FF", 2, null);
+        }
         profile.setLifetimeCubeKills(profile.getLifetimeCubeKills() + 1);
         profile.setLifetimeCoinsEarned(profile.getLifetimeCoinsEarned().add(BigInteger.valueOf(coins)));
         packs.getPlayerStore().save(player.getUniqueId());
@@ -1601,6 +1643,8 @@ public final class OreCubeService implements Listener {
         int coinPieces;
         if (!kill) {
             coinPieces = 1 + rank;
+        } else if (isRainbow(cube)) {
+            coinPieces = 30;
         } else if (tier.treasure() || tier.giant()) {
             coinPieces = 16;
         } else {
@@ -1911,6 +1955,10 @@ public final class OreCubeService implements Listener {
 
     /** "GOLDEN x2" (small-caps, the bonus's own glow color) - shown above the HP bar on the floating nametag, and inline before it on the boss bar. */
     private Component bonusLabel(OreCube cube) {
+        if (isRainbow(cube)) {
+            return Text.parse("<rainbow><bold>" + Formatting.fancyFont("rainbow") + " x"
+                    + (long) cube.bonus().multiplier() + "</bold></rainbow>");
+        }
         String colorName = cube.bonus().color().toString();
         double multiplier = cube.bonus().multiplier();
         String multText = multiplier == Math.rint(multiplier) ? String.valueOf((long) multiplier) : String.valueOf(multiplier);
