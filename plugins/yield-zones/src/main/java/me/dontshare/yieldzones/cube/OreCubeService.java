@@ -1635,9 +1635,7 @@ public final class OreCubeService implements Listener {
         if (cube.bonus() != null && !GIANT_GLOW_ID.equals(cube.bonus().id())) {
             title = bonusLabel(cube).append(Component.text(" ")).append(title);
         }
-        if (cube.tier().label() != null) {
-            title = tierLabel(cube.tier()).append(Component.text(" ")).append(title);
-        }
+        title = nameLabel(cube.tier()).append(Component.text(" ")).append(title);
         BossBar bar = bossBarByPlayer.get(player.getUniqueId());
         if (bar == null) {
             bar = BossBar.bossBar(title, progress, BossBar.Color.YELLOW, BossBar.Overlay.PROGRESS);
@@ -1663,13 +1661,40 @@ public final class OreCubeService implements Listener {
         if (cube.bonus() != null && !GIANT_GLOW_ID.equals(cube.bonus().id())) {
             text = bonusLabel(cube).append(Component.newline()).append(text);
         }
-        // The tier's own name sits on top: "BIG SAFE" above "GOLDEN x2"
-        // above the bar. A giant's cosmetic glow has no line of its own -
-        // the name already says what it is.
-        if (cube.tier().label() != null) {
-            text = tierLabel(cube.tier()).append(Component.newline()).append(text);
+        // The cube's name sits on top: "BIG SAFE" (or plain "Stone") above
+        // "GOLDEN x2" above the bar. A giant's cosmetic glow has no line of
+        // its own - the name already says what it is.
+        return nameLabel(cube.tier()).append(Component.newline()).append(text);
+    }
+
+    private static final Map<CubeTier, Component> BLOCK_NAMES = new ConcurrentHashMap<>();
+
+    /**
+     * What the cube is called: its tier's own label if it has one (a big
+     * safe, a boss block, a treasure chest), otherwise the block's name -
+     * white for a zone's common cube, green for the uncommon one, aqua for
+     * the rare one, so the rare cube reads as rare before you hit it.
+     */
+    private static Component nameLabel(CubeTier tier) {
+        if (tier.label() != null) {
+            return tierLabel(tier);
         }
-        return text;
+        return BLOCK_NAMES.computeIfAbsent(tier, t -> {
+            String color = t.weight() >= 50 ? "&f" : t.weight() >= 10 ? "&a" : "&b";
+            return Text.parse(color + "&l" + blockName(t.material()));
+        });
+    }
+
+    /** "COPPER_BLOCK" -> "Copper Block". */
+    private static String blockName(Material material) {
+        StringBuilder name = new StringBuilder();
+        for (String word : material.name().split("_")) {
+            if (!name.isEmpty()) {
+                name.append(' ');
+            }
+            name.append(word.charAt(0)).append(word.substring(1).toLowerCase(java.util.Locale.ROOT));
+        }
+        return name.toString();
     }
 
     /**
