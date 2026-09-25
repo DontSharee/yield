@@ -1566,9 +1566,14 @@ public final class OreCubeService implements Listener {
         // hundred ms away at most) re-derives the correct visual state from
         // liveCubes()/currentTarget() either way.
 
-        scheduledByPlayer.computeIfAbsent(player.getUniqueId(), k -> new AtomicInteger()).incrementAndGet();
+        // The counter itself is captured, not looked up again when the
+        // respawn fires: if they quit in between, onQuit has dropped it, and
+        // a fresh lookup would re-add a -1 counter for a player who's gone -
+        // an entry that never went away, and a wrong count if they rejoined.
+        AtomicInteger scheduled = scheduledByPlayer.computeIfAbsent(player.getUniqueId(), k -> new AtomicInteger());
+        scheduled.incrementAndGet();
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            scheduledByPlayer.computeIfAbsent(player.getUniqueId(), k -> new AtomicInteger()).decrementAndGet();
+            scheduled.decrementAndGet();
             if (player.isOnline() && zone.equals(currentZone.get(player.getUniqueId()))) {
                 spawnCubeFor(player, zone);
             }

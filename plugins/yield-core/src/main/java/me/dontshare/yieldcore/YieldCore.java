@@ -83,6 +83,7 @@ public final class YieldCore extends JavaPlugin {
     public void onEnable() {
         PacketEvents.getAPI().init();
         me.dontshare.yieldcore.perf.PerfTracker.start(this);
+        me.dontshare.yieldcore.diagnostics.Diagnostics.start(this);
         me.dontshare.yieldcore.packet.PacketEntityManager.install(this);
         EntityClickRegistry.install(this);
         FakeBlockClickRegistry.install(this);
@@ -206,6 +207,7 @@ public final class YieldCore extends JavaPlugin {
         if (schematicService != null) {
             schematicService.shutdown();
         }
+        me.dontshare.yieldcore.diagnostics.Diagnostics.stop();
         PacketEvents.getAPI().terminate();
     }
 

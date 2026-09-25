@@ -3,6 +3,7 @@ package me.dontshare.yieldanalytics.webhook;
 import com.google.gson.Gson;
 import me.dontshare.yieldanalytics.AnalyticsConfig;
 import me.dontshare.yieldanalytics.AnalyticsConfig.WebhookTarget;
+import me.dontshare.yieldcore.diagnostics.Diagnostics;
 import me.dontshare.yieldcore.status.ServerHealth;
 
 import java.net.URI;
@@ -13,7 +14,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -156,6 +159,37 @@ public final class WebhookService {
                 "Online", String.valueOf(online),
                 "Memory", health.heapUsedMb() + " / " + health.heapMaxMb() + " MB",
                 "DB queue", String.valueOf(health.dbQueued())), false);
+    }
+
+    /** Findings that were there last time - an alert goes out when one first appears. */
+    private Set<String> activeFindings = Set.of();
+
+    /**
+     * Main thread, every few seconds: posts each new warning or critical
+     * finding from the server's self-checks once, then again only if it
+     * clears and comes back after the cooldown.
+     */
+    public void healthFindings(List<Diagnostics.Finding> findings) {
+        Set<String> now = new HashSet<>();
+        for (Diagnostics.Finding finding : findings) {
+            if (finding.severity() == Diagnostics.Severity.INFO) {
+                continue;
+            }
+            now.add(finding.key());
+            if (activeFindings.contains(finding.key())) {
+                continue;
+            }
+            long at = System.currentTimeMillis();
+            Long last = lastAlertAt.get("health:" + finding.key());
+            if (last != null && at - last < config.alertCooldownMinutes() * 60_000L) {
+                continue;
+            }
+            lastAlertAt.put("health:" + finding.key(), at);
+            boolean critical = finding.severity() == Diagnostics.Severity.CRITICAL;
+            post("alert", (critical ? "Critical: " : "Warning: ") + finding.title(), finding.detail(),
+                    critical ? DISCORD_RED : DISCORD_GOLD, Map.of(), false);
+        }
+        activeFindings = now;
     }
 
     /** The periodic recap: what happened since the last one. */

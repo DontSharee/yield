@@ -40,7 +40,9 @@ webhooks:
     cooldown-minutes: 15
   # Each target: a URL, a format (discord = Discord embeds, json = the raw
   # event), and which events it wants:
-  #   summary - periodic recap        alert - lag (TPS/MSPT) past a threshold
+  #   summary - periodic recap        alert - lag (TPS/MSPT) past a threshold, plus
+  #                                   the server's self-checks: lag spikes, memory
+  #                                   leaks, failed saves (/yield status health)
   #   peak    - new all-time peak     error - SEVERE errors in the log
   #   server  - started / stopping    player - a brand-new player joined
   targets:

@@ -16,6 +16,7 @@ const PAGES = {
   economy: { title: "Economy & activity", refresh: 60, render: renderEconomy },
   pets: { title: "Pets", refresh: 60, render: renderPets },
   performance: { title: "Performance", refresh: 10, render: renderPerformance },
+  health: { title: "Server health", refresh: 10, render: renderHealth },
   lookup: { title: "Player lookup", refresh: 0, render: renderLookup },
 };
 
@@ -334,7 +335,14 @@ function histogramCard(stat, extra) {
 // ------------------------------------------------------------------ pages
 
 async function renderOverview(root) {
-  const data = await api("overview");
+  const [data, checks] = await Promise.all([api("overview"), api("diagnostics").catch(() => null)]);
+  const problems = ((checks && checks.findings) || []).filter((f) => f.severity !== "info");
+  if (problems.length) {
+    const critical = problems.some((f) => f.severity === "critical");
+    root.append(h("a", { class: "banner " + (critical ? "critical" : "warn"), href: "#health" },
+      h("strong", {}, `${problems.length} health ${problems.length === 1 ? "warning" : "warnings"}: `),
+      problems.slice(0, 2).map((f) => f.title).join(" · "), h("span", { class: "banner-more" }, "View →")));
+  }
   const health = data.health || {};
   const today = data.today || {};
   const players = data.players || {};
@@ -683,6 +691,121 @@ async function renderPerformance(root) {
   root.append(h("div", { class: "grid cols-2" },
     card("Plugin packets by system", packetTable(data.packetsBySystem || [])),
     card("Plugin packets by type", packetTable(data.packetsByType || []))));
+}
+
+// ------------------------------------------------------------------ health
+
+function findingsCard(findings) {
+  if (!findings.length) {
+    return card("Health checks", h("div", { class: "all-good" }, "✔ No problems found",
+      h("span", { class: "muted small" }, " - lag spikes, memory, leaks and saves all look normal")));
+  }
+  return card("Health checks", h("div", { class: "findings" }, findings.map((f) =>
+    h("div", { class: "finding " + f.severity },
+      h("span", { class: "sev" }, f.severity === "critical" ? "Critical" : f.severity === "warn" ? "Warning" : "Note"),
+      h("div", {}, h("div", { class: "finding-title" }, f.title), h("div", { class: "muted small" }, f.detail))))));
+}
+
+function spikeRow(spike) {
+  const cls = spike.ms >= 1000 ? "bad" : spike.ms >= 250 ? "warn" : "";
+  const body = [];
+  if (spike.culprits.length) {
+    body.push(h("div", { class: "spike-section" }, h("h4", {}, `Running during the slow part (${spike.samples} samples)`),
+      spike.culprits.map((c) => h("div", { class: "culprit" },
+        h("span", { class: "share" }, pct(c.share)), h("span", { class: "mono" }, c.where),
+        h("span", { class: "muted small" }, ` [${c.plugin}] in ${c.inside}`)))));
+  }
+  if (spike.systems.length) {
+    body.push(h("div", { class: "spike-section" }, h("h4", {}, "Timed systems in this tick"),
+      spike.systems.map((s) => h("div", { class: "culprit" }, h("span", { class: "share" }, s.ms.toFixed(1) + "ms"), h("span", { class: "mono" }, s.system)))));
+  }
+  if (spike.gcMs > 0) body.push(h("div", { class: "spike-section muted small" }, `Garbage collection during this tick: ${spike.gcMs.toFixed(0)} ms`));
+  if (spike.stack.length) body.push(h("div", { class: "spike-section" }, h("h4", {}, "Stack"), h("pre", { class: "stack" }, spike.stack.join("\n"))));
+  if (!body.length) body.push(h("div", { class: "muted small" }, "The slow part ended before sampling started, and no timed system stood out."));
+  return h("details", { class: "spike" },
+    h("summary", {},
+      h("span", { class: "muted small mono" }, new Date(spike.at).toLocaleTimeString()),
+      h("span", { class: "spike-ms " + cls }, spike.ms.toFixed(0) + " ms"),
+      h("span", { class: "spike-cause" }, spike.cause),
+      h("span", { class: "muted small" }, `${spike.online} online`)),
+    ...body);
+}
+
+async function renderHealth(root) {
+  const data = await api("diagnostics");
+  if (!data.t) {
+    root.append(card(null, empty("The first health check runs a few seconds after the server starts.")));
+    return;
+  }
+  const spikes = data.spikes || [];
+  const recent = spikes.filter((s) => s.at >= Date.now() - 10 * 60000);
+  const worst = recent.reduce((m, s) => Math.max(m, s.ms), 0);
+  const mem = data.memory || {};
+  const leaks = data.leaks || {};
+  const saves = data.saves || {};
+  root.append(findingsCard(data.findings || []));
+  root.append(h("div", { class: "grid kpis" },
+    kpi("Lag spikes, last 10 min", fmt(recent.length), `ticks over ${data.spikeThresholdMs} ms · ${fmt(data.spikesTotal)} since start`, recent.length >= 10 ? "warn" : "good"),
+    kpi("Worst tick, last 10 min", worst ? worst.toFixed(0) + " ms" : "–", "a healthy tick is under 50 ms", worst >= 1000 ? "bad" : worst >= 250 ? "warn" : "good"),
+    kpi("Memory kept", mem.liveMb >= 0 ? fmt(mem.liveMb) + " MB" : "–", `still in use after garbage collection, of ${fmt(mem.maxMb)} MB`),
+    kpi("Memory trend", mem.enoughData ? (mem.mbPerHour >= 0 ? "+" : "") + fmt(mem.mbPerHour) + " MB/h" : "measuring",
+      mem.enoughData ? `rising ${mem.risingBuckets} × 15 min in a row` : "needs about 75 minutes of uptime", mem.enoughData && mem.risingBuckets >= 4 && mem.mbPerHour > 0 ? "warn" : ""),
+    kpi("Leak suspects", fmt((leaks.suspects || []).length), leaks.at ? `last scan ${ago(leaks.at)} · ${fmt(leaks.objects)} objects` : "first scan 2 min after start", (leaks.suspects || []).length ? "warn" : "good"),
+    kpi("Failed saves", fmt(saves.failedTotal || 0), "since start", saves.failedTotal ? "bad" : "good")));
+
+  root.append(card(`Lag spikes - ticks over ${data.spikeThresholdMs} ms, newest first`,
+    spikes.length ? h("div", { class: "spikes" }, spikes.slice(0, 40).map(spikeRow))
+      : empty("None yet - every tick has been under " + data.spikeThresholdMs + " ms."),
+    h("p", { class: "muted small" }, "Click a spike for what the server thread was doing. For a full CPU profile, run Paper's built-in /spark profiler in game.")));
+
+  const minutes = (mem.minutes || []).filter((m) => m.liveMb != null || m.collections);
+  root.append(h("div", { class: "grid cols-2" },
+    card("Memory kept after garbage collection (MB)", minutes.length ? chart("", line(minutes.map((m) => hourLabel(m.t)), [
+      { label: "Kept", data: minutes.map((m) => m.liveMb), fill: true, spanGaps: true },
+      { label: "Players", data: minutes.map((m) => m.online), color: "#55e28b", yAxisID: "y1" },
+    ], { scales: { y: { suggestedMax: mem.maxMb }, y1: { position: "right", beginAtZero: true, grid: { display: false }, ticks: { color: "#5b6577" } } } }))
+      : empty("Fills in a minute at a time.")),
+    card("Garbage-collection pauses per minute (ms)", minutes.length ? chart("", bars(minutes.map((m) => hourLabel(m.t)), [
+      { label: "Paused", data: minutes.map((m) => m.pauseMs), color: "#ff9f43" },
+      { label: "Longest", data: minutes.map((m) => m.longestPauseMs), color: "#ff5f5f" },
+    ])) : empty("Fills in a minute at a time."))));
+
+  const suspects = leaks.suspects || [];
+  root.append(card("Leak scan",
+    h("p", { class: "muted small" }, leaks.at
+      ? `Every 5 minutes, every Yield plugin's data is checked for entries left behind by players who quit, players who left but are still referenced, and collections that keep growing. Last scan ${ago(leaks.at)}: ${fmt(leaks.objects)} objects in ${leaks.durationMs} ms${leaks.complete ? "" : " (stopped at the size limit)"}. Growth needs a few scans to show.`
+      : "The first scan runs 2 minutes after the server starts."),
+    suspects.length ? h("div", { class: "findings" }, suspects.map((s) => h("div", { class: "finding warn" },
+      h("span", { class: "sev" }, "Suspect"),
+      h("div", {}, h("div", { class: "finding-title" }, `${s.problem}: `, h("span", { class: "mono" }, s.path), h("span", { class: "muted small" }, ` [${s.plugin}]`)),
+        h("div", { class: "muted small" }, s.detail))))) : h("div", { class: "all-good" }, "✔ No leaks found")));
+
+  const holderTable = (rows, withStale) => {
+    const max = Math.max(1, ...rows.map((r) => r.size));
+    const cols = [
+      { label: "Where", value: (r) => h("div", {}, h("div", { class: "mono path" }, r.path), h("div", { class: "muted small" }, r.plugin)) },
+      { label: "Entries", num: true, value: (r) => barCell(r.size, max, fmt(r.size)) },
+    ];
+    if (withStale) cols.push({ label: "Players who left", num: true, value: (r) => {
+      const n = r.stale + r.leftPlayers;
+      return h("span", { class: n ? "warn-text" : "good-text" }, fmt(n));
+    } });
+    return table(cols, rows);
+  };
+  root.append(h("div", { class: "grid cols-2" },
+    card("Per-player data", holderTable((leaks.perPlayer || []).slice(0, 15), true)),
+    card("Largest collections", holderTable(leaks.largest || [], false))));
+
+  const gauges = Object.entries(leaks.gauges || {}).filter((g) => g[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 15);
+  root.append(h("div", { class: "grid cols-2" },
+    card("Scheduled tasks, entities and chunks", table([
+      { label: "What", value: (g) => h("span", { class: "mono" }, g[0].replace(":", " · ")) },
+      { label: "Count", num: true, value: (g) => fmt(g[1]) }], gauges)),
+    card("Failed saves", table([
+      { label: "When", value: (f) => new Date(f.at).toLocaleString() },
+      { label: "Data", value: (f) => f.store },
+      { label: "Player", value: (f) => h("span", { class: "mono small" }, f.player) },
+      { label: "Why", value: (f) => f.reason }], saves.recent || []))));
 }
 
 async function renderLookup(root) {

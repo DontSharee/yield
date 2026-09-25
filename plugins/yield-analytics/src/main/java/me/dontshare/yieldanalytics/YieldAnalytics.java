@@ -55,6 +55,7 @@ public final class YieldAnalytics extends JavaPlugin {
     private ActivityStore activity;
     private SessionTracker sessions;
     private LiveMonitor live;
+    private me.dontshare.yieldanalytics.collect.HealthView health;
     private StatsJob stats;
     private WebhookService webhooks;
     private WebServer web;
@@ -94,6 +95,7 @@ public final class YieldAnalytics extends JavaPlugin {
             live.loadPeaks();
             return null;
         });
+        health = new me.dontshare.yieldanalytics.collect.HealthView(webhooks);
         stats = new StatsJob(database, activity, packs, zones, tutorial, getLogger(), config.leftAfterDays());
 
         var scheduler = Bukkit.getScheduler();
@@ -101,6 +103,7 @@ public final class YieldAnalytics extends JavaPlugin {
             live.refresh();
             sessions.watchTutorial();
         }), 20L, 40L);
+        scheduler.runTaskTimer(this, PerfTracker.timed("analytics.health", health::refresh), 100L, 200L);
         scheduler.runTaskTimer(this, PerfTracker.timed("analytics.minute", () -> {
             live.minute();
             webhooks.flushNewPlayers();
@@ -110,7 +113,7 @@ public final class YieldAnalytics extends JavaPlugin {
                 config.summaryIntervalMinutes() * 1200L);
 
         if (config.webEnabled()) {
-            web = new WebServer(config, new ApiRoutes(live, stats, activity, packs), getLogger());
+            web = new WebServer(config, new ApiRoutes(live, stats, activity, packs, health), getLogger());
             try {
                 web.start();
                 getLogger().info("Analytics dashboard on port " + config.port() + " - /analytics for the address and token.");

@@ -11,18 +11,23 @@ import io.papermc.paper.command.brigadier.Commands;
 import me.dontshare.yieldcore.command.CommandManager;
 import me.dontshare.yieldcore.command.CommandPermissions;
 import me.dontshare.yieldcore.status.StatusRegistry;
+import me.dontshare.yieldcore.status.SyntheticPlayers;
 import me.dontshare.yieldcore.text.Text;
 import me.dontshare.yieldpacks.YieldPacks;
 import me.dontshare.yieldzones.YieldZones;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * {@code /loadtest} - fills the server with bot players that fight in the
@@ -83,6 +88,26 @@ public final class YieldLoadTest extends JavaPlugin {
         return lines;
     }
 
+    /**
+     * The leak drill: bots held on purpose after they leave, the two ways
+     * plugins usually leak - Player objects and per-player keys - so the
+     * leak scanner can be seen catching them.
+     */
+    private final List<Player> leakedPlayers = new ArrayList<>();
+    private final Set<UUID> leakedIds = new HashSet<>();
+
+    /** A deliberately slow tick, for checking the spike monitor names the culprit. */
+    private static void simulateLag(int ms) {
+        long end = System.nanoTime() + ms * 1_000_000L;
+        double sink = 0;
+        while (System.nanoTime() < end) {
+            sink += Math.sqrt(sink + 1);
+        }
+        if (sink < 0) {
+            Bukkit.getLogger().info("unreachable");
+        }
+    }
+
     private LiteralCommandNode<CommandSourceStack> command() {
         return Commands.literal("loadtest")
                 .requires(CommandPermissions.permission("yieldloadtest.admin"))
@@ -127,6 +152,32 @@ public final class YieldLoadTest extends JavaPlugin {
                                 .then(Commands.argument("zone", StringArgumentType.word())
                                         .then(Commands.argument("steps", StringArgumentType.greedyString())
                                                 .executes(this::auto)))))
+                .then(Commands.literal("lag")
+                        .then(Commands.argument("ms", IntegerArgumentType.integer(10, 20_000))
+                                .executes(ctx -> {
+                                    int ms = IntegerArgumentType.getInteger(ctx, "ms");
+                                    Bukkit.getScheduler().runTask(this, () -> simulateLag(ms));
+                                    reply(ctx.getSource().getSender(), "<gray>Next tick will take " + ms + " ms - check /yield status spikes.</gray>");
+                                    return Command.SINGLE_SUCCESS;
+                                })))
+                .then(Commands.literal("leak")
+                        .executes(ctx -> {
+                            for (Player player : Bukkit.getOnlinePlayers()) {
+                                if (SyntheticPlayers.is(player.getUniqueId())) {
+                                    leakedPlayers.add(player);
+                                    leakedIds.add(player.getUniqueId());
+                                }
+                            }
+                            reply(ctx.getSource().getSender(), "<gray>Now holding " + leakedPlayers.size()
+                                    + " bots after they leave - remove them and watch /yield status leaks.</gray>");
+                            return Command.SINGLE_SUCCESS;
+                        })
+                        .then(Commands.literal("clear").executes(ctx -> {
+                            leakedPlayers.clear();
+                            leakedIds.clear();
+                            reply(ctx.getSource().getSender(), "<gray>Leak test cleared.</gray>");
+                            return Command.SINGLE_SUCCESS;
+                        })))
                 .then(Commands.literal("cleanup")
                         .executes(ctx -> {
                             CommandSender sender = ctx.getSource().getSender();

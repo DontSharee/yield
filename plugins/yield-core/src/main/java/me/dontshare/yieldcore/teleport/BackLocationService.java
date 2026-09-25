@@ -6,6 +6,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
 import java.util.Map;
@@ -42,6 +43,13 @@ public final class BackLocationService implements Listener {
     @EventHandler
     public void onDeath(PlayerDeathEvent event) {
         lastLocation.put(event.getEntity().getUniqueId(), event.getEntity().getLocation());
+    }
+
+    /** Forgotten on quit - otherwise every player who ever teleported stays in memory until restart. */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onQuit(PlayerQuitEvent event) {
+        lastLocation.remove(event.getPlayer().getUniqueId());
+        suppressNextRecord.remove(event.getPlayer().getUniqueId());
     }
 
     /** Null if nothing's recorded for this player yet. */

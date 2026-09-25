@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
  *   activity?hours=48   hourly counters (kills, hatches, joins...) over time
  *   retention           daily actives, newcomers, cohort retention
  *   performance?hours=6 tick time, TPS, memory and traffic over time, plus per-system costs now
+ *   diagnostics         the server's self-checks: lag spikes and their causes, memory trend, leaks, failed saves
  *   players?q=abc       player search by name
  *   player?name=abc     one player's full picture
  * </pre>
@@ -44,8 +45,11 @@ public final class ApiRoutes {
     private final StatsJob stats;
     private final ActivityStore activity;
     private final YieldPacks packs;
+    private final me.dontshare.yieldanalytics.collect.HealthView health;
 
-    public ApiRoutes(LiveMonitor live, StatsJob stats, ActivityStore activity, YieldPacks packs) {
+    public ApiRoutes(LiveMonitor live, StatsJob stats, ActivityStore activity, YieldPacks packs,
+                     me.dontshare.yieldanalytics.collect.HealthView health) {
+        this.health = health;
         this.live = live;
         this.stats = stats;
         this.activity = activity;
@@ -61,6 +65,7 @@ public final class ApiRoutes {
             case "activity" -> activity(intParam(query, "hours", 48, 1, 24 * 90));
             case "retention" -> stats.snapshot().getOrDefault("retention", Map.of());
             case "performance" -> performance(intParam(query, "hours", 6, 1, 24 * 30));
+            case "diagnostics" -> health.snapshot();
             case "players" -> search(query.getOrDefault("q", ""));
             case "player" -> player(query.getOrDefault("name", ""));
             default -> null;

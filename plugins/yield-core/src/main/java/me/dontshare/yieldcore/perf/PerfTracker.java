@@ -40,6 +40,10 @@ public final class PerfTracker {
     private static volatile int ticksThisSecond;
     private static int slot;
     private static boolean started;
+    /** The server thread - only its work is attributed to a tick (see {@link #thisTick}). */
+    private static volatile Thread mainThread;
+    /** Set at the start of every tick by the tick monitor. */
+    private static volatile long tickId;
 
     private PerfTracker() {
     }
@@ -50,6 +54,7 @@ public final class PerfTracker {
             return;
         }
         started = true;
+        mainThread = Thread.currentThread();
         Bukkit.getScheduler().runTaskTimer(plugin, () -> ticksThisSecond++, 1L, 1L);
         Bukkit.getScheduler().runTaskTimer(plugin, PerfTracker::roll, 20L, 20L);
     }
@@ -68,6 +73,28 @@ public final class PerfTracker {
                 CURRENT.set(outer);
             }
         };
+    }
+
+    /** Marks the start of tick {@code id}; per-tick figures from here on belong to it. */
+    public static void beginTick(long id) {
+        tickId = id;
+    }
+
+    /** One system's time within the current tick. */
+    public record TickSection(String system, double ms) {
+    }
+
+    /** Main thread: what each timed system has cost so far this tick, costliest first. */
+    public static List<TickSection> thisTick() {
+        long id = tickId;
+        List<TickSection> result = new ArrayList<>();
+        for (Section section : SECTIONS.values()) {
+            if (section.tickOf == id && section.tickNanos > 0) {
+                result.add(new TickSection(section.name, section.tickNanos / 1e6));
+            }
+        }
+        result.sort(Comparator.comparingDouble(TickSection::ms).reversed());
+        return result;
     }
 
     /** Adds time measured by the caller - for work that isn't one scheduled task (an event handler, a flush). */
@@ -205,10 +232,22 @@ public final class PerfTracker {
             this.name = name;
         }
 
+        /** Main-thread time in tick {@link #tickOf} - only ever touched on the main thread. */
+        long tickOf = -1;
+        long tickNanos;
+
         void record(long elapsed) {
             nanos.add(elapsed);
             runs.increment();
             max.accumulateAndGet(elapsed, Math::max);
+            if (Thread.currentThread() == mainThread) {
+                long id = tickId;
+                if (tickOf != id) {
+                    tickOf = id;
+                    tickNanos = 0;
+                }
+                tickNanos += elapsed;
+            }
         }
 
         void roll(int slot) {

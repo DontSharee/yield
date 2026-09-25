@@ -374,6 +374,7 @@ public final class PlayerDataStore<T extends PlayerRecord> {
             encoded = encode(record);
         } catch (RuntimeException e) {
             logger.log(Level.SEVERE, "Failed to serialize player data for " + playerId, e);
+            me.dontshare.yieldcore.diagnostics.DataHealth.saveFailed(fieldKey, playerId, e);
             return CompletableFuture.failedFuture(e);
         }
 
@@ -426,8 +427,17 @@ public final class PlayerDataStore<T extends PlayerRecord> {
                 // never have landed.
                 lastFieldHashes.remove(playerId);
                 logger.log(Level.SEVERE, "Failed to save player data for " + playerId, error);
+                me.dontshare.yieldcore.diagnostics.DataHealth.saveFailed(fieldKey, playerId, error);
             } else {
-                lastFieldHashes.put(playerId, current);
+                // Only while the player is still loaded: the save made as
+                // they quit usually lands after unload() has cleared their
+                // entry, and putting it back leaked one entry per player
+                // who ever left.
+                synchronized (sessionLock) {
+                    if (cache.containsKey(playerId)) {
+                        lastFieldHashes.put(playerId, current);
+                    }
+                }
             }
         });
         return future;
@@ -471,6 +481,7 @@ public final class PlayerDataStore<T extends PlayerRecord> {
             collection.updateOne(Filters.eq("_id", playerId), Updates.set(fieldKey, encode(record)), new UpdateOptions().upsert(true));
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Failed to save player data for " + playerId + " during shutdown", e);
+            me.dontshare.yieldcore.diagnostics.DataHealth.saveFailed(fieldKey, playerId, e);
         }
     }
 
