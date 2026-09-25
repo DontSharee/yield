@@ -124,10 +124,23 @@ public final class MiningService implements Listener {
         }
     }
 
+    /** Survival reach is 4.5 blocks to the block's edge; this leaves room for lag and the eye-to-centre offset. */
+    private static final double MAX_DIG_REACH = 7.0;
+
     private void onFinishedDigging(Player player, MiningSpot spot) {
         OreDefinition definition = content.get().ores().get(spot.material());
         if (definition == null) {
             // mining.yml no longer configures this material - spot sits inert until it's reconfigured or removed.
+            return;
+        }
+
+        // Every spot is registered for every player, so without this a
+        // modified client could "finish digging" every ore in the world at
+        // once from wherever it stood. Out of reach: put the block back.
+        Location spotCenter = new Location(spot.world(), spot.x() + 0.5, spot.y() + 0.5, spot.z() + 0.5);
+        if (!player.getWorld().equals(spot.world())
+                || player.getEyeLocation().distanceSquared(spotCenter) > MAX_DIG_REACH * MAX_DIG_REACH) {
+            player.sendBlockChange(spotCenter, spot.material().createBlockData());
             return;
         }
 
