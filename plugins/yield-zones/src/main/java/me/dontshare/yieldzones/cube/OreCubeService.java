@@ -367,10 +367,28 @@ public final class OreCubeService implements Listener {
     }
 
     /** White-outlines whichever live cube a player is currently looking at, clearing it the instant they look away - a bonus cube's own persistent colored glow is left alone rather than fought over. */
+    /** Each player's last view (x, y, z, yaw, pitch, which cubes) - an unchanged view needs no new raycast. */
+    private final Map<UUID, double[]> lastHighlightView = new ConcurrentHashMap<>();
+
     private void tickHighlights() {
         for (Player player : Bukkit.getOnlinePlayers()) {
             List<OreCube> live = liveCubes(player);
             if (live.isEmpty()) {
+                continue;
+            }
+            // Runs every other tick for everyone; most of the time the
+            // camera hasn't moved and no cube has come or gone, so the
+            // answer can't have changed either.
+            Location at = player.getLocation();
+            // Which cubes, not just how many: one dying as another lands
+            // leaves the count the same.
+            int cubesKey = 0;
+            for (OreCube cube : live) {
+                cubesKey = cubesKey * 31 + System.identityHashCode(cube);
+            }
+            double[] view = {at.getX(), at.getY(), at.getZ(), at.getYaw(), at.getPitch(), cubesKey};
+            double[] previous = lastHighlightView.put(player.getUniqueId(), view);
+            if (previous != null && java.util.Arrays.equals(previous, view)) {
                 continue;
             }
             OreCube looking = raycastClosest(player, live);
@@ -2129,6 +2147,7 @@ public final class OreCubeService implements Listener {
         pendingSummary.remove(player.getUniqueId());
         lastSummaryAtMillis.remove(player.getUniqueId());
         lastHitSoundAt.remove(player.getUniqueId());
+        lastHighlightView.remove(player.getUniqueId());
     }
 
     private CubeTier rollTier(ZoneDefinition zone, PackPlayerProfile profile) {
