@@ -648,7 +648,37 @@ public final class WorldBossService implements Listener {
         }
         return Text.parse("<#FF5555><bold>" + boss.definition().displayName() + "</bold></#FF5555>\n"
                 + bar + "\n<dark_red>❤</dark_red> <red>" + Formatting.format(boss.hp()) + "</red><gray> / "
-                + Formatting.format(max) + "</gray>");
+                + Formatting.format(max) + "</gray>" + topDamagers(boss));
+    }
+
+    private static final String[] PLACE_COLORS = {"#FFD700", "#D0D0D0", "#CD7F32"};
+
+    /**
+     * The three biggest hitters so far, under the HP line - "#1 Name 12.5K
+     * (43%)". Only rebuilt when the boss redraws (at most once a tick), and
+     * only online contributors are named, so no name lookup ever touches
+     * disk.
+     */
+    private String topDamagers(WorldBoss boss) {
+        long total = boss.totalDamageDealt();
+        if (total <= 0) {
+            return "";
+        }
+        List<Map.Entry<UUID, Long>> top = boss.damageByPlayer().entrySet().stream()
+                .sorted(Map.Entry.<UUID, Long>comparingByValue().reversed())
+                .limit(3)
+                .toList();
+        StringBuilder lines = new StringBuilder("\n");
+        for (int i = 0; i < top.size(); i++) {
+            Player player = Bukkit.getPlayer(top.get(i).getKey());
+            String name = player != null ? player.getName() : "Someone";
+            long dealt = top.get(i).getValue();
+            lines.append("\n<").append(PLACE_COLORS[i]).append("><bold>#").append(i + 1).append("</bold></")
+                    .append(PLACE_COLORS[i]).append("> <white>").append(name).append("</white> <red>")
+                    .append(Formatting.format(dealt)).append("</red> <gray>(")
+                    .append(Math.round(dealt * 100.0 / total)).append("%)</gray>");
+        }
+        return lines.toString();
     }
 
     /** Everyone within {@link #BAR_VIEW_RANGE} sees the boss bar; walking off takes it away. */
