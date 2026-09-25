@@ -120,9 +120,21 @@ public final class LeaderboardService {
         // later through Bukkit's OfflinePlayer instead would mean a lookup
         // that can miss the local usercache and block on Mojang's API - and
         // it was being done on the main thread.
-        List<Document> docs = collection.find()
+        // Sorted and cut to the top in Mongo, on an index (see
+        // ensureIndex) - this used to pull EVERY player's document across
+        // the wire and sort the lot in Java, per leaderboard, per refresh.
+        // Big numbers are stored as digit strings, so those sort with
+        // numericOrdering ("100" above "99"). A little headroom over TOP_N
+        // covers any document whose value doesn't parse.
+        var query = collection.find()
                 .projection(Projections.include("_id", stat.field(), "core.username"))
-                .into(new ArrayList<>());
+                .sort(com.mongodb.client.model.Sorts.descending(stat.field()))
+                .limit(TOP_N * 2);
+        if (stat.type() == me.dontshare.yieldleaderboards.data.StatType.BIGINT_STRING) {
+            query = query.collation(NUMERIC_ORDER);
+        }
+        ensureIndex(collection, stat);
+        List<Document> docs = query.into(new ArrayList<>());
 
         List<Map.Entry<UUID, Comparable<?>>> entries = new ArrayList<>();
         Map<UUID, String> names = new HashMap<>();
@@ -139,6 +151,38 @@ public final class LeaderboardService {
         }
         entries.sort((a, b) -> compareDescending(a.getValue(), b.getValue()));
         return new Ranking(entries.size() > TOP_N ? entries.subList(0, TOP_N) : entries, names);
+    }
+
+    /** Digit strings compared as numbers - what a BIGINT_STRING stat is sorted (and indexed) with. */
+    private static final com.mongodb.client.model.Collation NUMERIC_ORDER = com.mongodb.client.model.Collation.builder()
+            .locale("en").numericOrdering(true).build();
+
+    /** Stat fields already indexed this run - createIndex is idempotent, but there's no need to ask twice. */
+    private final java.util.Set<String> indexedFields = ConcurrentHashMap.newKeySet();
+
+    /**
+     * A descending index on the stat's field, so the sorted, limited query
+     * above reads the top of an index instead of scanning every player. The
+     * string-number stats get the same numeric collation as their query, or
+     * Mongo couldn't use the index for it. Runs on the database thread,
+     * once per field.
+     */
+    private void ensureIndex(MongoCollection<Document> collection, StatDefinition stat) {
+        if (!indexedFields.add(stat.field())) {
+            return;
+        }
+        var options = new com.mongodb.client.model.IndexOptions().background(true);
+        if (stat.type() == me.dontshare.yieldleaderboards.data.StatType.BIGINT_STRING) {
+            options.collation(NUMERIC_ORDER);
+        }
+        try {
+            collection.createIndex(com.mongodb.client.model.Indexes.descending(stat.field()), options);
+        } catch (RuntimeException e) {
+            // A leaderboard still works without its index, just slower -
+            // log it and try again next reload.
+            indexedFields.remove(stat.field());
+            plugin.getLogger().warning("Couldn't index '" + stat.field() + "' for leaderboards: " + e.getMessage());
+        }
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
