@@ -135,6 +135,30 @@ Tier 3 pays **12× for 7× the HP** on purpose. The rare big cube should be
 worth stopping for — that is what makes a golden/diamond roll on one exciting
 instead of a chore.
 
+### How a cube pays out (loot drops)
+
+A cube pays **while it's being fought**, not only when it dies: each fifth of
+its HP knocked off (20/40/60/80%) drops a mid-fight payout worth 35%/4 of its
+coins, and rolls its diamond chance for 35%/4 of its diamonds. The break pays
+whatever is left - the full kill formula minus what the fight already paid -
+so **a cube's total never changes** however it's broken, and a one-shot cube
+simply pays everything on the break. (`CHIP_SHARE` / `CHIPS_PER_CUBE` in
+OreCubeService.)
+
+Everything drops as glowing sunflowers (coins) and diamonds that fly to the
+player inside their magnet range (base 6 blocks, +1 per Magnet station
+level) and are credited on arrival. Nothing is ever lost - a drop left 20s
+flies in anyway, and leaving the zone, logging off or a shutdown pays out
+whatever is still on the floor - so pacing is unchanged; the magnet only
+decides how *soon* money lands. Lifetime totals, quests and the summary
+still count a cube's whole payout at the kill.
+
+Higher tiers spill more pieces (5/8/12 on the break) and lean the rarer
+rolls their way: diamond chance by factors 1 / 1.6 / 2.5, **normalised per
+zone** so the zone's average diamond income is exactly what it was (Meadow:
+3.4% / 5.4% / 8.4% instead of a flat 5%); enchant books and candy get the
+factors outright, since they aren't what pacing runs on.
+
 The coin ladder itself climbs ~2.6× per zone and is made of round numbers so
 the jump is readable at a glance:
 

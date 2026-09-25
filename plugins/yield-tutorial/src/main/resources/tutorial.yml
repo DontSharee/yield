@@ -49,6 +49,7 @@ steps:
     label: "Kill 3 cubes"
     dialogue:
       - "See that falling cube? Left-click it, then send your pet at it - pets don't fight on their own until you tell them to."
+      - "Coins and diamonds spill out while you hit it, and a big burst when it breaks - get close and they fly straight to you."
     completes-on: KILL_CUBE
     goal: 3
     reward-coins: 100000
