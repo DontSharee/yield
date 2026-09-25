@@ -6,6 +6,7 @@ import me.dontshare.yieldpacks.pet.PetInstance;
 import me.dontshare.yieldpacks.player.AttackMode;
 import me.dontshare.yieldpacks.player.AutoTargetMode;
 import me.dontshare.yieldpacks.player.CombatPerks;
+import me.dontshare.yieldpacks.economy.TickMemo;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
 import me.dontshare.yieldzones.boss.WorldBossService;
 import me.dontshare.yieldzones.event.OreCubeKilledEvent;
@@ -119,6 +120,11 @@ public final class PetCombatController implements Listener {
     private final Map<String, Function<PackPlayerProfile, Double>> tripleHitChanceProviders = new ConcurrentHashMap<>();
     /** Additive on top of {@link #BASE_CRIT_CHANCE} - same composable-registry shape as double/triple-hit, a home for a future crit-chance upgrade/shard. */
     private final Map<String, Function<PackPlayerProfile, Double>> critChanceProviders = new ConcurrentHashMap<>();
+    // Every pet hit rolls all three, so each sum is taken at most once per
+    // player per tick however many pets land in it - see TickMemo.
+    private final TickMemo critChanceMemo = new TickMemo(profile -> sumProviders(critChanceProviders, profile));
+    private final TickMemo doubleHitChanceMemo = new TickMemo(profile -> sumProviders(doubleHitChanceProviders, profile));
+    private final TickMemo tripleHitChanceMemo = new TickMemo(profile -> sumProviders(tripleHitChanceProviders, profile));
 
     /** Every hit has SOME chance to crit out of the box - this is a baseline "always a little exciting" rate, not something that requires an upgrade to ever see at all. */
     private static final double BASE_CRIT_CHANCE = 0.10;
@@ -159,17 +165,17 @@ public final class PetCombatController implements Listener {
      */
     private void applyDamage(Player player, PackPlayerProfile profile, OreCube target, long amount, UUID petId) {
         ThreadLocalRandom random = ThreadLocalRandom.current();
-        double critChance = BASE_CRIT_CHANCE + sumProviders(critChanceProviders, profile);
+        double critChance = BASE_CRIT_CHANCE + critChanceMemo.get(profile);
         boolean crit = random.nextDouble() < critChance;
         long finalAmount = crit ? Math.round(amount * CRIT_MULTIPLIER) : amount;
         if (crit) {
             cubeService.playCritFlourish(player, target);
         }
         cubeService.queueDamage(player, target, finalAmount, petId, crit);
-        if (random.nextDouble() < sumProviders(doubleHitChanceProviders, profile)) {
+        if (random.nextDouble() < doubleHitChanceMemo.get(profile)) {
             cubeService.queueDamage(player, target, finalAmount, petId, crit);
         }
-        if (random.nextDouble() < sumProviders(tripleHitChanceProviders, profile)) {
+        if (random.nextDouble() < tripleHitChanceMemo.get(profile)) {
             cubeService.queueDamage(player, target, finalAmount, petId, crit);
         }
     }
@@ -386,6 +392,9 @@ public final class PetCombatController implements Listener {
         sharedTargetByPlayer.remove(id);
         singleTargetsByPet.remove(id);
         cooldownsByPet.remove(id);
+        critChanceMemo.forget(id);
+        doubleHitChanceMemo.forget(id);
+        tripleHitChanceMemo.forget(id);
     }
 
     /** Immediately recomputes this player's targeting/formation state the instant one of their cubes dies, instead of waiting for the next scheduled tick - see {@link #tickPlayer}. */
