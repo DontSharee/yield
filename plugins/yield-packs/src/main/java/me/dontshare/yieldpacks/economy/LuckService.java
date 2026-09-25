@@ -30,6 +30,21 @@ public final class LuckService {
         this.packRegistry = packRegistry;
     }
 
+    private final TickMemo luckMemo = new TickMemo(this::totalLuckMultiplier);
+
+    /**
+     * {@link #totalLuckMultiplier}, recomputed at most once a tick. The live
+     * one walks every pack's whole pool checking collection, then every
+     * luck provider - fine for a menu, not for every cube kill.
+     */
+    public double totalLuckMultiplierCached(PackPlayerProfile profile) {
+        return luckMemo.get(profile);
+    }
+
+    public void forgetCached(java.util.UUID playerId) {
+        luckMemo.forget(playerId);
+    }
+
     public double totalLuckMultiplier(PackPlayerProfile profile) {
         long completed = packRegistry.get().all().stream()
                 .filter(pack -> isFullyCollected(profile, pack))

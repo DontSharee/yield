@@ -317,8 +317,8 @@ public final class WorldBossService implements Listener {
             if (pet == null) {
                 continue;
             }
-            cooldowns.put(petId, currentTick + Math.round(ATTACK_INTERVAL_TICKS / packs.attackSpeedMultiplier(profile)));
-            double damage = packs.getEquipmentService().effectiveDamage(profile, pet) * packs.damageMultiplier(profile);
+            cooldowns.put(petId, currentTick + Math.round(ATTACK_INTERVAL_TICKS / packs.attackSpeedMultiplierCached(profile)));
+            double damage = packs.getEquipmentService().effectiveDamage(profile, pet) * packs.damageMultiplierCached(profile);
             queueDamage(player, boss, Math.round(damage), petId);
             packs.getPetDisplayService().playAttackLunge(player, slot);
         }

@@ -539,8 +539,8 @@ public final class PetCombatController implements Listener {
             if (pet == null) {
                 continue;
             }
-            cooldowns.put(petId, currentTick + Math.round(ATTACK_INTERVAL_TICKS / packs.attackSpeedMultiplier(profile)));
-            double damage = packs.getEquipmentService().effectiveDamage(profile, pet) * packs.damageMultiplier(profile);
+            cooldowns.put(petId, currentTick + Math.round(ATTACK_INTERVAL_TICKS / packs.attackSpeedMultiplierCached(profile)));
+            double damage = packs.getEquipmentService().effectiveDamage(profile, pet) * packs.damageMultiplierCached(profile);
             applyDamage(player, profile, finalTarget, Math.round(damage), petId);
             packs.getPetDisplayService().playAttackLunge(player, slot);
         }
@@ -601,8 +601,8 @@ public final class PetCombatController implements Listener {
             if (pet == null) {
                 continue;
             }
-            cooldowns.put(petId, currentTick + Math.round(ATTACK_INTERVAL_TICKS / packs.attackSpeedMultiplier(profile)));
-            double damage = packs.getEquipmentService().effectiveDamage(profile, pet) * packs.damageMultiplier(profile);
+            cooldowns.put(petId, currentTick + Math.round(ATTACK_INTERVAL_TICKS / packs.attackSpeedMultiplierCached(profile)));
+            double damage = packs.getEquipmentService().effectiveDamage(profile, pet) * packs.damageMultiplierCached(profile);
             applyDamage(player, profile, target, Math.round(damage), petId);
             packs.getPetDisplayService().playAttackLunge(player, slot);
         }
@@ -666,8 +666,8 @@ public final class PetCombatController implements Listener {
             if (pet == null) {
                 continue;
             }
-            cooldowns.put(petId, currentTick + Math.round(ATTACK_INTERVAL_TICKS / packs.attackSpeedMultiplier(profile)));
-            double damage = packs.getEquipmentService().effectiveDamage(profile, pet) * packs.damageMultiplier(profile);
+            cooldowns.put(petId, currentTick + Math.round(ATTACK_INTERVAL_TICKS / packs.attackSpeedMultiplierCached(profile)));
+            double damage = packs.getEquipmentService().effectiveDamage(profile, pet) * packs.damageMultiplierCached(profile);
             applyDamage(player, profile, target, Math.round(damage), petId);
             packs.getPetDisplayService().playAttackLunge(player, slot);
         }

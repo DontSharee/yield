@@ -31,7 +31,7 @@ public final class TeamEventListener implements Listener {
     public void onCubeKilled(OreCubeKilledEvent event) {
         Player player = event.getPlayer();
         PackPlayerProfile profile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
-        double luck = packs.getLuckService().totalLuckMultiplier(profile);
+        double luck = packs.getLuckService().totalLuckMultiplierCached(profile);
         double chance = content.get().trophy().dropChance() * luck;
         if (ThreadLocalRandom.current().nextDouble() >= chance) {
             return;

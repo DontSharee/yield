@@ -101,6 +101,14 @@ public final class LootDropService implements Listener {
     private final Map<UUID, Long> lastPickupAt = new ConcurrentHashMap<>();
     private final Map<UUID, Float> pickupPitch = new ConcurrentHashMap<>();
     private final Map<UUID, Integer> lastPickupSoundTick = new ConcurrentHashMap<>();
+    /** Each player's magnet range and the tick it was worked out - every provider walk, once a second rather than every tick. */
+    private record CachedRange(double range, int tick) {
+    }
+    private final Map<UUID, CachedRange> rangeCache = new ConcurrentHashMap<>();
+    private static final int RANGE_REFRESH_TICKS = 20;
+    /** Homing drops move every tick but tell the client every other tick, gliding over this many - half the packets, same curve. */
+    private static final int HOMING_SEND_EVERY = 2;
+    private static final int HOMING_GLIDE_TICKS = 3;
 
     /** What a run of pickups has added, shown as "+12.5K" beside the sidebar's wallet lines - see {@link #decorateWallet}. */
     private static final class RecentGain {
@@ -238,8 +246,7 @@ public final class LootDropService implements Listener {
             if (player == null || drops.isEmpty()) {
                 continue;
             }
-            PackPlayerProfile profile = packs.getPlayerStore().getCached(player.getUniqueId());
-            double range = profile != null ? magnetRange(profile) : BASE_MAGNET_RANGE;
+            double range = cachedRange(player, now);
             Location target = player.getLocation().add(0, 0.9, 0);
             Iterator<Drop> it = drops.iterator();
             while (it.hasNext()) {
@@ -268,6 +275,17 @@ public final class LootDropService implements Listener {
                 }
             }
         }
+    }
+
+    private double cachedRange(Player player, int now) {
+        CachedRange cached = rangeCache.get(player.getUniqueId());
+        if (cached != null && now - cached.tick() < RANGE_REFRESH_TICKS) {
+            return cached.range();
+        }
+        PackPlayerProfile profile = packs.getPlayerStore().getCached(player.getUniqueId());
+        double range = profile != null ? magnetRange(profile) : BASE_MAGNET_RANGE;
+        rangeCache.put(player.getUniqueId(), new CachedRange(range, now));
+        return range;
     }
 
     /** Advances one drop a tick. True once it has reached the player. */
@@ -300,7 +318,7 @@ public final class LootDropService implements Listener {
                     // A little hop up and out first, so the pull reads as
                     // the drop being picked up rather than sliding along.
                     drop.velocity = new Vector(0, 0.28, 0);
-                    ItemDisplayManager.setPositionInterpolation(player, drop.entityId, 2);
+                    ItemDisplayManager.setPositionInterpolation(player, drop.entityId, HOMING_GLIDE_TICKS);
                 }
             }
             case HOMING -> {
@@ -320,7 +338,9 @@ public final class LootDropService implements Listener {
                     return true;
                 }
                 drop.position.add(drop.velocity);
-                PacketEntityManager.teleportEntity(player, drop.entityId, drop.position);
+                if (drop.stateTicks % HOMING_SEND_EVERY == 0) {
+                    PacketEntityManager.teleportEntity(player, drop.entityId, drop.position);
+                }
             }
         }
         return false;
@@ -428,6 +448,7 @@ public final class LootDropService implements Listener {
         pickupPitch.remove(id);
         lastPickupSoundTick.remove(id);
         recentGains.remove(id);
+        rangeCache.remove(id);
     }
 
     public void shutdown() {

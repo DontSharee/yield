@@ -143,7 +143,7 @@ public final class TapService implements Listener {
                 total += packs.getEquipmentService().effectiveDamage(profile, pet);
             }
         }
-        return total * packs.damageMultiplier(profile);
+        return total * packs.damageMultiplierCached(profile);
     }
 
     /** The share of pet power one tap deals right now, before multipliers. */

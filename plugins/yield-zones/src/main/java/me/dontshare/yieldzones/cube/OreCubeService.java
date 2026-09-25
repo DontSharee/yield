@@ -871,6 +871,7 @@ public final class OreCubeService implements Listener {
             announceGiantLanding(owner, cube);
         }
         if (isRainbow(cube)) {
+            rainbowsByPlayer.computeIfAbsent(owner.getUniqueId(), id -> ConcurrentHashMap.newKeySet()).add(cube);
             owner.sendActionBar(Text.parse("<rainbow><bold>✦ A RAINBOW CUBE LANDED! ✦</bold></rainbow>"));
             owner.playSound(cube.center(), Sound.BLOCK_AMETHYST_BLOCK_RESONATE, 1f, 0.8f);
             owner.playSound(cube.center(), Sound.BLOCK_NOTE_BLOCK_CHIME, 0.8f, 1.2f);
@@ -893,16 +894,24 @@ public final class OreCubeService implements Listener {
      * Only rainbow cubes are touched, and they're rare.
      */
     private void tickRainbows() {
+        if (rainbowsByPlayer.isEmpty()) {
+            return;
+        }
         float hue = (Bukkit.getCurrentTick() % 60) / 60f;
         int rgb = java.awt.Color.HSBtoRGB(hue, 0.85f, 1f) & 0xFFFFFF;
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            for (OreCube cube : liveCubes(player)) {
-                if (isRainbow(cube)) {
-                    me.dontshare.yieldcore.packet.ItemDisplayManager.setGlowColor(player, cube.blockEntityId(), rgb);
-                }
+        for (Map.Entry<UUID, Set<OreCube>> entry : rainbowsByPlayer.entrySet()) {
+            Player player = Bukkit.getPlayer(entry.getKey());
+            if (player == null) {
+                continue;
+            }
+            for (OreCube cube : entry.getValue()) {
+                me.dontshare.yieldcore.packet.ItemDisplayManager.setGlowColor(player, cube.blockEntityId(), rgb);
             }
         }
     }
+
+    /** Only the live rainbow cubes, per owner - so the colour cycle never walks every cube on the server. */
+    private final Map<UUID, Set<OreCube>> rainbowsByPlayer = new ConcurrentHashMap<>();
 
     /**
      * Gives a bonus cube - and every big safe and boss block, which carry a
@@ -1040,6 +1049,10 @@ public final class OreCubeService implements Listener {
      * never drift out of sync with each other.
      */
     private void despawnCube(Player player, OreCube cube) {
+        Set<OreCube> rainbows = rainbowsByPlayer.get(player.getUniqueId());
+        if (rainbows != null && rainbows.remove(cube) && rainbows.isEmpty()) {
+            rainbowsByPlayer.remove(player.getUniqueId());
+        }
         // Clears the highlight team entry (if any) before the body entity
         // itself is destroyed below - despawnHighlight's own setGlowing
         // packet becomes a harmless no-op once that happens, but the team
@@ -1530,7 +1543,7 @@ public final class OreCubeService implements Listener {
         double comboMultiplier = comboService.bonusMultiplier(combo.count());
 
         double earningsBonus = leveling.earningsBonusFor(contributors);
-        long coins = Math.round(tier.coinValue() * packs.coinMultiplier(profile) * blockCoinMultiplierSum(profile, tier.material())
+        long coins = Math.round(tier.coinValue() * packs.coinMultiplierCached(profile) * blockCoinMultiplierSum(profile, tier.material())
                 * (1 + earningsBonus) * bonusMultiplier * comboMultiplier) + flatBonusSum(flatCoinBonusProviders, profile, tier.material());
         // What the fight already dropped comes off the top: the kill pays the
         // rest, so a cube pays the same in total however it was broken.
@@ -1541,7 +1554,7 @@ public final class OreCubeService implements Listener {
         // an outright guarantee like the milestone above - a hefty flat chance bump instead,
         // matching its own "bonus chance" framing rather than "always."
         boolean hasGlittering = packs.getPetEnchantService().hasBonusDiamondDropEnchant(contributors);
-        double luck = luckService.totalLuckMultiplier(profile);
+        double luck = luckService.totalLuckMultiplierCached(profile);
         double diamondChance = (0.05 * luck + diamondChanceBoostSum(profile)) * cube.diamondChanceMultiplier()
                 + (hasGlittering ? 0.5 : 0.0);
         // The roll is a flat chance; the TIER decides how big the payout is,
@@ -1550,7 +1563,7 @@ public final class OreCubeService implements Listener {
                 ? tier.diamondValue() : 0L;
         diamondsEarned += flatBonusSum(flatDiamondBonusProviders, profile, tier.material());
         if (diamondsEarned > 0) {
-            diamondsEarned = Math.round(diamondsEarned * packs.diamondMultiplier(profile)
+            diamondsEarned = Math.round(diamondsEarned * packs.diamondMultiplierCached(profile)
                     * (1.0 - CHIP_SHARE * cube.chipsPaid() / CHIPS_PER_CUBE));
             diamondsEarned = Math.max(1L, diamondsEarned);
         }
@@ -1621,14 +1634,14 @@ public final class OreCubeService implements Listener {
         }
         PackPlayerProfile profile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
         double bonusMultiplier = cube.bonus() != null ? cube.bonus().multiplier() : 1.0;
-        double diamondChance = (0.05 * luckService.totalLuckMultiplier(profile) + diamondChanceBoostSum(profile))
+        double diamondChance = (0.05 * luckService.totalLuckMultiplierCached(profile) + diamondChanceBoostSum(profile))
                 * cube.diamondChanceMultiplier();
         double perChip = CHIP_SHARE / CHIPS_PER_CUBE;
         while (cube.chipsPaid() < due) {
-            long coins = Math.round(tier.coinValue() * packs.coinMultiplier(profile)
+            long coins = Math.round(tier.coinValue() * packs.coinMultiplierCached(profile)
                     * blockCoinMultiplierSum(profile, tier.material()) * bonusMultiplier * perChip);
             long diamonds = ThreadLocalRandom.current().nextDouble() < diamondChance
-                    ? Math.max(1L, Math.round(tier.diamondValue() * packs.diamondMultiplier(profile) * perChip)) : 0L;
+                    ? Math.max(1L, Math.round(tier.diamondValue() * packs.diamondMultiplierCached(profile) * perChip)) : 0L;
             cube.recordChip(coins, diamonds);
             dropLoot(player, cube, coins, diamonds, false);
         }
@@ -1817,12 +1830,39 @@ public final class OreCubeService implements Listener {
      * A giant takes the tier of the ordinary cube it's a giant version of;
      * treasure sits outside the ladder.
      */
-    private void rankCube(ZoneDefinition zone, OreCube cube) {
-        CubeTier tier = cube.tier();
+    /** A zone's ordinary tiers by HP and its diamond normaliser - worked out once per zone, not per landing. */
+    private record ZoneLadder(ZoneDefinition zone, List<CubeTier> ladder, double norm) {
+    }
+    private final Map<String, ZoneLadder> laddersByZoneId = new ConcurrentHashMap<>();
+
+    private ZoneLadder ladderFor(ZoneDefinition zone) {
+        ZoneLadder cached = laddersByZoneId.get(zone.id());
+        // Identity, not equals: a reload builds new ZoneDefinitions, and
+        // that's exactly when this must be worked out again.
+        if (cached != null && cached.zone() == zone) {
+            return cached;
+        }
         List<CubeTier> ladder = zone.cubeTiers().stream()
                 .filter(t -> !t.treasure() && !t.giant())
                 .sorted(java.util.Comparator.comparingLong(CubeTier::maxHp))
                 .toList();
+        double paid = 0;
+        double paidWeighted = 0;
+        for (int i = 0; i < ladder.size(); i++) {
+            CubeTier rung = ladder.get(i);
+            double value = rung.weight() * rung.diamondValue();
+            paid += value;
+            paidWeighted += value * rarityFactor(i + 1);
+        }
+        ZoneLadder built = new ZoneLadder(zone, ladder, paidWeighted > 0 ? paid / paidWeighted : 1.0);
+        laddersByZoneId.put(zone.id(), built);
+        return built;
+    }
+
+    private void rankCube(ZoneDefinition zone, OreCube cube) {
+        CubeTier tier = cube.tier();
+        ZoneLadder zoneLadder = ladderFor(zone);
+        List<CubeTier> ladder = zoneLadder.ladder();
         int rank = 0;
         if (!tier.treasure()) {
             for (int i = 0; i < ladder.size(); i++) {
@@ -1833,15 +1873,7 @@ public final class OreCubeService implements Listener {
                 }
             }
         }
-        double paid = 0;
-        double paidWeighted = 0;
-        for (int i = 0; i < ladder.size(); i++) {
-            CubeTier rung = ladder.get(i);
-            double value = rung.weight() * rung.diamondValue();
-            paid += value;
-            paidWeighted += value * rarityFactor(i + 1);
-        }
-        double norm = paidWeighted > 0 ? paid / paidWeighted : 1.0;
+        double norm = zoneLadder.norm();
         double factor = rarityFactor(rank);
         cube.setRarity(rank, tier.giant() || tier.treasure() ? 1.0 : factor * norm, factor);
     }
@@ -2046,6 +2078,7 @@ public final class OreCubeService implements Listener {
         currentZone.remove(player.getUniqueId());
         cancelPendingFalls(player.getUniqueId());
         cubesByPlayer.remove(player.getUniqueId());
+        rainbowsByPlayer.remove(player.getUniqueId());
         pendingByPlayer.remove(player.getUniqueId());
         scheduledByPlayer.remove(player.getUniqueId());
         comboService.clear(player.getUniqueId());

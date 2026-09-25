@@ -174,6 +174,12 @@ public final class YieldPacks extends JavaPlugin {
      * potions) to plug into without hardcoding anything pet-combat-side.
      */
     private final Map<String, Function<PackPlayerProfile, Double>> coinMultiplierProviders = new ConcurrentHashMap<>();
+    // Once-a-tick copies of the multipliers for the combat/payout hot paths
+    // - see TickMemo. Menus use the live methods below.
+    private final me.dontshare.yieldpacks.economy.TickMemo coinMemo = new me.dontshare.yieldpacks.economy.TickMemo(this::coinMultiplier);
+    private final me.dontshare.yieldpacks.economy.TickMemo damageMemo = new me.dontshare.yieldpacks.economy.TickMemo(this::damageMultiplier);
+    private final me.dontshare.yieldpacks.economy.TickMemo attackSpeedMemo = new me.dontshare.yieldpacks.economy.TickMemo(this::attackSpeedMultiplier);
+    private final me.dontshare.yieldpacks.economy.TickMemo diamondMemo = new me.dontshare.yieldpacks.economy.TickMemo(this::diamondMultiplier);
     private final Map<String, Function<PackPlayerProfile, Double>> damageMultiplierProviders = new ConcurrentHashMap<>();
     private final Map<String, Function<PackPlayerProfile, Double>> attackSpeedMultiplierProviders = new ConcurrentHashMap<>();
     /** Speeds up Auto Mode's own target-switch cooldown - see yield-zones' {@code PetCombatController}, distinct from attack-speed (the interval between hits on the SAME target). */
@@ -206,6 +212,12 @@ public final class YieldPacks extends JavaPlugin {
         // "stats" subcommand) - its own keyed slot, same shape as every
         // other LuckService contributor (skill tree, teams, potions).
         luckService.registerExtraLuckProvider("admin", PackPlayerProfile::getAdminLuckBonus);
+        Bukkit.getPluginManager().registerEvents(new org.bukkit.event.Listener() {
+            @org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.MONITOR)
+            public void onQuit(org.bukkit.event.player.PlayerQuitEvent event) {
+                forgetCachedMultipliers(event.getPlayer().getUniqueId());
+            }
+        }, this);
 
         petLevelingContentLoader = new PetLevelingContentLoader(this, getLogger());
         petLevelingConfig = petLevelingContentLoader.load();
@@ -631,6 +643,35 @@ public final class YieldPacks extends JavaPlugin {
     /** Call on the registering plugin's onDisable. */
     public void unregisterCoinMultiplierProvider(String key) {
         coinMultiplierProviders.remove(key);
+    }
+
+    /** {@link #coinMultiplier}, recomputed at most once a tick - for per-kill payouts. */
+    public double coinMultiplierCached(PackPlayerProfile profile) {
+        return coinMemo.get(profile);
+    }
+
+    /** {@link #damageMultiplier}, recomputed at most once a tick - for per-attack combat. */
+    public double damageMultiplierCached(PackPlayerProfile profile) {
+        return damageMemo.get(profile);
+    }
+
+    /** {@link #attackSpeedMultiplier}, recomputed at most once a tick - for per-attack combat. */
+    public double attackSpeedMultiplierCached(PackPlayerProfile profile) {
+        return attackSpeedMemo.get(profile);
+    }
+
+    /** {@link #diamondMultiplier}, recomputed at most once a tick - for per-kill payouts. */
+    public double diamondMultiplierCached(PackPlayerProfile profile) {
+        return diamondMemo.get(profile);
+    }
+
+    /** Drops a player's once-a-tick multiplier copies - on quit. */
+    public void forgetCachedMultipliers(java.util.UUID playerId) {
+        coinMemo.forget(playerId);
+        damageMemo.forget(playerId);
+        attackSpeedMemo.forget(playerId);
+        diamondMemo.forget(playerId);
+        luckService.forgetCached(playerId);
     }
 
     /** The current global damage multiplier - the product of every currently-registered provider (1.0 if none are registered). Apply to pet attack damage. */
