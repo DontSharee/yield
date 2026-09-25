@@ -43,7 +43,7 @@ public final class YieldTutorial extends JavaPlugin {
         core.getScoreboardDisplay().setOverrideProvider(tutorialService::checklistFor);
 
         core.getListenerManager().register(new TutorialEventListener(tutorialService));
-        core.getListenerManager().register(new TutorialJoinListener(tutorialService));
+        core.getListenerManager().register(new TutorialJoinListener(tutorialService, npcManager));
         EntityClickRegistry.registerInteract(npcManager.entityId(), tutorialService::onNpcInteract);
 
         CommandManager.register(this, TutorialCommand.build(tutorialService), "The new-player tutorial (/tutorial skip to opt out)");

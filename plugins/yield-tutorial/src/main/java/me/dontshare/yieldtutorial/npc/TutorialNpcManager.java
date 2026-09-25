@@ -74,6 +74,15 @@ public final class TutorialNpcManager {
         }
     }
 
+    /**
+     * Drops a quitting player without sending anything. Left in the set, a
+     * quick relog (a duplicate-login kick is the same tick) reads as
+     * "already showing" and the fresh client never gets the NPC spawned.
+     */
+    public void forget(UUID playerId) {
+        viewers.remove(playerId);
+    }
+
     private void tick() {
         double radiusSquared = VISIBLE_RADIUS * VISIBLE_RADIUS;
         Set<UUID> desired = new HashSet<>();
