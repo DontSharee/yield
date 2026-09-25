@@ -374,6 +374,26 @@ public final class PetDisplayService {
         lastYaws.remove(ownerId);
     }
 
+    /**
+     * A player leaving, as both an owner and a viewer: their own pets go
+     * (and every map keyed by them, so an owner who never returns leaves
+     * nothing behind), and they drop out of every other owner's viewer set.
+     * Left in those sets, a rejoin would count as "already seeing" someone
+     * else's pets and only ever receive moves for entities their fresh
+     * client never spawned - other players' pets invisible until they walk
+     * out of range and back.
+     */
+    public void onQuit(Player player) {
+        UUID playerId = player.getUniqueId();
+        despawnAll(player);
+        ownerInstances.remove(playerId);
+        attackOverrides.remove(playerId);
+        ringRadii.remove(playerId);
+        for (Set<UUID> viewers : viewersByOwner.values()) {
+            viewers.remove(playerId);
+        }
+    }
+
     /** Full teardown for every tracked owner - call on plugin disable so nothing lingers client-side. */
     public void shutdown() {
         for (UUID ownerId : List.copyOf(ownerInstances.keySet())) {

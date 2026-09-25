@@ -21,6 +21,6 @@ public final class PetDisplayListener implements Listener {
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
-        displayService.despawnAll(event.getPlayer());
+        displayService.onQuit(event.getPlayer());
     }
 }
