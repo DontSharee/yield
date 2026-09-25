@@ -282,10 +282,6 @@ public final class YieldPacks extends JavaPlugin {
             if (profile == null) {
                 return List.of();
             }
-            double totalDamage = profile.getEquippedPetIds().stream()
-                    .flatMap(id -> profile.findPet(id).stream())
-                    .mapToDouble(pet -> equipmentService.effectiveDamage(profile, pet))
-                    .sum() * damageMultiplier(profile);
             return List.of(
                     " ",
                     "<#8CD5EC> " + Formatting.fancyFont("player"),

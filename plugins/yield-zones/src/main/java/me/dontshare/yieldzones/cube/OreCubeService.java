@@ -1651,9 +1651,11 @@ public final class OreCubeService implements Listener {
         announceCombo(player, cubeCenter, combo);
         queueSummary(player, coins, diamondsEarned);
         Bukkit.getPluginManager().callEvent(new OreCubeKilledEvent(player, tier, coins, diamondsEarned, bonusMultiplier));
-        // Level/damage may have just changed; the balance itself updates as
-        // the drops are collected (see LootDropService).
-        core().getScoreboardDisplay().refresh(player);
+        // No forced sidebar redraw here any more: it re-ran every sidebar
+        // provider (the equipped-damage sum included) on every kill,
+        // several times a second, while the balance only changes as loot is
+        // collected - LootDropService redraws then - and the sidebar's own
+        // once-a-second refresh picks up the rest.
     }
 
     /** How many times a cube pays out mid-fight - every fifth of its HP, stopping short of the kill. */
