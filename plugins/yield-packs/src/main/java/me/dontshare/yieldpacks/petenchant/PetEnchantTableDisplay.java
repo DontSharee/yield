@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * click here (no per-type switch), and global rather than zone-gated - no
  * unlock check, unlike a real zone machine.
  */
-public final class PetEnchantTableDisplay {
+public final class PetEnchantTableDisplay implements org.bukkit.event.Listener {
 
     private static final double VIEW_DISTANCE_SQUARED = 48.0 * 48.0;
     private static final long TICK_INTERVAL = 20L; // 1 second
@@ -58,7 +58,22 @@ public final class PetEnchantTableDisplay {
     }
 
     public void start() {
+        Bukkit.getPluginManager().registerEvents(this, plugin);
         Bukkit.getScheduler().runTaskTimer(plugin, this::tick, TICK_INTERVAL, TICK_INTERVAL);
+    }
+
+    /**
+     * Forgets a player who logged off: their client dropped every packet
+     * entity, so on rejoin each table must count them as a new viewer and
+     * spawn again - left in, it never reappeared until they walked away
+     * and back.
+     */
+    @org.bukkit.event.EventHandler
+    public void onQuit(org.bukkit.event.player.PlayerQuitEvent event) {
+        java.util.UUID id = event.getPlayer().getUniqueId();
+        for (java.util.Set<java.util.UUID> viewers : viewersByTable.values()) {
+            viewers.remove(id);
+        }
     }
 
     /** Same teardown-then-rebuild reasoning as {@code ZoneMachineDisplay#reload} - a content reload replaces every table (and its entity ids) wholesale. */
@@ -85,13 +100,14 @@ public final class PetEnchantTableDisplay {
 
     private void tick() {
         for (Player viewer : Bukkit.getOnlinePlayers()) {
+            org.bukkit.Location viewerAt = viewer.getLocation();
             for (PetEnchantTable table : tables) {
                 Set<UUID> viewers = viewersByTable.get(table);
                 if (viewers == null) {
                     continue;
                 }
                 boolean inRange = viewer.getWorld().equals(table.location().getWorld())
-                        && table.location().distanceSquared(viewer.getLocation()) <= VIEW_DISTANCE_SQUARED;
+                        && table.location().distanceSquared(viewerAt) <= VIEW_DISTANCE_SQUARED;
                 boolean seeing = viewers.contains(viewer.getUniqueId());
                 if (inRange && !seeing) {
                     spawnFor(viewer, table);

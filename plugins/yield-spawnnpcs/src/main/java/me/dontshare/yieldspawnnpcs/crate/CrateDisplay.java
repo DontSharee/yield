@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * for everyone already looking at it, not just once on spawn - otherwise a
  * key found mid-farming wouldn't show up until the player walked away and back.
  */
-public final class CrateDisplay {
+public final class CrateDisplay implements org.bukkit.event.Listener {
 
     private static final double VIEW_DISTANCE_SQUARED = 48.0 * 48.0;
     private static final long TICK_INTERVAL = 20L; // 1 second - spawn/despawn-by-distance check
@@ -63,7 +63,22 @@ public final class CrateDisplay {
     }
 
     public void start() {
+        Bukkit.getPluginManager().registerEvents(this, plugin);
         Bukkit.getScheduler().runTaskTimer(plugin, this::tick, TICK_INTERVAL, TICK_INTERVAL);
+    }
+
+    /**
+     * Forgets a player who logged off: their client dropped every packet
+     * entity, so on rejoin each crate must count them as a new viewer and
+     * spawn again - left in, it never reappeared until they walked away
+     * and back.
+     */
+    @org.bukkit.event.EventHandler
+    public void onQuit(org.bukkit.event.player.PlayerQuitEvent event) {
+        java.util.UUID id = event.getPlayer().getUniqueId();
+        for (java.util.Set<java.util.UUID> viewers : viewersByCrate.values()) {
+            viewers.remove(id);
+        }
     }
 
     /** A content reload replaces every crate (and its entity ids) wholesale - same teardown-then-rebuild reasoning as every other station's own reload in this codebase. */
@@ -93,13 +108,14 @@ public final class CrateDisplay {
         tickCount++;
         boolean refreshText = tickCount % TEXT_REFRESH_EVERY_N_TICKS == 0;
         for (Player viewer : Bukkit.getOnlinePlayers()) {
+            org.bukkit.Location viewerAt = viewer.getLocation();
             for (CrateDefinition crate : crates) {
                 Set<UUID> viewers = viewersByCrate.get(crate);
                 if (viewers == null) {
                     continue;
                 }
                 boolean inRange = viewer.getWorld().equals(crate.location().getWorld())
-                        && crate.location().distanceSquared(viewer.getLocation()) <= VIEW_DISTANCE_SQUARED;
+                        && crate.location().distanceSquared(viewerAt) <= VIEW_DISTANCE_SQUARED;
                 boolean seeing = viewers.contains(viewer.getUniqueId());
                 if (inRange && !seeing) {
                     spawnFor(viewer, crate);
