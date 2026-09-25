@@ -121,7 +121,8 @@ public final class ZoneMachineDisplay implements org.bukkit.event.Listener {
         machines = newMachines;
         for (ZoneMachine machine : newMachines) {
             viewersByMachine.put(machine, ConcurrentHashMap.newKeySet());
-            EntityClickRegistry.register(machine.hitboxEntityId(), player -> handleClick(player, machine));
+            EntityClickRegistry.register(machine.hitboxEntityId(),
+                    EntityClickRegistry.inReach(machine.location(), player -> handleClick(player, machine)));
         }
     }
 

@@ -122,7 +122,8 @@ public final class UpgradeStationDisplay implements Listener {
         stations = newStations;
         for (UpgradeStation station : newStations) {
             viewersByStation.put(station, ConcurrentHashMap.newKeySet());
-            EntityClickRegistry.registerInteract(station.hitboxEntityId(), player -> handleClick(player, station));
+            EntityClickRegistry.registerInteract(station.hitboxEntityId(),
+                    EntityClickRegistry.inReach(station.location(), player -> handleClick(player, station)));
         }
     }
 

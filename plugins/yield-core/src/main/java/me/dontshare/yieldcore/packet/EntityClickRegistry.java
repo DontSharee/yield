@@ -7,6 +7,7 @@ import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientAttack;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -114,6 +115,30 @@ public final class EntityClickRegistry {
             queued.remove(playerId);
             handler.accept(player);
         });
+    }
+
+    /** Generous next to vanilla's 3-block entity reach: these hitboxes are big, and it only has to stop clicks from across the map. */
+    public static final double DEFAULT_REACH = 10.0;
+
+    /**
+     * {@code handler}, but only for a click from within {@code reach} of
+     * {@code at}. A fake entity's id reaches every client that ever saw it,
+     * and nothing server-side checks where an attack on one came from - a
+     * modified client could buy upgrades or hatch at a station from anywhere
+     * on the map. Use for anything that stands in one place.
+     */
+    public static Consumer<Player> inReach(Location at, double reach, Consumer<Player> handler) {
+        double reachSquared = reach * reach;
+        return player -> {
+            Location eye = player.getEyeLocation();
+            if (eye.getWorld() == at.getWorld() && eye.distanceSquared(at) <= reachSquared) {
+                handler.accept(player);
+            }
+        };
+    }
+
+    public static Consumer<Player> inReach(Location at, Consumer<Player> handler) {
+        return inReach(at, DEFAULT_REACH, handler);
     }
 
     /** Registers a callback for left-clicks (attacks) on a specific fake entity id - call {@link #unregister} once it despawns. */

@@ -100,7 +100,8 @@ public final class CrateDisplay implements org.bukkit.event.Listener {
         crates = newCrates;
         for (CrateDefinition crate : newCrates) {
             viewersByCrate.put(crate, ConcurrentHashMap.newKeySet());
-            EntityClickRegistry.register(crate.hitboxEntityId(), player -> handleClick(player, crate));
+            EntityClickRegistry.register(crate.hitboxEntityId(),
+                    EntityClickRegistry.inReach(crate.location(), player -> handleClick(player, crate)));
         }
     }
 

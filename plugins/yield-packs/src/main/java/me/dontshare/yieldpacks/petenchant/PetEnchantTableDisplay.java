@@ -94,7 +94,8 @@ public final class PetEnchantTableDisplay implements org.bukkit.event.Listener {
         tables = newTables;
         for (PetEnchantTable table : newTables) {
             viewersByTable.put(table, ConcurrentHashMap.newKeySet());
-            EntityClickRegistry.register(table.hitboxEntityId(), player -> handleClick(player, table));
+            EntityClickRegistry.register(table.hitboxEntityId(),
+                    EntityClickRegistry.inReach(table.location(), player -> handleClick(player, table)));
         }
     }
 

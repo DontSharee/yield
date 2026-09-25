@@ -186,8 +186,10 @@ public final class PackStationDisplay implements Listener {
         stations = newStations;
         for (PackStation station : newStations) {
             viewersByStation.put(station, ConcurrentHashMap.newKeySet());
-            EntityClickRegistry.register(station.hitboxEntityId(), player -> handleSmack(player, station));
-            EntityClickRegistry.registerInteract(station.hitboxEntityId(), player -> handleRightClick(player, station));
+            EntityClickRegistry.register(station.hitboxEntityId(),
+                    EntityClickRegistry.inReach(station.location(), player -> handleSmack(player, station)));
+            EntityClickRegistry.registerInteract(station.hitboxEntityId(),
+                    EntityClickRegistry.inReach(station.location(), player -> handleRightClick(player, station)));
         }
     }
 
