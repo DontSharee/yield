@@ -55,14 +55,16 @@ public final class LoginStreakService {
         questStore.save(player.getUniqueId());
 
         int dayInCycle = dayInCycle(streak);
-        long coins = coinsFor(dayInCycle);
+        // Coins scale with the player's own multiplier, so a streak day is
+        // worth something at every stage rather than being pocket change a
+        // few zones in. Coins and diamonds are NOT credited here: they come
+        // out of the streak present the player smacks open (see
+        // GiftDisplayService#queueStreakGift), which pays them directly
+        // instead if the player leaves before opening it.
+        long coins = Math.round(coinsFor(dayInCycle) * packs.coinMultiplier(profile));
         long diamonds = diamondsFor(dayInCycle);
         long credits = dayInCycle == CYCLE_LENGTH ? 50L : 0L;
 
-        profile.setCoins(profile.getCoins().add(BigInteger.valueOf(coins)));
-        if (diamonds > 0) {
-            profile.setDiamonds(profile.getDiamonds().add(BigInteger.valueOf(diamonds)));
-        }
         if (credits > 0) {
             profile.setCredits(profile.getCredits().add(BigInteger.valueOf(credits)));
         }
@@ -78,23 +80,23 @@ public final class LoginStreakService {
 
     private long coinsFor(int dayInCycle) {
         return switch (dayInCycle) {
-            case 1 -> 500L;
-            case 2 -> 1_000L;
-            case 3 -> 1_500L;
-            case 4 -> 2_500L;
-            case 5 -> 4_000L;
-            case 6 -> 6_000L;
-            case 7 -> 10_000L;
+            case 1 -> 50_000L;
+            case 2 -> 100_000L;
+            case 3 -> 150_000L;
+            case 4 -> 250_000L;
+            case 5 -> 400_000L;
+            case 6 -> 600_000L;
+            case 7 -> 1_000_000L;
             default -> 0L;
         };
     }
 
     private long diamondsFor(int dayInCycle) {
         return switch (dayInCycle) {
-            case 3 -> 5L;
-            case 5 -> 10L;
-            case 6 -> 5L;
-            case 7 -> 25L;
+            case 3 -> 50L;
+            case 5 -> 100L;
+            case 6 -> 50L;
+            case 7 -> 250L;
             default -> 0L;
         };
     }

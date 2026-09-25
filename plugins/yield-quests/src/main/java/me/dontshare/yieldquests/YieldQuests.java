@@ -56,7 +56,10 @@ public final class YieldQuests extends JavaPlugin {
 
         core.getListenerManager().register(new QuestEventListener(questService, rankQuestService));
         core.getListenerManager().register(new PresentsSessionListener(presentsService));
-        core.getListenerManager().register(new LoginStreakListener(this, loginStreakService));
+        GiftDisplayService giftDisplay = new GiftDisplayService(this, presentsService, packs,
+                JavaPlugin.getPlugin(me.dontshare.yieldzones.YieldZones.class));
+        giftDisplay.start();
+        core.getListenerManager().register(new LoginStreakListener(this, loginStreakService, giftDisplay));
 
         // No separate Rank Quest GUI/command - the board renders inline in
         // yield-packs' own RankupGui (row 0), reachable via /rankup,
@@ -65,9 +68,6 @@ public final class YieldQuests extends JavaPlugin {
 
         QuestGui questGui = new QuestGui(packs.getPlayerStore(), () -> questContent, questService, core.getGuiManager(),
                 packs::getItemRegistry);
-        GiftDisplayService giftDisplay = new GiftDisplayService(this, presentsService, packs,
-                JavaPlugin.getPlugin(me.dontshare.yieldzones.YieldZones.class));
-        giftDisplay.start();
         PresentsGui presentsGui = new PresentsGui(presentsService, giftDisplay, core.getGuiManager());
 
         CommandManager.register(this, QuestCommand.build(questGui), "View and claim today's daily quests", List.of());

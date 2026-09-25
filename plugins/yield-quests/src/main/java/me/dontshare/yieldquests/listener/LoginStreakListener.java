@@ -26,10 +26,13 @@ public final class LoginStreakListener implements Listener {
 
     private final JavaPlugin plugin;
     private final LoginStreakService service;
+    private final me.dontshare.yieldquests.GiftDisplayService giftDisplay;
 
-    public LoginStreakListener(JavaPlugin plugin, LoginStreakService service) {
+    public LoginStreakListener(JavaPlugin plugin, LoginStreakService service,
+                               me.dontshare.yieldquests.GiftDisplayService giftDisplay) {
         this.plugin = plugin;
         this.service = service;
+        this.giftDisplay = giftDisplay;
     }
 
     @EventHandler
@@ -40,6 +43,11 @@ public final class LoginStreakListener implements Listener {
             // A relog on the same real-world day - no new reward, no fanfare, nothing to announce twice.
             return;
         }
+        // Queued straight away, not after the announcement delay: the coins
+        // and diamonds live in this present now, and a player who leaves in
+        // the next two seconds is paid them on the way out.
+        giftDisplay.queueStreakGift(player, result.streak(), result.dayInCycle() == 7,
+                result.coinsGranted(), result.diamondsGranted());
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (player.isOnline()) {
                 announce(player, result);
@@ -60,6 +68,7 @@ public final class LoginStreakListener implements Listener {
             player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
         }
         player.sendMessage(Text.parse("<#FFD700>Welcome back! <sub></#FFD700>", Placeholder.component("sub", sub)));
+        player.sendMessage(Text.parse("<gray>Your streak present is on its way - smack it open when it lands.</gray>"));
     }
 
     private Component buildRewardLine(LoginStreakService.StreakResult result) {

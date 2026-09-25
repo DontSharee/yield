@@ -65,12 +65,26 @@ public final class GiftDisplayService implements Listener {
         boolean opening;
         /** Dropped from the /daily menu: opens as soon as it lands. */
         final boolean openOnLanding;
+        /** What it pays - fixed up front for a streak present, set when claimed for a free gift. */
+        PresentsService.Reward reward;
+        /** Its reward has gone out, as loot or straight to the balance - see {@link #onQuit}. */
+        boolean paid;
+        /** A streak present rather than one of the session's free gifts - its reward is already fixed. */
+        String title = "✦ FREE GIFT ✦";
+        ItemStack icon;
 
         Gift(int index, boolean openOnLanding) {
             this.index = index;
             this.openOnLanding = openOnLanding;
         }
     }
+
+    /** A login-streak day waiting to drop in: it goes before any free gift. */
+    private record PendingStreak(int streak, boolean bigDay, PresentsService.Reward reward, long readyAtMillis) {
+    }
+    private final Map<UUID, PendingStreak> pendingStreaks = new ConcurrentHashMap<>();
+    /** How long after joining the streak present drops - lets the join screen settle. */
+    private static final long STREAK_DROP_DELAY_MILLIS = 3000L;
 
     private final JavaPlugin plugin;
     private final PresentsService presents;
@@ -99,6 +113,14 @@ public final class GiftDisplayService implements Listener {
                 if (now < nextGiftAt.getOrDefault(player.getUniqueId(), 0L)) {
                     continue;
                 }
+                PendingStreak streak = pendingStreaks.get(player.getUniqueId());
+                if (streak != null) {
+                    if (now >= streak.readyAtMillis()) {
+                        pendingStreaks.remove(player.getUniqueId());
+                        dropStreak(player, streak);
+                    }
+                    continue;
+                }
                 int index = presents.nextOpenable(player);
                 if (index >= 0) {
                     drop(player, index, false);
@@ -115,7 +137,16 @@ public final class GiftDisplayService implements Listener {
                 // Walked off - it comes with them rather than being left behind.
                 despawn(player, gift);
                 gifts.remove(player.getUniqueId());
-                drop(player, gift.index, false);
+                if (gift.reward != null) {
+                    // A streak present - its reward travels with it.
+                    Gift again = new Gift(gift.index, false);
+                    again.reward = gift.reward;
+                    again.title = gift.title;
+                    again.icon = gift.icon;
+                    place(player, again);
+                } else {
+                    drop(player, gift.index, false);
+                }
                 continue;
             }
             // A slow, continuous turn: each step is interpolated over the
@@ -150,6 +181,33 @@ public final class GiftDisplayService implements Listener {
         }
         PresentDefinition present = list.get(index);
         Gift gift = new Gift(index, openOnLanding);
+        gift.icon = packs.getIconFactory().headOrFallback(present.headDatabaseId(), present.fallbackMaterial());
+        place(player, gift);
+    }
+
+    /**
+     * Queues today's login-streak reward as a present that drops beside the
+     * player a few seconds after they join, ahead of any free gift. Its
+     * coins and diamonds are fixed now and paid when it's opened - or
+     * straight to the balance if they leave first (see {@link #onQuit}).
+     */
+    public void queueStreakGift(Player player, int streak, boolean bigDay, long coins, long diamonds) {
+        pendingStreaks.put(player.getUniqueId(), new PendingStreak(streak, bigDay,
+                new PresentsService.Reward(coins, diamonds), System.currentTimeMillis() + STREAK_DROP_DELAY_MILLIS));
+    }
+
+    private void dropStreak(Player player, PendingStreak streak) {
+        Gift gift = new Gift(-1, false);
+        gift.reward = streak.reward();
+        gift.title = "✦ DAY " + streak.streak() + " STREAK ✦";
+        gift.icon = new ItemStack(streak.bigDay() ? org.bukkit.Material.ENDER_CHEST : org.bukkit.Material.CHEST);
+        place(player, gift);
+        player.sendMessage(Text.parse("<#FFC83D><bold>✦ DAY " + streak.streak() + " STREAK!</bold></#FFC83D> <gray>Your streak present landed next to you - smack it to open!</gray>"));
+        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BELL, 0.8f, 1.3f);
+    }
+
+    /** Drops {@code gift} out of the sky beside the player. */
+    private void place(Player player, Gift gift) {
         gifts.put(player.getUniqueId(), gift);
 
         Location feet = player.getLocation();
@@ -165,7 +223,7 @@ public final class GiftDisplayService implements Listener {
         landing.setPitch(0f);
         gift.landing = landing;
         Location sky = landing.clone().add(0, DROP_HEIGHT, 0);
-        ItemStack item = packs.getIconFactory().headOrFallback(present.headDatabaseId(), present.fallbackMaterial());
+        ItemStack item = gift.icon;
 
         PacketEntityManager.beginBundle(player);
         ItemDisplayManager.spawn(player, gift.itemId, sky);
@@ -180,7 +238,7 @@ public final class GiftDisplayService implements Listener {
         TextDisplayManager.setBackgroundColor(player, gift.textId, 0x00000000);
         TextDisplayManager.setStyle(player, gift.textId, true, false, false, TextDisplayManager.Alignment.CENTER);
         TextDisplayManager.setText(player, gift.textId, Text.parse(
-                "<#FFC83D><bold>✦ FREE GIFT ✦</bold></#FFC83D>\n<yellow><bold>CLICK TO OPEN</bold></yellow>"));
+                "<#FFC83D><bold>" + gift.title + "</bold></#FFC83D>\n<yellow><bold>CLICK TO OPEN</bold></yellow>"));
         TextDisplayManager.setPositionInterpolation(player, gift.textId, FALL_TICKS);
 
         // Interaction boxes stand on their bottom face.
@@ -220,7 +278,8 @@ public final class GiftDisplayService implements Listener {
         if (gift == null || gift.opening) {
             return;
         }
-        PresentsService.Reward reward = presents.claimForDrop(player, gift.index);
+        PresentsService.Reward reward = gift.reward != null ? gift.reward : presents.claimForDrop(player, gift.index);
+        gift.reward = reward;
         if (reward == null) {
             // Claimed elsewhere, or not actually unlocked - just clear it away.
             despawn(player, gift);
@@ -257,9 +316,11 @@ public final class GiftDisplayService implements Listener {
         PacketEntityManager.destroyEntity(player, gift.itemId);
         gifts.remove(player.getUniqueId(), gift);
         nextGiftAt.put(player.getUniqueId(), System.currentTimeMillis() + NEXT_GIFT_DELAY_MILLIS);
-        if (!player.isOnline()) {
+        if (!player.isOnline() || gift.paid) {
+            // Left mid-burst: onQuit has already paid it.
             return;
         }
+        gift.paid = true;
         Location at = gift.landing;
         player.spawnParticle(Particle.TOTEM_OF_UNDYING, at, 50, 0.3, 0.4, 0.3, 0.5);
         player.spawnParticle(Particle.FIREWORK, at, 25, 0.2, 0.2, 0.2, 0.15);
@@ -282,14 +343,36 @@ public final class GiftDisplayService implements Listener {
         PacketEntityManager.destroyEntity(player, gift.hitboxId);
     }
 
-    @EventHandler
+    /**
+     * Pays anything owed that hasn't gone out yet: a streak present still
+     * waiting to drop or sitting unopened, or any present caught mid-burst.
+     * (A free gift nobody opened pays nothing - the session chain re-locks
+     * on logout by design.) LOWEST, so it lands before the player stores'
+     * own quit save.
+     */
+    @EventHandler(priority = org.bukkit.event.EventPriority.LOWEST)
     public void onQuit(PlayerQuitEvent event) {
-        UUID id = event.getPlayer().getUniqueId();
+        Player player = event.getPlayer();
+        UUID id = player.getUniqueId();
         Gift gift = gifts.remove(id);
         if (gift != null) {
             EntityClickRegistry.unregister(gift.hitboxId);
             EntityClickRegistry.unregisterInteract(gift.hitboxId);
+            if (gift.reward != null && !gift.paid) {
+                gift.paid = true;
+                creditDirectly(player, gift.reward);
+            }
+        }
+        PendingStreak streak = pendingStreaks.remove(id);
+        if (streak != null) {
+            creditDirectly(player, streak.reward());
         }
         nextGiftAt.remove(id);
+    }
+
+    private void creditDirectly(Player player, PresentsService.Reward reward) {
+        var profile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
+        profile.setCoins(profile.getCoins().add(java.math.BigInteger.valueOf(reward.coins())));
+        profile.setDiamonds(profile.getDiamonds().add(java.math.BigInteger.valueOf(reward.diamonds())));
     }
 }
