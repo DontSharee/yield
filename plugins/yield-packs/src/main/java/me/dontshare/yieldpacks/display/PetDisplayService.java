@@ -60,6 +60,16 @@ public final class PetDisplayService {
     private static final float YAW_EPSILON_DEGREES = 0.5f;
     /** Duration of both the forward lunge and the return spring-back - see {@link #playAttackLunge}. */
     private static final int LUNGE_TICKS = 3;
+    /**
+     * How close another player has to be to see someone's pets lunge. Each
+     * hit is a lunge and a return per pet per viewer; across a busy zone at
+     * the full view distance that was most of the traffic, for a 0.3-block
+     * hop nobody can make out from across the zone. The owner always sees
+     * their own.
+     */
+    private static final double LUNGE_VIEW_RANGE = 16.0;
+    /** Returns go a little further than lunges, so a viewer drifting outward between the two never keeps a pet stuck mid-lunge. */
+    private static final double LUNGE_RETURN_RANGE = LUNGE_VIEW_RANGE + 8.0;
 
     private final JavaPlugin plugin;
     private final PlayerDataStore<PackPlayerProfile> playerStore;
@@ -75,8 +85,8 @@ public final class PetDisplayService {
     private final Map<UUID, List<Location>> lastSentPositions = new ConcurrentHashMap<>();
     /** Owners whose idle pets are currently bobbing client-side (see updateOwner). */
     private final Set<UUID> bobbing = ConcurrentHashMap.newKeySet();
-    /** Owners whose pets lunged since the last cycle, and so need their interpolation window put back - see {@link #moveFor}. */
-    private final Set<UUID> lungedOwners = ConcurrentHashMap.newKeySet();
+    /** Per owner, the slots that lunged since the last cycle - each needs moving back and its interpolation window put back; see {@link #moveFor}. */
+    private final Map<UUID, Set<Integer>> lungedSlots = new ConcurrentHashMap<>();
     /** Last yaw sent per slot, so a stationary player's pets stop re-sending a rotation that hasn't changed. */
     private final Map<UUID, float[]> lastYaws = new ConcurrentHashMap<>();
     /** Per-owner, per-equip-slot target overrides - a slot missing from the map stays in formation. Multiple slots may point at different targets at once (see single-send). */
@@ -190,10 +200,11 @@ public final class PetDisplayService {
         PetDisplayInstance instance = instances.get(slot);
         // The shortened window below sticks until something resets it, so the
         // next regular cycle has to put it back - see moveFor.
-        lungedOwners.add(ownerId);
+        lungedSlots.computeIfAbsent(ownerId, id -> ConcurrentHashMap.newKeySet()).add(slot);
+        Location ownerAt = owner.getLocation();
         for (UUID viewerId : viewersByOwner.getOrDefault(ownerId, Set.of())) {
             Player viewer = Bukkit.getPlayer(viewerId);
-            if (viewer == null) {
+            if (viewer == null || !withinLungeRange(viewer, ownerId, ownerAt, LUNGE_VIEW_RANGE)) {
                 continue;
             }
             ItemDisplayManager.setPositionInterpolation(viewer, instance.itemEntityId(), LUNGE_TICKS);
@@ -370,7 +381,7 @@ public final class PetDisplayService {
         lastOwnerLocation.remove(ownerId);
         lastSentPositions.remove(ownerId);
         bobbing.remove(ownerId);
-        lungedOwners.remove(ownerId);
+        lungedSlots.remove(ownerId);
         lastYaws.remove(ownerId);
     }
 
@@ -407,7 +418,7 @@ public final class PetDisplayService {
         lastOwnerLocation.clear();
         lastSentPositions.clear();
         bobbing.clear();
-        lungedOwners.clear();
+        lungedSlots.clear();
         lastYaws.clear();
     }
 
@@ -424,20 +435,16 @@ public final class PetDisplayService {
                 && last.distance(current) < config.movementThreshold();
         lastOwnerLocation.put(ownerId, current.clone());
 
-        // An idle squad (owner standing still, nobody attacking) bobs on the
-        // CLIENT: its spots are sent once, then one translation keyframe per
-        // half bob per pet glides it up and down - instead of re-sending
+        // A squad whose owner is standing still - idle OR fighting - bobs on
+        // the CLIENT: its spots are sent once, then one translation keyframe
+        // per half bob per pet glides it up and down, instead of re-sending
         // every pet's position every update just to move it a few
-        // centimetres. That's the common case (AFK, auto-hatching, standing
-        // at a menu) and it was the bulk of this service's packets. Pets
-        // ringed round a target keep the old server-driven bob.
-        Map<Integer, Location> overrides = attackOverrides.get(ownerId);
-        boolean attacking = overrides != null && !overrides.isEmpty();
-        boolean idleBob = stationary && !attacking;
-        double hoverOffset = stationary && attacking
-                ? config.hoverAmplitude() * Math.sin(2 * Math.PI * elapsedTicks / config.hoverPeriodTicks())
-                : 0.0;
-        List<Location> positions = resolvePositions(owner, instances, hoverOffset);
+        // centimetres. Fighting used to keep a server-driven bob, which
+        // meant every pet of everyone fighting went out to every viewer five
+        // times a second - in a busy zone, nearly all of this service's
+        // traffic, for a few centimetres of hover.
+        boolean clientBob = stationary;
+        List<Location> positions = resolvePositions(owner, instances, 0.0);
         // Tracks the owner's live yaw (not a fixed world-space constant) for
         // formation slots, so pets keep facing back toward the player as
         // they turn; attacking slots instead face whatever they're
@@ -448,18 +455,17 @@ public final class PetDisplayService {
         Set<UUID> currentlySeeing = viewersByOwner.computeIfAbsent(ownerId, id -> ConcurrentHashMap.newKeySet());
 
         // spawnFor already sets each entity's interpolation window, and only a
-        // lunge ever shortens it, so the reset that used to go out on every
-        // move of every pet to every viewer is only actually needed in the
-        // cycle after one happened.
-        boolean resetInterpolation = lungedOwners.remove(ownerId);
+        // lunge ever shortens it - so only a pet that lunged since the last
+        // cycle needs moving back and its window restored, not the squad.
+        Set<Integer> lunged = lungedSlots.remove(ownerId);
         boolean yawChanged = yawsChanged(ownerId, yaws);
         boolean positionsChanged = positionsChanged(ownerId, positions);
-        boolean sendMoves = !idleBob || positionsChanged || resetInterpolation || yawChanged;
+        boolean allPositions = !clientBob || positionsChanged;
 
         Float bobTarget = null;
         int bobTicks = 0;
         int updateTicks = config.updateIntervalTicks();
-        if (idleBob && config.hoverAmplitude() > 0) {
+        if (clientBob && config.hoverAmplitude() > 0) {
             int half = Math.max(updateTicks, config.hoverPeriodTicks() / 2);
             boolean starting = bobbing.add(ownerId);
             if (starting || elapsedTicks % half < updateTicks) {
@@ -468,7 +474,7 @@ public final class PetDisplayService {
                 bobTicks = half;
             }
         } else if (bobbing.remove(ownerId)) {
-            // Moving again (or fighting): settle back onto the real spot.
+            // Moving again: settle back onto the real spot.
             bobTarget = 0f;
             bobTicks = updateTicks;
         }
@@ -494,8 +500,10 @@ public final class PetDisplayService {
             if (currentlySeeing.add(viewerId)) {
                 spawnFor(viewer, instances, positions, yaws);
             } else {
-                if (sendMoves) {
-                    moveFor(viewer, instances, positions, yaws, resetInterpolation, yawChanged);
+                Set<Integer> returning = lunged != null && withinLungeRange(viewer, ownerId, current, LUNGE_RETURN_RANGE)
+                        ? lunged : null;
+                if (allPositions || yawChanged || returning != null) {
+                    moveFor(viewer, instances, positions, yaws, allPositions, yawChanged, returning);
                 }
                 if (bobTarget != null) {
                     sendBob(viewer, instances, bobTarget, bobTicks);
@@ -783,34 +791,46 @@ public final class PetDisplayService {
         }
     }
 
+    private static boolean withinLungeRange(Player viewer, UUID ownerId, Location ownerAt, double range) {
+        if (viewer.getUniqueId().equals(ownerId)) {
+            return true;
+        }
+        Location at = viewer.getLocation();
+        return at.getWorld() == ownerAt.getWorld() && at.distanceSquared(ownerAt) <= range * range;
+    }
+
+    /**
+     * @param allPositions every pet's spot goes out (the squad moved);
+     *                     otherwise only the pets in {@code lunged} are sent back to theirs
+     * @param yawChanged   every pet's facing goes out - on its own when that is all that changed
+     * @param lunged       slots that lunged since the last cycle, or null
+     */
     private void moveFor(Player viewer, List<PetDisplayInstance> instances, List<Location> positions, List<Float> yaws,
-                          boolean resetInterpolation, boolean yawChanged) {
+                          boolean allPositions, boolean yawChanged, Set<Integer> lunged) {
         int ticks = config.updateIntervalTicks();
         // Bundled the same way spawnFor already is - this runs for every
         // pet, every viewer, every update-interval-ticks, so with a large
         // equip cap it's the single biggest source of outgoing packets this
         // service produces; batching them into one bundle per viewer instead
-        // of leaving each of the 5 packets below to flush individually cuts
-        // that overhead directly.
+        // of leaving each packet below to flush individually cuts that
+        // overhead directly.
         PacketEntityManager.beginBundle(viewer);
         for (int i = 0; i < instances.size(); i++) {
             PetDisplayInstance instance = instances.get(i);
             Location pos = positions.get(i);
-            // Explicitly reset every cycle, not just at spawn - an attack
-            // lunge (see playAttackLunge) temporarily shortens this same
-            // entity's interpolation window, and the client keeps using
-            // whatever duration it was LAST told until something resets it;
-            // without this, every regular move after a pet's first attack
-            // would keep interpolating over the lunge's short window instead
-            // of this loop's own cadence, arriving early and visibly
-            // "pausing" before the next update - the main cause of pet
-            // movement looking less smooth than it should.
-            if (resetInterpolation) {
+            boolean returning = lunged != null && lunged.contains(i);
+            // A lunge (see playAttackLunge) shortens this pet's position
+            // interpolation window, and the client keeps using whatever it
+            // was LAST told - without putting it back, every later move
+            // would arrive early and visibly pause before the next update.
+            if (returning) {
                 ItemDisplayManager.setPositionInterpolation(viewer, instance.itemEntityId(), ticks);
                 TextDisplayManager.setPositionInterpolation(viewer, instance.textEntityId(), ticks);
             }
-            PacketEntityManager.teleportEntity(viewer, instance.itemEntityId(), pos);
-            PacketEntityManager.teleportEntity(viewer, instance.textEntityId(), pos.clone().add(0, 0.4, 0));
+            if (allPositions || returning) {
+                PacketEntityManager.teleportEntity(viewer, instance.itemEntityId(), pos);
+                PacketEntityManager.teleportEntity(viewer, instance.textEntityId(), pos.clone().add(0, 0.4, 0));
+            }
             // Tracks a live-updating yaw, so it goes out whenever that yaw
             // actually moved - which, for a player standing still, it doesn't.
             if (yawChanged) {
