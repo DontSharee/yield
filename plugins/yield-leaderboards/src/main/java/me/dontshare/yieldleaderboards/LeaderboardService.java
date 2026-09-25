@@ -237,7 +237,10 @@ public final class LeaderboardService {
     private void updateHologram(LeaderboardDefinition leaderboard, StatDefinition stat,
                                  List<Map.Entry<UUID, Comparable<?>>> ranked, Map<UUID, String> names) {
         announceChanges(leaderboard, ranked);
-        if (!FancyHologramsPlugin.isEnabled()) {
+        // Asked of the plugin manager first: FancyHolograms is a softdepend,
+        // and touching FancyHologramsPlugin at all without it installed
+        // throws NoClassDefFoundError on every refresh.
+        if (!Bukkit.getPluginManager().isPluginEnabled("FancyHolograms") || !FancyHologramsPlugin.isEnabled()) {
             return;
         }
         Optional<Hologram> hologramOpt = FancyHologramsPlugin.get().getHologramManager().getHologram(leaderboard.hologramName());
