@@ -5,6 +5,7 @@ import me.dontshare.yieldcosmetics.NameplateService;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 /**
  * On join: pushes the joining player's own equipped nameplate out to
@@ -27,5 +28,10 @@ public final class NameplateJoinListener implements Listener {
     public void onJoin(PlayerJoinEvent event) {
         nameplateService.catchUp(event.getPlayer());
         cosmeticService.applyEquippedNameplate(event.getPlayer());
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        nameplateService.forget(event.getPlayer().getUniqueId());
     }
 }

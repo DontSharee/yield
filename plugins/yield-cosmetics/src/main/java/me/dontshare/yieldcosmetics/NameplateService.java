@@ -66,6 +66,11 @@ public final class NameplateService {
         }
     }
 
+    /** Call on quit - the join path re-applies their nameplate, and an entry kept for everyone who ever logged in only grows. */
+    public void forget(UUID wearerId) {
+        activeStyleByWearer.remove(wearerId);
+    }
+
     private void applyOnBoard(Scoreboard board, String entryName, String style) {
         Team existing = board.getEntryTeam(entryName);
         if (existing != null && existing.getName().startsWith(TEAM_PREFIX)) {
