@@ -18,14 +18,14 @@ public final class Formatting {
     private static final String[] SUFFIXES = {
             "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc", "Ud", "Td",
             "Qad", "Qid", "Sxd", "Spd", "Ocd", "Nod", "Vg", "Uvg", "Dvg", "Tvg", "Qavg",
-            "Qivg", "Sxvg", "Spvg", "Ocvg", "Ocvg", "Nov", "Tt", "Unt", "Dtt", "Ttt", "Qut", "Qat", "Sst"
+            "Qivg", "Sxvg", "Spvg", "Ocvg", "Novg", "Nov", "Tt", "Unt", "Dtt", "Ttt", "Qut", "Qat", "Sst"
     };
 
     /** {@link #unformat}'s lookup list - "0" is a placeholder so K aligns with index 1, matching one 1000x step. */
     private static final String[] UNFORMAT_SUFFIXES = {
             "0", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc", "Ud", "Td",
             "Qad", "Qid", "Sxd", "Spd", "Ocd", "Nod", "Vg", "Uvg", "Dvg", "Tvg", "Qavg",
-            "Qivg", "Sxvg", "Spvg", "Ocvg", "Ocvg", "Nov", "Tt", "Unt", "Dtt", "Ttt", "Qut", "Qat", "Sst"
+            "Qivg", "Sxvg", "Spvg", "Ocvg", "Novg", "Nov", "Tt", "Unt", "Dtt", "Ttt", "Qut", "Qat", "Sst"
     };
 
     private static final String NORMAL_LETTERS = "abcdefghijklmnopqrstuvwxyz";
