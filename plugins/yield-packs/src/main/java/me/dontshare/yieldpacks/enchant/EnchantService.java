@@ -191,19 +191,24 @@ public final class EnchantService {
      * their proportions to each other.
      */
     public boolean tryDropBook(Player player, double chance, double luckMultiplier, String minRarityId) {
+        return rollBookDrop(player, chance, luckMultiplier, minRarityId) != null;
+    }
+
+    /** {@link #tryDropBook(Player, double, double, String)}, returning the rarity found (null for none) - so the caller can stage the moment in that rarity's colour. */
+    public Rarity rollBookDrop(Player player, double chance, double luckMultiplier, String minRarityId) {
         if (chance <= 0 || ThreadLocalRandom.current().nextDouble() >= Math.min(1.0, chance * luckMultiplier)) {
-            return false;
+            return null;
         }
         int minSort = minRarityId == null ? 0 : rarities.get().find(minRarityId).map(Rarity::sortOrder).orElse(0);
         EnchantType[] types = EnchantType.values();
         EnchantType type = types[ThreadLocalRandom.current().nextInt(types.length)];
         Rarity rarity = rollRarity(luckMultiplier, minSort);
         if (rarity == null) {
-            return false;
+            return null;
         }
         giveItem(player, enchantItem.create(type, rarity));
         announceFind(player, type, rarity);
-        return true;
+        return rarity;
     }
 
     /**

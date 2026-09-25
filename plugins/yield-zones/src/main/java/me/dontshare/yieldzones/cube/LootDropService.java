@@ -44,7 +44,8 @@ import java.util.function.Function;
  */
 public final class LootDropService implements Listener {
 
-    public enum Kind { COIN, DIAMOND }
+    /** COSMETIC carries nothing: it's the visible stand-in for something already handed over (a book, a candy). */
+    public enum Kind { COIN, DIAMOND, COSMETIC }
 
     /** Magnet range with no upgrades, in blocks. */
     public static final double BASE_MAGNET_RANGE = 6.0;
@@ -79,6 +80,8 @@ public final class LootDropService implements Listener {
         State state = State.RISING;
         int stateTicks;
         int restingTicks;
+        /** Rests this long at most before flying in, whatever the range. */
+        int autoHomeTicks = AUTO_COLLECT_TICKS;
 
         Drop(int entityId, Kind kind, long amount, Location start, Location apex, Location landing) {
             this.entityId = entityId;
@@ -177,6 +180,37 @@ public final class LootDropService implements Listener {
         }
     }
 
+    /**
+     * A one-off showpiece: {@code item} pops out of the cube higher than
+     * loot does, glowing {@code glowRgb}, hangs a moment where it lands,
+     * then flies in regardless of range. Credits nothing - it's the visible
+     * half of a drop that was already handed over.
+     */
+    public void spawnCosmetic(Player player, Location center, double floorY, double spread, ItemStack item, int glowRgb, float scale) {
+        List<Drop> drops = dropsByPlayer.computeIfAbsent(player.getUniqueId(), id -> new ArrayList<>());
+        if (drops.size() >= MAX_DROPS_PER_PLAYER) {
+            return;
+        }
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+        double angle = random.nextDouble(Math.PI * 2);
+        double radius = spread + 1.0;
+        Location landing = new Location(center.getWorld(),
+                center.getX() + Math.cos(angle) * radius, floorY + 0.45, center.getZ() + Math.sin(angle) * radius);
+        Location apex = center.clone().add(Math.cos(angle) * radius * 0.4, 2.2, Math.sin(angle) * radius * 0.4);
+        Drop drop = new Drop(PacketEntityManager.nextEntityId(), Kind.COSMETIC, 0L, center.clone(), apex, landing);
+        drop.autoHomeTicks = 25;
+        drops.add(drop);
+        PacketEntityManager.beginBundle(player);
+        ItemDisplayManager.spawn(player, drop.entityId, drop.position);
+        ItemDisplayManager.setItem(player, drop.entityId, item);
+        ItemDisplayManager.setBillboardCenter(player, drop.entityId);
+        ItemDisplayManager.setScale(player, drop.entityId, scale, scale, scale);
+        ItemDisplayManager.setGlowing(player, drop.entityId, true);
+        ItemDisplayManager.setGlowColor(player, drop.entityId, glowRgb);
+        ItemDisplayManager.setPositionInterpolation(player, drop.entityId, RISE_TICKS);
+        PacketEntityManager.endBundle(player);
+    }
+
     /** {@code amount} split into {@code count} near-equal parts; part 0 takes the remainder. */
     private static long share(long amount, int count, int index) {
         long base = amount / count;
@@ -260,7 +294,7 @@ public final class LootDropService implements Listener {
             }
             case RESTING -> {
                 drop.restingTicks++;
-                if (drop.position.distanceSquared(target) <= range * range || drop.restingTicks >= AUTO_COLLECT_TICKS) {
+                if (drop.position.distanceSquared(target) <= range * range || drop.restingTicks >= drop.autoHomeTicks) {
                     drop.state = State.HOMING;
                     drop.stateTicks = 0;
                     // A little hop up and out first, so the pull reads as
@@ -301,7 +335,7 @@ public final class LootDropService implements Listener {
     }
 
     private void credit(Player player, Kind kind, long amount) {
-        if (amount <= 0) {
+        if (amount <= 0 || kind == Kind.COSMETIC) {
             return;
         }
         PackPlayerProfile profile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
@@ -360,7 +394,9 @@ public final class LootDropService implements Listener {
         float pitch = lastAt != null && nowMillis - lastAt < PICKUP_STREAK_MILLIS
                 ? Math.min(2.0f, pickupPitch.getOrDefault(id, 1.0f) + 0.05f) : 1.0f;
         pickupPitch.put(id, pitch);
-        if (kind == Kind.COIN) {
+        if (kind == Kind.COSMETIC) {
+            player.playSound(player.getLocation(), Sound.ENTITY_ITEM_PICKUP, 0.5f, 1.2f);
+        } else if (kind == Kind.COIN) {
             player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.25f, pitch);
         } else {
             player.playSound(player.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.6f, Math.min(2.0f, pitch + 0.3f));

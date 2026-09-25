@@ -1506,6 +1506,7 @@ public final class OreCubeService implements Listener {
         dropLoot(player, cube, killCoins, killDiamonds, true);
         if (tier.treasure()) {
             grantTreasurePacks(player, profile, tier);
+            rareMoment(player, cube, "TREASURE", "#FFD700", 2, null);
         }
         profile.setLifetimeCubeKills(profile.getLifetimeCubeKills() + 1);
         profile.setLifetimeCoinsEarned(profile.getLifetimeCoinsEarned().add(BigInteger.valueOf(coins)));
@@ -1517,11 +1518,19 @@ public final class OreCubeService implements Listener {
             packs.getPetDisplayService().showXpGain(player, contributorId, petXpAmount);
         }
         // Rarer cubes roll their rare drops at better odds - see rankCube.
-        giveCandyDrops(player, luck * cube.rareDropMultiplier());
+        giveCandyDrops(player, cube, luck * cube.rareDropMultiplier());
         // Enchant Books: very rare from an ordinary cube, likelier from a big
         // safe, guaranteed (and at least Epic) from a boss block - the cube's
         // own chance and floor, set at load (see CubeTier#bookChance).
-        packs.getEnchantService().tryDropBook(player, tier.bookChance() * cube.rareDropMultiplier(), luck, tier.bookMinRarity());
+        var book = packs.getEnchantService().rollBookDrop(player, tier.bookChance() * cube.rareDropMultiplier(), luck, tier.bookMinRarity());
+        if (book != null) {
+            int intensity = book.sortOrder() >= 4 ? 2 : book.sortOrder() >= 2 ? 1 : 0;
+            rareMoment(player, cube, book.displayName().toUpperCase(java.util.Locale.ROOT) + " BOOK", book.colorHex(),
+                    intensity, new ItemStack(Material.ENCHANTED_BOOK));
+        }
+        if (killDiamonds > 0 && (cube.tierRank() >= 3 || bonus != null) && !tier.treasure()) {
+            rareMoment(player, cube, "DIAMONDS", "#55FFFF", 0, null);
+        }
         showEarningsIndicator(player, cubeCenter, killCoins, killDiamonds, combo.count());
         announceCombo(player, cubeCenter, combo);
         queueSummary(player, coins, diamondsEarned);
@@ -1590,13 +1599,63 @@ public final class OreCubeService implements Listener {
     }
 
     /** Placeholder candy source for this pass (see Candy's own Javadoc) - a luck-modified roll per configured candy type on every kill. Overflow past a full inventory drops at the player's feet rather than vanishing. */
-    private void giveCandyDrops(Player player, double luck) {
+    private void giveCandyDrops(Player player, OreCube cube, double luck) {
         for (Candy c : packs.getPetLevelingService().rollCandyDrops(luck)) {
             ItemStack item = packs.getPetLevelingService().createCandyItem(c);
+            rareMoment(player, cube, "CANDY", "#FFB6E1", 0, item.clone());
             player.getInventory().addItem(item).values()
                     .forEach(leftover -> player.getWorld().dropItemNaturally(player.getLocation(), leftover));
             player.sendMessage(Text.parse("<#FFB6E1>You found some <name>!</#FFB6E1>",
                     Placeholder.unparsed("name", c.displayName())));
+        }
+    }
+
+    /**
+     * The moment a rare drop gets: a column of light in its colour rising
+     * out of the cube, "✦ LABEL ✦" floating up big and bold, a burst and a
+     * chime that grow with {@code intensity} (0 small, 1 notable, 2 huge),
+     * and - when there's an {@code item} to show - that item popping out
+     * and flying to the player.
+     * <p>
+     * Every piece of it is sent to this one player only (packet entities,
+     * per-player particles and sounds): with a hundred players in a zone,
+     * nobody else's screen or connection pays for it.
+     */
+    private void rareMoment(Player player, OreCube cube, String label, String colorHex, int intensity, ItemStack item) {
+        int rgb;
+        try {
+            rgb = Integer.parseInt(colorHex.replace("#", ""), 16);
+        } catch (NumberFormatException e) {
+            rgb = 0xFFFFFF;
+        }
+        Location center = cube.center();
+        org.bukkit.Color color = org.bukkit.Color.fromRGB(rgb);
+        Particle.DustOptions dust = new Particle.DustOptions(color, 1.3f + 0.3f * intensity);
+        double height = 2.0 + intensity * 1.2;
+        for (double y = 0; y <= height; y += 0.2) {
+            player.spawnParticle(Particle.DUST, center.clone().add(0, y, 0), 2, 0.08, 0.05, 0.08, 0, dust);
+        }
+        if (intensity >= 1) {
+            player.spawnParticle(Particle.FIREWORK, center, 14 * intensity, 0.3, 0.3, 0.3, 0.12);
+        }
+        if (intensity >= 2) {
+            player.spawnParticle(Particle.TOTEM_OF_UNDYING, center, 45, 0.4, 0.5, 0.4, 0.45);
+        }
+
+        Component text = Text.parse("<" + colorHex + "><bold>✦ " + label + " ✦</bold></" + colorHex + ">");
+        float scale = 1.15f + 0.25f * intensity;
+        spawnFloatingText(player, center, text, 14, 34 + 10 * intensity, scale, 1.3 + 0.2 * intensity);
+
+        player.playSound(center, Sound.BLOCK_AMETHYST_BLOCK_RESONATE, 0.9f, 1.4f);
+        if (intensity >= 1) {
+            player.playSound(center, Sound.BLOCK_NOTE_BLOCK_CHIME, 0.8f, 1.8f);
+        }
+        if (intensity >= 2) {
+            player.playSound(center, Sound.ENTITY_PLAYER_LEVELUP, 0.6f, 1.5f);
+        }
+
+        if (item != null) {
+            lootDrops.spawnCosmetic(player, center, cube.location().getY(), cube.size() / 2.0, item, rgb, 0.7f);
         }
     }
 
