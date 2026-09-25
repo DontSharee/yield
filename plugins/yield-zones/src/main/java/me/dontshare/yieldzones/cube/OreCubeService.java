@@ -833,6 +833,7 @@ public final class OreCubeService implements Listener {
             applyBonusGlow(owner, blockEntityId, blockEntityUuid, bonus);
         }
         OreCube cube = new OreCube(landedAt, tier, blockEntityId, blockEntityUuid, textEntityId, bonus);
+        rankCube(zone, cube);
         // Registration first, health bar last - the block has already
         // physically landed by this point (FakeFallingBlock's own handler
         // already did the sendBlockChange before invoking this callback),
@@ -1486,7 +1487,8 @@ public final class OreCubeService implements Listener {
         // matching its own "bonus chance" framing rather than "always."
         boolean hasGlittering = packs.getPetEnchantService().hasBonusDiamondDropEnchant(contributors);
         double luck = luckService.totalLuckMultiplier(profile);
-        double diamondChance = 0.05 * luck + diamondChanceBoostSum(profile) + (hasGlittering ? 0.5 : 0.0);
+        double diamondChance = (0.05 * luck + diamondChanceBoostSum(profile)) * cube.diamondChanceMultiplier()
+                + (hasGlittering ? 0.5 : 0.0);
         // The roll is a flat chance; the TIER decides how big the payout is,
         // so diamond income tracks the zone the same way coins do.
         long diamondsEarned = guaranteedDiamond || ThreadLocalRandom.current().nextDouble() < diamondChance
@@ -1514,11 +1516,12 @@ public final class OreCubeService implements Listener {
         for (UUID contributorId : contributingInstanceIds) {
             packs.getPetDisplayService().showXpGain(player, contributorId, petXpAmount);
         }
-        giveCandyDrops(player, luck);
+        // Rarer cubes roll their rare drops at better odds - see rankCube.
+        giveCandyDrops(player, luck * cube.rareDropMultiplier());
         // Enchant Books: very rare from an ordinary cube, likelier from a big
         // safe, guaranteed (and at least Epic) from a boss block - the cube's
         // own chance and floor, set at load (see CubeTier#bookChance).
-        packs.getEnchantService().tryDropBook(player, tier.bookChance(), luck, tier.bookMinRarity());
+        packs.getEnchantService().tryDropBook(player, tier.bookChance() * cube.rareDropMultiplier(), luck, tier.bookMinRarity());
         showEarningsIndicator(player, cubeCenter, killCoins, killDiamonds, combo.count());
         announceCombo(player, cubeCenter, combo);
         queueSummary(player, coins, diamondsEarned);
@@ -1551,7 +1554,8 @@ public final class OreCubeService implements Listener {
         }
         PackPlayerProfile profile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
         double bonusMultiplier = cube.bonus() != null ? cube.bonus().multiplier() : 1.0;
-        double diamondChance = 0.05 * luckService.totalLuckMultiplier(profile) + diamondChanceBoostSum(profile);
+        double diamondChance = (0.05 * luckService.totalLuckMultiplier(profile) + diamondChanceBoostSum(profile))
+                * cube.diamondChanceMultiplier();
         double perChip = CHIP_SHARE / CHIPS_PER_CUBE;
         while (cube.chipsPaid() < due) {
             long coins = Math.round(tier.coinValue() * packs.coinMultiplier(profile)
@@ -1566,13 +1570,16 @@ public final class OreCubeService implements Listener {
     /** Spills {@code coins}/{@code diamonds} out of {@code cube} as collectable drops - a few for a mid-fight payout, a fountain for the kill, more for a rarer cube. */
     private void dropLoot(Player player, OreCube cube, long coins, long diamonds, boolean kill) {
         CubeTier tier = cube.tier();
+        // Each tier up spills visibly more: Tier I 5, II 8, III 12 on the
+        // break (2/3/4 mid-fight), a giant or chest a real fountain.
+        int rank = Math.max(1, cube.tierRank());
         int coinPieces;
         if (!kill) {
-            coinPieces = 2;
+            coinPieces = 1 + rank;
         } else if (tier.treasure() || tier.giant()) {
-            coinPieces = 14;
+            coinPieces = 16;
         } else {
-            coinPieces = tier.weight() < 10 ? 8 : 5;
+            coinPieces = rank == 1 ? 5 : rank == 2 ? 8 : 12 + 3 * (rank - 3);
         }
         int diamondPieces = kill ? Math.max(2, coinPieces / 3) : 1;
         Location center = cube.center();
@@ -1635,7 +1642,7 @@ public final class OreCubeService implements Listener {
         if (cube.bonus() != null && !GIANT_GLOW_ID.equals(cube.bonus().id())) {
             title = bonusLabel(cube).append(Component.text(" ")).append(title);
         }
-        title = nameLabel(cube.tier()).append(Component.text(" ")).append(title);
+        title = nameLabel(cube).append(Component.text(" ")).append(title);
         BossBar bar = bossBarByPlayer.get(player.getUniqueId());
         if (bar == null) {
             bar = BossBar.bossBar(title, progress, BossBar.Color.YELLOW, BossBar.Overlay.PROGRESS);
@@ -1664,8 +1671,63 @@ public final class OreCubeService implements Listener {
         // The cube's name sits on top: "BIG SAFE" (or plain "Stone") above
         // "GOLDEN x2" above the bar. A giant's cosmetic glow has no line of
         // its own - the name already says what it is.
-        return nameLabel(cube.tier()).append(Component.newline()).append(text);
+        return nameLabel(cube).append(Component.newline()).append(text);
     }
+
+    /** How much likelier each tier of a zone is to pay out its rarer things, before normalising - Tier I, II, III, then +0.9 a tier beyond. */
+    private static double rarityFactor(int rank) {
+        return switch (rank) {
+            case 0, 1 -> 1.0;
+            case 2 -> 1.6;
+            case 3 -> 2.5;
+            default -> 2.5 + 0.9 * (rank - 3);
+        };
+    }
+
+    /**
+     * Works out where this cube sits in its zone's ladder (Tier I is the
+     * weakest ordinary cube by HP) and how its odds shift for it.
+     * <p>
+     * Higher tiers are likelier to drop diamonds, but the zone's diamond
+     * income stays where the pacing has it: the factors are normalised so
+     * that, weighted by how often each tier spawns and what it pays, the
+     * average chance is unchanged - Tier I gives up a little so Tier III
+     * can pay out far more often. Enchant books and candy just get the
+     * factor straight: they're rare, and not what the pacing runs on.
+     * <p>
+     * A giant takes the tier of the ordinary cube it's a giant version of;
+     * treasure sits outside the ladder.
+     */
+    private void rankCube(ZoneDefinition zone, OreCube cube) {
+        CubeTier tier = cube.tier();
+        List<CubeTier> ladder = zone.cubeTiers().stream()
+                .filter(t -> !t.treasure() && !t.giant())
+                .sorted(java.util.Comparator.comparingLong(CubeTier::maxHp))
+                .toList();
+        int rank = 0;
+        if (!tier.treasure()) {
+            for (int i = 0; i < ladder.size(); i++) {
+                CubeTier rung = ladder.get(i);
+                if (tier.giant() ? rung.material() == tier.material() : rung.equals(tier)) {
+                    rank = i + 1;
+                    break;
+                }
+            }
+        }
+        double paid = 0;
+        double paidWeighted = 0;
+        for (int i = 0; i < ladder.size(); i++) {
+            CubeTier rung = ladder.get(i);
+            double value = rung.weight() * rung.diamondValue();
+            paid += value;
+            paidWeighted += value * rarityFactor(i + 1);
+        }
+        double norm = paidWeighted > 0 ? paid / paidWeighted : 1.0;
+        double factor = rarityFactor(rank);
+        cube.setRarity(rank, tier.giant() || tier.treasure() ? 1.0 : factor * norm, factor);
+    }
+
+    private static final String[] ROMAN = {"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"};
 
     private static final Map<CubeTier, Component> BLOCK_NAMES = new ConcurrentHashMap<>();
 
@@ -1675,14 +1737,26 @@ public final class OreCubeService implements Listener {
      * white for a zone's common cube, green for the uncommon one, aqua for
      * the rare one, so the rare cube reads as rare before you hit it.
      */
-    private static Component nameLabel(CubeTier tier) {
-        if (tier.label() != null) {
-            return tierLabel(tier);
+    private static Component nameLabel(OreCube cube) {
+        CubeTier tier = cube.tier();
+        int rank = cube.tierRank();
+        Component name = tier.label() != null ? tierLabel(tier)
+                : BLOCK_NAMES.computeIfAbsent(tier, t -> {
+                    String color = t.weight() >= 50 ? "&f" : t.weight() >= 10 ? "&a" : "&b";
+                    return Text.parse(color + "&l" + blockName(t.material()));
+                });
+        if (rank <= 0) {
+            return name;
         }
-        return BLOCK_NAMES.computeIfAbsent(tier, t -> {
-            String color = t.weight() >= 50 ? "&f" : t.weight() >= 10 ? "&a" : "&b";
-            return Text.parse(color + "&l" + blockName(t.material()));
-        });
+        return TIER_TAGS.computeIfAbsent(rank, OreCubeService::tierTag).append(name);
+    }
+
+    private static final Map<Integer, Component> TIER_TAGS = new ConcurrentHashMap<>();
+
+    /** "[Tier II] " - dark gray brackets, gray text, in front of the cube's name. */
+    private static Component tierTag(int rank) {
+        String numeral = rank < ROMAN.length ? ROMAN[rank] : String.valueOf(rank);
+        return Text.parse("&8[&7Tier " + numeral + "&8] ");
     }
 
     /** "COPPER_BLOCK" -> "Copper Block". */

@@ -30,6 +30,12 @@ public final class OreCube {
     private int chipsPaid;
     private long chippedCoins;
     private long chippedDiamonds;
+    /** 1 for the zone's common cube, 2, 3... by HP - 0 for a cube outside the ladder (treasure). See OreCubeService#rankCube. */
+    private int tierRank;
+    /** How much likelier this cube is than the zone average to pay out diamonds - see OreCubeService#rankCube. */
+    private double diamondChanceMultiplier = 1.0;
+    /** How much likelier its rare drops (enchant books, candy) are. */
+    private double rareDropMultiplier = 1.0;
 
     public OreCube(Location location, CubeTier tier, int blockEntityId, UUID blockEntityUuid, int textEntityId, CubeBonus bonus) {
         this.location = location;
@@ -119,6 +125,24 @@ public final class OreCube {
         chipsPaid++;
         chippedCoins += coins;
         chippedDiamonds += diamonds;
+    }
+
+    public int tierRank() {
+        return tierRank;
+    }
+
+    public double diamondChanceMultiplier() {
+        return diamondChanceMultiplier;
+    }
+
+    public double rareDropMultiplier() {
+        return rareDropMultiplier;
+    }
+
+    public void setRarity(int tierRank, double diamondChanceMultiplier, double rareDropMultiplier) {
+        this.tierRank = tierRank;
+        this.diamondChanceMultiplier = diamondChanceMultiplier;
+        this.rareDropMultiplier = rareDropMultiplier;
     }
 
     public boolean highlighted() {
