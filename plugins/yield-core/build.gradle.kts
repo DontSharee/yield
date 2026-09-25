@@ -1,4 +1,4 @@
-version = "0.11.8"
+version = "0.11.9"
 
 repositories {
     maven("https://repo.extendedclip.com/releases/")

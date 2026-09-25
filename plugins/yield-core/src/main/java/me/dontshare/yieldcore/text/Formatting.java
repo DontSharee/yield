@@ -113,20 +113,32 @@ public final class Formatting {
         }
         int digits = abs.toString().length();
         int step = (digits - 1) / 3;
-        String suffix = (step >= 1 && step <= SUFFIXES.length) ? SUFFIXES[step - 1] : "";
 
         BigDecimal divisor = BigDecimal.TEN.pow(step * 3);
         BigDecimal scaled = new BigDecimal(n).divide(divisor, 2, RoundingMode.DOWN);
-        String value = round ? String.valueOf(Math.round(scaled.doubleValue())) : trimTrailingZeros(scaled.doubleValue());
-        return value + suffix;
+        return withSuffix(scaled.doubleValue(), step, round);
     }
 
     private static String abbreviate(double n, boolean round) {
         double magnitude = Math.log(Math.max(Math.abs(n), 1)) / Math.log(1000);
         int step = (int) Math.floor(magnitude);
         double scaled = n / Math.pow(1000, step);
-        String suffix = (step >= 1 && step <= SUFFIXES.length) ? SUFFIXES[step - 1] : "";
+        return withSuffix(scaled, step, round);
+    }
+
+    /**
+     * {@code scaled} (already divided down by {@code 1000^step}) with its
+     * suffix - moved up a step when rounding carries it to 1000, so
+     * 999,999,999 reads "1B" rather than "1000M".
+     */
+    private static String withSuffix(double scaled, int step, boolean round) {
         String value = round ? String.valueOf(Math.round(scaled)) : trimTrailingZeros(scaled);
+        if (step < SUFFIXES.length && Math.abs(Double.parseDouble(value)) >= 1000) {
+            scaled /= 1000;
+            step++;
+            value = round ? String.valueOf(Math.round(scaled)) : trimTrailingZeros(scaled);
+        }
+        String suffix = (step >= 1 && step <= SUFFIXES.length) ? SUFFIXES[step - 1] : "";
         return value + suffix;
     }
 
