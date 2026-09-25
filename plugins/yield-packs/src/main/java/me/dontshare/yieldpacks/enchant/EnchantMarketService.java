@@ -123,7 +123,7 @@ public final class EnchantMarketService {
 
     public void start() {
         announcedHour = currentHour();
-        Bukkit.getScheduler().runTaskTimer(plugin, this::watchForRestock, WATCH_INTERVAL_TICKS, WATCH_INTERVAL_TICKS);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("enchantmarket.watch", this::watchForRestock), WATCH_INTERVAL_TICKS, WATCH_INTERVAL_TICKS);
     }
 
     public static long currentHour() {

@@ -196,7 +196,7 @@ public final class PetCombatController implements Listener {
     }
 
     public void start() {
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tick, TICK_INTERVAL, TICK_INTERVAL);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("combat.pets", this::tick), 1L, 1L);
     }
 
     /** Left-click handling for CLOSEST/STRONGEST/WEAKEST - overrides the whole squad's shared target. */
@@ -294,10 +294,18 @@ public final class PetCombatController implements Listener {
         return profile.findPet(petId).map(pet -> packs.getEquipmentService().effectiveDamage(profile, pet)).orElse(0.0);
     }
 
+    /**
+     * Each player's combat still runs once per {@link #TICK_INTERVAL}, but
+     * on their own tick of it - all at once, a busy zone made every fourth
+     * tick a long one.
+     */
     private void tick() {
-        currentTick += TICK_INTERVAL;
+        currentTick++;
+        long phase = currentTick % TICK_INTERVAL;
         for (Player player : Bukkit.getOnlinePlayers()) {
-            tickPlayer(player);
+            if (Math.floorMod(player.getUniqueId().hashCode(), (int) TICK_INTERVAL) == phase) {
+                tickPlayer(player);
+            }
         }
     }
 

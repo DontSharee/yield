@@ -31,6 +31,7 @@ public final class YieldCommand {
                                     "<#4BD9FF><bold>Yield</bold></#4BD9FF> <dark_gray>»</dark_gray> <gray>Config reloaded.</gray>"));
                             return Command.SINGLE_SUCCESS;
                         }))
+                .then(me.dontshare.yieldcore.status.StatusCommand.node())
                 .then(Commands.literal("resync")
                         .executes(ctx -> {
                             for (Player player : Bukkit.getOnlinePlayers()) {

@@ -47,7 +47,7 @@ public final class PackActionBarService {
     }
 
     public void start() {
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 0L, 20L);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("pets.actionbar", this::tick), 0L, 20L);
     }
 
     private void tick() {

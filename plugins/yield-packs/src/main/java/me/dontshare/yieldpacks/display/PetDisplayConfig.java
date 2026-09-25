@@ -5,5 +5,5 @@ public record PetDisplayConfig(
         int gridColumns, double columnSpacing, double rowSpacing, double startDistance, double heightOffset,
         double hoverAmplitude, int hoverPeriodTicks, double movementThreshold,
         int updateIntervalTicks, double viewDistance, float scale, float pitchDegrees, float yawDegrees,
-        float hugeScaleMultiplier) {
+        float hugeScaleMultiplier, boolean labelsForOthers, boolean combatShownToOthers) {
 }

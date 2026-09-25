@@ -138,10 +138,10 @@ public final class PackStationDisplay implements Listener {
 
     public void start() {
         Bukkit.getPluginManager().registerEvents(this, plugin);
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tick, TICK_INTERVAL, TICK_INTERVAL);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("display.eggstations", this::tick), TICK_INTERVAL, TICK_INTERVAL);
         // Every tick, so the bar keeps up with the player rather than
         // trailing a second behind.
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tickBars, 1L, 1L);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("display.hatchbars", this::tickBars), 1L, 1L);
     }
 
     /**

@@ -181,7 +181,7 @@ public final class PackOpenService implements Listener {
     public void start() {
         Bukkit.getPluginManager().registerEvents(this, plugin);
         long intervalTicks = Math.max(1L, content.get().shop().openCooldownMillis() / 50L);
-        Bukkit.getScheduler().runTaskTimer(plugin, this::autoHatchTick, intervalTicks, intervalTicks);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("hatch.auto", this::autoHatchTick), intervalTicks, intervalTicks);
     }
 
     /**

@@ -69,6 +69,7 @@ public final class YieldZones extends JavaPlugin {
         YieldPacks packs = JavaPlugin.getPlugin(YieldPacks.class);
         cubeService = new OreCubeService(this, () -> zones, packs);
         cubeService.start();
+        me.dontshare.yieldcore.status.StatusRegistry.register("Zones", this::zoneStatusLines);
 
         worldBossService = new WorldBossService(this, packs, cubeService, () -> worldBosses);
         worldBossService.start();
@@ -210,6 +211,34 @@ public final class YieldZones extends JavaPlugin {
     }
 
     /** The live zone registry - always current after {@link #reloadContent}. Read through this method (or capture a {@code () -> zones}-style supplier) rather than caching the returned map, since a reload replaces it wholesale rather than mutating it in place. */
+    /** One line per zone with anyone in it - {@code /yield status}. */
+    private java.util.List<String> zoneStatusLines() {
+        Map<String, Integer> counts = new java.util.LinkedHashMap<>();
+        for (ZoneDefinition zone : zones.values()) {
+            counts.put(zone.id(), 0);
+        }
+        int outside = 0;
+        for (org.bukkit.entity.Player player : org.bukkit.Bukkit.getOnlinePlayers()) {
+            ZoneDefinition zone = cubeService.currentZoneOf(player);
+            if (zone == null) {
+                outside++;
+            } else {
+                counts.merge(zone.id(), 1, Integer::sum);
+            }
+        }
+        java.util.List<String> lines = new java.util.ArrayList<>();
+        StringBuilder line = new StringBuilder();
+        for (Map.Entry<String, Integer> entry : counts.entrySet()) {
+            if (entry.getValue() == 0) {
+                continue;
+            }
+            line.append("<white>").append(entry.getKey()).append("</white> <gray>").append(entry.getValue()).append("</gray>  ");
+        }
+        line.append("<dark_gray>outside zones</dark_gray> <gray>").append(outside).append("</gray>");
+        lines.add(line.toString());
+        return lines;
+    }
+
     public Map<String, ZoneDefinition> getZones() {
         return zones;
     }

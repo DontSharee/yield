@@ -91,7 +91,7 @@ public final class TradeService {
     }
 
     public void startConfirmTicker() {
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tickConfirmations, 1L, 1L);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("trade", this::tickConfirmations), 1L, 1L);
     }
 
     public TradeSession sessionOf(UUID playerId) {

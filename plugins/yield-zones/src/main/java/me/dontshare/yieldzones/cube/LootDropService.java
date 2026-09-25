@@ -130,7 +130,7 @@ public final class LootDropService implements Listener {
     public void start() {
         Bukkit.getPluginManager().registerEvents(this, plugin);
         JavaPlugin.getPlugin(YieldCore.class).getScoreboardDisplay().addLineTransformer(this::decorateWallet);
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 1L, 1L);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("loot.drops", this::tick), 1L, 1L);
     }
 
     /** Extra magnet range in blocks, summed on top of {@link #BASE_MAGNET_RANGE} - e.g. yield-upgrades' Magnet station. */

@@ -97,7 +97,7 @@ public final class TapService implements Listener {
 
     public void start() {
         Bukkit.getPluginManager().registerEvents(this, plugin);
-        Bukkit.getScheduler().runTaskTimer(plugin, this::autoTapTick, AUTO_TAP_INTERVAL_TICKS, AUTO_TAP_INTERVAL_TICKS);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("combat.autotap", this::autoTapTick), AUTO_TAP_INTERVAL_TICKS, AUTO_TAP_INTERVAL_TICKS);
     }
 
     public void setPaused(Predicate<Player> paused) {
@@ -217,10 +217,12 @@ public final class TapService implements Listener {
                 lastTapKillAt.put(id, now);
             }
         }
+        long started = System.nanoTime();
         for (TapListener listener : tapListeners.values()) {
             listener.onTap(player, profile, cube, exact);
         }
         cubes.applyTap(player, cube, damage, exact);
+        me.dontshare.yieldcore.perf.PerfTracker.record("combat.taps", System.nanoTime() - started);
         return true;
     }
 

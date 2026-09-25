@@ -128,6 +128,19 @@ public final class DatabaseManager {
         }
     }
 
+    /** Database tasks waiting for a thread - a steadily growing number means Mongo can't keep up. */
+    public int queuedTasks() {
+        return executor.getQueue().size();
+    }
+
+    public int activeTasks() {
+        return executor.getActiveCount();
+    }
+
+    public long completedTasks() {
+        return executor.getCompletedTaskCount();
+    }
+
     /**
      * Lets the writes still queued land before the connection goes.
      * <p>

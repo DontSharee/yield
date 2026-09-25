@@ -52,16 +52,14 @@ import java.util.function.Supplier;
  */
 public final class PetDisplayService {
 
-    /** How far (as a fraction of the distance to the target) an attacking pet lunges forward per hit. */
     /** Blocks a pet steps toward its target on each hit. */
     private static final double LUNGE_STEP = 0.3;
 
     /** Below this, a yaw change isn't worth a packet - it's far finer than anyone can see. */
     private static final float YAW_EPSILON_DEGREES = 0.5f;
-    /** Duration of both the forward lunge and the return spring-back - see {@link #playAttackLunge}. */
-    private static final int LUNGE_TICKS = 3;
     /**
-     * How close another player has to be to see someone's pets lunge. Each
+     * How close another player has to be to see someone's pets lunge and
+     * bob. Each
      * hit is a lunge and a return per pet per viewer; across a busy zone at
      * the full view distance that was most of the traffic, for a 0.3-block
      * hop nobody can make out from across the zone. The owner always sees
@@ -89,6 +87,9 @@ public final class PetDisplayService {
     private final Map<UUID, Set<Integer>> lungedSlots = new ConcurrentHashMap<>();
     /** Last yaw sent per slot, so a stationary player's pets stop re-sending a rotation that hasn't changed. */
     private final Map<UUID, float[]> lastYaws = new ConcurrentHashMap<>();
+    /** The same, for what everyone but the owner was last sent - see {@link #othersSeeFormation}. */
+    private final Map<UUID, List<Location>> lastSentToOthers = new ConcurrentHashMap<>();
+    private final Map<UUID, float[]> lastYawsToOthers = new ConcurrentHashMap<>();
     /** Per-owner, per-equip-slot target overrides - a slot missing from the map stays in formation. Multiple slots may point at different targets at once (see single-send). */
     private final Map<UUID, Map<Integer, Location>> attackOverrides = new ConcurrentHashMap<>();
     /**
@@ -198,19 +199,21 @@ public final class PetDisplayService {
         Location lunge = current.clone().add(towardTarget);
 
         PetDisplayInstance instance = instances.get(slot);
-        // The shortened window below sticks until something resets it, so the
-        // next regular cycle has to put it back - see moveFor.
+        // The next regular cycle sends it back - see moveFor.
         lungedSlots.computeIfAbsent(ownerId, id -> ConcurrentHashMap.newKeySet()).add(slot);
         Location ownerAt = owner.getLocation();
+        // One packet per viewer: the pet alone, over its usual glide window.
+        // A lunge used to shorten that window (and the name label's) first,
+        // then hop the label too - four packets out and four back per hit per
+        // viewer, the busiest traffic in a crowded zone, for a hop a tick
+        // quicker and a label moving 0.3 blocks.
         for (UUID viewerId : viewersByOwner.getOrDefault(ownerId, Set.of())) {
             Player viewer = Bukkit.getPlayer(viewerId);
-            if (viewer == null || !withinLungeRange(viewer, ownerId, ownerAt, LUNGE_VIEW_RANGE)) {
+            if (viewer == null || !withinLungeRange(viewer, ownerId, ownerAt, LUNGE_VIEW_RANGE)
+                    || (!viewerId.equals(ownerId) && othersSeeFormation(ownerId))) {
                 continue;
             }
-            ItemDisplayManager.setPositionInterpolation(viewer, instance.itemEntityId(), LUNGE_TICKS);
             PacketEntityManager.teleportEntity(viewer, instance.itemEntityId(), lunge);
-            TextDisplayManager.setPositionInterpolation(viewer, instance.textEntityId(), LUNGE_TICKS);
-            PacketEntityManager.teleportEntity(viewer, instance.textEntityId(), lunge.clone().add(0, 0.4, 0));
         }
     }
 
@@ -281,22 +284,38 @@ public final class PetDisplayService {
     }
 
     public void start() {
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tick, config.updateIntervalTicks(), config.updateIntervalTicks());
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("pets.display", this::tick), 1L, 1L);
     }
 
+    /**
+     * Every owner is still updated once per update-interval-ticks, but on
+     * their own tick of it rather than all together: with a busy server the
+     * all-at-once pass was a spike every fourth tick (the cause of most of
+     * the tick-time spread in the load test) and three quiet ticks between.
+     */
     private void tick() {
-        elapsedTicks += config.updateIntervalTicks();
+        elapsedTicks++;
+        int interval = Math.max(1, config.updateIntervalTicks());
+        long phase = elapsedTicks % interval;
         for (Player owner : Bukkit.getOnlinePlayers()) {
-            updateOwner(owner);
+            if (Math.floorMod(owner.getUniqueId().hashCode(), interval) == phase) {
+                updateOwner(owner);
+            }
         }
     }
 
     /** Rebuilds this owner's pet instances from their current equip list. Call after any equip/unequip mutation. */
     public void refresh(Player owner) {
-        despawnAll(owner);
         UUID ownerId = owner.getUniqueId();
         PackPlayerProfile profile = playerStore.getOrCreate(ownerId);
         List<UUID> equippedIds = profile.getEquippedPetIds();
+        if (unchanged(ownerInstances.get(ownerId), profile, equippedIds)) {
+            // Every hatch ends in a refresh, and most hatches equip nothing -
+            // rebuilding anyway destroyed and re-spawned the whole squad for
+            // every viewer in range.
+            return;
+        }
+        despawnAll(owner);
         if (equippedIds.isEmpty()) {
             ownerInstances.remove(ownerId);
             return;
@@ -315,6 +334,22 @@ public final class PetDisplayService {
         // harder-to-get-wrong bookkeeping.
     }
 
+    /** Whether the squad on screen already is exactly the one equipped: same pets, same order, same levels and shine. */
+    private static boolean unchanged(List<PetDisplayInstance> current, PackPlayerProfile profile, List<UUID> equippedIds) {
+        if (current == null || current.size() != equippedIds.size()) {
+            return false;
+        }
+        for (int i = 0; i < equippedIds.size(); i++) {
+            PetDisplayInstance shown = current.get(i);
+            var pet = profile.findPet(equippedIds.get(i)).orElse(null);
+            if (pet == null || !pet.getItemId().equals(shown.itemId()) || pet.getLevel() != shown.level()
+                    || pet.isShiny() != shown.shiny()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /** Re-evaluates what this one viewer should see of every owner's pets. Call after their PetVisibility setting changes. */
     public void refreshViewer(Player viewer) {
         UUID viewerId = viewer.getUniqueId();
@@ -328,12 +363,14 @@ public final class PetDisplayService {
             boolean shouldSeeNow = shouldSee.contains(viewerId);
             boolean seeingNow = currentlySeeing.contains(viewerId);
             if (shouldSeeNow && !seeingNow) {
-                List<Location> positions = resolvePositions(owner, instances, 0);
-                List<Float> yaws = computeYaws(owner, positions);
-                spawnFor(viewer, instances, positions, yaws);
+                boolean isOwner = viewerId.equals(owner.getUniqueId());
+                boolean formation = !isOwner && othersSeeFormation(owner.getUniqueId());
+                List<Location> positions = formation ? resolveFormation(owner, instances) : resolvePositions(owner, instances, 0);
+                List<Float> yaws = formation ? formationYaws(owner, instances.size()) : computeYaws(owner, positions);
+                spawnFor(viewer, instances, positions, yaws, labelsFor(viewerId, owner.getUniqueId()));
                 currentlySeeing.add(viewerId);
             } else if (!shouldSeeNow && seeingNow) {
-                despawnFor(viewer, instances);
+                despawnFor(viewer, instances, labelsFor(viewerId, owner.getUniqueId()));
                 currentlySeeing.remove(viewerId);
             }
         }
@@ -371,7 +408,7 @@ public final class PetDisplayService {
                     continue;
                 }
                 try {
-                    despawnFor(viewer, instances);
+                    despawnFor(viewer, instances, labelsFor(viewerId, ownerId));
                 } catch (Exception e) {
                     plugin.getLogger().warning("Failed to despawn " + owner.getName() + "'s pet display for viewer "
                             + viewer.getName() + ": " + e.getMessage());
@@ -380,6 +417,9 @@ public final class PetDisplayService {
         }
         lastOwnerLocation.remove(ownerId);
         lastSentPositions.remove(ownerId);
+        lastSentToOthers.remove(ownerId);
+        lastYawsToOthers.remove(ownerId);
+        othersFacing.remove(ownerId);
         bobbing.remove(ownerId);
         lungedSlots.remove(ownerId);
         lastYaws.remove(ownerId);
@@ -417,6 +457,9 @@ public final class PetDisplayService {
         viewersByOwner.clear();
         lastOwnerLocation.clear();
         lastSentPositions.clear();
+        lastSentToOthers.clear();
+        lastYawsToOthers.clear();
+        othersFacing.clear();
         bobbing.clear();
         lungedSlots.clear();
         lastYaws.clear();
@@ -454,29 +497,48 @@ public final class PetDisplayService {
         Set<UUID> shouldSee = computeViewers(owner, current);
         Set<UUID> currentlySeeing = viewersByOwner.computeIfAbsent(ownerId, id -> ConcurrentHashMap.newKeySet());
 
-        // spawnFor already sets each entity's interpolation window, and only a
-        // lunge ever shortens it - so only a pet that lunged since the last
-        // cycle needs moving back and its window restored, not the squad.
+        // Per pet, not per squad: one pet sent to a new cube used to resend
+        // every pet's spot and facing to every viewer. A pet that lunged since
+        // the last cycle goes back to its spot too.
         Set<Integer> lunged = lungedSlots.remove(ownerId);
-        boolean yawChanged = yawsChanged(ownerId, yaws);
-        boolean positionsChanged = positionsChanged(ownerId, positions);
-        boolean allPositions = !clientBob || positionsChanged;
+        boolean[] turned = turnedSlots(lastYaws, ownerId, yaws);
+        boolean[] moved = movedSlots(lastSentPositions, ownerId, positions);
+        // Everyone else - see othersSeeFormation - with their own record of
+        // what they were last sent, since it can differ from the owner's.
+        boolean formationForOthers = othersSeeFormation(ownerId);
+        List<Location> othersPositions = formationForOthers ? resolveFormation(owner, instances) : positions;
+        List<Float> othersYaws = formationForOthers ? formationYaws(owner, instances.size()) : yaws;
+        boolean[] othersTurned = turnedSlots(lastYawsToOthers, ownerId, othersYaws);
+        boolean[] othersMoved = movedSlots(lastSentToOthers, ownerId, othersPositions);
 
         Float bobTarget = null;
         int bobTicks = 0;
+        // Everyone else's view of this squad bobs at half the rate - the
+        // same gentle hover, slower, for half the keyframes to every viewer
+        // in a crowd.
+        Float othersBobTarget = null;
+        int othersBobTicks = 0;
         int updateTicks = config.updateIntervalTicks();
         if (clientBob && config.hoverAmplitude() > 0) {
             int half = Math.max(updateTicks, config.hoverPeriodTicks() / 2);
+            int othersHalf = half * 2;
             boolean starting = bobbing.add(ownerId);
             if (starting || elapsedTicks % half < updateTicks) {
                 boolean up = (elapsedTicks / half) % 2 == 0;
                 bobTarget = (float) (up ? config.hoverAmplitude() : -config.hoverAmplitude());
                 bobTicks = half;
             }
+            if (starting || elapsedTicks % othersHalf < updateTicks) {
+                boolean up = (elapsedTicks / othersHalf) % 2 == 0;
+                othersBobTarget = (float) (up ? config.hoverAmplitude() : -config.hoverAmplitude());
+                othersBobTicks = othersHalf;
+            }
         } else if (bobbing.remove(ownerId)) {
             // Moving again: settle back onto the real spot.
             bobTarget = 0f;
             bobTicks = updateTicks;
+            othersBobTarget = 0f;
+            othersBobTicks = updateTicks;
         }
 
         // Driven off the two viewer sets rather than every online player:
@@ -488,7 +550,12 @@ public final class PetDisplayService {
             }
             Player viewer = Bukkit.getPlayer(viewerId);
             if (viewer != null) {
-                despawnFor(viewer, instances);
+                String outer = me.dontshare.yieldcore.perf.PerfTracker.enter("pets.display.despawn");
+                try {
+                    despawnFor(viewer, instances, labelsFor(viewerId, ownerId));
+                } finally {
+                    me.dontshare.yieldcore.perf.PerfTracker.exit(outer);
+                }
             }
             currentlySeeing.remove(viewerId);
         }
@@ -497,75 +564,103 @@ public final class PetDisplayService {
             if (viewer == null) {
                 continue;
             }
+            boolean isOwner = viewerId.equals(ownerId);
             if (currentlySeeing.add(viewerId)) {
-                spawnFor(viewer, instances, positions, yaws);
-            } else {
-                Set<Integer> returning = lunged != null && withinLungeRange(viewer, ownerId, current, LUNGE_RETURN_RANGE)
-                        ? lunged : null;
-                if (allPositions || yawChanged || returning != null) {
-                    moveFor(viewer, instances, positions, yaws, allPositions, yawChanged, returning);
+                String outer = me.dontshare.yieldcore.perf.PerfTracker.enter("pets.display.spawn");
+                try {
+                    spawnFor(viewer, instances, isOwner ? positions : othersPositions, isOwner ? yaws : othersYaws,
+                            labelsFor(viewerId, ownerId));
+                } finally {
+                    me.dontshare.yieldcore.perf.PerfTracker.exit(outer);
                 }
-                if (bobTarget != null) {
-                    sendBob(viewer, instances, bobTarget, bobTicks);
+            } else {
+                boolean[] viewerMoved = isOwner ? moved : othersMoved;
+                boolean[] viewerTurned = isOwner ? turned : othersTurned;
+                Set<Integer> returning = lunged != null && (isOwner || !formationForOthers)
+                        && withinLungeRange(viewer, ownerId, current, LUNGE_RETURN_RANGE) ? lunged : null;
+                if (viewerMoved != null || viewerTurned != null || returning != null) {
+                    String outer = me.dontshare.yieldcore.perf.PerfTracker.enter(viewerMoved != null ? "pets.display.move"
+                            : viewerTurned != null ? "pets.display.turn" : "pets.display.return");
+                    try {
+                        moveFor(viewer, instances, isOwner ? positions : othersPositions, isOwner ? yaws : othersYaws,
+                                viewerMoved, viewerTurned, returning, labelsFor(viewerId, ownerId));
+                    } finally {
+                        me.dontshare.yieldcore.perf.PerfTracker.exit(outer);
+                    }
+                }
+                // A far viewer can't make out a few centimetres of hover on
+                // someone else's pets; they still get the settle back to 0.
+                Float viewerBob = isOwner ? bobTarget : othersBobTarget;
+                if (viewerBob != null && (viewerBob == 0f || withinLungeRange(viewer, ownerId, current, LUNGE_VIEW_RANGE))) {
+                    String outer = me.dontshare.yieldcore.perf.PerfTracker.enter("pets.display.bob");
+                    try {
+                        sendBob(viewer, instances, viewerBob, isOwner ? bobTicks : othersBobTicks, labelsFor(viewerId, ownerId));
+                    } finally {
+                        me.dontshare.yieldcore.perf.PerfTracker.exit(outer);
+                    }
                 }
             }
         }
     }
 
     /** One bob keyframe for every pet (and its label) - the client glides there over {@code ticks}. */
-    private void sendBob(Player viewer, List<PetDisplayInstance> instances, float y, int ticks) {
+    private void sendBob(Player viewer, List<PetDisplayInstance> instances, float y, int ticks, boolean labels) {
         PacketEntityManager.beginBundle(viewer);
         for (PetDisplayInstance instance : instances) {
             ItemDisplayManager.setTranslationInterpolated(viewer, instance.itemEntityId(), 0f, y, 0f, ticks);
-            ItemDisplayManager.setTranslationInterpolated(viewer, instance.textEntityId(), 0f, y, 0f, ticks);
+            if (labels) {
+                ItemDisplayManager.setTranslationInterpolated(viewer, instance.textEntityId(), 0f, y, 0f, ticks);
+            }
         }
         PacketEntityManager.endBundle(viewer);
     }
 
     /** Whether any pet's spot moved since it was last sent - and records the new spots if so. */
-    private boolean positionsChanged(UUID ownerId, List<Location> positions) {
-        List<Location> previous = lastSentPositions.get(ownerId);
-        boolean changed = previous == null || previous.size() != positions.size();
-        if (!changed) {
-            for (int i = 0; i < positions.size(); i++) {
-                Location a = previous.get(i);
-                Location b = positions.get(i);
-                if (a.getWorld() != b.getWorld() || a.distanceSquared(b) > 1.0e-4) {
-                    changed = true;
-                    break;
+    /** Which slots' spots moved since they were last sent - null when none did. */
+    private boolean[] movedSlots(Map<UUID, List<Location>> lastSent, UUID ownerId, List<Location> positions) {
+        List<Location> previous = lastSent.get(ownerId);
+        boolean[] moved = null;
+        for (int i = 0; i < positions.size(); i++) {
+            Location a = previous != null && i < previous.size() ? previous.get(i) : null;
+            Location b = positions.get(i);
+            if (a == null || a.getWorld() != b.getWorld() || a.distanceSquared(b) > 1.0e-4) {
+                if (moved == null) {
+                    moved = new boolean[positions.size()];
                 }
+                moved[i] = true;
             }
         }
-        if (changed) {
+        if (moved != null || previous == null || previous.size() != positions.size()) {
             List<Location> copy = new ArrayList<>(positions.size());
             for (Location position : positions) {
                 copy.add(position.clone());
             }
-            lastSentPositions.put(ownerId, copy);
+            lastSent.put(ownerId, copy);
         }
-        return changed;
+        return moved;
     }
 
     /** Whether any slot's yaw actually moved since the last cycle - if none did, the rotation packet has nothing to say. */
-    private boolean yawsChanged(UUID ownerId, List<Float> yaws) {
-        float[] previous = lastYaws.get(ownerId);
-        boolean changed = previous == null || previous.length != yaws.size();
-        if (!changed) {
-            for (int i = 0; i < previous.length; i++) {
-                if (Math.abs(previous[i] - yaws.get(i)) > YAW_EPSILON_DEGREES) {
-                    changed = true;
-                    break;
+    /** Which slots' facings turned since they were last sent - null when none did. */
+    private boolean[] turnedSlots(Map<UUID, float[]> lastSent, UUID ownerId, List<Float> yaws) {
+        float[] previous = lastSent.get(ownerId);
+        boolean[] turned = null;
+        for (int i = 0; i < yaws.size(); i++) {
+            if (previous == null || i >= previous.length || Math.abs(previous[i] - yaws.get(i)) > YAW_EPSILON_DEGREES) {
+                if (turned == null) {
+                    turned = new boolean[yaws.size()];
                 }
+                turned[i] = true;
             }
         }
-        if (changed) {
+        if (turned != null || previous == null || previous.length != yaws.size()) {
             float[] snapshot = new float[yaws.size()];
             for (int i = 0; i < snapshot.length; i++) {
                 snapshot[i] = yaws.get(i);
             }
-            lastYaws.put(ownerId, snapshot);
+            lastSent.put(ownerId, snapshot);
         }
-        return changed;
+        return turned;
     }
 
     /**
@@ -698,6 +793,77 @@ public final class PetDisplayService {
         return new Location(center.getWorld(), x, center.getY(), z);
     }
 
+    /**
+     * Whether players other than the owner see this squad trailing its owner
+     * (see {@link #othersFacing}) rather than exactly what the owner sees.
+     * <p>
+     * A player's cubes exist only on their own screen, so to anyone else a
+     * fighting squad is pets circling and lunging at empty air - and with a
+     * crowd, re-sending every squad's every change of target, and every turn
+     * of every owner's camera, to every viewer was nearly all this service's
+     * traffic. pet-display.yml's combat.shown-to-others shows others the
+     * fighting again.
+     */
+    private boolean othersSeeFormation(UUID ownerId) {
+        if (!config.combatShownToOthers()) {
+            return true;
+        }
+        Map<Integer, Location> overrides = attackOverrides.get(ownerId);
+        return overrides == null || overrides.isEmpty();
+    }
+
+    private List<Location> resolveFormation(Player owner, List<PetDisplayInstance> instances) {
+        List<Boolean> huge = new ArrayList<>(instances.size());
+        for (PetDisplayInstance instance : instances) {
+            huge.add(isHuge(instance.itemId()));
+        }
+        Location at = owner.getLocation();
+        at.setYaw(othersFacing(owner));
+        return PetFormation.positionsFor(at, instances.size(), huge, config);
+    }
+
+    /** How far an owner has to walk before everyone else's view of their formation turns to trail them. */
+    private static final double OTHERS_HEADING_STEP = 0.75;
+    /** Per owner: the heading others see the formation trail, and where the owner stood when it was set. */
+    private record Heading(float yaw, Location from) {
+    }
+
+    private final Map<UUID, Heading> othersFacing = new ConcurrentHashMap<>();
+
+    /**
+     * The facing everyone but the owner sees a formation at: the way the
+     * owner last walked, not where they're looking. The formation stands
+     * behind that facing, and a player's camera is never still - followed
+     * exactly, every glance re-sent every pet to every viewer. Pets trailing
+     * the way you walk is also simply how following pets look.
+     */
+    private float othersFacing(Player owner) {
+        Location at = owner.getLocation();
+        Heading held = othersFacing.get(owner.getUniqueId());
+        if (held == null || held.from().getWorld() != at.getWorld()) {
+            othersFacing.put(owner.getUniqueId(), new Heading(at.getYaw(), at));
+            return at.getYaw();
+        }
+        double dx = at.getX() - held.from().getX();
+        double dz = at.getZ() - held.from().getZ();
+        if (dx * dx + dz * dz < OTHERS_HEADING_STEP * OTHERS_HEADING_STEP) {
+            return held.yaw();
+        }
+        float heading = (float) Math.toDegrees(Math.atan2(-dx, dz));
+        othersFacing.put(owner.getUniqueId(), new Heading(heading, at));
+        return heading;
+    }
+
+
+    private List<Float> formationYaws(Player owner, int count) {
+        float formationYaw = othersFacing(owner) + config.yawDegrees();
+        List<Float> yaws = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            yaws.add(formationYaw);
+        }
+        return yaws;
+    }
+
     private List<Location> positionsFor(Player owner, List<PetDisplayInstance> instances, double hoverOffset) {
         int count = instances.size();
         List<Boolean> huge = new ArrayList<>(count);
@@ -727,13 +893,24 @@ public final class PetDisplayService {
      * nowhere near. {@code ownerLocation} is passed in so it isn't re-fetched
      * (and re-allocated) for every candidate.
      */
+    /** Blocks past the view distance a viewer who already sees a squad keeps it - see computeViewers. */
+    private static final double VIEW_HYSTERESIS = 8.0;
+
     private Set<UUID> computeViewers(Player owner, Location ownerLocation) {
         Set<UUID> result = new HashSet<>();
         double viewDistance = config.viewDistance();
         double viewDistanceSquared = viewDistance * viewDistance;
-        for (Player viewer : owner.getWorld().getNearbyPlayers(ownerLocation, viewDistance)) {
+        // Someone already seeing this squad keeps it a little past the view
+        // distance: without that, anyone walking along the edge had the whole
+        // squad destroyed and spawned again every few steps.
+        double keepDistance = viewDistance + VIEW_HYSTERESIS;
+        double keepDistanceSquared = keepDistance * keepDistance;
+        Set<UUID> seeing = viewersByOwner.getOrDefault(owner.getUniqueId(), Set.of());
+        for (Player viewer : owner.getWorld().getNearbyPlayers(ownerLocation, keepDistance)) {
             // getNearbyPlayers works to a bounding box; keep the exact radius.
-            if (viewer.getLocation().distanceSquared(ownerLocation) > viewDistanceSquared) {
+            double distanceSquared = viewer.getLocation().distanceSquared(ownerLocation);
+            if (distanceSquared > keepDistanceSquared
+                    || (distanceSquared > viewDistanceSquared && !seeing.contains(viewer.getUniqueId()))) {
                 continue;
             }
             PackPlayerProfile viewerProfile = playerStore.getCached(viewer.getUniqueId());
@@ -752,7 +929,7 @@ public final class PetDisplayService {
         return result;
     }
 
-    private void spawnFor(Player viewer, List<PetDisplayInstance> instances, List<Location> positions, List<Float> yaws) {
+    private void spawnFor(Player viewer, List<PetDisplayInstance> instances, List<Location> positions, List<Float> yaws, boolean labels) {
         for (int i = 0; i < instances.size(); i++) {
             PetDisplayInstance instance = instances.get(i);
             Location pos = positions.get(i);
@@ -775,6 +952,10 @@ public final class PetDisplayService {
                 ItemDisplayManager.setInterpolation(viewer, instance.itemEntityId(), 0,
                         config.updateIntervalTicks(), config.updateIntervalTicks());
 
+                if (!labels) {
+                    PacketEntityManager.endBundle(viewer);
+                    return;
+                }
                 Location labelPos = pos.clone().add(0, 0.4, 0);
                 TextDisplayManager.spawn(viewer, instance.textEntityId(), labelPos);
                 TextDisplayManager.setBillboard(viewer, instance.textEntityId(), TextDisplayManager.Billboard.VERTICAL);
@@ -800,51 +981,49 @@ public final class PetDisplayService {
     }
 
     /**
-     * @param allPositions every pet's spot goes out (the squad moved);
-     *                     otherwise only the pets in {@code lunged} are sent back to theirs
-     * @param yawChanged   every pet's facing goes out - on its own when that is all that changed
-     * @param lunged       slots that lunged since the last cycle, or null
+     * @param moved     slots whose spot changed (pet and label go), or null
+     * @param turned    slots whose facing changed, or null
+     * @param returning slots that lunged since the last cycle (the pet alone goes back), or null
      */
     private void moveFor(Player viewer, List<PetDisplayInstance> instances, List<Location> positions, List<Float> yaws,
-                          boolean allPositions, boolean yawChanged, Set<Integer> lunged) {
+                          boolean[] moved, boolean[] turned, Set<Integer> returning, boolean labels) {
         int ticks = config.updateIntervalTicks();
-        // Bundled the same way spawnFor already is - this runs for every
-        // pet, every viewer, every update-interval-ticks, so with a large
-        // equip cap it's the single biggest source of outgoing packets this
-        // service produces; batching them into one bundle per viewer instead
-        // of leaving each packet below to flush individually cuts that
-        // overhead directly.
+        // Bundled so the client applies the whole squad's changes in one frame.
         PacketEntityManager.beginBundle(viewer);
         for (int i = 0; i < instances.size(); i++) {
             PetDisplayInstance instance = instances.get(i);
             Location pos = positions.get(i);
-            boolean returning = lunged != null && lunged.contains(i);
-            // A lunge (see playAttackLunge) shortens this pet's position
-            // interpolation window, and the client keeps using whatever it
-            // was LAST told - without putting it back, every later move
-            // would arrive early and visibly pause before the next update.
-            if (returning) {
-                ItemDisplayManager.setPositionInterpolation(viewer, instance.itemEntityId(), ticks);
-                TextDisplayManager.setPositionInterpolation(viewer, instance.textEntityId(), ticks);
-            }
-            if (allPositions || returning) {
+            boolean move = moved != null && moved[i];
+            if (move || (returning != null && returning.contains(i))) {
                 PacketEntityManager.teleportEntity(viewer, instance.itemEntityId(), pos);
+            }
+            if (move && labels) {
                 PacketEntityManager.teleportEntity(viewer, instance.textEntityId(), pos.clone().add(0, 0.4, 0));
             }
-            // Tracks a live-updating yaw, so it goes out whenever that yaw
-            // actually moved - which, for a player standing still, it doesn't.
-            if (yawChanged) {
+            if (turned != null && turned[i]) {
                 ItemDisplayManager.setRotationInterpolated(viewer, instance.itemEntityId(), config.pitchDegrees(), yaws.get(i), ticks);
             }
         }
         PacketEntityManager.endBundle(viewer);
     }
 
-    private void despawnFor(Player viewer, List<PetDisplayInstance> instances) {
+    private void despawnFor(Player viewer, List<PetDisplayInstance> instances, boolean labels) {
         for (PetDisplayInstance instance : instances) {
             PacketEntityManager.destroyEntity(viewer, instance.itemEntityId());
-            PacketEntityManager.destroyEntity(viewer, instance.textEntityId());
+            if (labels) {
+                PacketEntityManager.destroyEntity(viewer, instance.textEntityId());
+            }
         }
+    }
+
+    /**
+     * Whether this viewer sees name labels over this owner's pets. The owner
+     * always does; everyone else only if pet-display.yml says so - a busy
+     * zone is a hundred squads, and a label over every pet there is both
+     * clutter and a second entity per pet to keep moving for every viewer.
+     */
+    private boolean labelsFor(UUID viewerId, UUID ownerId) {
+        return viewerId.equals(ownerId) || config.labelsForOthers();
     }
 
     /**
@@ -896,7 +1075,7 @@ public final class PetDisplayService {
             Component text = labelFor(item, newLevel, old.shiny());
             for (UUID viewerId : viewersByOwner.getOrDefault(ownerId, Set.of())) {
                 Player viewer = Bukkit.getPlayer(viewerId);
-                if (viewer != null) {
+                if (viewer != null && labelsFor(viewerId, ownerId)) {
                     TextDisplayManager.setText(viewer, old.textEntityId(), text);
                 }
             }

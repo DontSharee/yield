@@ -65,7 +65,7 @@ public final class WalkInTriggerDisplay implements org.bukkit.event.Listener {
 
     public void start() {
         Bukkit.getPluginManager().registerEvents(this, plugin);
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tick, TICK_INTERVAL, TICK_INTERVAL);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("display.walkins", this::tick), TICK_INTERVAL, TICK_INTERVAL);
     }
 
     /**

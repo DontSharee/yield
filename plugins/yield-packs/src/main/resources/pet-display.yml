@@ -25,6 +25,19 @@ hover:
 update-interval-ticks: 4 # how often position packets are sent (paired with matching client-side interpolation)
 view-distance: 48        # blocks - only players within this radius of someone see their pets
 
+# Name labels over pets. You always see your own; other players' pets show
+# theirs only if this is on - a busy zone is a hundred squads, and a label
+# over every pet there is clutter and twice the entities to keep moving.
+labels:
+  show-to-others: false
+
+# Whether other players see your pets fighting. Your cubes only exist on
+# your own screen, so to anyone else fighting pets are circling and lunging
+# at empty air - off, they see your squad following you instead, and a
+# crowded zone sends a fraction of the traffic.
+combat:
+  shown-to-others: false
+
 # The item's own visual orientation - a fixed tilt/facing, independent of
 # the player's look direction (it never tracks camera movement).
 item:

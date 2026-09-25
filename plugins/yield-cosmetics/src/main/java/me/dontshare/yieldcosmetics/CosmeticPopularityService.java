@@ -38,7 +38,7 @@ public final class CosmeticPopularityService {
     }
 
     public void start() {
-        Bukkit.getScheduler().runTaskTimer(plugin, this::refreshAll, 0L, REFRESH_INTERVAL_TICKS);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("cosmetics.popularity", this::refreshAll), 0L, REFRESH_INTERVAL_TICKS);
     }
 
     public int countFor(CosmeticCategory category, String cosmeticId) {

@@ -83,7 +83,7 @@ public final class UpgradeStationDisplay implements Listener {
 
     public void start() {
         Bukkit.getPluginManager().registerEvents(this, plugin);
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tick, TICK_INTERVAL, TICK_INTERVAL);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("display.upgrades", this::tick), TICK_INTERVAL, TICK_INTERVAL);
     }
 
     /** A player who logs off loses every packet entity; forgetting them makes each station spawn afresh when they're back. */

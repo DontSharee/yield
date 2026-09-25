@@ -101,9 +101,9 @@ public final class WorldBossService implements Listener {
     }
 
     public void start() {
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tick, TICK_INTERVAL, TICK_INTERVAL);
-        Bukkit.getScheduler().runTaskTimer(plugin, this::checkSpawns, CHECK_INTERVAL_TICKS, CHECK_INTERVAL_TICKS);
-        Bukkit.getScheduler().runTaskTimer(plugin, this::checkExpiry, CHECK_INTERVAL_TICKS, CHECK_INTERVAL_TICKS);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("boss.tick", this::tick), TICK_INTERVAL, TICK_INTERVAL);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("boss.spawns", this::checkSpawns), CHECK_INTERVAL_TICKS, CHECK_INTERVAL_TICKS);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("boss.expiry", this::checkExpiry), CHECK_INTERVAL_TICKS, CHECK_INTERVAL_TICKS);
     }
 
     private void checkSpawns() {

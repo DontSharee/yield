@@ -67,6 +67,21 @@ public final class PlayerDataStore<T extends PlayerRecord> {
     private final Function<UUID, T> defaultFactory;
     private final Logger logger;
 
+    /** Every store created, for the status readout - they all live as long as the server does. */
+    private static final List<PlayerDataStore<?>> ALL = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    /** One store's load right now: players held in memory, writes in flight, and saves waiting for the end of the tick. */
+    public record StoreStats(String field, int cached, int writesInFlight, int coalesced) {
+    }
+
+    public static List<StoreStats> allStats() {
+        List<StoreStats> stats = new ArrayList<>();
+        for (PlayerDataStore<?> store : ALL) {
+            stats.add(new StoreStats(store.fieldKey, store.cache.size(), store.pendingSaves.size(), store.coalesced.size()));
+        }
+        return stats;
+    }
+
     private final Map<UUID, T> cache = new ConcurrentHashMap<>();
     /**
      * Each player's current session - started by a login load, ended by
@@ -110,6 +125,7 @@ public final class PlayerDataStore<T extends PlayerRecord> {
         this.type = type;
         this.defaultFactory = defaultFactory;
         this.logger = logger;
+        ALL.add(this);
     }
 
     /**
@@ -240,7 +256,7 @@ public final class PlayerDataStore<T extends PlayerRecord> {
         coalesced.put(playerId, future);
         if (!flushScheduled) {
             flushScheduled = true;
-            Bukkit.getScheduler().runTask(owner, this::flushCoalesced);
+            Bukkit.getScheduler().runTask(owner, me.dontshare.yieldcore.perf.PerfTracker.timed("core.saves", this::flushCoalesced));
         }
         return future;
     }
@@ -524,7 +540,7 @@ public final class PlayerDataStore<T extends PlayerRecord> {
         long step = 20L;
         int slices = (int) Math.max(1, intervalTicks / step);
         long initialDelay = ThreadLocalRandom.current().nextLong(step);
-        Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("core.autosave", () -> {
             if (autoSaveQueue.isEmpty()) {
                 autoSaveQueue.addAll(cache.keySet());
                 autoSaveBudget = Math.max(1, (autoSaveQueue.size() + slices - 1) / slices);
@@ -538,7 +554,7 @@ public final class PlayerDataStore<T extends PlayerRecord> {
                     write(playerId, false);
                 }
             }
-        }, initialDelay, step);
+        }), initialDelay, step);
     }
 
     private T fetchOrDefault(UUID playerId) {

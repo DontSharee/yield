@@ -33,6 +33,8 @@ public final class PetDisplayConfigLoader {
                 (float) config.getDouble("item.scale", 0.85),
                 (float) config.getDouble("item.pitch-degrees", -5),
                 (float) config.getDouble("item.yaw-degrees", 180),
-                (float) config.getDouble("item.huge-scale-multiplier", 2.5));
+                (float) config.getDouble("item.huge-scale-multiplier", 2.5),
+                config.getBoolean("labels.show-to-others", false),
+                config.getBoolean("combat.shown-to-others", false));
     }
 }

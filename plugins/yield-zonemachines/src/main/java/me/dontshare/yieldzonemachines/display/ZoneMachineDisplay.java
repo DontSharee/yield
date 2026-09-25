@@ -85,7 +85,7 @@ public final class ZoneMachineDisplay implements org.bukkit.event.Listener {
 
     public void start() {
         Bukkit.getPluginManager().registerEvents(this, plugin);
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tick, TICK_INTERVAL, TICK_INTERVAL);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("display.machines", this::tick), TICK_INTERVAL, TICK_INTERVAL);
     }
 
     /**

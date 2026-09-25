@@ -105,7 +105,7 @@ public final class GiftDisplayService implements Listener {
 
     public void start() {
         Bukkit.getPluginManager().registerEvents(this, plugin);
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tick, TICK_INTERVAL, TICK_INTERVAL);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("gifts", this::tick), TICK_INTERVAL, TICK_INTERVAL);
     }
 
     private void tick() {

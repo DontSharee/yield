@@ -1,0 +1,8 @@
+name: yield-loadtest
+version: '${version}'
+main: me.dontshare.yieldloadtest.YieldLoadTest
+api-version: '26.2'
+depend: [yield-core, yield-packs, yield-zones, packetevents]
+permissions:
+  yieldloadtest.admin:
+    default: op

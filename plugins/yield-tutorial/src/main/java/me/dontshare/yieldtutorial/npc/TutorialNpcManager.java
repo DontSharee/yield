@@ -60,7 +60,7 @@ public final class TutorialNpcManager {
     }
 
     public void start() {
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 0L, REFRESH_INTERVAL_TICKS);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("tutorial.npc", this::tick), 0L, REFRESH_INTERVAL_TICKS);
     }
 
     public int entityId() {

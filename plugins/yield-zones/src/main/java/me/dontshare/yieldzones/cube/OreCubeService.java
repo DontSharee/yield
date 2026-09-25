@@ -356,14 +356,14 @@ public final class OreCubeService implements Listener {
 
     public void start() {
         lootDrops.start();
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tick, TICK_INTERVAL, TICK_INTERVAL);
-        Bukkit.getScheduler().runTaskTimer(plugin, this::flushSummaries, SUMMARY_INTERVAL, SUMMARY_INTERVAL);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("cubes.tick", this::tick), TICK_INTERVAL, TICK_INTERVAL);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("cubes.summaries", this::flushSummaries), SUMMARY_INTERVAL, SUMMARY_INTERVAL);
         // Its own, much faster loop - the main tick()'s 1-second cadence
         // would make "what am I looking at" feel laggy and behind.
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tickHighlights, HIGHLIGHT_TICK_INTERVAL, HIGHLIGHT_TICK_INTERVAL);
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tickRainbows, 3L, 3L);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("cubes.highlights", this::tickHighlights), HIGHLIGHT_TICK_INTERVAL, HIGHLIGHT_TICK_INTERVAL);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("cubes.rainbows", this::tickRainbows), 3L, 3L);
         // One sweeper for every short visual follow-up - see deferredByTick.
-        Bukkit.getScheduler().runTaskTimer(plugin, this::sweepDeferred, 1L, 1L);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("cubes.deferred", this::sweepDeferred), 1L, 1L);
     }
 
     /** White-outlines whichever live cube a player is currently looking at, clearing it the instant they look away - a bonus cube's own persistent colored glow is left alone rather than fought over. */

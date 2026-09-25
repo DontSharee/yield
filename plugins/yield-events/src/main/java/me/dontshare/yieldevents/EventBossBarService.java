@@ -38,7 +38,7 @@ public final class EventBossBarService {
     }
 
     public void start() {
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tick, TICK_INTERVAL, TICK_INTERVAL);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("events.bar", this::tick), TICK_INTERVAL, TICK_INTERVAL);
     }
 
     private void tick() {

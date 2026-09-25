@@ -63,7 +63,7 @@ public final class ServerBoostService {
                 plugin.getLogger().info("Restored " + restored.size() + " server boost(s) still running from before the restart.");
             }
         }));
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tick, TICK_INTERVAL_TICKS, TICK_INTERVAL_TICKS);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("achievements.boosts", this::tick), TICK_INTERVAL_TICKS, TICK_INTERVAL_TICKS);
     }
 
     /**

@@ -106,7 +106,7 @@ public final class YieldEvents extends JavaPlugin {
         new EventBossBarService(this, eventService).start();
         CommandManager.register(this, EventCommand.build(eventService, questGui), "See what event is running", List.of());
         core.getAdminCommandRegistry().register(EventsAdminCommand.build(this));
-        Bukkit.getScheduler().runTaskTimer(this, this::watchForChange, WATCH_INTERVAL_TICKS, WATCH_INTERVAL_TICKS);
+        Bukkit.getScheduler().runTaskTimer(this, me.dontshare.yieldcore.perf.PerfTracker.timed("events.watch", this::watchForChange), WATCH_INTERVAL_TICKS, WATCH_INTERVAL_TICKS);
     }
 
     /** Re-reads events.yml. Registered charges are per egg id and survive it, since the eggs themselves are config in another plugin. */

@@ -82,6 +82,8 @@ public final class YieldCore extends JavaPlugin {
     @Override
     public void onEnable() {
         PacketEvents.getAPI().init();
+        me.dontshare.yieldcore.perf.PerfTracker.start(this);
+        me.dontshare.yieldcore.packet.PacketEntityManager.install(this);
         EntityClickRegistry.install(this);
         FakeBlockClickRegistry.install(this);
         FakeBlockDigRegistry.install(this);

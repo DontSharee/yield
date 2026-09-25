@@ -34,7 +34,7 @@ public final class AutoFuseService {
     }
 
     public void start() {
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tick, TICK_INTERVAL, TICK_INTERVAL);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("pets.autofuse", this::tick), TICK_INTERVAL, TICK_INTERVAL);
     }
 
     private void tick() {

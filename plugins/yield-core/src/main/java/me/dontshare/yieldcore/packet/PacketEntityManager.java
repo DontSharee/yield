@@ -25,10 +25,16 @@ import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerUp
 import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import io.github.retrooper.packetevents.util.SpigotReflectionUtil;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -102,11 +108,76 @@ public final class PacketEntityManager {
      * targets 26.2.
      */
     public static void beginBundle(Player viewer) {
+        if (viewer == null || !viewer.isOnline()) {
+            return;
+        }
+        flushOpenBundle(viewer, false);
         send(viewer, new WrapperPlayServerBundle());
+        if (Bukkit.isPrimaryThread()) {
+            OPEN_BUNDLES.put(viewer.getUniqueId(), new OpenBundle(viewer));
+        }
     }
 
     public static void endBundle(Player viewer) {
+        if (viewer == null) {
+            return;
+        }
+        flushOpenBundle(viewer, true);
         send(viewer, new WrapperPlayServerBundle());
+    }
+
+    /**
+     * Metadata waiting to go out for each viewer with a bundle open, merged
+     * per entity.
+     * <p>
+     * Everything that spawns a display sets it up one field at a time - text,
+     * scale, billboard, background, glow, interpolation - and each call used
+     * to be its own metadata packet: a damage number was a dozen packets, a
+     * squad of pets a hundred. Inside a bundle the client applies them all in
+     * the same frame anyway, so they are held and sent as one packet per
+     * entity, just before the next packet that isn't metadata (so nothing is
+     * reordered) or the bundle's end. Main thread only; anything else goes
+     * straight out.
+     */
+    private static final Map<UUID, OpenBundle> OPEN_BUNDLES = new HashMap<>();
+    private static boolean warnedUnclosed;
+
+    private static final class OpenBundle {
+        final Player viewer;
+        final Map<Integer, Map<Integer, EntityData<?>>> byEntity = new LinkedHashMap<>();
+
+        OpenBundle(Player viewer) {
+            this.viewer = viewer;
+        }
+    }
+
+    /** Call once from core's onEnable: closes any bundle a caller forgot to, at the end of its tick. */
+    public static void install(JavaPlugin plugin) {
+        Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            if (OPEN_BUNDLES.isEmpty()) {
+                return;
+            }
+            if (!warnedUnclosed) {
+                warnedUnclosed = true;
+                plugin.getLogger().warning("A packet bundle was opened and never closed - closed it at the end of the tick.");
+            }
+            for (OpenBundle bundle : List.copyOf(OPEN_BUNDLES.values())) {
+                endBundle(bundle.viewer);
+            }
+        }, 1L, 1L);
+    }
+
+    /** Sends whatever metadata the viewer's open bundle is holding; {@code close} also forgets the bundle. */
+    private static void flushOpenBundle(Player viewer, boolean close) {
+        OpenBundle bundle = close ? OPEN_BUNDLES.remove(viewer.getUniqueId()) : OPEN_BUNDLES.get(viewer.getUniqueId());
+        if (bundle == null || bundle.byEntity.isEmpty()) {
+            return;
+        }
+        List<Map.Entry<Integer, Map<Integer, EntityData<?>>>> entries = new ArrayList<>(bundle.byEntity.entrySet());
+        bundle.byEntity.clear();
+        for (Map.Entry<Integer, Map<Integer, EntityData<?>>> entry : entries) {
+            deliver(viewer, new WrapperPlayServerEntityMetadata(entry.getKey(), new ArrayList<>(entry.getValue().values())));
+        }
     }
 
     /** Overrides the entity's max health attribute - mainly useful for fake player-type NPCs, which default to 20. */
@@ -217,8 +288,29 @@ public final class PacketEntityManager {
         if (viewer == null || !viewer.isOnline()) {
             return;
         }
+        if (!OPEN_BUNDLES.isEmpty() && Bukkit.isPrimaryThread()) {
+            OpenBundle bundle = OPEN_BUNDLES.get(viewer.getUniqueId());
+            if (bundle != null) {
+                if (packet instanceof WrapperPlayServerEntityMetadata metadata) {
+                    Map<Integer, EntityData<?>> fields = bundle.byEntity.computeIfAbsent(metadata.getEntityId(), id -> new LinkedHashMap<>());
+                    for (EntityData<?> data : metadata.getEntityMetadata()) {
+                        // A later value for the same field replaces the earlier
+                        // one - the client would have ended up on it anyway.
+                        fields.remove(data.getIndex());
+                        fields.put(data.getIndex(), data);
+                    }
+                    return;
+                }
+                flushOpenBundle(viewer, false);
+            }
+        }
+        deliver(viewer, packet);
+    }
+
+    private static void deliver(Player viewer, com.github.retrooper.packetevents.wrapper.PacketWrapper<?> packet) {
         User user = user(viewer);
         if (user != null) {
+            me.dontshare.yieldcore.perf.PerfTracker.countPacket(packet);
             user.sendPacket(packet);
         }
     }

@@ -80,11 +80,11 @@ public final class YieldScoreboardDisplay implements Listener {
 
     /** Starts the periodic refresh loop. Call once at plugin startup. */
     public void start() {
-        Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("core.sidebar", () -> {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 render(player);
             }
-        }, 0L, REFRESH_INTERVAL_TICKS);
+        }), 0L, REFRESH_INTERVAL_TICKS);
     }
 
     @EventHandler

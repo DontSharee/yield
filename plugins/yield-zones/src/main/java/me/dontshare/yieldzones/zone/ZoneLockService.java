@@ -98,7 +98,7 @@ public final class ZoneLockService implements Listener {
     }
 
     public void start() {
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 0L, TICK_INTERVAL);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("zones.locks", this::tick), 0L, TICK_INTERVAL);
     }
 
     public boolean isUnlocked(Player player, ZoneDefinition zone) {

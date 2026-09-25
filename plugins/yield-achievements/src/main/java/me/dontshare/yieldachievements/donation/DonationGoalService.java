@@ -56,7 +56,7 @@ public final class DonationGoalService {
     public void start() {
         databaseManager.supplyAsync(store::load).thenAccept(loaded ->
                 Bukkit.getScheduler().runTask(plugin, () -> progress.set(loaded)));
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tick, TICK_INTERVAL_TICKS, TICK_INTERVAL_TICKS);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("achievements.donations", this::tick), TICK_INTERVAL_TICKS, TICK_INTERVAL_TICKS);
     }
 
     /** The permanent server-wide coin multiplier bought by donations so far - 1.0 before the first goal. */

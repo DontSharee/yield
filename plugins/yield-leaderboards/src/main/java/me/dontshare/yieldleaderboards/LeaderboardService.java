@@ -60,7 +60,7 @@ public final class LeaderboardService {
     }
 
     public void start() {
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tick, CHECK_INTERVAL_TICKS, CHECK_INTERVAL_TICKS);
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("leaderboards", this::tick), CHECK_INTERVAL_TICKS, CHECK_INTERVAL_TICKS);
     }
 
     /** Forces an immediate refresh of every configured leaderboard, ignoring each one's own update delay. */

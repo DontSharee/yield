@@ -94,7 +94,7 @@ public final class AuctionBrowseGui {
     }
 
     public void start() {
-        Bukkit.getScheduler().runTaskTimer(plugin, this::refresh, 0L, config.get().browseRefreshIntervalTicks());
+        Bukkit.getScheduler().runTaskTimer(plugin, me.dontshare.yieldcore.perf.PerfTracker.timed("auction.browse", this::refresh), 0L, config.get().browseRefreshIntervalTicks());
     }
 
     private void refresh() {
