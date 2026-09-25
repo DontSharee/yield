@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * matching the pack stations' own convention rather than the upgrade
  * stations' right-click, since these are purchases too.
  */
-public final class ZoneMachineDisplay {
+public final class ZoneMachineDisplay implements org.bukkit.event.Listener {
 
     private static final double VIEW_DISTANCE_SQUARED = 48.0 * 48.0;
     private static final long TICK_INTERVAL = 20L; // 1 second
@@ -84,7 +84,23 @@ public final class ZoneMachineDisplay {
     }
 
     public void start() {
+        Bukkit.getPluginManager().registerEvents(this, plugin);
         Bukkit.getScheduler().runTaskTimer(plugin, this::tick, TICK_INTERVAL, TICK_INTERVAL);
+    }
+
+    /**
+     * Forgets a player who logged off - their client dropped every packet
+     * entity, so on rejoin everything has to count them as new; left in,
+     * a rejoining player never saw them again until they walked off and
+     * back.
+     */
+    @org.bukkit.event.EventHandler
+    public void onQuit(org.bukkit.event.player.PlayerQuitEvent event) {
+        UUID id = event.getPlayer().getUniqueId();
+        for (Set<UUID> viewers : viewersByMachine.values()) {
+            viewers.remove(id);
+        }
+        lastRendered.remove(id);
     }
 
     /** Same teardown-then-rebuild reasoning as PackStationDisplay#reload - a content reload replaces every machine (and its entity ids) wholesale. */

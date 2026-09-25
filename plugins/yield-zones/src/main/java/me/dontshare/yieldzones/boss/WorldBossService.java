@@ -227,6 +227,14 @@ public final class WorldBossService implements Listener {
         }
     }
 
+    /** Engagement and pet cooldowns go with the player; the top-bar viewer sets tidy themselves (see updateBarViewers). */
+    @EventHandler
+    public void onQuit(org.bukkit.event.player.PlayerQuitEvent event) {
+        UUID id = event.getPlayer().getUniqueId();
+        engagedBossIdByPlayer.remove(id);
+        cooldownsByPetByPlayer.remove(id);
+    }
+
     private boolean containsBlock(WorldBoss boss, Location clicked) {
         for (Location barrier : boss.barrierLocations()) {
             if (barrier.getWorld().equals(clicked.getWorld()) && barrier.getBlockX() == clicked.getBlockX()

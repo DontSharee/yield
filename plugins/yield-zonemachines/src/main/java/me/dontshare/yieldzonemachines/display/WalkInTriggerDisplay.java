@@ -30,7 +30,7 @@ import java.util.function.Supplier;
  * they just walk in" check is a plain distance comparison against the
  * player's own real location.
  */
-public final class WalkInTriggerDisplay {
+public final class WalkInTriggerDisplay implements org.bukkit.event.Listener {
 
     private static final double RING_RADIUS = 1.3;
     private static final int RING_POINTS = 20;
@@ -64,7 +64,19 @@ public final class WalkInTriggerDisplay {
     }
 
     public void start() {
+        Bukkit.getPluginManager().registerEvents(this, plugin);
         Bukkit.getScheduler().runTaskTimer(plugin, this::tick, TICK_INTERVAL, TICK_INTERVAL);
+    }
+
+    /**
+     * Forgets a player who logged off - their client dropped every packet
+     * entity, so on rejoin everything has to count them as new; left in,
+     * a rejoining player never saw them again until they walked off and
+     * back.
+     */
+    @org.bukkit.event.EventHandler
+    public void onQuit(org.bukkit.event.player.PlayerQuitEvent event) {
+        insideByPlayer.remove(event.getPlayer().getUniqueId());
     }
 
     /** A content reload swaps the trigger list wholesale - clear every player's "currently inside" tracking rather than trying to reconcile it against triggers that may no longer exist at all. */
