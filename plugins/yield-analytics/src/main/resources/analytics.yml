@@ -1,0 +1,51 @@
+# Player analytics - what players do, collected on this server, served as a
+# dashboard website and JSON API, and pushed to webhooks.
+
+web:
+  enabled: true
+  # 0.0.0.0 listens everywhere; 127.0.0.1 keeps it to this machine (put a
+  # reverse proxy with HTTPS in front before exposing it).
+  bind: 0.0.0.0
+  port: 8765
+  # Anyone with this token can read the dashboard and API. Left blank, one is
+  # generated on first start and written back here - see the console, or
+  # /analytics token.
+  token: ""
+  # Browser origins allowed to call the API from another site, e.g.
+  # "https://stats.example.com" - or "*" for any. Empty: the dashboard served
+  # here is the only browser client.
+  allowed-origins: []
+
+# How long per-minute samples and hourly activity counts are kept.
+retention-days: 90
+# How often the all-players statistics (averages, distributions, funnel,
+# retention) are recomputed. Each run reads every player's document once.
+stats-refresh-minutes: 5
+# A player who never finished the tutorial and hasn't been back for this many
+# days counts as having left during it.
+left-after-days: 3
+# Record yield-loadtest's bots as if they were players - only for seeing the
+# dashboard filled in during a test. Never on a live server.
+count-load-test-bots: false
+
+webhooks:
+  # A summary of the last period goes to every target listening for "summary".
+  summary-interval-minutes: 60
+  alerts:
+    tps-below: 18.0
+    mspt-above: 45.0
+    # How long the server has to stay past a threshold before it alerts.
+    sustained-seconds: 60
+    # And at least this long between two alerts of the same kind.
+    cooldown-minutes: 15
+  # Each target: a URL, a format (discord = Discord embeds, json = the raw
+  # event), and which events it wants:
+  #   summary - periodic recap        alert - lag (TPS/MSPT) past a threshold
+  #   peak    - new all-time peak     error - SEVERE errors in the log
+  #   server  - started / stopping    player - a brand-new player joined
+  targets:
+    - name: example
+      enabled: false
+      url: "https://discord.com/api/webhooks/ID/TOKEN"
+      format: discord
+      events: [summary, alert, peak, error, server]

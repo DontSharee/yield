@@ -37,7 +37,11 @@ public final class PlayerProfileManager implements Listener {
         try {
             PlayerProfile profile = store.loadBlocking(playerId);
             profile.setUsername(event.getName());
-            profile.setLastSeen(System.currentTimeMillis());
+            long now = System.currentTimeMillis();
+            if (profile.getFirstJoined() == 0) {
+                profile.setFirstJoined(now);
+            }
+            profile.setLastSeen(now);
         } catch (Exception e) {
             // Never let the player join on default data - that default
             // data would then get saved over whatever they actually had.

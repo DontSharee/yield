@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Yield Analytics</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <!-- async: the dashboard must never wait on the CDN - it draws its charts once this arrives. -->
+  <script id="chartjs" src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" async></script>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div id="login" class="login" hidden>
+    <form id="login-form" class="login-card">
+      <div class="brand brand-lg"><span class="brand-mark"></span>Yield Analytics</div>
+      <p class="muted">Enter the dashboard token from <code>analytics.yml</code> (or <code>/analytics token</code> in game).</p>
+      <input id="token-input" type="password" autocomplete="current-password" placeholder="Token" required>
+      <button type="submit">Open dashboard</button>
+      <p id="login-error" class="error" hidden></p>
+    </form>
+  </div>
+
+  <div id="app" class="app" hidden>
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark"></span>Yield Analytics</div>
+      <nav id="nav">
+        <a href="#overview" data-page="overview">Overview</a>
+        <a href="#live" data-page="live">Live zones</a>
+        <a href="#players" data-page="players">Players &amp; retention</a>
+        <a href="#tutorial" data-page="tutorial">Tutorial funnel</a>
+        <a href="#progression" data-page="progression">Progression</a>
+        <a href="#averages" data-page="averages">Averages</a>
+        <a href="#economy" data-page="economy">Economy &amp; activity</a>
+        <a href="#pets" data-page="pets">Pets</a>
+        <a href="#performance" data-page="performance">Performance</a>
+        <a href="#lookup" data-page="lookup">Player lookup</a>
+      </nav>
+      <div class="sidebar-foot">
+        <button id="logout" class="link">Sign out</button>
+      </div>
+    </aside>
+    <main>
+      <header class="topbar">
+        <h1 id="page-title">Overview</h1>
+        <div class="topbar-right">
+          <span id="server-pill" class="pill">…</span>
+          <span id="updated" class="muted small"></span>
+          <label class="toggle small"><input id="auto-refresh" type="checkbox" checked> Auto refresh</label>
+        </div>
+      </header>
+      <section id="page" class="page"></section>
+    </main>
+  </div>
+</body>
+</html>

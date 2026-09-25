@@ -82,3 +82,6 @@ project(":yield-trade").projectDir = file("plugins/yield-trade")
 
 include("yield-loadtest")
 project(":yield-loadtest").projectDir = file("plugins/yield-loadtest")
+
+include("yield-analytics")
+project(":yield-analytics").projectDir = file("plugins/yield-analytics")

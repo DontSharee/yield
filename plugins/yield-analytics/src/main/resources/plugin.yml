@@ -1,0 +1,9 @@
+name: yield-analytics
+version: '${version}'
+main: me.dontshare.yieldanalytics.YieldAnalytics
+api-version: '26.2'
+depend: [yield-core, yield-packs, yield-zones, yield-rebirth, yield-mining]
+softdepend: [yield-tutorial]
+permissions:
+  yieldanalytics.admin:
+    default: op
