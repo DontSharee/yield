@@ -99,6 +99,18 @@ public final class LootDropService implements Listener {
     private final Map<UUID, Float> pickupPitch = new ConcurrentHashMap<>();
     private final Map<UUID, Integer> lastPickupSoundTick = new ConcurrentHashMap<>();
 
+    /** What a run of pickups has added, shown as "+12.5K" beside the sidebar's wallet lines - see {@link #decorateWallet}. */
+    private static final class RecentGain {
+        long coins;
+        long diamonds;
+        int lastTick;
+    }
+    private final Map<UUID, RecentGain> recentGains = new ConcurrentHashMap<>();
+    /** How long after the last pickup the "+" figure stays up. */
+    private static final int GAIN_WINDOW_TICKS = 40;
+    private static final String COINS_LABEL = me.dontshare.yieldcore.text.Formatting.fancyFont("coins: ");
+    private static final String DIAMONDS_LABEL = me.dontshare.yieldcore.text.Formatting.fancyFont("diamonds: ");
+
     public LootDropService(JavaPlugin plugin, YieldPacks packs) {
         this.plugin = plugin;
         this.packs = packs;
@@ -106,6 +118,7 @@ public final class LootDropService implements Listener {
 
     public void start() {
         Bukkit.getPluginManager().registerEvents(this, plugin);
+        JavaPlugin.getPlugin(YieldCore.class).getScoreboardDisplay().addLineTransformer(this::decorateWallet);
         Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 1L, 1L);
     }
 
@@ -205,6 +218,13 @@ public final class LootDropService implements Listener {
                 }
             }
         }
+        for (Map.Entry<UUID, RecentGain> entry : recentGains.entrySet()) {
+            if (now - entry.getValue().lastTick >= GAIN_WINDOW_TICKS) {
+                recentGains.remove(entry.getKey());
+                // Redraw once more so the "+" figure goes away.
+                scoreboardDirtySince.putIfAbsent(entry.getKey(), (long) now - SCOREBOARD_REFRESH_TICKS);
+            }
+        }
         for (Map.Entry<UUID, Long> dirty : scoreboardDirtySince.entrySet()) {
             if (now - dirty.getValue() >= SCOREBOARD_REFRESH_TICKS) {
                 Player player = Bukkit.getPlayer(dirty.getKey());
@@ -290,7 +310,36 @@ public final class LootDropService implements Listener {
         } else {
             profile.setDiamonds(profile.getDiamonds().add(BigInteger.valueOf(amount)));
         }
+        RecentGain gain = recentGains.computeIfAbsent(player.getUniqueId(), id -> new RecentGain());
+        if (kind == Kind.COIN) {
+            gain.coins += amount;
+        } else {
+            gain.diamonds += amount;
+        }
+        gain.lastTick = Bukkit.getCurrentTick();
         scoreboardDirtySince.putIfAbsent(player.getUniqueId(), (long) Bukkit.getCurrentTick());
+    }
+
+    /**
+     * Puts the running total of a pickup streak next to the wallet lines -
+     * "coins: 1.2M +12.5K" - growing as a burst of drops sweeps in, gone a
+     * couple of seconds after the last one lands. Keyed on the sidebar's
+     * own small-caps labels.
+     */
+    private List<String> decorateWallet(Player player, List<String> lines) {
+        RecentGain gain = recentGains.get(player.getUniqueId());
+        if (gain == null) {
+            return lines;
+        }
+        for (int i = 0; i < lines.size(); i++) {
+            String line = lines.get(i);
+            if (gain.coins > 0 && line.contains(COINS_LABEL)) {
+                lines.set(i, line + " <#55FF7F>+" + me.dontshare.yieldcore.text.Formatting.format(gain.coins));
+            } else if (gain.diamonds > 0 && line.contains(DIAMONDS_LABEL)) {
+                lines.set(i, line + " <#55FF7F>+" + me.dontshare.yieldcore.text.Formatting.format(gain.diamonds));
+            }
+        }
+        return lines;
     }
 
     /**
@@ -342,6 +391,7 @@ public final class LootDropService implements Listener {
         lastPickupAt.remove(id);
         pickupPitch.remove(id);
         lastPickupSoundTick.remove(id);
+        recentGains.remove(id);
     }
 
     public void shutdown() {
