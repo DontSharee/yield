@@ -117,6 +117,31 @@ public final class PresentsService {
         return -1;
     }
 
+    /**
+     * The sidebar's gift line: 0 if a present is ready to open now, the
+     * milliseconds until the next one unlocks otherwise, or -1 once every
+     * present this session is opened.
+     */
+    public long millisUntilNextGift(Player player) {
+        Long joinedAt = joinedAtMillis.get(player.getUniqueId());
+        if (joinedAt == null) {
+            return -1;
+        }
+        long online = System.currentTimeMillis() - joinedAt;
+        long soonest = -1;
+        List<PresentDefinition> presents = presents();
+        for (int i = 0; i < presents.size(); i++) {
+            if (isClaimed(player, i)) {
+                continue;
+            }
+            long wait = Math.max(0, presents.get(i).unlockAfterMinutes() * 60_000L - online);
+            if (soonest < 0 || wait < soonest) {
+                soonest = wait;
+            }
+        }
+        return soonest;
+    }
+
     /** Minutes remaining until this present unlocks - 0 if already unlocked. */
     public long minutesUntilUnlock(Player player, int index) {
         List<PresentDefinition> presents = presents();

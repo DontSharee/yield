@@ -218,7 +218,7 @@ public final class GiftDisplayService implements Listener {
         forward.normalize();
         Vector side = new Vector(-forward.getZ(), 0, forward.getX()).multiply(ThreadLocalRandom.current().nextDouble(-1.0, 1.0));
         Location landing = feet.clone().add(forward.multiply(2.4)).add(side);
-        landing.setY(feet.getY() + GIFT_SCALE / 2.0);
+        landing.setY(groundBelow(landing, feet.getY()) + GIFT_SCALE / 2.0);
         landing.setYaw(0f);
         landing.setPitch(0f);
         gift.landing = landing;
@@ -266,6 +266,20 @@ public final class GiftDisplayService implements Listener {
                 open(player);
             }
         }, FALL_TICKS + 1L);
+    }
+
+    /**
+     * The floor under a landing spot: traced down from a block above the
+     * player's feet, so a gift that drops while they're mid-jump or on a
+     * slab edge sits on the ground instead of hanging in the air. Falls
+     * back to their feet height over a drop or the void.
+     */
+    private static double groundBelow(Location spot, double feetY) {
+        Location from = spot.clone();
+        from.setY(feetY + 1.0);
+        org.bukkit.util.RayTraceResult hit = from.getWorld().rayTraceBlocks(from, new Vector(0, -1, 0), 6.0,
+                org.bukkit.FluidCollisionMode.NEVER, true);
+        return hit != null ? hit.getHitPosition().getY() : feetY;
     }
 
     private static Location labelLocation(Location gift) {

@@ -59,6 +59,25 @@ public final class YieldQuests extends JavaPlugin {
         GiftDisplayService giftDisplay = new GiftDisplayService(this, presentsService, packs,
                 JavaPlugin.getPlugin(me.dontshare.yieldzones.YieldZones.class));
         giftDisplay.start();
+        // "next gift: 3:12" under the player section of the sidebar, or
+        // "ready!" while one's waiting - so the next present is always
+        // something to look forward to, not a surprise.
+        String multiLabel = me.dontshare.yieldcore.text.Formatting.fancyFont("multi: ");
+        String giftLabel = me.dontshare.yieldcore.text.Formatting.fancyFont("next gift: ");
+        core.getScoreboardDisplay().addLineTransformer((player, lines) -> {
+            long wait = presentsService.millisUntilNextGift(player);
+            if (wait < 0) {
+                return lines;
+            }
+            String value = wait == 0 ? "<#FFC83D>ready!" : "<#FFC83D>" + (wait / 60_000) + ":" + String.format("%02d", (wait / 1000) % 60);
+            for (int i = 0; i < lines.size(); i++) {
+                if (lines.get(i).contains(multiLabel)) {
+                    lines.add(i + 1, " <#8CD5EC>&l| &f" + giftLabel + value);
+                    break;
+                }
+            }
+            return lines;
+        });
         core.getListenerManager().register(new LoginStreakListener(this, loginStreakService, giftDisplay));
 
         // No separate Rank Quest GUI/command - the board renders inline in
