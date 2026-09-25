@@ -11,6 +11,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Map;
+import java.util.UUID;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
@@ -89,11 +91,29 @@ public final class EntityClickRegistry {
         });
     }
 
+    /**
+     * Players with a click of each kind already queued for the main thread.
+     * A vanilla client sends at most one attack and one use per tick; a
+     * hacked one can send hundreds a second, each of which became its own
+     * task. One queued per player per kind loses nothing real.
+     */
+    private static final Set<UUID> attackQueued = ConcurrentHashMap.newKeySet();
+    private static final Set<UUID> interactQueued = ConcurrentHashMap.newKeySet();
+
     private static void dispatch(JavaPlugin plugin, Map<Integer, Consumer<Player>> handlers, int entityId, Player player) {
         Consumer<Player> handler = handlers.get(entityId);
-        if (handler != null) {
-            Bukkit.getScheduler().runTask(plugin, () -> handler.accept(player));
+        if (handler == null) {
+            return;
         }
+        Set<UUID> queued = handlers == attackHandlers ? attackQueued : interactQueued;
+        UUID playerId = player.getUniqueId();
+        if (!queued.add(playerId)) {
+            return;
+        }
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            queued.remove(playerId);
+            handler.accept(player);
+        });
     }
 
     /** Registers a callback for left-clicks (attacks) on a specific fake entity id - call {@link #unregister} once it despawns. */

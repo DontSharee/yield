@@ -87,6 +87,13 @@ public final class FakeBlockClickRegistry {
     }
 
     private static final Map<UUID, Map<Key, Registration>> handlers = new ConcurrentHashMap<>();
+    /**
+     * Players with a swing already queued for the main thread. A client can
+     * send hundreds of swing packets a second; each became its own task and
+     * raycast. A vanilla client swings at most once a tick, so one queued at
+     * a time loses nothing.
+     */
+    private static final java.util.Set<UUID> swingQueued = ConcurrentHashMap.newKeySet();
 
     private FakeBlockClickRegistry() {
     }
@@ -117,7 +124,13 @@ public final class FakeBlockClickRegistry {
                 // location/world), so that (and the handler call) are
                 // deferred to the main thread like every other packet
                 // handler in this codebase.
-                Bukkit.getScheduler().runTask(plugin, () -> handleSwing(player));
+                if (!swingQueued.add(player.getUniqueId())) {
+                    return;
+                }
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    swingQueued.remove(player.getUniqueId());
+                    handleSwing(player);
+                });
             }
 
             private void onBlockPlacement(PacketReceiveEvent event) {
@@ -142,6 +155,7 @@ public final class FakeBlockClickRegistry {
             @EventHandler
             public void onQuit(PlayerQuitEvent event) {
                 handlers.remove(event.getPlayer().getUniqueId());
+                swingQueued.remove(event.getPlayer().getUniqueId());
             }
         }, plugin);
     }
