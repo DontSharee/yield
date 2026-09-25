@@ -20,8 +20,10 @@ public final class SpawnService {
     public SpawnService(JavaPlugin plugin, Logger logger) {
         this.plugin = plugin;
         this.logger = logger;
-        plugin.saveResource("spawn.yml", false);
         this.file = new File(plugin.getDataFolder(), "spawn.yml");
+        if (!file.exists()) {
+            plugin.saveResource("spawn.yml", false);
+        }
         this.location = load();
     }
 
