@@ -102,20 +102,25 @@ public final class PackStationDisplay implements Listener {
     private final Map<UUID, Map<PackStation, Long>> eggHiddenUntil = new ConcurrentHashMap<>();
 
     /**
-     * The "click to disable auto hatch" bar each station can show: a glowing
-     * red slab on the floor in front of the egg, its label above it, and a
-     * hitbox to smack. Only the player auto-hatching at THAT station sees it.
+     * The "click to disable auto hatch" bar: a red bar with its label above
+     * it, floating just under where the hatch animation shows the eggs, and
+     * carried along with the player every tick so it's always there to
+     * smack. Only the auto-hatching player sees theirs.
      */
-    private record Bar(int bodyId, int hitboxId, int textId) {
+    private record Bar(int labelId, int barId, int hitboxId) {
     }
-    private final Map<PackStation, Bar> bars = new ConcurrentHashMap<>();
-    /** Which station's bar each player currently has on screen. */
-    private final Map<UUID, PackStation> barShownFor = new ConcurrentHashMap<>();
-    private static final float BAR_WIDTH = 1.6f;
-    private static final float BAR_THICKNESS = 0.22f;
-    /** How far in front of the station the bar sits - clear of the egg. */
-    private static final double BAR_OUT = 1.4;
-    private static final int BAR_GLOW = 0xFF3B3B;
+    private final Map<UUID, Bar> barsByPlayer = new ConcurrentHashMap<>();
+    /** Where each bar was last sent, so a player standing still (most auto-hatchers) costs nothing a tick. */
+    private final Map<UUID, Location> lastBarAt = new ConcurrentHashMap<>();
+    /** Same distance out as the hatch grid's nearest rows (PackRevealAnimationService.FORWARD_DISTANCE). */
+    private static final double BAR_FORWARD = 2.6;
+    /** Below eye level: the hatch grid's bottom row sits 0.35 under the eye, its eggs about half a block tall. */
+    private static final double BAR_DROP = 1.05;
+    private static final float BAR_HITBOX_WIDTH = 1.6f;
+    private static final float BAR_HITBOX_HEIGHT = 0.5f;
+    /** Sixteen spaces on a red background - a solid bar about 1.6 blocks wide. */
+    private static final Component BAR_TEXT = Component.text("                ");
+    private static final int BAR_COLOR = 0xE6E02424;
 
     public PackStationDisplay(JavaPlugin plugin, YieldPacks packs, PackStationService stationService) {
         this.plugin = plugin;
@@ -126,6 +131,9 @@ public final class PackStationDisplay implements Listener {
     public void start() {
         Bukkit.getPluginManager().registerEvents(this, plugin);
         Bukkit.getScheduler().runTaskTimer(plugin, this::tick, TICK_INTERVAL, TICK_INTERVAL);
+        // Every tick, so the bar keeps up with the player rather than
+        // trailing a second behind.
+        Bukkit.getScheduler().runTaskTimer(plugin, this::tickBars, 1L, 1L);
     }
 
     /**
@@ -143,7 +151,12 @@ public final class PackStationDisplay implements Listener {
         lastRenderState.remove(id);
         shownEggPackId.remove(id);
         eggHiddenUntil.remove(id);
-        barShownFor.remove(id);
+        lastBarAt.remove(id);
+        Bar bar = barsByPlayer.remove(id);
+        if (bar != null) {
+            EntityClickRegistry.unregister(bar.hitboxId());
+            EntityClickRegistry.unregisterInteract(bar.hitboxId());
+        }
     }
 
     /** Same teardown-then-rebuild reasoning as UpgradeStationDisplay#reload - a content reload replaces every PackStation (and its entity ids) wholesale. */
@@ -151,11 +164,6 @@ public final class PackStationDisplay implements Listener {
         for (PackStation station : stations) {
             EntityClickRegistry.unregister(station.hitboxEntityId());
             EntityClickRegistry.unregisterInteract(station.hitboxEntityId());
-            Bar oldBar = bars.remove(station);
-            if (oldBar != null) {
-                EntityClickRegistry.unregister(oldBar.hitboxId());
-                EntityClickRegistry.unregisterInteract(oldBar.hitboxId());
-            }
             Set<UUID> viewers = viewersByStation.remove(station);
             if (viewers == null) {
                 continue;
@@ -172,10 +180,6 @@ public final class PackStationDisplay implements Listener {
             viewersByStation.put(station, ConcurrentHashMap.newKeySet());
             EntityClickRegistry.register(station.hitboxEntityId(), player -> handleSmack(player, station));
             EntityClickRegistry.registerInteract(station.hitboxEntityId(), player -> handleRightClick(player, station));
-            Bar bar = new Bar(PacketEntityManager.nextEntityId(), PacketEntityManager.nextEntityId(), PacketEntityManager.nextEntityId());
-            bars.put(station, bar);
-            EntityClickRegistry.register(bar.hitboxId(), player -> handleBarSmack(player, station));
-            EntityClickRegistry.registerInteract(bar.hitboxId(), player -> handleBarSmack(player, station));
         }
     }
 
@@ -202,7 +206,6 @@ public final class PackStationDisplay implements Listener {
                     // balance can change from something unrelated too.
                     refreshFor(viewer, station);
                     updateEgg(viewer, station);
-                    updateBar(viewer, station);
                 }
             }
         }
@@ -443,120 +446,106 @@ public final class PackStationDisplay implements Listener {
         return stationCorner.clone().add(0.2, 2.7, 0.5);
     }
 
-    /** Shows the bar at the station this viewer is auto-hatching at, and takes it away once they aren't. */
-    private void updateBar(Player viewer, PackStation station) {
-        Location site = packs.getPackOpenService().autoHatchSite(viewer);
-        boolean here = site != null && site.getWorld().equals(station.location().getWorld())
-                && site.distanceSquared(station.location()) < 0.01;
-        PackStation shown = barShownFor.get(viewer.getUniqueId());
-        if (here && shown != station) {
-            if (shown != null) {
-                despawnBar(viewer, shown);
+    /** Shows each auto-hatching player their bar, keeps it in front of them, and takes it away when auto hatch stops. */
+    private void tickBars() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            boolean active = packs.getPackOpenService().autoHatchSite(player) != null;
+            Bar bar = barsByPlayer.get(player.getUniqueId());
+            if (active && bar == null) {
+                spawnBar(player);
+            } else if (!active && bar != null) {
+                removeBar(player);
+            } else if (active) {
+                moveBar(player, bar);
             }
-            spawnBar(viewer, station);
-            barShownFor.put(viewer.getUniqueId(), station);
-        } else if (!here && shown == station) {
-            despawnBar(viewer, station);
-            barShownFor.remove(viewer.getUniqueId());
         }
     }
 
-    /** One smack on the bar: auto hatch off, the bar presses in and goes. */
-    private void handleBarSmack(Player player, PackStation station) {
-        if (barShownFor.get(player.getUniqueId()) != station) {
+    /** One smack on the bar: auto hatch off, and the bar goes. */
+    private void handleBarSmack(Player player) {
+        if (!barsByPlayer.containsKey(player.getUniqueId())) {
             return;
         }
-        barShownFor.remove(player.getUniqueId());
         packs.getPackOpenService().stopAutoHatch(player);
-        Bar bar = bars.get(station);
-        if (bar != null) {
-            Vector3f[] shape = barShape(station, 0.8f);
-            BlockDisplayManager.setInterpolation(player, bar.bodyId(), 0, PUSH_TICKS, PUSH_TICKS);
-            BlockDisplayManager.setTransformation(player, bar.bodyId(), shape[0], shape[1]);
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                if (player.isOnline() && barShownFor.get(player.getUniqueId()) != station) {
-                    despawnBar(player, station);
-                }
-            }, PUSH_TICKS + 1L);
-        }
+        removeBar(player);
         player.playSound(player.getLocation(), Sound.BLOCK_STONE_BUTTON_CLICK_ON, 0.7f, 0.8f);
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.5f, 0.7f);
         player.sendMessage(Text.parse("<gray>Auto Hatch <red>off</red>.</gray>"));
     }
 
-    private void spawnBar(Player viewer, PackStation station) {
-        Bar bar = bars.get(station);
-        if (bar == null) {
-            return;
-        }
-        Location center = barCenter(station);
-        Vector3f[] shape = barShape(station, 1f);
+    private void spawnBar(Player player) {
+        Bar bar = new Bar(PacketEntityManager.nextEntityId(), PacketEntityManager.nextEntityId(), PacketEntityManager.nextEntityId());
+        barsByPlayer.put(player.getUniqueId(), bar);
+        EntityClickRegistry.register(bar.hitboxId(), this::handleBarSmack);
+        EntityClickRegistry.registerInteract(bar.hitboxId(), this::handleBarSmack);
+        Location at = barLocation(player);
 
-        PacketEntityManager.beginBundle(viewer);
-        BlockDisplayManager.spawn(viewer, bar.bodyId(), center);
-        BlockDisplayManager.setBlockState(viewer, bar.bodyId(), Material.RED_CONCRETE);
-        BlockDisplayManager.setTransformation(viewer, bar.bodyId(), shape[0], shape[1]);
-        ItemDisplayManager.setGlowing(viewer, bar.bodyId(), true);
-        ItemDisplayManager.setGlowColor(viewer, bar.bodyId(), BAR_GLOW);
+        PacketEntityManager.beginBundle(player);
+        TextDisplayManager.spawn(player, bar.barId(), at);
+        TextDisplayManager.setBillboard(player, bar.barId(), TextDisplayManager.Billboard.CENTER);
+        TextDisplayManager.setBackgroundColor(player, bar.barId(), BAR_COLOR);
+        TextDisplayManager.setText(player, bar.barId(), BAR_TEXT);
+        TextDisplayManager.setPositionInterpolation(player, bar.barId(), 2);
 
-        // Interaction boxes stand on their bottom face - from the floor up past the bar.
-        InteractionEntityManager.spawn(viewer, bar.hitboxId(), center.clone().subtract(0, center.getY() - station.location().getY(), 0));
-        InteractionEntityManager.setSize(viewer, bar.hitboxId(), BAR_WIDTH, 0.6f);
-
-        TextDisplayManager.spawn(viewer, bar.textId(), center.clone().add(0, 0.3, 0));
-        TextDisplayManager.setBillboard(viewer, bar.textId(), TextDisplayManager.Billboard.VERTICAL);
-        TextDisplayManager.setBackgroundColor(viewer, bar.textId(), 0x00000000);
-        TextDisplayManager.setStyle(viewer, bar.textId(), true, false, false, TextDisplayManager.Alignment.CENTER);
-        TextDisplayManager.setScale(viewer, bar.textId(), 0.8f, 0.8f, 0.8f);
-        TextDisplayManager.setText(viewer, bar.textId(),
+        TextDisplayManager.spawn(player, bar.labelId(), labelLocation(at));
+        TextDisplayManager.setBillboard(player, bar.labelId(), TextDisplayManager.Billboard.CENTER);
+        TextDisplayManager.setBackgroundColor(player, bar.labelId(), 0x00000000);
+        TextDisplayManager.setStyle(player, bar.labelId(), true, false, false, TextDisplayManager.Alignment.CENTER);
+        TextDisplayManager.setScale(player, bar.labelId(), 0.75f, 0.75f, 0.75f);
+        TextDisplayManager.setText(player, bar.labelId(),
                 Text.parse("&c&l" + Formatting.fancyFont("Click to disable Auto Hatch")));
-        PacketEntityManager.endBundle(viewer);
+        TextDisplayManager.setPositionInterpolation(player, bar.labelId(), 2);
+
+        InteractionEntityManager.spawn(player, bar.hitboxId(), barHitboxLocation(at));
+        InteractionEntityManager.setSize(player, bar.hitboxId(), BAR_HITBOX_WIDTH, BAR_HITBOX_HEIGHT);
+        PacketEntityManager.endBundle(player);
     }
 
-    private void despawnBar(Player viewer, PackStation station) {
-        Bar bar = bars.get(station);
+    private void moveBar(Player player, Bar bar) {
+        Location at = barLocation(player);
+        Location last = lastBarAt.put(player.getUniqueId(), at);
+        if (last != null && last.getWorld() == at.getWorld() && last.distanceSquared(at) < 1.0e-4) {
+            return;
+        }
+        PacketEntityManager.teleportEntity(player, bar.barId(), at);
+        PacketEntityManager.teleportEntity(player, bar.labelId(), labelLocation(at));
+        PacketEntityManager.teleportEntity(player, bar.hitboxId(), barHitboxLocation(at));
+    }
+
+    private void removeBar(Player player) {
+        lastBarAt.remove(player.getUniqueId());
+        Bar bar = barsByPlayer.remove(player.getUniqueId());
         if (bar == null) {
             return;
         }
-        PacketEntityManager.destroyEntity(viewer, bar.bodyId());
-        PacketEntityManager.destroyEntity(viewer, bar.hitboxId());
-        PacketEntityManager.destroyEntity(viewer, bar.textId());
+        EntityClickRegistry.unregister(bar.hitboxId());
+        EntityClickRegistry.unregisterInteract(bar.hitboxId());
+        PacketEntityManager.destroyEntity(player, bar.barId());
+        PacketEntityManager.destroyEntity(player, bar.labelId());
+        PacketEntityManager.destroyEntity(player, bar.hitboxId());
     }
 
-    /** On the floor in front of the station - "front" being the way its egg faces. */
-    private Location barCenter(PackStation station) {
-        Location corner = station.location();
-        double yaw = Math.toRadians(corner.getYaw());
-        return new Location(corner.getWorld(),
-                corner.getX() + 0.5 - Math.sin(yaw) * BAR_OUT,
-                corner.getY() + 0.15,
-                corner.getZ() + 0.5 + Math.cos(yaw) * BAR_OUT);
+    /** Straight ahead of where the player is facing (level, ignoring pitch), under the hatch grid. */
+    private Location barLocation(Player player) {
+        Location eye = player.getEyeLocation();
+        org.bukkit.util.Vector forward = eye.getDirection().setY(0);
+        if (forward.lengthSquared() < 1.0e-6) {
+            forward = new org.bukkit.util.Vector(0, 0, 1);
+        }
+        forward.normalize().multiply(BAR_FORWARD);
+        return new Location(eye.getWorld(), eye.getX() + forward.getX(), eye.getY() - BAR_DROP, eye.getZ() + forward.getZ());
     }
 
-    /**
-     * The bar's translate/scale, centred on {@link #barCenter} and lying
-     * across the station's front - along X for a station facing north or
-     * south, along Z for one facing east or west. {@code press} squashes it
-     * for the push animation.
-     */
-    private Vector3f[] barShape(PackStation station, float press) {
-        double yaw = Math.toRadians(station.location().getYaw());
-        boolean acrossX = Math.abs(Math.cos(yaw)) >= Math.abs(Math.sin(yaw));
-        float width = BAR_WIDTH * (press < 1f ? 0.95f : 1f);
-        float height = BAR_THICKNESS * press;
-        float sx = acrossX ? width : BAR_THICKNESS;
-        float sz = acrossX ? BAR_THICKNESS : width;
-        return new Vector3f[] {
-                new Vector3f(-sx / 2f, -height / 2f, -sz / 2f),
-                new Vector3f(sx, height, sz)
-        };
+    private static Location labelLocation(Location bar) {
+        return bar.clone().add(0, 0.28, 0);
+    }
+
+    /** Interaction boxes stand on their bottom face - start it a little under the bar so the whole bar is covered. */
+    private static Location barHitboxLocation(Location bar) {
+        return bar.clone().subtract(0, 0.15, 0);
     }
 
     private void despawnFor(Player viewer, PackStation station) {
-        if (barShownFor.get(viewer.getUniqueId()) == station) {
-            barShownFor.remove(viewer.getUniqueId());
-            despawnBar(viewer, station);
-        }
         // Forgotten so a later respawn redraws rather than matching a state
         // this viewer can no longer see.
         Map<PackStation, String> perStation = lastRenderState.get(viewer.getUniqueId());
