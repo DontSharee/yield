@@ -69,6 +69,11 @@ public final class PlayerDataStore<T extends PlayerRecord> {
 
     private final Map<UUID, T> cache = new ConcurrentHashMap<>();
     private final Map<UUID, CompletableFuture<Void>> pendingSaves = new ConcurrentHashMap<>();
+    /** save() calls waiting for this tick's single write - see {@link #save}. */
+    private final Map<UUID, CompletableFuture<Void>> coalesced = new ConcurrentHashMap<>();
+    private volatile boolean flushScheduled;
+    /** Set by {@link #startAutoSave}; schedules the coalesced flush. */
+    private volatile JavaPlugin owner;
     /** Per-top-level-field hashes of each player's last successfully written subdocument - see {@link #write}. */
     private final Map<UUID, Map<String, Integer>> lastFieldHashes = new ConcurrentHashMap<>();
     /** Players still to be visited in the current autosave sweep - see {@link #startAutoSave}. */
@@ -157,7 +162,57 @@ public final class PlayerDataStore<T extends PlayerRecord> {
      * {@link #encode}.
      */
     public CompletableFuture<Void> save(UUID playerId) {
-        return write(playerId, true);
+        if (owner == null || !owner.isEnabled()) {
+            return write(playerId, false);
+        }
+        // Coalesced: every save() for this player in the same tick shares
+        // one write at the end of it. A single cube kill used to set off
+        // around ten of these across the plugins (payout, quests, blocktree,
+        // achievements, milestones, levels...), and each one serialized the
+        // player's whole record - their entire pet collection - and wrote
+        // the whole subdocument to Mongo. Now it's one diffed write.
+        CompletableFuture<Void> existing = coalesced.get(playerId);
+        if (existing != null) {
+            return existing;
+        }
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        coalesced.put(playerId, future);
+        if (!flushScheduled) {
+            flushScheduled = true;
+            Bukkit.getScheduler().runTask(owner, this::flushCoalesced);
+        }
+        return future;
+    }
+
+    /**
+     * An immediate save that rewrites the whole subdocument - for a player
+     * leaving, where nothing should rest on the diff baseline. Anything
+     * coalesced for them rides along with it.
+     */
+    public CompletableFuture<Void> saveNow(UUID playerId) {
+        CompletableFuture<Void> pending = coalesced.remove(playerId);
+        CompletableFuture<Void> future = write(playerId, true);
+        if (pending != null) {
+            future.whenComplete((ignored, error) -> complete(pending, error));
+        }
+        return future;
+    }
+
+    private void flushCoalesced() {
+        flushScheduled = false;
+        List<Map.Entry<UUID, CompletableFuture<Void>>> batch = new ArrayList<>(coalesced.entrySet());
+        coalesced.clear();
+        for (Map.Entry<UUID, CompletableFuture<Void>> entry : batch) {
+            write(entry.getKey(), false).whenComplete((ignored, error) -> complete(entry.getValue(), error));
+        }
+    }
+
+    private static void complete(CompletableFuture<Void> future, Throwable error) {
+        if (error != null) {
+            future.completeExceptionally(error);
+        } else {
+            future.complete(null);
+        }
     }
 
     /**
@@ -216,10 +271,17 @@ public final class PlayerDataStore<T extends PlayerRecord> {
             update = Updates.combine(changes);
         }
 
-        CompletableFuture<Void> future = databaseManager.supplyAsync(() -> {
+        // Chained behind this player's previous write, if one is still in
+        // flight: the database pool has several threads, and two writes of
+        // the same record racing could land out of order - an older
+        // snapshot overwriting a newer one.
+        CompletableFuture<Void> prior = pendingSaves.get(playerId);
+        java.util.function.Supplier<CompletableFuture<Void>> run = () -> databaseManager.supplyAsync(() -> {
             collection.updateOne(Filters.eq("_id", playerId), update, new UpdateOptions().upsert(true));
-            return null;
+            return (Void) null;
         });
+        CompletableFuture<Void> future = prior == null ? run.get()
+                : prior.handle((ignored, error) -> null).thenCompose(ignored -> run.get());
 
         pendingSaves.put(playerId, future);
         future.whenComplete((ignored, error) -> {
@@ -263,6 +325,10 @@ public final class PlayerDataStore<T extends PlayerRecord> {
      * shutting down, so the final save has to block instead.
      */
     public void saveSync(UUID playerId) {
+        CompletableFuture<Void> pending = coalesced.remove(playerId);
+        if (pending != null) {
+            pending.complete(null);
+        }
         T record = cache.get(playerId);
         if (record == null) {
             return;
@@ -305,6 +371,7 @@ public final class PlayerDataStore<T extends PlayerRecord> {
      * all typically started around server boot) don't land on the same tick.
      */
     public void startAutoSave(JavaPlugin plugin, long intervalTicks) {
+        this.owner = plugin;
         long step = 20L;
         int slices = (int) Math.max(1, intervalTicks / step);
         long initialDelay = ThreadLocalRandom.current().nextLong(step);

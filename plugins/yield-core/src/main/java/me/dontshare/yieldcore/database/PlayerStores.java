@@ -65,10 +65,27 @@ public final class PlayerStores {
             }
         }
 
+        /**
+         * The owning plugin is shutting down: save everyone it holds, now.
+         * On a server stop, plugins are disabled BEFORE players are
+         * disconnected, so {@link #onQuit} never runs then - without this,
+         * every restart dropped whatever each player had changed in this
+         * store since their last autosave (up to two minutes). This listener
+         * belongs to yield-core, which every store's plugin depends on, so
+         * it's still registered - and the database still open - when the
+         * owner goes.
+         */
+        @EventHandler
+        public void onOwnerDisable(org.bukkit.event.server.PluginDisableEvent event) {
+            if (event.getPlugin() == owner) {
+                store.saveAllSync();
+            }
+        }
+
         @EventHandler
         public void onQuit(PlayerQuitEvent event) {
             UUID playerId = event.getPlayer().getUniqueId();
-            store.save(playerId).whenComplete((ignored, error) -> {
+            store.saveNow(playerId).whenComplete((ignored, error) -> {
                 if (error == null) {
                     store.unload(playerId);
                 }

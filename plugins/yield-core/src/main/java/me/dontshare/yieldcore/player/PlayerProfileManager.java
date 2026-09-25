@@ -50,7 +50,7 @@ public final class PlayerProfileManager implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         UUID playerId = event.getPlayer().getUniqueId();
-        store.save(playerId).whenComplete((ignored, error) -> {
+        store.saveNow(playerId).whenComplete((ignored, error) -> {
             if (error == null) {
                 store.unload(playerId);
             }
