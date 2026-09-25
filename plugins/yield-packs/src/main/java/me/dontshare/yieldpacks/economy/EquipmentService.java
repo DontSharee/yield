@@ -170,7 +170,7 @@ public final class EquipmentService {
     }
 
     /** The lowest damage any common pet in {@code packs.yml} lists - the floor a Huge pet falls back to when its owner has never owned a single non-Huge pet, so an all-Huge team is never stuck dealing literal zero damage. */
-    private static final double MIN_HUGE_BASIS_DAMAGE = 1.0;
+    private static final double MIN_HUGE_BASIS_DAMAGE = 1000.0;
 
     /** Size past which {@link #damageBasisCache} sheds entries left behind by players who have since logged out. */
     private static final int BASIS_CACHE_SWEEP_THRESHOLD = 1024;
