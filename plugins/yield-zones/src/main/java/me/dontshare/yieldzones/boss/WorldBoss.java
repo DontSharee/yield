@@ -3,6 +3,7 @@ package me.dontshare.yieldzones.boss;
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.Location;
 import org.bukkit.entity.BlockDisplay;
+import org.bukkit.entity.TextDisplay;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,6 +26,10 @@ public final class WorldBoss {
     private final Map<UUID, Long> damageByPlayer = new HashMap<>();
     private long hp;
     private BossBar bossBar;
+    /** The floating name + health bar above the boss - see WorldBossService#spawnNametag. */
+    private TextDisplay nametag;
+    /** HP changed since the bar and nametag were last redrawn - see WorldBossService#tick. */
+    private boolean dirty;
 
     public WorldBoss(WorldBossDefinition definition, BlockDisplay displayEntity, List<Location> barrierLocations) {
         this.definition = definition;
@@ -83,6 +88,36 @@ public final class WorldBoss {
 
     public long totalDamageDealt() {
         return damageByPlayer.values().stream().mapToLong(Long::longValue).sum();
+    }
+
+    public TextDisplay nametag() {
+        return nametag;
+    }
+
+    public void setNametag(TextDisplay nametag) {
+        this.nametag = nametag;
+    }
+
+    public boolean dirty() {
+        return dirty;
+    }
+
+    public void setDirty(boolean dirty) {
+        this.dirty = dirty;
+    }
+
+    /** Where the boss's model actually is: the middle of its size-block cube, whose corner is the location minus half the size, rounded down. */
+    public Location visualCenter() {
+        int size = definition.size();
+        int radius = size / 2;
+        Location at = definition.location();
+        return new Location(at.getWorld(), at.getBlockX() - radius + size / 2.0,
+                at.getBlockY() - radius + size / 2.0, at.getBlockZ() - radius + size / 2.0);
+    }
+
+    /** The Y of the boss's bottom face - its floor. */
+    public double floorY() {
+        return definition.location().getBlockY() - definition.size() / 2;
     }
 
     public BossBar bossBar() {

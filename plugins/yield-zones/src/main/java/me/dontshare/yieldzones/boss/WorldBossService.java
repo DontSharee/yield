@@ -20,6 +20,12 @@ import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.BlockDisplay;
+import org.bukkit.entity.Display;
+import org.bukkit.entity.TextDisplay;
+import org.bukkit.event.player.PlayerAnimationEvent;
+import org.bukkit.event.player.PlayerAnimationType;
+import org.bukkit.util.RayTraceResult;
+import me.dontshare.yieldzones.cube.LootDropService;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -74,6 +80,13 @@ public final class WorldBossService implements Listener {
     private final Map<UUID, String> engagedBossIdByPlayer = new ConcurrentHashMap<>();
     private final Map<UUID, Map<UUID, Long>> cooldownsByPetByPlayer = new ConcurrentHashMap<>();
     private long currentTick;
+    /** Who has each boss's top-of-screen bar up right now - everyone near it, engaged or not. */
+    private final Map<String, java.util.Set<UUID>> barViewersByBossId = new ConcurrentHashMap<>();
+    /** Within this of a boss you see its bar, whether or not your pets are on it. */
+    private static final double BAR_VIEW_RANGE = 48.0;
+    /** How far a swing reaches to engage a boss - a bit past normal reach, it's a big target. */
+    private static final double SWING_REACH = 8.0;
+    private static final int NAMETAG_BAR_SEGMENTS = 20;
 
     public WorldBossService(JavaPlugin plugin, YieldPacks packs, OreCubeService cubeService, Supplier<Map<String, WorldBossDefinition>> definitions) {
         this.plugin = plugin;
@@ -161,6 +174,7 @@ public final class WorldBossService implements Listener {
         }
 
         WorldBoss boss = new WorldBoss(def, display, barrierLocations);
+        boss.setNametag(spawnNametag(boss));
         activeByBossId.put(def.id(), boss);
         announce(world, "<#FF5555><bold>" + def.displayName() + " has appeared!</bold></#FF5555> <gray>Left-click it to send your pets.</gray>");
     }
@@ -175,6 +189,32 @@ public final class WorldBossService implements Listener {
             if (containsBlock(boss, clicked)) {
                 event.setCancelled(true);
                 engage(event.getPlayer(), boss);
+                return;
+            }
+        }
+    }
+
+    /**
+     * Zone players are in Adventure mode, and an Adventure client never
+     * tells the server it left-clicked a block - so {@link #onLeftClickBlock}
+     * alone meant nobody could ever engage a boss, which is why its bar never
+     * showed. The arm swing does always arrive; this traces from it to see
+     * whether it was aimed at a boss, the same way cube clicks work.
+     */
+    @EventHandler
+    public void onSwing(PlayerAnimationEvent event) {
+        if (event.getAnimationType() != PlayerAnimationType.ARM_SWING || activeByBossId.isEmpty()) {
+            return;
+        }
+        Player player = event.getPlayer();
+        RayTraceResult hit = player.rayTraceBlocks(SWING_REACH);
+        if (hit == null || hit.getHitBlock() == null) {
+            return;
+        }
+        Location aimed = hit.getHitBlock().getLocation();
+        for (WorldBoss boss : activeByBossId.values()) {
+            if (containsBlock(boss, aimed)) {
+                engage(player, boss);
                 return;
             }
         }
@@ -211,6 +251,14 @@ public final class WorldBossService implements Listener {
     private void tick() {
         currentTick += TICK_INTERVAL;
         ensureDisplays();
+        for (WorldBoss boss : activeByBossId.values()) {
+            if (boss.dirty()) {
+                boss.setDirty(false);
+                updateBossBar(boss);
+                updateNametag(boss);
+            }
+            updateBarViewers(boss);
+        }
         for (Player player : Bukkit.getOnlinePlayers()) {
             tickPlayer(player);
         }
@@ -300,14 +348,22 @@ public final class WorldBossService implements Listener {
     private void ensureDisplays() {
         for (WorldBoss boss : activeByBossId.values()) {
             BlockDisplay display = boss.displayEntity();
-            if (display != null && display.isValid()) {
+            TextDisplay nametag = boss.nametag();
+            boolean modelOk = display != null && display.isValid();
+            boolean tagOk = nametag != null && nametag.isValid();
+            if (modelOk && tagOk) {
                 continue;
             }
             Location at = boss.definition().location();
             if (at.getWorld() == null || !at.getWorld().isChunkLoaded(at.getBlockX() >> 4, at.getBlockZ() >> 4)) {
                 continue;
             }
-            boss.setDisplayEntity(spawnDisplay(boss.definition()));
+            if (!modelOk) {
+                boss.setDisplayEntity(spawnDisplay(boss.definition()));
+            }
+            if (!tagOk) {
+                boss.setNametag(spawnNametag(boss));
+            }
         }
     }
 
@@ -347,10 +403,9 @@ public final class WorldBossService implements Listener {
         for (WorldBoss boss : List.copyOf(activeByBossId.values())) {
             activeByBossId.remove(boss.definition().id());
             if (boss.displayEntity() != null) {
-                if (boss.displayEntity() != null) {
-            boss.displayEntity().remove();
-        }
+                boss.displayEntity().remove();
             }
+            removeNametagAndBar(boss);
             for (Location barrier : boss.barrierLocations()) {
                 barrier.getBlock().setType(Material.AIR, false);
             }
@@ -384,7 +439,9 @@ public final class WorldBossService implements Listener {
         }
         boss.damage(amount);
         boss.addContribution(player.getUniqueId(), amount);
-        updateBossBar(boss);
+        // Redrawn at most once per tick (see tick) - every pet of every
+        // player hitting it would otherwise rebuild the bar per hit.
+        boss.setDirty(true);
         showDamageIndicator(player, boss, amount);
 
         PackPlayerProfile profile = packs.getPlayerStore().getCached(player.getUniqueId());
@@ -429,6 +486,7 @@ public final class WorldBossService implements Listener {
         if (boss.displayEntity() != null) {
             boss.displayEntity().remove();
         }
+        removeNametagAndBar(boss);
         for (Location barrier : boss.barrierLocations()) {
             barrier.getBlock().setType(Material.AIR, false);
         }
@@ -460,7 +518,7 @@ public final class WorldBossService implements Listener {
             double share = entry.getValue() / (double) totalDamage;
             long coins = Math.round(def.rewardCoins() * share);
             long diamonds = Math.round(def.rewardDiamonds() * share);
-            payOut(player, coins, diamonds);
+            payOut(player, boss, coins, diamonds);
         }
 
         Bukkit.getPluginManager().callEvent(new WorldBossKilledEvent(def, Map.copyOf(boss.damageByPlayer()), def.rewardCoins(), def.rewardDiamonds()));
@@ -473,6 +531,7 @@ public final class WorldBossService implements Listener {
         if (boss.displayEntity() != null) {
             boss.displayEntity().remove();
         }
+        removeNametagAndBar(boss);
         for (Location barrier : boss.barrierLocations()) {
             barrier.getBlock().setType(Material.AIR, false);
         }
@@ -494,11 +553,18 @@ public final class WorldBossService implements Listener {
         announce(world, "<gray>" + boss.definition().displayName() + " has retreated, unclaimed.</gray>");
     }
 
-    private void payOut(Player player, long coins, long diamonds) {
-        PackPlayerProfile profile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
-        profile.setCoins(profile.getCoins().add(BigInteger.valueOf(coins)));
-        profile.setDiamonds(profile.getDiamonds().add(BigInteger.valueOf(diamonds)));
-        packs.getPlayerStore().save(player.getUniqueId());
+    /**
+     * Each contributor's share sprays out of the boss as a fountain of coins
+     * and diamonds - far more pieces than any cube - and flies to them the
+     * same way cube loot does (see LootDropService), credited as it lands.
+     */
+    private void payOut(Player player, WorldBoss boss, long coins, long diamonds) {
+        LootDropService drops = cubeService.getLootDrops();
+        Location center = boss.visualCenter();
+        double spread = boss.definition().size() / 2.0;
+        drops.spawn(player, center, boss.floorY(), spread, LootDropService.Kind.COIN, coins, 36);
+        drops.spawn(player, center, boss.floorY(), spread, LootDropService.Kind.DIAMOND, diamonds, 14);
+        player.playSound(center, Sound.ENTITY_PLAYER_LEVELUP, 0.7f, 1.2f);
         player.sendMessage(Text.parse("<green>You earned <gold>" + Formatting.format(coins) + " coins</gold>"
                 + (diamonds > 0 ? " <gray>and</gray> <aqua>" + Formatting.format(diamonds) + " diamonds</aqua>" : "") + "!</green>"));
     }
@@ -522,6 +588,77 @@ public final class WorldBossService implements Listener {
             updateBossBar(boss);
         }
         player.showBossBar(boss.bossBar());
+    }
+
+    /**
+     * The name above the boss with its health bar underneath and the HP
+     * below that - a real entity, so every player sees the same one.
+     * Not persistent, like the model: {@link #ensureDisplays} brings it back
+     * if its chunk unloads.
+     */
+    private TextDisplay spawnNametag(WorldBoss boss) {
+        Location at = boss.visualCenter().add(0, boss.definition().size() / 2.0 + 0.9, 0);
+        return at.getWorld().spawn(at, TextDisplay.class, tag -> {
+            tag.setBillboard(Display.Billboard.CENTER);
+            tag.setBackgroundColor(org.bukkit.Color.fromARGB(0, 0, 0, 0));
+            tag.setShadowed(true);
+            tag.setAlignment(TextDisplay.TextAlignment.CENTER);
+            float scale = 1.3f + boss.definition().size() * 0.1f;
+            tag.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(),
+                    new Vector3f(scale, scale, scale), new AxisAngle4f()));
+            tag.text(nametagText(boss));
+            tag.setPersistent(false);
+        });
+    }
+
+    private void updateNametag(WorldBoss boss) {
+        TextDisplay tag = boss.nametag();
+        if (tag != null && tag.isValid()) {
+            tag.text(nametagText(boss));
+        }
+    }
+
+    /** Name on top, the bar under it, then "❤ hp / max". */
+    private Component nametagText(WorldBoss boss) {
+        long max = Math.max(1L, boss.definition().maxHp());
+        int filled = (int) Math.ceil(NAMETAG_BAR_SEGMENTS * (boss.hp() / (double) max));
+        filled = Math.max(boss.hp() > 0 ? 1 : 0, Math.min(NAMETAG_BAR_SEGMENTS, filled));
+        StringBuilder bar = new StringBuilder();
+        for (int i = 0; i < NAMETAG_BAR_SEGMENTS; i++) {
+            bar.append(i < filled ? "<#FF3B3B><st> </st></#FF3B3B>" : "<#3A3A3A><st> </st></#3A3A3A>");
+        }
+        return Text.parse("<#FF5555><bold>" + boss.definition().displayName() + "</bold></#FF5555>\n"
+                + bar + "\n<dark_red>❤</dark_red> <red>" + Formatting.format(boss.hp()) + "</red><gray> / "
+                + Formatting.format(max) + "</gray>");
+    }
+
+    /** Everyone within {@link #BAR_VIEW_RANGE} sees the boss bar; walking off takes it away. */
+    private void updateBarViewers(WorldBoss boss) {
+        if (boss.bossBar() == null) {
+            updateBossBar(boss);
+        }
+        java.util.Set<UUID> viewers = barViewersByBossId.computeIfAbsent(boss.definition().id(), id -> ConcurrentHashMap.newKeySet());
+        Location center = boss.visualCenter();
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            boolean near = player.getWorld().equals(center.getWorld())
+                    && player.getLocation().distanceSquared(center) <= BAR_VIEW_RANGE * BAR_VIEW_RANGE;
+            boolean showing = viewers.contains(player.getUniqueId());
+            if (near && !showing) {
+                player.showBossBar(boss.bossBar());
+                viewers.add(player.getUniqueId());
+            } else if (!near && showing) {
+                player.hideBossBar(boss.bossBar());
+                viewers.remove(player.getUniqueId());
+            }
+        }
+        viewers.removeIf(id -> Bukkit.getPlayer(id) == null);
+    }
+
+    private void removeNametagAndBar(WorldBoss boss) {
+        if (boss.nametag() != null) {
+            boss.nametag().remove();
+        }
+        barViewersByBossId.remove(boss.definition().id());
     }
 
     private void announce(World world, String message) {
