@@ -89,7 +89,9 @@ public final class YieldQuests extends JavaPlugin {
             }
             return lines;
         });
-        core.getListenerManager().register(new LoginStreakListener(this, loginStreakService, giftDisplay));
+        LoginStreakListener loginStreakListener = new LoginStreakListener(this, loginStreakService, giftDisplay);
+        core.getListenerManager().register(loginStreakListener);
+        loginStreakListener.startDayRolloverWatch();
 
         // No separate Rank Quest GUI/command - the board renders inline in
         // yield-packs' own RankupGui (row 0), reachable via /rankup,

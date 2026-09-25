@@ -15,11 +15,13 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.time.Duration;
+import java.time.LocalDate;
 
 /** Announces the login streak the moment a player joins - see LoginStreakService for the actual day-boundary/reward logic. */
 public final class LoginStreakListener implements Listener {
 
     private static final long DELAY_TICKS = 40L; // 2s - lets join messages/resource pack prompts settle first
+    private static final long ROLLOVER_CHECK_TICKS = 20L * 60;
     private static final Duration FADE_IN = Duration.ofMillis(300);
     private static final Duration STAY = Duration.ofSeconds(2, 500_000_000);
     private static final Duration FADE_OUT = Duration.ofMillis(500);
@@ -37,7 +39,30 @@ public final class LoginStreakListener implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
+        credit(event.getPlayer(), true);
+    }
+
+    /**
+     * A new day counts for everyone already online too. Checked once a
+     * minute: without it, a player AFK across midnight got nothing for the
+     * new day, and one who stayed on for two nights and then relogged lost
+     * the whole streak - they "missed" the days they were online for.
+     */
+    public void startDayRolloverWatch() {
+        long[] lastDay = {LocalDate.now().toEpochDay()};
+        Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            long today = LocalDate.now().toEpochDay();
+            if (today == lastDay[0]) {
+                return;
+            }
+            lastDay[0] = today;
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                credit(player, false);
+            }
+        }, ROLLOVER_CHECK_TICKS, ROLLOVER_CHECK_TICKS);
+    }
+
+    private void credit(Player player, boolean joining) {
         LoginStreakService.StreakResult result = service.recordLogin(player);
         if (result.alreadyCreditedToday()) {
             // A relog on the same real-world day - no new reward, no fanfare, nothing to announce twice.
@@ -50,12 +75,12 @@ public final class LoginStreakListener implements Listener {
                 result.coinsGranted(), result.diamondsGranted());
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (player.isOnline()) {
-                announce(player, result);
+                announce(player, result, joining);
             }
         }, DELAY_TICKS);
     }
 
-    private void announce(Player player, LoginStreakService.StreakResult result) {
+    private void announce(Player player, LoginStreakService.StreakResult result, boolean joining) {
         Component main = Text.parse("<gradient:#FFD700:#FFAA00><bold>Day <streak> Streak!</bold></gradient>",
                 Placeholder.unparsed("streak", String.valueOf(result.streak())));
         Component sub = buildRewardLine(result);
@@ -67,7 +92,8 @@ public final class LoginStreakListener implements Listener {
         if (result.dayInCycle() == 7) {
             player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
         }
-        player.sendMessage(Text.parse("<#FFD700>Welcome back! <sub></#FFD700>", Placeholder.component("sub", sub)));
+        player.sendMessage(Text.parse("<#FFD700>" + (joining ? "Welcome back!" : "A new day!") + " <sub></#FFD700>",
+                Placeholder.component("sub", sub)));
         player.sendMessage(Text.parse("<gray>Your streak present is on its way - smack it open when it lands.</gray>"));
     }
 

@@ -183,8 +183,13 @@ public final class GiftDisplayService implements Listener {
                 // A streak present was sitting there: it goes back in the
                 // queue and drops again right after, instead of its reward
                 // being thrown away with it.
-                pendingStreaks.put(player.getUniqueId(), new PendingStreak(current.streakDay, current.bigDay,
-                        current.reward, System.currentTimeMillis() + STREAK_DROP_DELAY_MILLIS));
+                pendingStreaks.merge(player.getUniqueId(), new PendingStreak(current.streakDay, current.bigDay,
+                        current.reward, System.currentTimeMillis() + STREAK_DROP_DELAY_MILLIS),
+                        (older, newer) -> new PendingStreak(Math.max(older.streak(), newer.streak()),
+                                older.bigDay() || newer.bigDay(),
+                                new PresentsService.Reward(older.reward().coins() + newer.reward().coins(),
+                                        older.reward().diamonds() + newer.reward().diamonds()),
+                                newer.readyAtMillis()));
             }
         }
         drop(player, index, true);
@@ -208,8 +213,16 @@ public final class GiftDisplayService implements Listener {
      * straight to the balance if they leave first (see {@link #onQuit}).
      */
     public void queueStreakGift(Player player, int streak, boolean bigDay, long coins, long diamonds) {
-        pendingStreaks.put(player.getUniqueId(), new PendingStreak(streak, bigDay,
-                new PresentsService.Reward(coins, diamonds), System.currentTimeMillis() + STREAK_DROP_DELAY_MILLIS));
+        PendingStreak fresh = new PendingStreak(streak, bigDay,
+                new PresentsService.Reward(coins, diamonds), System.currentTimeMillis() + STREAK_DROP_DELAY_MILLIS);
+        // One still waiting to drop (a displaced present re-queued, or a day
+        // rolling over before the last one landed) rides along in the new
+        // one rather than being replaced and lost.
+        pendingStreaks.merge(player.getUniqueId(), fresh, (older, newer) -> new PendingStreak(newer.streak(),
+                newer.bigDay() || older.bigDay(),
+                new PresentsService.Reward(older.reward().coins() + newer.reward().coins(),
+                        older.reward().diamonds() + newer.reward().diamonds()),
+                newer.readyAtMillis()));
     }
 
     private void dropStreak(Player player, PendingStreak streak) {
