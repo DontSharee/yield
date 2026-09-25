@@ -36,8 +36,20 @@ public final class GuiManager {
         }
     }
 
-    void forget(UUID playerId) {
+    /**
+     * {@code closed} has just closed. Only forgotten if it is still the
+     * current screen: opening one menu from another fires the old one's
+     * close after the new one is already current, and dropping that would
+     * leave {@link #closeAll} blind to a menu that may hold real items.
+     */
+    void forget(UUID playerId, Gui closed) {
+        current.remove(playerId, closed);
+    }
+
+    /** The player left - nothing of theirs should outlive them here. */
+    void forgetPlayer(UUID playerId) {
         current.remove(playerId);
+        previous.remove(playerId);
     }
 
     /**

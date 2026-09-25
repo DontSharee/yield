@@ -204,8 +204,14 @@ public final class GuiListener implements Listener {
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
         if (event.getPlayer() instanceof Player player && event.getView().getTopInventory().getHolder() instanceof Gui gui) {
-            manager.forget(player.getUniqueId());
+            manager.forget(player.getUniqueId(), gui);
             gui.handleClose(player);
         }
+    }
+
+    /** MONITOR: after the disconnect's own inventory close has run its handler. */
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR)
+    public void onQuit(org.bukkit.event.player.PlayerQuitEvent event) {
+        manager.forgetPlayer(event.getPlayer().getUniqueId());
     }
 }
