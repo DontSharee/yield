@@ -1,10 +1,8 @@
 package me.dontshare.yieldcore.packet;
 
-import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
-import com.github.retrooper.packetevents.protocol.player.User;
 import com.github.retrooper.packetevents.protocol.world.states.WrappedBlockState;
 import com.github.retrooper.packetevents.util.Quaternion4f;
 import com.github.retrooper.packetevents.util.Vector3f;
@@ -47,7 +45,7 @@ public final class BlockDisplayManager {
      * letting one get generated internally, so the two stay in sync.
      */
     public static void spawn(Player viewer, int entityId, UUID entityUuid, Location location) {
-        user(viewer).sendPacket(new WrapperPlayServerSpawnEntity(
+        PacketEntityManager.send(viewer, new WrapperPlayServerSpawnEntity(
                 entityId,
                 entityUuid,
                 EntityTypes.BLOCK_DISPLAY,
@@ -125,10 +123,7 @@ public final class BlockDisplayManager {
     }
 
     private static void sendMetadata(Player viewer, int entityId, EntityData<?>... data) {
-        user(viewer).sendPacket(new WrapperPlayServerEntityMetadata(entityId, List.of(data)));
+        PacketEntityManager.send(viewer, new WrapperPlayServerEntityMetadata(entityId, List.of(data)));
     }
 
-    private static User user(Player viewer) {
-        return PacketEvents.getAPI().getPlayerManager().getUser(viewer);
-    }
 }

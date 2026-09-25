@@ -74,7 +74,7 @@ public final class PacketEntityManager {
      */
     public static void spawnEntity(Player viewer, int entityId, UUID entityUuid, EntityType type, Location location) {
         Vector3d position = new Vector3d(location.getX(), location.getY(), location.getZ());
-        user(viewer).sendPacket(new WrapperPlayServerSpawnEntity(
+        send(viewer, new WrapperPlayServerSpawnEntity(
                 entityId,
                 Optional.of(entityUuid),
                 type,
@@ -88,7 +88,7 @@ public final class PacketEntityManager {
     }
 
     public static void destroyEntity(Player viewer, int entityId) {
-        user(viewer).sendPacket(new WrapperPlayServerDestroyEntities(entityId));
+        send(viewer, new WrapperPlayServerDestroyEntities(entityId));
     }
 
     /**
@@ -102,16 +102,16 @@ public final class PacketEntityManager {
      * targets 26.2.
      */
     public static void beginBundle(Player viewer) {
-        user(viewer).sendPacket(new WrapperPlayServerBundle());
+        send(viewer, new WrapperPlayServerBundle());
     }
 
     public static void endBundle(Player viewer) {
-        user(viewer).sendPacket(new WrapperPlayServerBundle());
+        send(viewer, new WrapperPlayServerBundle());
     }
 
     /** Overrides the entity's max health attribute - mainly useful for fake player-type NPCs, which default to 20. */
     public static void setMaxHealth(Player viewer, int entityId, double health) {
-        user(viewer).sendPacket(new WrapperPlayServerUpdateAttributes(entityId,
+        send(viewer, new WrapperPlayServerUpdateAttributes(entityId,
                 List.of(new WrapperPlayServerUpdateAttributes.Property(Attributes.MAX_HEALTH, health, List.of()))));
     }
 
@@ -121,17 +121,17 @@ public final class PacketEntityManager {
      * shulker a solid box of any size (see yield-zones' giant cubes).
      */
     public static void setScale(Player viewer, int entityId, double scale) {
-        user(viewer).sendPacket(new WrapperPlayServerUpdateAttributes(entityId,
+        send(viewer, new WrapperPlayServerUpdateAttributes(entityId,
                 List.of(new WrapperPlayServerUpdateAttributes.Property(Attributes.SCALE, scale, List.of()))));
     }
 
     public static void teleportEntity(Player viewer, int entityId, Location location) {
-        user(viewer).sendPacket(new WrapperPlayServerEntityTeleport(
+        send(viewer, new WrapperPlayServerEntityTeleport(
                 entityId, SpigotConversionUtil.fromBukkitLocation(location), true));
     }
 
     public static void playAnimation(Player viewer, int entityId, WrapperPlayServerEntityAnimation.EntityAnimationType type) {
-        user(viewer).sendPacket(new WrapperPlayServerEntityAnimation(entityId, type));
+        send(viewer, new WrapperPlayServerEntityAnimation(entityId, type));
     }
 
     /**
@@ -171,7 +171,7 @@ public final class PacketEntityManager {
 
     public static void setEquipment(Player viewer, int entityId, EquipmentSlot slot, org.bukkit.inventory.ItemStack item) {
         Equipment equipment = new Equipment(slot, SpigotConversionUtil.fromBukkitItemStack(item));
-        user(viewer).sendPacket(new WrapperPlayServerEntityEquipment(entityId, List.of(equipment)));
+        send(viewer, new WrapperPlayServerEntityEquipment(entityId, List.of(equipment)));
     }
 
     /**
@@ -194,16 +194,33 @@ public final class PacketEntityManager {
         UserProfile profile = skin == null ? new UserProfile(npcId, name) : new UserProfile(npcId, name, skin);
         WrapperPlayServerPlayerInfoUpdate.PlayerInfo info = new WrapperPlayServerPlayerInfoUpdate.PlayerInfo(
                 profile, false, 0, GameMode.SURVIVAL, null, null);
-        user(viewer).sendPacket(new WrapperPlayServerPlayerInfoUpdate(
+        send(viewer, new WrapperPlayServerPlayerInfoUpdate(
                 EnumSet.of(WrapperPlayServerPlayerInfoUpdate.Action.ADD_PLAYER), List.of(info)));
     }
 
     public static void removePlayerInfo(Player viewer, UUID npcId) {
-        user(viewer).sendPacket(new WrapperPlayServerPlayerInfoRemove(npcId));
+        send(viewer, new WrapperPlayServerPlayerInfoRemove(npcId));
     }
 
     private static void sendMetadata(Player viewer, int entityId, EntityData<?>... data) {
-        user(viewer).sendPacket(new WrapperPlayServerEntityMetadata(entityId, List.of(data)));
+        send(viewer, new WrapperPlayServerEntityMetadata(entityId, List.of(data)));
+    }
+
+    /**
+     * Sends one packet to one viewer - or nothing, if they've logged off.
+     * Plenty of packet work is scheduled a few ticks out (a damage number
+     * despawning, a hatch animation step), and PacketEvents has no User for
+     * a disconnected player: without this check, each of those threw from
+     * its task the moment someone quit mid-effect.
+     */
+    public static void send(Player viewer, com.github.retrooper.packetevents.wrapper.PacketWrapper<?> packet) {
+        if (viewer == null || !viewer.isOnline()) {
+            return;
+        }
+        User user = user(viewer);
+        if (user != null) {
+            user.sendPacket(packet);
+        }
     }
 
     private static User user(Player viewer) {
