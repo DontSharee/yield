@@ -19,6 +19,9 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
@@ -36,7 +39,7 @@ import java.util.function.Consumer;
  * events, to keep this self-contained) - structurally mirrors
  * {@code PetDisplayService}'s own per-viewer visibility loop.
  */
-public final class UpgradeStationDisplay {
+public final class UpgradeStationDisplay implements Listener {
 
     private static final double VIEW_DISTANCE_SQUARED = 48.0 * 48.0;
     private static final long TICK_INTERVAL = 20L; // 1 second
@@ -79,7 +82,18 @@ public final class UpgradeStationDisplay {
     }
 
     public void start() {
+        Bukkit.getPluginManager().registerEvents(this, plugin);
         Bukkit.getScheduler().runTaskTimer(plugin, this::tick, TICK_INTERVAL, TICK_INTERVAL);
+    }
+
+    /** A player who logs off loses every packet entity; forgetting them makes each station spawn afresh when they're back. */
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        UUID id = event.getPlayer().getUniqueId();
+        for (Set<UUID> viewers : viewersByStation.values()) {
+            viewers.remove(id);
+        }
+        lastButtonColor.remove(id);
     }
 
     /**

@@ -422,6 +422,27 @@ public final class PackOpenService implements Listener {
         }
     }
 
+    /** The station this player is auto-hatching at right now, or null - what an egg's "disable auto hatch" bar keys off. */
+    public org.bukkit.Location autoHatchSite(Player player) {
+        PackPlayerProfile profile = store.getCached(player.getUniqueId());
+        if (profile == null || !profile.isAutoOpenEnabled()) {
+            return null;
+        }
+        AutoSession session = autoSessions.get(player.getUniqueId());
+        return session != null ? session.at() : null;
+    }
+
+    /** Switches auto hatch off for this player, as if they had toggled it in the hatch menu. */
+    public void stopAutoHatch(Player player) {
+        java.util.UUID id = player.getUniqueId();
+        autoSessions.remove(id);
+        PackPlayerProfile profile = store.getCached(id);
+        if (profile != null && profile.isAutoOpenEnabled()) {
+            profile.setAutoOpenEnabled(false);
+            store.save(id);
+        }
+    }
+
     @org.bukkit.event.EventHandler
     public void onQuitClearAutoSession(org.bukkit.event.player.PlayerQuitEvent event) {
         autoSessions.remove(event.getPlayer().getUniqueId());
