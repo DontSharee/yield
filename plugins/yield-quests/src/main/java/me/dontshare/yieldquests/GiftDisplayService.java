@@ -384,6 +384,36 @@ public final class GiftDisplayService implements Listener {
         nextGiftAt.remove(id);
     }
 
+    /**
+     * Server shutdown: plugins are disabled BEFORE players are disconnected,
+     * so {@link #onQuit} never runs then. Pays every online player whatever
+     * a streak present (waiting, unopened) or a mid-burst present still owes
+     * them, and saves, while the player store is still up.
+     */
+    public void shutdown() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            UUID id = player.getUniqueId();
+            boolean owed = false;
+            Gift gift = gifts.remove(id);
+            if (gift != null) {
+                despawn(player, gift);
+                if (gift.reward != null && !gift.paid) {
+                    gift.paid = true;
+                    creditDirectly(player, gift.reward);
+                    owed = true;
+                }
+            }
+            PendingStreak streak = pendingStreaks.remove(id);
+            if (streak != null) {
+                creditDirectly(player, streak.reward());
+                owed = true;
+            }
+            if (owed) {
+                packs.getPlayerStore().saveSync(id);
+            }
+        }
+    }
+
     private void creditDirectly(Player player, PresentsService.Reward reward) {
         var profile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
         profile.setCoins(profile.getCoins().add(java.math.BigInteger.valueOf(reward.coins())));

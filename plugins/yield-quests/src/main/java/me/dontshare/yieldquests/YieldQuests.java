@@ -26,6 +26,17 @@ import java.util.List;
 
 public final class YieldQuests extends JavaPlugin {
 
+    /** Kept for {@link #onDisable} - owed presents are paid at shutdown. */
+    private GiftDisplayService giftDisplay;
+
+    @Override
+    public void onDisable() {
+        if (giftDisplay != null) {
+            giftDisplay.shutdown();
+        }
+    }
+
+
     private QuestContentLoader questContentLoader;
     private PresentsContentLoader presentsContentLoader;
     private RankQuestContentLoader rankQuestContentLoader;
@@ -56,7 +67,7 @@ public final class YieldQuests extends JavaPlugin {
 
         core.getListenerManager().register(new QuestEventListener(questService, rankQuestService));
         core.getListenerManager().register(new PresentsSessionListener(presentsService));
-        GiftDisplayService giftDisplay = new GiftDisplayService(this, presentsService, packs,
+        giftDisplay = new GiftDisplayService(this, presentsService, packs,
                 JavaPlugin.getPlugin(me.dontshare.yieldzones.YieldZones.class));
         giftDisplay.start();
         // "next gift: 3:12" under the player section of the sidebar, or
