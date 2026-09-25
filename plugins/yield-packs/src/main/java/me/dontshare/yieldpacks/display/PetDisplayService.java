@@ -71,6 +71,10 @@ public final class PetDisplayService {
     private final Map<UUID, List<PetDisplayInstance>> ownerInstances = new ConcurrentHashMap<>();
     private final Map<UUID, Set<UUID>> viewersByOwner = new ConcurrentHashMap<>();
     private final Map<UUID, Location> lastOwnerLocation = new ConcurrentHashMap<>();
+    /** Where each owner's pets were last sent - an idle squad whose spots haven't moved sends nothing. */
+    private final Map<UUID, List<Location>> lastSentPositions = new ConcurrentHashMap<>();
+    /** Owners whose idle pets are currently bobbing client-side (see updateOwner). */
+    private final Set<UUID> bobbing = ConcurrentHashMap.newKeySet();
     /** Owners whose pets lunged since the last cycle, and so need their interpolation window put back - see {@link #moveFor}. */
     private final Set<UUID> lungedOwners = ConcurrentHashMap.newKeySet();
     /** Last yaw sent per slot, so a stationary player's pets stop re-sending a rotation that hasn't changed. */
@@ -364,6 +368,8 @@ public final class PetDisplayService {
             }
         }
         lastOwnerLocation.remove(ownerId);
+        lastSentPositions.remove(ownerId);
+        bobbing.remove(ownerId);
         lungedOwners.remove(ownerId);
         lastYaws.remove(ownerId);
     }
@@ -379,6 +385,8 @@ public final class PetDisplayService {
         ownerInstances.clear();
         viewersByOwner.clear();
         lastOwnerLocation.clear();
+        lastSentPositions.clear();
+        bobbing.clear();
         lungedOwners.clear();
         lastYaws.clear();
     }
@@ -396,7 +404,17 @@ public final class PetDisplayService {
                 && last.distance(current) < config.movementThreshold();
         lastOwnerLocation.put(ownerId, current.clone());
 
-        double hoverOffset = stationary
+        // An idle squad (owner standing still, nobody attacking) bobs on the
+        // CLIENT: its spots are sent once, then one translation keyframe per
+        // half bob per pet glides it up and down - instead of re-sending
+        // every pet's position every update just to move it a few
+        // centimetres. That's the common case (AFK, auto-hatching, standing
+        // at a menu) and it was the bulk of this service's packets. Pets
+        // ringed round a target keep the old server-driven bob.
+        Map<Integer, Location> overrides = attackOverrides.get(ownerId);
+        boolean attacking = overrides != null && !overrides.isEmpty();
+        boolean idleBob = stationary && !attacking;
+        double hoverOffset = stationary && attacking
                 ? config.hoverAmplitude() * Math.sin(2 * Math.PI * elapsedTicks / config.hoverPeriodTicks())
                 : 0.0;
         List<Location> positions = resolvePositions(owner, instances, hoverOffset);
@@ -415,6 +433,25 @@ public final class PetDisplayService {
         // cycle after one happened.
         boolean resetInterpolation = lungedOwners.remove(ownerId);
         boolean yawChanged = yawsChanged(ownerId, yaws);
+        boolean positionsChanged = positionsChanged(ownerId, positions);
+        boolean sendMoves = !idleBob || positionsChanged || resetInterpolation || yawChanged;
+
+        Float bobTarget = null;
+        int bobTicks = 0;
+        int updateTicks = config.updateIntervalTicks();
+        if (idleBob && config.hoverAmplitude() > 0) {
+            int half = Math.max(updateTicks, config.hoverPeriodTicks() / 2);
+            boolean starting = bobbing.add(ownerId);
+            if (starting || elapsedTicks % half < updateTicks) {
+                boolean up = (elapsedTicks / half) % 2 == 0;
+                bobTarget = (float) (up ? config.hoverAmplitude() : -config.hoverAmplitude());
+                bobTicks = half;
+            }
+        } else if (bobbing.remove(ownerId)) {
+            // Moving again (or fighting): settle back onto the real spot.
+            bobTarget = 0f;
+            bobTicks = updateTicks;
+        }
 
         // Driven off the two viewer sets rather than every online player:
         // whether someone sees these pets has nothing to do with how many
@@ -437,9 +474,48 @@ public final class PetDisplayService {
             if (currentlySeeing.add(viewerId)) {
                 spawnFor(viewer, instances, positions, yaws);
             } else {
-                moveFor(viewer, instances, positions, yaws, resetInterpolation, yawChanged);
+                if (sendMoves) {
+                    moveFor(viewer, instances, positions, yaws, resetInterpolation, yawChanged);
+                }
+                if (bobTarget != null) {
+                    sendBob(viewer, instances, bobTarget, bobTicks);
+                }
             }
         }
+    }
+
+    /** One bob keyframe for every pet (and its label) - the client glides there over {@code ticks}. */
+    private void sendBob(Player viewer, List<PetDisplayInstance> instances, float y, int ticks) {
+        PacketEntityManager.beginBundle(viewer);
+        for (PetDisplayInstance instance : instances) {
+            ItemDisplayManager.setTranslationInterpolated(viewer, instance.itemEntityId(), 0f, y, 0f, ticks);
+            ItemDisplayManager.setTranslationInterpolated(viewer, instance.textEntityId(), 0f, y, 0f, ticks);
+        }
+        PacketEntityManager.endBundle(viewer);
+    }
+
+    /** Whether any pet's spot moved since it was last sent - and records the new spots if so. */
+    private boolean positionsChanged(UUID ownerId, List<Location> positions) {
+        List<Location> previous = lastSentPositions.get(ownerId);
+        boolean changed = previous == null || previous.size() != positions.size();
+        if (!changed) {
+            for (int i = 0; i < positions.size(); i++) {
+                Location a = previous.get(i);
+                Location b = positions.get(i);
+                if (a.getWorld() != b.getWorld() || a.distanceSquared(b) > 1.0e-4) {
+                    changed = true;
+                    break;
+                }
+            }
+        }
+        if (changed) {
+            List<Location> copy = new ArrayList<>(positions.size());
+            for (Location position : positions) {
+                copy.add(position.clone());
+            }
+            lastSentPositions.put(ownerId, copy);
+        }
+        return changed;
     }
 
     /** Whether any slot's yaw actually moved since the last cycle - if none did, the rotation packet has nothing to say. */

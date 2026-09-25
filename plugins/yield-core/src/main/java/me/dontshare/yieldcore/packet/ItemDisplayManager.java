@@ -142,6 +142,19 @@ public final class ItemDisplayManager {
                 new EntityData<>(13, EntityDataTypes.QUATERNION, rotationOf(pitchDegrees, yawDegrees)));
     }
 
+    /**
+     * Glides the display's transformation translation to {@code (x, y, z)}
+     * over {@code ticks} on the client - movement that costs one packet per
+     * keyframe instead of a teleport every few ticks. Metadata indices are
+     * shared by every Display type, so this works on text displays too.
+     */
+    public static void setTranslationInterpolated(Player viewer, int entityId, float x, float y, float z, int ticks) {
+        sendMetadata(viewer, entityId,
+                new EntityData<>(8, EntityDataTypes.INT, 0),
+                new EntityData<>(9, EntityDataTypes.INT, ticks),
+                new EntityData<>(11, EntityDataTypes.VECTOR3F, new Vector3f(x, y, z)));
+    }
+
     /** Angle in radians, rotating around the Y axis (a "spin in place"). */
     public static void setYRotation(Player viewer, int entityId, double radians) {
         float halfAngle = (float) (radians / 2.0);
