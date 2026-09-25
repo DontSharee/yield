@@ -27,6 +27,7 @@ public final class RebirthService {
      * {@code available} count in one synchronous call.
      */
     private static final int MAX_REBIRTHS_PER_PREVIEW = 100_000;
+    private static final java.math.MathContext COST_PRECISION = java.math.MathContext.DECIMAL128;
 
     public record RebirthPreview(int available, BigInteger totalCost) {
     }
@@ -55,8 +56,18 @@ public final class RebirthService {
      * coin balances are themselves unbounded.
      */
     public BigInteger requiredCoins(int rebirthNumber) {
-        BigDecimal cost = BigDecimal.valueOf(baseCost).multiply(BigDecimal.valueOf(growth).pow(rebirthNumber));
-        return cost.setScale(0, RoundingMode.HALF_UP).toBigInteger();
+        return rawCost(rebirthNumber).setScale(0, RoundingMode.HALF_UP).toBigInteger();
+    }
+
+    /**
+     * To 34 significant digits, not exactly: an exact {@code 1.12^n} carries
+     * {@code 2n} decimal places, so by rebirth two thousand every cost was a
+     * number thousands of digits long - and the rebirth machine's readout
+     * works one out per affordable rebirth, for every player near it, every
+     * second. 34 digits is exact for any cost anyone could read.
+     */
+    private BigDecimal rawCost(int rebirthNumber) {
+        return BigDecimal.valueOf(baseCost).multiply(BigDecimal.valueOf(growth).pow(rebirthNumber, COST_PRECISION), COST_PRECISION);
     }
 
     /** The permanent coin-income multiplier from rebirths - see rebirth.yml's {@code coin-bonus-per-rebirth}. */
@@ -74,14 +85,19 @@ public final class RebirthService {
         int available = 0;
         BigInteger totalCost = BigInteger.ZERO;
         BigInteger remaining = profile.getCoins();
+        // Each next cost is the last one times the growth rate - one small
+        // multiply per step instead of a fresh power.
+        BigDecimal growthFactor = BigDecimal.valueOf(growth);
+        BigDecimal raw = rawCost(profile.getRebirths());
         while (available < MAX_REBIRTHS_PER_PREVIEW) {
-            BigInteger nextCost = requiredCoins(profile.getRebirths() + available);
+            BigInteger nextCost = raw.setScale(0, RoundingMode.HALF_UP).toBigInteger();
             if (nextCost.compareTo(remaining) > 0) {
                 break;
             }
             remaining = remaining.subtract(nextCost);
             totalCost = totalCost.add(nextCost);
             available++;
+            raw = raw.multiply(growthFactor, COST_PRECISION);
         }
         return new RebirthPreview(available, totalCost);
     }
