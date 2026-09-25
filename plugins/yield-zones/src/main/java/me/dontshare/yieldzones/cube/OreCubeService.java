@@ -888,6 +888,16 @@ public final class OreCubeService implements Listener {
             spawnCollision(owner, cube);
             announceGiantLanding(owner, cube);
         }
+        if (tier.treasure()) {
+            // A chest is the zone's event: make sure it's noticed. Owner-only.
+            owner.sendActionBar(Text.parse("<#FFD700><bold>✦ A TREASURE CHEST LANDED! ✦</bold></#FFD700>"));
+            owner.playSound(cube.center(), Sound.BLOCK_CHEST_LOCKED, 0.8f, 1.2f);
+            owner.playSound(cube.center(), Sound.BLOCK_NOTE_BLOCK_CHIME, 0.8f, 1.5f);
+            Particle.DustOptions gold = new Particle.DustOptions(org.bukkit.Color.fromRGB(0xFFD700), 1.4f);
+            for (double y = 0; y <= 3.0; y += 0.25) {
+                owner.spawnParticle(Particle.DUST, cube.center().add(0, y, 0), 2, 0.08, 0.05, 0.08, 0, gold);
+            }
+        }
         if (isRainbow(cube)) {
             rainbowsByPlayer.computeIfAbsent(owner.getUniqueId(), id -> ConcurrentHashMap.newKeySet()).add(cube);
             owner.sendActionBar(Text.parse("<rainbow><bold>✦ A RAINBOW CUBE LANDED! ✦</bold></rainbow>"));
