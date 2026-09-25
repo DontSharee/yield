@@ -354,7 +354,8 @@ public final class PackPlayerProfile implements PlayerRecord {
         return autoAttackOff;
     }
 
-    /** What combat reads: pets fight on their own unless the player switched it off. */
+    /** What combat reads: pets fight on their own unless the player switched it off. Derived, so never stored. */
+    @org.bson.codecs.pojo.annotations.BsonIgnore
     public boolean isAutoAttackOn() {
         return !autoAttackOff;
     }
@@ -431,6 +432,14 @@ public final class PackPlayerProfile implements PlayerRecord {
     /** Virtual crate-key counts - crateId -> how many of that crate's own Key this player currently has (see CrateService). */
     public Map<String, Integer> getCrateKeys() {
         return crateKeys;
+    }
+
+    // The setters below are what make these fields LOAD. The POJO codec
+    // writes any property with a getter, but only reads back one with a
+    // setter: without them, crate keys, enchant slots and mastery XP were
+    // saved every time and came back empty on every load.
+    public void setCrateKeys(Map<String, Integer> crateKeys) {
+        this.crateKeys = crateKeys == null ? new HashMap<>() : new HashMap<>(crateKeys);
     }
 
     public void setStoredPacks(Map<String, Integer> storedPacks) {
@@ -594,6 +603,18 @@ public final class PackPlayerProfile implements PlayerRecord {
         return enchantSlots;
     }
 
+    /** Always exactly nine slots, whatever was stored - see getCrateKeys' note on why this setter exists. */
+    public void setEnchantSlots(List<String> enchantSlots) {
+        List<String> slots = newEmptyEnchantSlots();
+        if (enchantSlots != null) {
+            for (int i = 0; i < Math.min(slots.size(), enchantSlots.size()); i++) {
+                String slot = enchantSlots.get(i);
+                slots.set(i, slot == null ? "" : slot);
+            }
+        }
+        this.enchantSlots = slots;
+    }
+
     public long getEnchantMarketHour() {
         return enchantMarketHour;
     }
@@ -612,6 +633,10 @@ public final class PackPlayerProfile implements PlayerRecord {
 
     public Map<String, Long> getMasteryXp() {
         return masteryXp;
+    }
+
+    public void setMasteryXp(Map<String, Long> masteryXp) {
+        this.masteryXp = masteryXp == null ? new HashMap<>() : new HashMap<>(masteryXp);
     }
 
     public double getAdminLuckBonus() {

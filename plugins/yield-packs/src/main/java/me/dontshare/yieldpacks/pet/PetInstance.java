@@ -124,6 +124,21 @@ public final class PetInstance {
         return activeUniqueEnchants;
     }
 
+    // These setters are what make the three fields above LOAD: the POJO
+    // codec writes a getter-only property but never reads it back, so a
+    // pet's forge and enchant bonuses were saved and then lost on load.
+    public void setForgeBonuses(Map<String, Double> forgeBonuses) {
+        this.forgeBonuses = forgeBonuses == null ? new HashMap<>() : new HashMap<>(forgeBonuses);
+    }
+
+    public void setEnchantBonuses(Map<String, Double> enchantBonuses) {
+        this.enchantBonuses = enchantBonuses == null ? new HashMap<>() : new HashMap<>(enchantBonuses);
+    }
+
+    public void setActiveUniqueEnchants(List<String> activeUniqueEnchants) {
+        this.activeUniqueEnchants = activeUniqueEnchants == null ? new ArrayList<>() : new ArrayList<>(activeUniqueEnchants);
+    }
+
     /**
      * Still at baseline - genuinely interchangeable with any other baseline
      * copy of the same item id, so the Bag may stack them into one slot and
@@ -144,6 +159,7 @@ public final class PetInstance {
      * bulk-delete-by-rarity and fusion both consume baseline pets, so an
      * enchanted or forged level-1 pet could be destroyed without warning.
      */
+    @org.bson.codecs.pojo.annotations.BsonIgnore
     public boolean isBaseline() {
         return level <= 1
                 && xp == 0
