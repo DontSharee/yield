@@ -74,8 +74,8 @@ public final class PlayerDataStore<T extends PlayerRecord> {
     private volatile boolean flushScheduled;
     /** Set by {@link #startAutoSave}; schedules the coalesced flush. */
     private volatile JavaPlugin owner;
-    /** Per-top-level-field hashes of each player's last successfully written subdocument - see {@link #write}. */
-    private final Map<UUID, Map<String, Integer>> lastFieldHashes = new ConcurrentHashMap<>();
+    /** Per-top-level-field hashes of each player's last successfully written subdocument - see {@link #write} and {@link #deepHash}. */
+    private final Map<UUID, Map<String, Long>> lastFieldHashes = new ConcurrentHashMap<>();
     /** Players still to be visited in the current autosave sweep - see {@link #startAutoSave}. */
     private final ArrayDeque<UUID> autoSaveQueue = new ArrayDeque<>();
     private int autoSaveBudget = 1;
@@ -229,6 +229,63 @@ public final class PlayerDataStore<T extends PlayerRecord> {
      * A forced save (quit, shutdown) writes the subdocument whole, so nothing
      * durable rests on the comparison being right.
      */
+    /**
+     * A 64-bit, order-sensitive fingerprint of one encoded field.
+     * <p>
+     * Not {@code BsonValue#hashCode}: a document's is a plain sum over its
+     * entries and a string's only 32 bits, so two edits inside one pet (a
+     * level and its xp, say) could cancel out and read as "unchanged" - that
+     * field would then go unwritten until the next forced save.
+     */
+    static long deepHash(BsonValue value) {
+        long h = value.getBsonType().ordinal() * 0x9E3779B97F4A7C15L;
+        switch (value.getBsonType()) {
+            case DOCUMENT -> {
+                for (Map.Entry<String, BsonValue> entry : value.asDocument().entrySet()) {
+                    h = mix(h, hashString(entry.getKey()));
+                    h = mix(h, deepHash(entry.getValue()));
+                }
+            }
+            case ARRAY -> {
+                for (BsonValue element : value.asArray()) {
+                    h = mix(h, deepHash(element));
+                }
+                h = mix(h, value.asArray().size());
+            }
+            case STRING -> h = mix(h, hashString(value.asString().getValue()));
+            case INT32 -> h = mix(h, value.asInt32().getValue());
+            case INT64 -> h = mix(h, value.asInt64().getValue());
+            case DOUBLE -> h = mix(h, Double.doubleToLongBits(value.asDouble().getValue()));
+            case BOOLEAN -> h = mix(h, value.asBoolean().getValue() ? 1 : 2);
+            case DATE_TIME -> h = mix(h, value.asDateTime().getValue());
+            case DECIMAL128 -> {
+                h = mix(h, value.asDecimal128().getValue().getHigh());
+                h = mix(h, value.asDecimal128().getValue().getLow());
+            }
+            case BINARY -> {
+                h = mix(h, value.asBinary().getType());
+                for (byte b : value.asBinary().getData()) {
+                    h = mix(h, b);
+                }
+            }
+            default -> h = mix(h, value.hashCode());
+        }
+        return h;
+    }
+
+    private static long hashString(String text) {
+        long h = 0xCBF29CE484222325L;
+        for (int i = 0; i < text.length(); i++) {
+            h = (h ^ text.charAt(i)) * 0x100000001B3L;
+        }
+        return h;
+    }
+
+    private static long mix(long h, long v) {
+        h = (h ^ v) * 0x9E3779B97F4A7C15L;
+        return h ^ (h >>> 31);
+    }
+
     private CompletableFuture<Void> write(UUID playerId, boolean force) {
         T record = cache.get(playerId);
         if (record == null) {
@@ -243,10 +300,10 @@ public final class PlayerDataStore<T extends PlayerRecord> {
             return CompletableFuture.failedFuture(e);
         }
 
-        Map<String, Integer> previous = force ? null : lastFieldHashes.get(playerId);
-        Map<String, Integer> current = new HashMap<>(encoded.size() * 2);
+        Map<String, Long> previous = force ? null : lastFieldHashes.get(playerId);
+        Map<String, Long> current = new HashMap<>(encoded.size() * 2);
         for (Map.Entry<String, BsonValue> field : encoded.entrySet()) {
-            current.put(field.getKey(), field.getValue().hashCode());
+            current.put(field.getKey(), deepHash(field.getValue()));
         }
 
         Bson update;
@@ -255,8 +312,8 @@ public final class PlayerDataStore<T extends PlayerRecord> {
         } else {
             List<Bson> changes = new ArrayList<>();
             for (Map.Entry<String, BsonValue> field : encoded.entrySet()) {
-                Integer before = previous.get(field.getKey());
-                if (before == null || before.intValue() != current.get(field.getKey()).intValue()) {
+                Long before = previous.get(field.getKey());
+                if (before == null || before.longValue() != current.get(field.getKey()).longValue()) {
                     changes.add(Updates.set(fieldKey + "." + field.getKey(), field.getValue()));
                 }
             }
