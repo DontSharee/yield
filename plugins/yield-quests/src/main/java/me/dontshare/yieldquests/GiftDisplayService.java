@@ -72,6 +72,9 @@ public final class GiftDisplayService implements Listener {
         /** A streak present rather than one of the session's free gifts - its reward is already fixed. */
         String title = "✦ FREE GIFT ✦";
         ItemStack icon;
+        /** For a streak present: which day, and whether it's the big one - so it can be queued again if displaced. */
+        int streakDay;
+        boolean bigDay;
 
         Gift(int index, boolean openOnLanding) {
             this.index = index;
@@ -143,6 +146,8 @@ public final class GiftDisplayService implements Listener {
                     again.reward = gift.reward;
                     again.title = gift.title;
                     again.icon = gift.icon;
+                    again.streakDay = gift.streakDay;
+                    again.bigDay = gift.bigDay;
                     place(player, again);
                 } else {
                     drop(player, gift.index, false);
@@ -168,8 +173,19 @@ public final class GiftDisplayService implements Listener {
             return;
         }
         if (current != null) {
+            if (current.opening) {
+                // Mid-burst - let it finish; the menu pick can wait a moment.
+                return;
+            }
             despawn(player, current);
             gifts.remove(player.getUniqueId());
+            if (current.index < 0 && current.reward != null && !current.paid) {
+                // A streak present was sitting there: it goes back in the
+                // queue and drops again right after, instead of its reward
+                // being thrown away with it.
+                pendingStreaks.put(player.getUniqueId(), new PendingStreak(current.streakDay, current.bigDay,
+                        current.reward, System.currentTimeMillis() + STREAK_DROP_DELAY_MILLIS));
+            }
         }
         drop(player, index, true);
     }
@@ -199,6 +215,8 @@ public final class GiftDisplayService implements Listener {
     private void dropStreak(Player player, PendingStreak streak) {
         Gift gift = new Gift(-1, false);
         gift.reward = streak.reward();
+        gift.streakDay = streak.streak();
+        gift.bigDay = streak.bigDay();
         gift.title = "✦ DAY " + streak.streak() + " STREAK ✦";
         gift.icon = new ItemStack(streak.bigDay() ? org.bukkit.Material.ENDER_CHEST : org.bukkit.Material.CHEST);
         place(player, gift);

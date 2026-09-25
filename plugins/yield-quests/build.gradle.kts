@@ -1,4 +1,4 @@
-version = "0.8.2"
+version = "0.8.3"
 
 dependencies {
     // Not transitive from other plugins' own compileOnly dependencies on
