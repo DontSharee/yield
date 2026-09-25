@@ -12,6 +12,9 @@ import me.dontshare.yieldzones.zone.ZoneLockService;
 import org.bukkit.entity.Player;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -226,13 +229,42 @@ public final class UpgradeService {
         return multiplierFor(profile, effect) - 1.0;
     }
 
-    /** {@code 1.0 + Σ(level * valuePerLevel)} across every type configured with this effect - matches RebirthService.coinMultiplier's own existing formula shape. */
-    private double multiplierFor(PackPlayerProfile profile, UpgradeEffect effect) {
-        double total = 1.0;
-        for (UpgradeType type : content.get().types().values()) {
-            if (type.effect() == effect) {
-                total += levelOf(profile.getPlayerId(), type.id()) * type.valuePerLevel();
+    /** The types behind each effect, for one content snapshot - rebuilt only when a reload swaps the snapshot. */
+    private record EffectIndex(UpgradeContent source, Map<UpgradeEffect, List<UpgradeType>> byEffect) {
+    }
+
+    private volatile EffectIndex effectIndex;
+
+    private List<UpgradeType> typesFor(UpgradeEffect effect) {
+        UpgradeContent current = content.get();
+        EffectIndex index = effectIndex;
+        if (index == null || index.source() != current) {
+            Map<UpgradeEffect, List<UpgradeType>> byEffect = new EnumMap<>(UpgradeEffect.class);
+            for (UpgradeType type : current.types().values()) {
+                byEffect.computeIfAbsent(type.effect(), e -> new ArrayList<>()).add(type);
             }
+            index = new EffectIndex(current, byEffect);
+            effectIndex = index;
+        }
+        return index.byEffect().getOrDefault(effect, List.of());
+    }
+
+    /**
+     * {@code 1.0 + Σ(level * valuePerLevel)} across every type configured with this effect - matches RebirthService.coinMultiplier's own existing formula shape.
+     * <p>
+     * Combat asks for several of these on every pet hit, so it reads the
+     * level map once and walks only this effect's types, rather than
+     * looking the profile up again for every configured type.
+     */
+    private double multiplierFor(PackPlayerProfile profile, UpgradeEffect effect) {
+        List<UpgradeType> types = typesFor(effect);
+        if (types.isEmpty()) {
+            return 1.0;
+        }
+        Map<String, Integer> levels = upgradeStore.getOrCreate(profile.getPlayerId()).getLevels();
+        double total = 1.0;
+        for (UpgradeType type : types) {
+            total += levels.getOrDefault(type.id(), 0) * type.valuePerLevel();
         }
         return total;
     }
