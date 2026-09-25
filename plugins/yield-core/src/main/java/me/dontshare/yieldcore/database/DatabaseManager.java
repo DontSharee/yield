@@ -16,8 +16,9 @@ import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -41,7 +42,9 @@ public final class DatabaseManager {
 
     private final MongoClient client;
     private final MongoDatabase database;
-    private final ExecutorService executor = Executors.newFixedThreadPool(4);
+    private final ThreadPoolExecutor executor = new ThreadPoolExecutor(4, 4, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+    /** How long shutdown waits for queued writes to land before closing the connection. */
+    private static final long SHUTDOWN_DRAIN_MILLIS = 10_000L;
 
     public DatabaseManager(FileConfiguration config) {
         String connectionString = config.getString("mongodb.connection-string", "mongodb://localhost:27017");
@@ -125,8 +128,27 @@ public final class DatabaseManager {
         }
     }
 
+    /**
+     * Lets the writes still queued land before the connection goes.
+     * <p>
+     * Shutting the pool straight down stranded them: a save chained behind
+     * one still running submits itself only once that one finishes, which a
+     * shut-down pool refuses, and anything already queued then ran against
+     * a closed client. So this waits for the pool to go idle (bounded), and
+     * only then stops it.
+     */
     public void close() {
-        executor.shutdown();
+        long deadline = System.currentTimeMillis() + SHUTDOWN_DRAIN_MILLIS;
+        try {
+            while (System.currentTimeMillis() < deadline
+                    && (executor.getActiveCount() > 0 || !executor.getQueue().isEmpty())) {
+                Thread.sleep(20L);
+            }
+            executor.shutdown();
+            executor.awaitTermination(Math.max(0L, deadline - System.currentTimeMillis()), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         client.close();
     }
 }
