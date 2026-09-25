@@ -68,6 +68,22 @@ public final class PlayerDataStore<T extends PlayerRecord> {
     private final Logger logger;
 
     private final Map<UUID, T> cache = new ConcurrentHashMap<>();
+    /**
+     * Each player's current session - started by a login load, ended by
+     * {@link #unload}. A record is only ever cached for a player with one;
+     * see {@link #getOrCreate}.
+     */
+    private final Map<UUID, Long> sessions = new ConcurrentHashMap<>();
+    private final java.util.concurrent.atomic.AtomicLong sessionCounter = new java.util.concurrent.atomic.AtomicLong();
+    /**
+     * The session each online connection joined with. A quit ends that one,
+     * not whatever is current: on a duplicate login the new connection's
+     * pre-login has already started the next session by the time the old
+     * one is kicked.
+     */
+    private final Map<UUID, Long> joinedSessions = new ConcurrentHashMap<>();
+    /** Guards every change to which players have a session together with their cache entry. */
+    private final Object sessionLock = new Object();
     private final Map<UUID, CompletableFuture<Void>> pendingSaves = new ConcurrentHashMap<>();
     /** save() calls waiting for this tick's single write - see {@link #save}. */
     private final Map<UUID, CompletableFuture<Void>> coalesced = new ConcurrentHashMap<>();
@@ -116,9 +132,45 @@ public final class PlayerDataStore<T extends PlayerRecord> {
         return cache.get(playerId);
     }
 
-    /** Like {@link #getCached}, but falls back to an in-memory default rather than returning null. */
+    /**
+     * Like {@link #getCached}, but falls back to an in-memory default rather than returning null.
+     * <p>
+     * For a player with no session (logged off, or never here) the default
+     * is handed back detached - not cached, so never saved. Cached, it would
+     * be picked up by the next autosave, and a first write is always the
+     * whole subdocument: a late callback touching someone who had just left
+     * would have written a blank record over everything they owned.
+     */
     public T getOrCreate(UUID playerId) {
-        return cache.computeIfAbsent(playerId, defaultFactory);
+        T record = cache.get(playerId);
+        if (record != null) {
+            return record;
+        }
+        synchronized (sessionLock) {
+            if (!sessions.containsKey(playerId)) {
+                return defaultFactory.apply(playerId);
+            }
+            return cache.computeIfAbsent(playerId, defaultFactory);
+        }
+    }
+
+    /** This player's current session token, or -1 without one. */
+    public long sessionOf(UUID playerId) {
+        return sessions.getOrDefault(playerId, -1L);
+    }
+
+    /** Call on join: ties the connection to the session its pre-login started. */
+    public void markJoined(UUID playerId) {
+        long session = sessionOf(playerId);
+        if (session >= 0) {
+            joinedSessions.put(playerId, session);
+        }
+    }
+
+    /** Call on quit: the session this connection joined with, to pass to {@link #unload(UUID, long)}. */
+    public long takeJoinedSession(UUID playerId) {
+        Long session = joinedSessions.remove(playerId);
+        return session != null ? session : sessionOf(playerId);
     }
 
     /**
@@ -127,14 +179,7 @@ public final class PlayerDataStore<T extends PlayerRecord> {
      * out from under a save that hasn't landed yet). Caches the result.
      */
     public CompletableFuture<T> load(UUID playerId) {
-        CompletableFuture<Void> pendingSave = pendingSaves.get(playerId);
-        CompletableFuture<Void> after = pendingSave != null ? pendingSave : CompletableFuture.completedFuture(null);
-
-        return after.thenComposeAsync(ignored -> databaseManager.supplyAsync(() -> fetchOrDefault(playerId)))
-                .thenApply(record -> {
-                    cache.put(playerId, record);
-                    return record;
-                });
+        return databaseManager.supplyAsync(() -> loadBlocking(playerId));
     }
 
     /**
@@ -144,13 +189,29 @@ public final class PlayerDataStore<T extends PlayerRecord> {
      * login rather than let the player join on default data.
      */
     public T loadBlocking(UUID playerId) {
+        // Still cached means the copy in memory is the newest there is: a
+        // duplicate login while the old session is online, a rejoin before
+        // the quit save finished, or a quit save that failed and is waiting
+        // on a retry. Reading the database instead would roll them back.
+        synchronized (sessionLock) {
+            T live = cache.get(playerId);
+            if (live != null) {
+                sessions.put(playerId, sessionCounter.incrementAndGet());
+                return live;
+            }
+        }
         CompletableFuture<Void> pendingSave = pendingSaves.get(playerId);
         if (pendingSave != null) {
             pendingSave.join();
         }
         T record = fetchOrDefault(playerId);
-        cache.put(playerId, record);
-        return record;
+        // The session starts only once the record is in place, so nothing
+        // can cache a blank default for them while it loads.
+        synchronized (sessionLock) {
+            T existing = cache.putIfAbsent(playerId, record);
+            sessions.put(playerId, sessionCounter.incrementAndGet());
+            return existing != null ? existing : record;
+        }
     }
 
     /**
@@ -404,10 +465,41 @@ public final class PlayerDataStore<T extends PlayerRecord> {
         }
     }
 
-    /** Drops a player from the in-memory cache. Call after {@link #save} on quit. */
-    public void unload(UUID playerId) {
-        cache.remove(playerId);
-        lastFieldHashes.remove(playerId);
+    /**
+     * A login this store loaded for was turned away later in pre-login
+     * (another store failed, a ban, a full server) - no quit will ever come
+     * to end the session, so it ends here. Left alone if they are in fact
+     * online: a refused duplicate login must not unload the live session.
+     */
+    public void abandonLogin(UUID playerId) {
+        if (Bukkit.getPlayer(playerId) == null) {
+            unload(playerId, sessionOf(playerId));
+            return;
+        }
+        // Their pre-login moved the session on; hand it back to the
+        // connection that is actually playing, or its quit won't match.
+        synchronized (sessionLock) {
+            Long joined = joinedSessions.get(playerId);
+            if (joined != null) {
+                sessions.put(playerId, joined);
+            }
+        }
+    }
+
+    /**
+     * Ends the session {@code session} (from {@link #takeJoinedSession}, taken
+     * as they left) and drops the player from the in-memory cache - unless a
+     * new login has started another session since, in which case the record
+     * is theirs now and stays.
+     */
+    public void unload(UUID playerId, long session) {
+        synchronized (sessionLock) {
+            if (session < 0 || !sessions.remove(playerId, session)) {
+                return;
+            }
+            cache.remove(playerId);
+            lastFieldHashes.remove(playerId);
+        }
     }
 
     /**

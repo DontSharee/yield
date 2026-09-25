@@ -82,12 +82,25 @@ public final class PlayerStores {
             }
         }
 
+        @EventHandler(priority = EventPriority.MONITOR)
+        public void onPreLoginResult(AsyncPlayerPreLoginEvent event) {
+            if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) {
+                store.abandonLogin(event.getUniqueId());
+            }
+        }
+
+        @EventHandler(priority = EventPriority.LOWEST)
+        public void onJoin(org.bukkit.event.player.PlayerJoinEvent event) {
+            store.markJoined(event.getPlayer().getUniqueId());
+        }
+
         @EventHandler
         public void onQuit(PlayerQuitEvent event) {
             UUID playerId = event.getPlayer().getUniqueId();
+            long session = store.takeJoinedSession(playerId);
             store.saveNow(playerId).whenComplete((ignored, error) -> {
                 if (error == null) {
-                    store.unload(playerId);
+                    store.unload(playerId, session);
                 }
                 // On failure it stays cached so the next autosave retries -
                 // unloading would discard the only copy of whatever didn't land.
