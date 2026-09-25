@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
@@ -55,6 +56,13 @@ public final class BlockTreeService {
      * dropped whenever the answer could change (a claim, a reload, a quit).
      */
     private final Map<UUID, Map<BlockPerk, Double>> perkCache = new ConcurrentHashMap<>();
+    /**
+     * Each player's global stat sums (indexed by effect ordinal), cached and
+     * dropped alongside {@link #perkCache}. Double/triple-hit chance is asked
+     * for on every pet hit, and summing it walks every tier of every block's
+     * tree - building a lookup key string for each one.
+     */
+    private final Map<UUID, double[]> globalSumCache = new ConcurrentHashMap<>();
 
     public BlockTreeService(Supplier<Map<Material, BlockTreeDefinition>> content, PlayerDataStore<PackPlayerProfile> store,
                              PlayerDataStore<BlockTreeProfile> blockStore) {
@@ -160,6 +168,7 @@ public final class BlockTreeService {
         store.save(player.getUniqueId());
         blockStore.save(player.getUniqueId());
         perkCache.remove(player.getUniqueId());
+        globalSumCache.remove(player.getUniqueId());
         return ClaimResult.SUCCESS;
     }
 
@@ -207,10 +216,12 @@ public final class BlockTreeService {
     /** Forget cached perks - one player's (on quit) or everyone's (after a reload). */
     public void invalidatePerks(UUID playerId) {
         perkCache.remove(playerId);
+        globalSumCache.remove(playerId);
     }
 
     public void invalidateAllPerks() {
         perkCache.clear();
+        globalSumCache.clear();
     }
 
     private Map<BlockPerk, Double> computePerks(BlockTreeProfile profile) {
@@ -329,9 +340,10 @@ public final class BlockTreeService {
         if (def == null) {
             return 0.0;
         }
+        Set<String> claimed = blockStore.getOrCreate(profile.getPlayerId()).getClaimedTiers();
         double total = 0.0;
         for (int i = 0; i < def.tiers().size(); i++) {
-            if (!blockStore.getOrCreate(profile.getPlayerId()).getClaimedTiers().contains(key(material, i))) {
+            if (!claimed.contains(key(material, i))) {
                 continue;
             }
             for (BlockTreeEffect effect : def.tiers().get(i).effects()) {
@@ -344,10 +356,33 @@ public final class BlockTreeService {
     }
 
     private double sumGlobal(PackPlayerProfile profile, BlockTreeEffectType type) {
-        double total = 0.0;
-        for (Map.Entry<Material, BlockTreeDefinition> entry : content.get().entrySet()) {
-            total += sumBlockScoped(profile, entry.getKey(), type);
+        UUID playerId = profile.getPlayerId();
+        double[] sums = globalSumCache.get(playerId);
+        if (sums == null) {
+            BlockTreeProfile blockProfile = blockStore.getCached(playerId);
+            if (blockProfile == null) {
+                return 0.0;
+            }
+            sums = computeGlobalSums(blockProfile);
+            globalSumCache.put(playerId, sums);
         }
-        return total;
+        return sums[type.ordinal()];
+    }
+
+    /** Every effect type's total over every claimed tier of every block, in one pass. */
+    private double[] computeGlobalSums(BlockTreeProfile profile) {
+        double[] sums = new double[BlockTreeEffectType.values().length];
+        Set<String> claimed = profile.getClaimedTiers();
+        for (BlockTreeDefinition def : content.get().values()) {
+            for (int i = 0; i < def.tiers().size(); i++) {
+                if (!claimed.contains(key(def.material(), i))) {
+                    continue;
+                }
+                for (BlockTreeEffect effect : def.tiers().get(i).effects()) {
+                    sums[effect.type().ordinal()] += effect.value();
+                }
+            }
+        }
+        return sums;
     }
 }
