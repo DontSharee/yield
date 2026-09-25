@@ -128,13 +128,16 @@ public final class UpgradeStationDisplay implements Listener {
 
     private void tick() {
         for (Player viewer : Bukkit.getOnlinePlayers()) {
+            // Once per player, not once per station - there are over a
+            // hundred stations, and getLocation() allocates a fresh copy.
+            Location viewerAt = viewer.getLocation();
             for (UpgradeStation station : stations) {
                 Set<UUID> viewers = viewersByStation.get(station);
                 if (viewers == null) {
                     continue;
                 }
-                boolean inRange = viewer.getWorld().equals(station.location().getWorld())
-                        && station.location().distanceSquared(viewer.getLocation()) <= VIEW_DISTANCE_SQUARED;
+                boolean inRange = viewerAt.getWorld().equals(station.location().getWorld())
+                        && station.location().distanceSquared(viewerAt) <= VIEW_DISTANCE_SQUARED;
                 boolean seeing = viewers.contains(viewer.getUniqueId());
                 if (inRange && !seeing) {
                     spawnFor(viewer, station);
