@@ -79,6 +79,8 @@ public record SeasonalEvent(String id, String displayName, String color, LocalDa
 
     /** Days left including today, or 0 once it is over. */
     public long daysRemaining(LocalDate today) {
-        return Math.max(0, today.until(end).getDays() + (today.isAfter(end) ? 0 : 1));
+        // DAYS.between, not Period#getDays - that is only the days part of a
+        // months-and-days period, so a six-week event read as two weeks.
+        return Math.max(0, java.time.temporal.ChronoUnit.DAYS.between(today, end) + 1);
     }
 }

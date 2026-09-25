@@ -49,7 +49,7 @@ public final class EventBossBarService {
         }
         LocalDate today = LocalDate.now();
         long daysLeft = event.daysRemaining(today);
-        long totalDays = Math.max(1, event.start().until(event.end()).getDays() + 1L);
+        long totalDays = Math.max(1, java.time.temporal.ChronoUnit.DAYS.between(event.start(), event.end()) + 1L);
         float progress = Math.max(0f, Math.min(1f, (float) daysLeft / totalDays));
 
         String state = event.id() + "|" + daysLeft;
