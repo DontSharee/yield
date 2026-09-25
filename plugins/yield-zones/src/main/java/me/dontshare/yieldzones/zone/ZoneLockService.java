@@ -313,19 +313,23 @@ public final class ZoneLockService implements Listener {
     }
 
     private void tickPlayer(Player player) {
+        // Once per sweep, not once per wall per zone - getLocation() hands
+        // back a fresh copy every call, and this runs every 4 ticks for
+        // every player against every zone.
+        Location at = player.getLocation();
         for (ZoneDefinition zone : zones.get().values()) {
             if (zone.walls().isEmpty()) {
                 continue;
             }
             Set<String> shown = wallShownFor.computeIfAbsent(player.getUniqueId(), k -> ConcurrentHashMap.newKeySet());
             boolean locked = !isUnlocked(player, zone);
-            boolean withinRenderRange = locked && withinRadius(player, zone, WALL_RENDER_RADIUS);
+            boolean withinRenderRange = locked && withinRadius(at, zone, WALL_RENDER_RADIUS);
 
             if (withinRenderRange) {
                 if (shown.add(zone.id())) {
                     renderWall(player, zone);
                 }
-                if (purchaseGui != null && withinRadius(player, zone, AUTO_POPUP_RADIUS)) {
+                if (purchaseGui != null && withinRadius(at, zone, AUTO_POPUP_RADIUS)) {
                     maybeAutoPopup(player, zone);
                 }
             } else if (shown.remove(zone.id())) {
@@ -344,9 +348,9 @@ public final class ZoneLockService implements Listener {
         purchaseGui.open(player, zone);
     }
 
-    private boolean withinRadius(Player player, ZoneDefinition zone, double radius) {
+    private boolean withinRadius(Location at, ZoneDefinition zone, double radius) {
         for (ZoneWall wall : zone.walls()) {
-            if (distanceToRegion(player.getLocation(), wall.region()) <= radius) {
+            if (distanceToRegion(at, wall.region()) <= radius) {
                 return true;
             }
         }
