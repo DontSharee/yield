@@ -272,7 +272,11 @@ public final class WorldBossService implements Listener {
                 updateBossBar(boss);
                 updateNametag(boss);
             }
-            updateBarViewers(boss);
+            // Who's near enough to see the bar only needs checking once a
+            // second, not every combat tick.
+            if (currentTick % 20 < TICK_INTERVAL) {
+                updateBarViewers(boss);
+            }
         }
         for (Player player : Bukkit.getOnlinePlayers()) {
             tickPlayer(player);
@@ -654,9 +658,8 @@ public final class WorldBossService implements Listener {
         }
         java.util.Set<UUID> viewers = barViewersByBossId.computeIfAbsent(boss.definition().id(), id -> ConcurrentHashMap.newKeySet());
         Location center = boss.visualCenter();
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            boolean near = player.getWorld().equals(center.getWorld())
-                    && player.getLocation().distanceSquared(center) <= BAR_VIEW_RANGE * BAR_VIEW_RANGE;
+        for (Player player : center.getWorld().getPlayers()) {
+            boolean near = player.getLocation().distanceSquared(center) <= BAR_VIEW_RANGE * BAR_VIEW_RANGE;
             boolean showing = viewers.contains(player.getUniqueId());
             if (near && !showing) {
                 player.showBossBar(boss.bossBar());
@@ -666,7 +669,19 @@ public final class WorldBossService implements Listener {
                 viewers.remove(player.getUniqueId());
             }
         }
-        viewers.removeIf(id -> Bukkit.getPlayer(id) == null);
+        // Left the boss's world, or the server: they're no longer in the
+        // loop above, so take the bar away here.
+        viewers.removeIf(id -> {
+            Player player = Bukkit.getPlayer(id);
+            if (player == null) {
+                return true;
+            }
+            if (!player.getWorld().equals(center.getWorld())) {
+                player.hideBossBar(boss.bossBar());
+                return true;
+            }
+            return false;
+        });
     }
 
     private void removeNametagAndBar(WorldBoss boss) {
