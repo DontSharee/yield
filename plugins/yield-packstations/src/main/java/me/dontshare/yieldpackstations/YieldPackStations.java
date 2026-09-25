@@ -47,7 +47,8 @@ public final class YieldPackStations extends JavaPlugin {
         stationService = new PackStationService(packs, zones::getZones, zones.getZoneLockService());
         stationService.registerDynamicPack(PackStationContentLoader.BLACK_MARKET_KEY,
                 blackMarket::currentPackId, () -> "<#4BD9FF><bold>Black Market</bold></#4BD9FF>");
-        display = new PackStationDisplay(this, packs, stationService);
+        display = new PackStationDisplay(this, packs, stationService,
+                player -> zones.getCubeService().aimedCubeDistance(player, 6.0) != null);
         display.start();
         // Auto-hatch only runs while a player is stood at an egg, and only
         // this plugin knows where the eggs physically are - yield-packs

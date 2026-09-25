@@ -122,11 +122,19 @@ public final class PackStationDisplay implements Listener {
     private static final Component BAR_TEXT = Component.text("                ");
     private static final int BAR_COLOR = 0xE6E02424;
 
-    public PackStationDisplay(JavaPlugin plugin, YieldPacks packs, PackStationService stationService) {
+    /**
+     * @param aimingAtCube whether a player's look is on one of their ore
+     *                     cubes - see {@link #handleBarSmack}.
+     */
+    public PackStationDisplay(JavaPlugin plugin, YieldPacks packs, PackStationService stationService,
+                              java.util.function.Predicate<Player> aimingAtCube) {
         this.plugin = plugin;
         this.packs = packs;
         this.stationService = stationService;
+        this.aimingAtCube = aimingAtCube;
     }
+
+    private final java.util.function.Predicate<Player> aimingAtCube;
 
     public void start() {
         Bukkit.getPluginManager().registerEvents(this, plugin);
@@ -464,6 +472,12 @@ public final class PackStationDisplay implements Listener {
     /** One smack on the bar: auto hatch off, and the bar goes. */
     private void handleBarSmack(Player player) {
         if (!barsByPlayer.containsKey(player.getUniqueId())) {
+            return;
+        }
+        // The bar floats at waist height in the line of sight to cubes on
+        // the floor a few blocks out - a hit meant for a cube must not
+        // switch auto hatch off on the way through.
+        if (aimingAtCube.test(player)) {
             return;
         }
         packs.getPackOpenService().stopAutoHatch(player);

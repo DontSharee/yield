@@ -211,6 +211,13 @@ public final class WorldBossService implements Listener {
         if (hit == null || hit.getHitBlock() == null) {
             return;
         }
+        // Cubes are client-only, so the server's ray goes straight through
+        // them: a boss standing behind the cube a player is hitting would
+        // otherwise steal the swing. The nearer target wins.
+        Double cubeDistance = cubeService.aimedCubeDistance(player, SWING_REACH);
+        if (cubeDistance != null && cubeDistance < hit.getHitPosition().distance(player.getEyeLocation().toVector())) {
+            return;
+        }
         Location aimed = hit.getHitBlock().getLocation();
         for (WorldBoss boss : activeByBossId.values()) {
             if (containsBlock(boss, aimed)) {

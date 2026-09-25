@@ -392,6 +392,22 @@ public final class OreCubeService implements Listener {
      * size, so what lights up when you look at it is exactly what a click
      * would hit - a big safe included.
      */
+    /** How far along this player's look the nearest of their own cubes is, or null if they aren't aiming at one (within {@code range}). */
+    public Double aimedCubeDistance(Player player, double range) {
+        Location eye = player.getEyeLocation();
+        org.bukkit.util.Vector direction = eye.getDirection();
+        Double best = null;
+        for (OreCube cube : liveCubes(player)) {
+            Location at = cube.location();
+            Double distance = FakeBlockClickRegistry.intersectDistance(eye, direction,
+                    at.getBlockX(), at.getBlockY(), at.getBlockZ(), cube.size(), range);
+            if (distance != null && (best == null || distance < best)) {
+                best = distance;
+            }
+        }
+        return best;
+    }
+
     private OreCube raycastClosest(Player player, List<OreCube> live) {
         Location eye = player.getEyeLocation();
         org.bukkit.util.Vector direction = eye.getDirection();
