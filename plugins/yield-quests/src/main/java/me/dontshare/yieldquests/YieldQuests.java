@@ -65,7 +65,10 @@ public final class YieldQuests extends JavaPlugin {
 
         QuestGui questGui = new QuestGui(packs.getPlayerStore(), () -> questContent, questService, core.getGuiManager(),
                 packs::getItemRegistry);
-        PresentsGui presentsGui = new PresentsGui(presentsService, core.getGuiManager());
+        GiftDisplayService giftDisplay = new GiftDisplayService(this, presentsService, packs,
+                JavaPlugin.getPlugin(me.dontshare.yieldzones.YieldZones.class));
+        giftDisplay.start();
+        PresentsGui presentsGui = new PresentsGui(presentsService, giftDisplay, core.getGuiManager());
 
         CommandManager.register(this, QuestCommand.build(questGui), "View and claim today's daily quests", List.of());
         CommandManager.register(this, DailyCommand.build(presentsGui), "Claim your session's daily presents", List.of());

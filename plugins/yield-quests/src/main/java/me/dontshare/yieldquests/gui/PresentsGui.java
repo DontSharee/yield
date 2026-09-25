@@ -30,16 +30,19 @@ public final class PresentsGui {
 
     private static final String ACCENT = "<#4BD9FF>";
     private static final int INFO_SLOT = 4;
-    /** Two rows of five, each centred on the middle column. */
-    private static final int[] GRID_SLOTS = {11, 12, 13, 14, 15, 20, 21, 22, 23, 24};
+    /** Up to fourteen, seven to a row, each row centred. */
+    private static final int MAX_PRESENTS = 14;
     private static final int CLOSE_SLOT = 31;
 
     private final PresentsService presentsService;
+    private final me.dontshare.yieldquests.GiftDisplayService giftDisplay;
     private final GuiManager guiManager;
     private final HeadDatabaseAPI headDatabaseApi;
 
-    public PresentsGui(PresentsService presentsService, GuiManager guiManager) {
+    public PresentsGui(PresentsService presentsService, me.dontshare.yieldquests.GiftDisplayService giftDisplay,
+                       GuiManager guiManager) {
         this.presentsService = presentsService;
+        this.giftDisplay = giftDisplay;
         this.guiManager = guiManager;
         this.headDatabaseApi = Bukkit.getPluginManager().getPlugin("HeadDatabase") != null ? new HeadDatabaseAPI() : null;
     }
@@ -51,34 +54,35 @@ public final class PresentsGui {
                 .item(CLOSE_SLOT, GuiIcons.closeButton(), (clicker, event) -> clicker.closeInventory());
 
         List<PresentDefinition> presents = presentsService.presents();
-        for (int i = 0; i < presents.size() && i < GRID_SLOTS.length; i++) {
+        int shown = Math.min(presents.size(), MAX_PRESENTS);
+        int[] slots = me.dontshare.yieldcore.gui.GuiLayout.centered(1, shown);
+        for (int i = 0; i < shown; i++) {
             int index = i;
-            builder.item(GRID_SLOTS[i], buildPresentIcon(player, presents.get(index), index),
+            builder.item(slots[i], buildPresentIcon(player, presents.get(index), index),
                     (clicker, event) -> attemptClaim(clicker, index));
         }
 
         guiManager.open(player, builder.build());
     }
 
+    /**
+     * Claiming from the menu doesn't pay into the balance directly any more:
+     * the menu closes and the present drops in front of the player and
+     * bursts open there, spraying its loot - the same moment as smacking one
+     * that fell on its own (see GiftDisplayService).
+     */
     private void attemptClaim(Player player, int index) {
-        PresentsService.ClaimResult result = presentsService.claim(player, index);
-        switch (result) {
-            case SUCCESS -> {
-                player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.6f, 1.6f);
-                PresentDefinition present = presentsService.presents().get(index);
-                player.sendMessage(Text.parse("<green>Claimed! +<coins> coins<diamond></green>",
-                        Placeholder.unparsed("coins", Formatting.format(present.coins())),
-                        Placeholder.unparsed("diamond", present.diamonds() > 0 ? " and " + present.diamonds() + " diamond(s)" : "")));
-            }
-            case LOCKED -> {
-                player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
-                player.sendMessage(Text.parse("<red>Not unlocked yet - keep playing!</red>"));
-            }
-            case ALREADY_CLAIMED -> player.sendMessage(Text.parse("<gray>Already claimed this session.</gray>"));
-            case INVALID -> {
-            }
+        if (presentsService.isClaimed(player, index)) {
+            player.sendMessage(Text.parse("<gray>Already claimed this session.</gray>"));
+            return;
         }
-        open(player);
+        if (!presentsService.isUnlocked(player, index)) {
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
+            player.sendMessage(Text.parse("<red>Not unlocked yet - keep playing!</red>"));
+            return;
+        }
+        player.closeInventory();
+        giftDisplay.openFromMenu(player, index);
     }
 
     private ItemStack buildInfoIcon() {

@@ -85,6 +85,38 @@ public final class PresentsService {
         return ClaimResult.SUCCESS;
     }
 
+    /** What opening a present pays - coins already scaled by the player's coin multiplier. */
+    public record Reward(long coins, long diamonds) {
+    }
+
+    /**
+     * Marks a present claimed and hands back what it pays, WITHOUT crediting
+     * it - the physical present sprays it out as loot that credits itself
+     * as it's collected (see GiftDisplayService). Null when it can't be
+     * claimed (locked, already claimed, no such present).
+     */
+    public Reward claimForDrop(Player player, int index) {
+        List<PresentDefinition> presents = presents();
+        if (index < 0 || index >= presents.size() || isClaimed(player, index) || !isUnlocked(player, index)) {
+            return null;
+        }
+        PresentDefinition present = presents.get(index);
+        PackPlayerProfile profile = packs.getPlayerStore().getOrCreate(player.getUniqueId());
+        claimedThisSession.computeIfAbsent(player.getUniqueId(), k -> ConcurrentHashMap.newKeySet()).add(index);
+        return new Reward(Math.round(present.coins() * packs.coinMultiplier(profile)), present.diamonds());
+    }
+
+    /** The first present that's unlocked and not yet opened, or -1. */
+    public int nextOpenable(Player player) {
+        List<PresentDefinition> presents = presents();
+        for (int i = 0; i < presents.size(); i++) {
+            if (isUnlocked(player, i) && !isClaimed(player, i)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     /** Minutes remaining until this present unlocks - 0 if already unlocked. */
     public long minutesUntilUnlock(Player player, int index) {
         List<PresentDefinition> presents = presents();

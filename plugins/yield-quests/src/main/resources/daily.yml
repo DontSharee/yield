@@ -14,19 +14,25 @@
 # Run /admin quests reload after editing this file - already-online players
 # keep their current session progress either way, only the reward numbers/
 # thresholds themselves change.
-# BALANCE - the chain is a reward for STAYING ONLINE, so it is paced against
-# the session it is meant to encourage: present 1 lands in the first five
-# minutes (when a new player has almost nothing), and the last one at 4.5
-# hours is worth about a minute of late-game income. Nothing here is ever
-# the fastest way to earn - it is a thank-you for a long session.
+# BALANCE - one present every five minutes for the first hour of a
+# session, like Pet Simulator's free gifts: frequent enough that there's
+# nearly always one on the way, each a little bigger than the last. The
+# first is a welcome for a brand-new player; the twelfth is worth about a
+# minute of late-game income. Nothing here is ever the fastest way to earn.
+#
+# When a present unlocks it drops out of the sky next to the player as a
+# real (client-side) present they smack open - it bursts and sprays its
+# coins/diamonds as collectable loot. /daily still lists them all.
 presents:
   - { unlock-after-minutes: 5, head: "", fallback-material: WHITE_SHULKER_BOX, coins: 500000, diamonds: 50 }
-  - { unlock-after-minutes: 10, head: "", fallback-material: ORANGE_SHULKER_BOX, coins: 1200000, diamonds: 100 }
-  - { unlock-after-minutes: 25, head: "", fallback-material: MAGENTA_SHULKER_BOX, coins: 3000000, diamonds: 200 }
-  - { unlock-after-minutes: 45, head: "", fallback-material: LIGHT_BLUE_SHULKER_BOX, coins: 7000000, diamonds: 350 }
-  - { unlock-after-minutes: 70, head: "", fallback-material: YELLOW_SHULKER_BOX, coins: 15000000, diamonds: 600 }
-  - { unlock-after-minutes: 100, head: "", fallback-material: LIME_SHULKER_BOX, coins: 30000000, diamonds: 1000, }
-  - { unlock-after-minutes: 135, head: "", fallback-material: PINK_SHULKER_BOX, coins: 60000000, diamonds: 1750 }
-  - { unlock-after-minutes: 175, head: "", fallback-material: CYAN_SHULKER_BOX, coins: 120000000, diamonds: 3000 }
-  - { unlock-after-minutes: 220, head: "", fallback-material: PURPLE_SHULKER_BOX, coins: 250000000, diamonds: 5000 }
-  - { unlock-after-minutes: 270, head: "", fallback-material: RED_SHULKER_BOX, coins: 600000000, diamonds: 10000 }
+  - { unlock-after-minutes: 10, head: "", fallback-material: ORANGE_SHULKER_BOX, coins: 1000000, diamonds: 75 }
+  - { unlock-after-minutes: 15, head: "", fallback-material: MAGENTA_SHULKER_BOX, coins: 1500000, diamonds: 120 }
+  - { unlock-after-minutes: 20, head: "", fallback-material: LIGHT_BLUE_SHULKER_BOX, coins: 2500000, diamonds: 150 }
+  - { unlock-after-minutes: 25, head: "", fallback-material: YELLOW_SHULKER_BOX, coins: 4000000, diamonds: 250 }
+  - { unlock-after-minutes: 30, head: "", fallback-material: LIME_SHULKER_BOX, coins: 7500000, diamonds: 400 }
+  - { unlock-after-minutes: 35, head: "", fallback-material: PINK_SHULKER_BOX, coins: 12000000, diamonds: 500 }
+  - { unlock-after-minutes: 40, head: "", fallback-material: CYAN_SHULKER_BOX, coins: 20000000, diamonds: 750 }
+  - { unlock-after-minutes: 45, head: "", fallback-material: PURPLE_SHULKER_BOX, coins: 40000000, diamonds: 1000 }
+  - { unlock-after-minutes: 50, head: "", fallback-material: BLUE_SHULKER_BOX, coins: 60000000, diamonds: 1500 }
+  - { unlock-after-minutes: 55, head: "", fallback-material: GREEN_SHULKER_BOX, coins: 100000000, diamonds: 2500 }
+  - { unlock-after-minutes: 60, head: "", fallback-material: RED_SHULKER_BOX, coins: 150000000, diamonds: 3000 }
