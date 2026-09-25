@@ -242,8 +242,9 @@ public final class YieldPacks extends JavaPlugin {
             return true;
         });
 
-        ExistsCounterStore existsCounterStore = new ExistsCounterStore(core.getDatabaseManager(), getLogger());
+        existsCounterStore = new ExistsCounterStore(core.getDatabaseManager(), getLogger());
         existsCounterStore.loadAll();
+        existsCounterStore.start(this);
 
         iconFactory = new ItemIconFactory();
         petDisplayConfigLoader = new PetDisplayConfigLoader(this);
@@ -466,8 +467,14 @@ public final class YieldPacks extends JavaPlugin {
                 "Open your player settings (send-mode single/all, etc.)", List.of());
     }
 
+    /** Kept for {@link #onDisable} - batched mint counts are flushed on the way out. */
+    private ExistsCounterStore existsCounterStore;
+
     @Override
     public void onDisable() {
+        if (existsCounterStore != null) {
+            existsCounterStore.flush();
+        }
         // Before the store is flushed, not after: a screen like the Enchants
         // menu reconciles the profile from its slots as it closes, and
         // plugins are disabled well before players are kicked, so that close
