@@ -73,9 +73,15 @@ public final class EntityClickRegistry {
                     return;
                 }
                 WrapperPlayClientInteractEntity wrapper = new WrapperPlayClientInteractEntity(event);
-                WrapperPlayClientInteractEntity.InteractAction action = wrapper.getAction();
-                if (action != WrapperPlayClientInteractEntity.InteractAction.INTERACT
-                        && action != WrapperPlayClientInteractEntity.InteractAction.INTERACT_AT) {
+                // One right-click is up to FOUR packets: the client sends an
+                // INTERACT_AT then an INTERACT for the main hand, and - since
+                // a fake entity never "consumes" the click client-side - the
+                // same pair again for the off hand. Handing every one of them
+                // on ran each handler up to four times: an upgrade station
+                // bought up to four levels per click. Exactly one survives:
+                // the main hand's INTERACT.
+                if (wrapper.getAction() != WrapperPlayClientInteractEntity.InteractAction.INTERACT
+                        || wrapper.getHand() != com.github.retrooper.packetevents.protocol.player.InteractionHand.MAIN_HAND) {
                     return;
                 }
                 dispatch(plugin, interactHandlers, wrapper.getEntityId(), player);
