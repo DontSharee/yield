@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
@@ -56,7 +57,82 @@ public final class ApiRoutes {
         this.packs = packs;
     }
 
-    Object route(String path, Map<String, String> query) {
+    private me.dontshare.yieldanalytics.admin.EditService edits;
+    private me.dontshare.yieldanalytics.admin.PlayerDirectory directory;
+    private Access access;
+
+    /** The editor's parts - set once, before the site starts. */
+    public void setAdmin(me.dontshare.yieldanalytics.admin.EditService edits,
+                         me.dontshare.yieldanalytics.admin.PlayerDirectory directory, Access access) {
+        this.edits = edits;
+        this.directory = directory;
+        this.access = access;
+    }
+
+    Object get(String path, Map<String, String> query, Access.Caller caller) {
+        return switch (path) {
+            case "whoami" -> whoami(caller);
+            case "directory" -> directory.page(query.get("q"), query.get("sort"), !"asc".equals(query.get("dir")),
+                    intParam(query, "page", 1, 1, 1_000_000), intParam(query, "size", 50, 10, 200),
+                    "1".equals(query.get("online")), "1".equals(query.get("bots")));
+            case "schema" -> edits.schema();
+            case "values" -> edits.values(uuidParam(query));
+            case "pets" -> edits.pets(uuidParam(query));
+            case "inventory" -> edits.inventory(uuidParam(query));
+            case "edits" -> caller.role() != Access.Role.EDITOR ? null : edits.history(query.containsKey("uuid") ? uuidParam(query) : null, intParam(query, "limit", 50, 1, 500));
+            default -> route(path, query);
+        };
+    }
+
+    Object post(String path, Map<String, Object> body, Access.Caller caller) {
+        return switch (path) {
+            case "edit" -> edits.edit(caller, uuid(body.get("uuid")), text(body, "stat"), text(body, "value"));
+            case "undo" -> edits.undo(caller, text(body, "id"));
+            case "inventory/remove" -> edits.removeItem(caller, uuid(body.get("uuid")), (int) number(body.get("slot")));
+            case "kick" -> edits.kick(caller, uuid(body.get("uuid")), body.get("reason") == null ? "" : String.valueOf(body.get("reason")));
+            case "code/rotate" -> {
+                access.rotate();
+                yield whoami(caller);
+            }
+            default -> null;
+        };
+    }
+
+    private Map<String, Object> whoami(Access.Caller caller) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("role", caller.role().name().toLowerCase(java.util.Locale.ROOT));
+        out.put("name", caller.name());
+        out.put("ip", caller.ip());
+        if (caller.role() == Access.Role.EDITOR) {
+            // Whitelisted: theirs to hand out.
+            out.put("viewerCode", access.code());
+        }
+        out.put("codeExpiresAt", access.codeExpiresAt());
+        return out;
+    }
+
+    private static UUID uuidParam(Map<String, String> query) {
+        return uuid(query.get("uuid"));
+    }
+
+    private static UUID uuid(Object raw) {
+        try {
+            return UUID.fromString(String.valueOf(raw));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Not a player id.");
+        }
+    }
+
+    private static String text(Map<String, Object> body, String key) {
+        Object value = body.get(key);
+        if (value == null) {
+            throw new IllegalArgumentException("Missing " + key + ".");
+        }
+        return value instanceof Number n && n.doubleValue() == Math.rint(n.doubleValue())
+                ? String.valueOf(n.longValue()) : String.valueOf(value);
+    }
+
+    private Object route(String path, Map<String, String> query) {
         return switch (path) {
             case "overview" -> overview();
             case "live" -> liveView();
@@ -67,7 +143,7 @@ public final class ApiRoutes {
             case "performance" -> performance(intParam(query, "hours", 6, 1, 24 * 30));
             case "diagnostics" -> health.snapshot();
             case "players" -> search(query.getOrDefault("q", ""));
-            case "player" -> player(query.getOrDefault("name", ""));
+            case "player" -> query.containsKey("uuid") ? playerById(uuidParam(query)) : player(query.getOrDefault("name", ""));
             default -> null;
         };
     }
@@ -212,6 +288,11 @@ public final class ApiRoutes {
             rows.add(row);
         }
         return rows;
+    }
+
+    private Map<String, Object> playerById(UUID id) {
+        String name = directory.nameOf(id);
+        return name == null ? null : player(name);
     }
 
     private Map<String, Object> player(String name) {

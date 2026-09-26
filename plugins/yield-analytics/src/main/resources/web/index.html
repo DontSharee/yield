@@ -17,10 +17,11 @@
   <div id="login" class="login" hidden>
     <form id="login-form" class="login-card">
       <div class="brand brand-lg"><span class="brand-mark"></span>Yield Analytics</div>
-      <p class="muted">Enter the dashboard token from <code>analytics.yml</code> (or <code>/analytics token</code> in game).</p>
-      <input id="token-input" type="password" autocomplete="current-password" placeholder="Token" required>
+      <p class="muted">Enter the viewer code - an admin gets it with <code>/analytics code</code> in game. It changes every few minutes.</p>
+      <input id="token-input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Viewer code" maxlength="16" required>
       <button type="submit">Open dashboard</button>
       <p id="login-error" class="error" hidden></p>
+      <p id="login-ip" class="muted small"></p>
     </form>
   </div>
 
@@ -38,7 +39,9 @@
         <a href="#pets" data-page="pets">Pets</a>
         <a href="#performance" data-page="performance">Performance</a>
         <a href="#health" data-page="health">Server health</a>
+        <a href="#directory" data-page="directory">All players</a>
         <a href="#lookup" data-page="lookup">Player lookup</a>
+        <a href="#edits" data-page="edits" data-editor-only hidden>Edit log</a>
       </nav>
       <div class="sidebar-foot">
         <button id="logout" class="link">Sign out</button>
@@ -48,6 +51,7 @@
       <header class="topbar">
         <h1 id="page-title">Overview</h1>
         <div class="topbar-right">
+          <span id="role-pill" class="pill"></span>
           <span id="server-pill" class="pill">…</span>
           <span id="updated" class="muted small"></span>
           <label class="toggle small"><input id="auto-refresh" type="checkbox" checked> Auto refresh</label>

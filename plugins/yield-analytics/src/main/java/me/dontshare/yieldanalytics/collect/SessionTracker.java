@@ -116,6 +116,8 @@ public final class SessionTracker implements Listener {
         if (profile != null) {
             profile.setLongestSessionMs(Math.max(profile.getLongestSessionMs(), length));
             profile.setLastSeen(now);
+            profile.setInventoryJson(me.dontshare.yieldanalytics.admin.InventoryView.json(event.getPlayer()));
+            profile.setInventoryAt(now);
         }
         activity.count("sessionsEnded");
         activity.count("sessionMs", length);

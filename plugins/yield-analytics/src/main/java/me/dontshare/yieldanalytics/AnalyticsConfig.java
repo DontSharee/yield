@@ -6,18 +6,16 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
-import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
 
 /** analytics.yml, read once at enable. */
 public record AnalyticsConfig(
-        boolean webEnabled, String bind, int port, String token, List<String> allowedOrigins,
+        boolean webEnabled, String bind, int port, List<String> whitelist, int viewerCodeMinutes,
+        List<String> trustedProxies, List<String> hostnames, List<String> allowedOrigins,
         int retentionDays, int statsRefreshMinutes, int leftAfterDays, boolean countLoadTestBots,
         int summaryIntervalMinutes, double tpsBelow, double msptAbove, int sustainedSeconds, int alertCooldownMinutes,
         List<WebhookTarget> webhooks) {
@@ -32,28 +30,20 @@ public record AnalyticsConfig(
         }
     }
 
+    /** Replaces the whitelist in analytics.yml, keeping everything else (comments included) as it is. */
+    public static void saveWhitelist(JavaPlugin plugin, List<String> entries) throws IOException {
+        File file = new File(plugin.getDataFolder(), "analytics.yml");
+        YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
+        yaml.set("web.whitelist", entries);
+        yaml.save(file);
+    }
+
     static AnalyticsConfig load(JavaPlugin plugin) {
         if (!new File(plugin.getDataFolder(), "analytics.yml").exists()) {
             plugin.saveResource("analytics.yml", false);
         }
         File file = new File(plugin.getDataFolder(), "analytics.yml");
         YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
-
-        String token = yaml.getString("web.token", "");
-        if (token == null || token.isBlank()) {
-            // Generated rather than defaulted: a shared default would be a
-            // password every copy of this plugin has.
-            byte[] bytes = new byte[24];
-            new SecureRandom().nextBytes(bytes);
-            token = HexFormat.of().formatHex(bytes);
-            yaml.set("web.token", token);
-            try {
-                yaml.save(file);
-                plugin.getLogger().info("Generated a dashboard token and saved it to analytics.yml.");
-            } catch (IOException e) {
-                plugin.getLogger().log(Level.WARNING, "Could not save the generated dashboard token - it lasts until restart.", e);
-            }
-        }
 
         List<WebhookTarget> targets = new ArrayList<>();
         for (Map<?, ?> raw : yaml.getMapList("webhooks.targets")) {
@@ -81,7 +71,10 @@ public record AnalyticsConfig(
                 yaml.getBoolean("web.enabled", true),
                 yaml.getString("web.bind", "0.0.0.0"),
                 yaml.getInt("web.port", 8765),
-                token,
+                yaml.getStringList("web.whitelist"),
+                Math.max(1, yaml.getInt("web.viewer-code-minutes", 10)),
+                yaml.getStringList("web.trusted-proxies"),
+                yaml.getStringList("web.hostnames"),
                 yaml.getStringList("web.allowed-origins"),
                 Math.max(1, yaml.getInt("retention-days", 90)),
                 Math.max(1, yaml.getInt("stats-refresh-minutes", 5)),

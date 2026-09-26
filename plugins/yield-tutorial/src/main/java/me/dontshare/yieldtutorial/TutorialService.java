@@ -58,6 +58,16 @@ public final class TutorialService {
         }
     }
 
+    /** After an admin changed their tutorial state: the guide comes or goes to match, and a new current step is shown. */
+    public void refresh(Player player) {
+        PlayerProfile profile = store.getCached(player.getUniqueId());
+        if (profile != null && isActive(player)) {
+            showCurrentStep(player, profile);
+        } else {
+            npcManager.hideFor(player);
+        }
+    }
+
     /** Right-click on the guide - a reminder of the current step, never an advance. */
     public void onNpcInteract(Player player) {
         PlayerProfile profile = store.getCached(player.getUniqueId());

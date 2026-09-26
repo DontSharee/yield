@@ -114,6 +114,11 @@ public final class WebhookService {
                 fields("Online", String.valueOf(now), "Previous peak", String.valueOf(previous)), false);
     }
 
+    /** Someone changed a player on the site. */
+    public void edit(String actor, String player, String summary) {
+        post("edit", actor + " edited " + player, summary, DISCORD_BLUE, Map.of(), false);
+    }
+
     public void error(String message) {
         post("error", "Server error", "```\n" + truncate(message, 1800) + "\n```", DISCORD_RED, Map.of(), false);
     }

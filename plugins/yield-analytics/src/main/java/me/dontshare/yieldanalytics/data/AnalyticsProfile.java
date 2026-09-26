@@ -32,6 +32,9 @@ public final class AnalyticsProfile implements PlayerRecord {
     private int tutorialStepReached;
     /** Zone id to when the player first stood in (or unlocked) it. */
     private Map<String, Long> zoneReachedAt = new HashMap<>();
+    /** Their inventory as they logged out, for the site to show while they're away - JSON, see InventoryView. */
+    private String inventoryJson = "";
+    private long inventoryAt;
 
     public AnalyticsProfile() {
     }
@@ -127,5 +130,21 @@ public final class AnalyticsProfile implements PlayerRecord {
 
     public void setZoneReachedAt(Map<String, Long> zoneReachedAt) {
         this.zoneReachedAt = zoneReachedAt != null ? zoneReachedAt : new HashMap<>();
+    }
+
+    public String getInventoryJson() {
+        return inventoryJson;
+    }
+
+    public void setInventoryJson(String inventoryJson) {
+        this.inventoryJson = inventoryJson == null ? "" : inventoryJson;
+    }
+
+    public long getInventoryAt() {
+        return inventoryAt;
+    }
+
+    public void setInventoryAt(long inventoryAt) {
+        this.inventoryAt = inventoryAt;
     }
 }

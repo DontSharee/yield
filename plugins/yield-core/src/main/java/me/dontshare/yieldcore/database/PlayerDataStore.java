@@ -220,14 +220,189 @@ public final class PlayerDataStore<T extends PlayerRecord> {
         if (pendingSave != null) {
             pendingSave.join();
         }
-        T record = fetchOrDefault(playerId);
-        // The session starts only once the record is in place, so nothing
-        // can cache a blank default for them while it loads.
-        synchronized (sessionLock) {
-            T existing = cache.putIfAbsent(playerId, record);
-            sessions.put(playerId, sessionCounter.incrementAndGet());
-            return existing != null ? existing : record;
+        // Under the edit lock from read to cache: an offline edit (see
+        // edit()) either lands before this read or sees the player loaded
+        // and goes to the cached record - never between the two, where it
+        // would be overwritten by the next save.
+        synchronized (editLock(playerId)) {
+            T record = fetchOrDefault(playerId);
+            // The session starts only once the record is in place, so nothing
+            // can cache a blank default for them while it loads.
+            synchronized (sessionLock) {
+                T existing = cache.putIfAbsent(playerId, record);
+                sessions.put(playerId, sessionCounter.incrementAndGet());
+                return existing != null ? existing : record;
+            }
         }
+    }
+
+    /** Where {@link #edit} applied a change. */
+    public enum EditTarget {
+        /** The player was loaded: their cached record was changed on the main thread, then saved. */
+        LIVE,
+        /** The player wasn't loaded: their record was read, changed and written straight back to the database. */
+        DATABASE
+    }
+
+    private final Object[] editLocks = createLocks();
+
+    private static Object[] createLocks() {
+        Object[] locks = new Object[64];
+        for (int i = 0; i < locks.length; i++) {
+            locks[i] = new Object();
+        }
+        return locks;
+    }
+
+    private Object editLock(UUID playerId) {
+        return editLocks[Math.floorMod(playerId.hashCode(), editLocks.length)];
+    }
+
+    /**
+     * Changes one player's record wherever it currently lives - for admin
+     * tools, which edit players who may or may not be online.
+     * <ul>
+     *   <li>Loaded: {@code change} runs on the main thread against the
+     *       cached record, which is then saved - editing the database would
+     *       just be overwritten by the next save.</li>
+     *   <li>Not loaded: the record is read from the database, changed and
+     *       written back, under a lock a login's load waits on - so a player
+     *       joining mid-edit loads the edited record, never the one before.</li>
+     * </ul>
+     * {@code change} may throw {@link IllegalArgumentException} to refuse the
+     * edit; the future then fails with it. Fails with
+     * {@link java.util.NoSuchElementException} for a player with no saved data.
+     */
+    public CompletableFuture<EditTarget> edit(UUID playerId, java.util.function.Consumer<T> change) {
+        CompletableFuture<EditTarget> result = new CompletableFuture<>();
+        databaseManager.supplyAsync(() -> {
+            editAnywhere(playerId, change, result, 0);
+            return null;
+        }).exceptionally(error -> {
+            result.completeExceptionally(error);
+            return null;
+        });
+        return result;
+    }
+
+    private void editAnywhere(UUID playerId, java.util.function.Consumer<T> change, CompletableFuture<EditTarget> result, int attempt) {
+        boolean live;
+        synchronized (editLock(playerId)) {
+            live = cache.containsKey(playerId);
+            if (!live) {
+                try {
+                    editStored(playerId, change);
+                    result.complete(EditTarget.DATABASE);
+                } catch (RuntimeException e) {
+                    result.completeExceptionally(e);
+                }
+                return;
+            }
+        }
+        org.bukkit.plugin.Plugin plugin = owner != null ? owner : Bukkit.getPluginManager().getPlugin("yield-core");
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            T record = cache.get(playerId);
+            if (record == null) {
+                // Left between the check and now - edit the stored copy instead.
+                if (attempt < 3) {
+                    databaseManager.supplyAsync(() -> {
+                        editAnywhere(playerId, change, result, attempt + 1);
+                        return null;
+                    });
+                } else {
+                    result.completeExceptionally(new IllegalStateException("The player kept joining and leaving - try again."));
+                }
+                return;
+            }
+            try {
+                change.accept(record);
+            } catch (RuntimeException e) {
+                result.completeExceptionally(e);
+                return;
+            }
+            save(playerId);
+            result.complete(EditTarget.LIVE);
+        });
+    }
+
+    /** Database thread, under the player's edit lock. */
+    private void editStored(UUID playerId, java.util.function.Consumer<T> change) {
+        CompletableFuture<Void> pendingSave = pendingSaves.get(playerId);
+        if (pendingSave != null) {
+            pendingSave.join();
+        }
+        Document doc = collection.find(Filters.eq("_id", playerId)).projection(Projections.include(fieldKey)).first();
+        if (doc == null) {
+            throw new java.util.NoSuchElementException("No saved data for " + playerId);
+        }
+        Document sub = doc.get(fieldKey, Document.class);
+        T decoded = sub != null ? decode(rawMigration.apply(sub)) : null;
+        T record = decoded != null ? decoded : defaultFactory.apply(playerId);
+        change.accept(record);
+        // The record never left this thread, so encoding it here is safe.
+        collection.updateOne(Filters.eq("_id", playerId), Updates.set(fieldKey, encode(record)));
+    }
+
+    /** Whether this player's record is loaded - then {@link #getCached} is the one to read, on the main thread. */
+    public boolean isLoaded(UUID playerId) {
+        return cache.containsKey(playerId);
+    }
+
+    /**
+     * Database thread: a detached copy of one player's stored record, for
+     * reading someone who isn't loaded. Null with no saved data at all.
+     */
+    public T readStored(UUID playerId) {
+        Document doc = collection.find(Filters.eq("_id", playerId)).projection(Projections.include(fieldKey)).first();
+        if (doc == null) {
+            return null;
+        }
+        Document sub = doc.get(fieldKey, Document.class);
+        T decoded = sub != null ? decode(rawMigration.apply(sub)) : null;
+        return decoded != null ? decoded : defaultFactory.apply(playerId);
+    }
+
+    /**
+     * Reads something from one player's record wherever it lives: on the
+     * main thread from the cached record if they're loaded, otherwise from
+     * a copy decoded on a database thread. Completes with null for a player
+     * with no saved data.
+     */
+    public <R> CompletableFuture<R> read(UUID playerId, Function<T, R> reader) {
+        if (cache.containsKey(playerId)) {
+            CompletableFuture<R> result = new CompletableFuture<>();
+            org.bukkit.plugin.Plugin plugin = owner != null ? owner : Bukkit.getPluginManager().getPlugin("yield-core");
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                T record = cache.get(playerId);
+                if (record != null) {
+                    try {
+                        result.complete(reader.apply(record));
+                    } catch (RuntimeException e) {
+                        result.completeExceptionally(e);
+                    }
+                } else {
+                    databaseManager.supplyAsync(() -> {
+                        T stored = readStored(playerId);
+                        return stored == null ? null : reader.apply(stored);
+                    }).whenComplete((value, error) -> {
+                        if (error != null) {
+                            result.completeExceptionally(error);
+                        } else {
+                            result.complete(value);
+                        }
+                    });
+                }
+            });
+            return result;
+        }
+        return databaseManager.supplyAsync(() -> {
+            T stored = readStored(playerId);
+            return stored == null ? null : reader.apply(stored);
+        });
+    }
+
+    public String fieldKey() {
+        return fieldKey;
     }
 
     /**

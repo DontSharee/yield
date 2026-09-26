@@ -31,6 +31,22 @@ public final class YieldLeveling extends JavaPlugin {
 
         Bukkit.getPluginManager().registerEvents(new PlayerLevelingListener(levelingService), this);
         core.getAdminCommandRegistry().register(LevelingAdminCommand.build(this));
+
+        me.dontshare.yieldcore.admin.PlayerEdits.register(new me.dontshare.yieldcore.admin.PlayerEdits.Stat<>(
+                "level", "Level", "Progress", me.dontshare.yieldcore.admin.PlayerEdits.Kind.NUMBER, 1, config.maxLevel(),
+                "Sets the level with no XP into it.", store,
+                profile -> String.valueOf(profile.getLevel()),
+                (profile, value) -> {
+                    String before = String.valueOf(profile.getLevel());
+                    profile.setLevel((int) me.dontshare.yieldcore.admin.PlayerEdits.number(value, 1, config.maxLevel()));
+                    profile.setXp(0);
+                    return me.dontshare.yieldcore.admin.PlayerEdits.restore("level", before);
+                }, java.util.List::of, levelingService::syncBar, this));
+    }
+
+    @Override
+    public void onDisable() {
+        me.dontshare.yieldcore.admin.PlayerEdits.unregisterAll(this);
     }
 
     /** Re-reads player-leveling.yml - existing PlayerLevelingService instance keeps working against the same, now-updated config supplier. */

@@ -39,6 +39,7 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.math.BigInteger;
@@ -170,6 +171,49 @@ public final class YieldZones extends JavaPlugin {
         // finished, since Bukkit/Paper don't start ticking until the whole
         // server has finished enabling every plugin.
         Bukkit.getScheduler().runTask(this, this::reloadContent);
+        registerEdits();
+    }
+
+    /**
+     * "Highest zone unlocked" for the analytics site's editor: picking a
+     * zone unlocks it and every zone before it, and locks every zone after.
+     */
+    private void registerEdits() {
+        YieldPacks packs = JavaPlugin.getPlugin(YieldPacks.class);
+        me.dontshare.yieldcore.admin.PlayerEdits.register(new me.dontshare.yieldcore.admin.PlayerEdits.Stat<>(
+                "zone", "Highest zone unlocked", "Progress", me.dontshare.yieldcore.admin.PlayerEdits.Kind.CHOICE, 0, 0,
+                "Unlocks this zone and every one before it; locks every one after.", packs.getPlayerStore(),
+                this::highestUnlocked,
+                (profile, value) -> {
+                    String before = highestUnlocked(profile);
+                    List<String> order = new ArrayList<>(zones.keySet());
+                    int index = order.indexOf(value);
+                    if (index < 0) {
+                        throw new IllegalArgumentException("No such zone: " + value);
+                    }
+                    java.util.Set<String> unlocked = profile.getUnlockedZoneIds();
+                    unlocked.removeAll(order);
+                    unlocked.addAll(order.subList(0, index + 1));
+                    return me.dontshare.yieldcore.admin.PlayerEdits.restore("zone", before);
+                },
+                () -> {
+                    List<me.dontshare.yieldcore.admin.PlayerEdits.Option> options = new ArrayList<>();
+                    for (ZoneDefinition zone : zones.values()) {
+                        options.add(new me.dontshare.yieldcore.admin.PlayerEdits.Option(zone.id(),
+                                zone.displayName().replaceAll("(?i)[&§][0-9a-fk-orx#]", "").replaceAll("<[^>]*>", ""), null));
+                    }
+                    return options;
+                }, null, this));
+    }
+
+    private String highestUnlocked(me.dontshare.yieldpacks.player.PackPlayerProfile profile) {
+        String highest = "";
+        for (String id : zones.keySet()) {
+            if (profile.getUnlockedZoneIds().contains(id)) {
+                highest = id;
+            }
+        }
+        return highest;
     }
 
     /** Re-reads zones.yml and worldboss.yml - existing live cubes/targets/bosses are unaffected until players naturally cross zone boundaries again (or a boss dies/expires). */
@@ -181,6 +225,7 @@ public final class YieldZones extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        me.dontshare.yieldcore.admin.PlayerEdits.unregisterAll(this);
         if (cubeService != null) {
             // Loot still on the floor is paid, not lost.
             cubeService.getLootDrops().shutdown();

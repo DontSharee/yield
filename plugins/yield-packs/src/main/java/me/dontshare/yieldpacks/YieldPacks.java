@@ -465,6 +465,7 @@ public final class YieldPacks extends JavaPlugin {
         SettingsGui settingsGui = new SettingsGui(playerStore, core.getGuiManager());
         CommandManager.register(this, SettingsCommand.build(settingsGui),
                 "Open your player settings (send-mode single/all, etc.)", List.of());
+        new me.dontshare.yieldpacks.admin.PackEdits(this, () -> content.rarities()).register();
     }
 
     /** Kept for {@link #onDisable} - batched mint counts are flushed on the way out. */
@@ -472,6 +473,7 @@ public final class YieldPacks extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        me.dontshare.yieldcore.admin.PlayerEdits.unregisterAll(this);
         if (existsCounterStore != null) {
             existsCounterStore.flush();
         }

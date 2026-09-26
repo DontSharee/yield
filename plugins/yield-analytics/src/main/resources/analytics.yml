@@ -7,10 +7,30 @@ web:
   # reverse proxy with HTTPS in front before exposing it).
   bind: 0.0.0.0
   port: 8765
-  # Anyone with this token can read the dashboard and API. Left blank, one is
-  # generated on first start and written back here - see the console, or
-  # /analytics token.
-  token: ""
+  # Who gets in, and what they can do:
+  #  - An address on this whitelist opens the site with no code, and can EDIT
+  #    players (stats, pets, inventory). Its sign-in never expires.
+  #    IPs or CIDR ranges, each optionally "= name" for the edit log:
+  #      - "203.0.113.7 = Alex"
+  #      - "198.51.100.0/24"
+  #    Manage it in game too: /analytics whitelist add|remove|list
+  #  - Everyone else can only VIEW, with the viewer code - /analytics code in
+  #    game, or the Share box on the site for a whitelisted user. The code
+  #    changes every viewer-code-minutes, and when it does everyone signed in
+  #    with the old one is signed out.
+  whitelist: []
+  viewer-code-minutes: 10
+  # Behind a reverse proxy (nginx, Caddy, Cloudflare Tunnel...) every request
+  # arrives from the proxy's own address - list it here and the address it
+  # passes on (X-Forwarded-For) is used instead. Leave empty without a proxy:
+  # otherwise anyone could claim a whitelisted address.
+  trusted-proxies: []
+  # The site's own domain names, if it's opened by one (e.g.
+  # stats.example.com behind a reverse proxy). Whitelisted editing only
+  # counts when the site is opened by an IP address or one of these - so
+  # another website can't borrow a whitelisted visitor's access by pointing
+  # its own domain at this server (DNS rebinding).
+  hostnames: []
   # Browser origins allowed to call the API from another site, e.g.
   # "https://stats.example.com" - or "*" for any. Empty: the dashboard served
   # here is the only browser client.
@@ -45,6 +65,7 @@ webhooks:
   #                                   leaks, failed saves (/yield status health)
   #   peak    - new all-time peak     error - SEVERE errors in the log
   #   server  - started / stopping    player - a brand-new player joined
+  #   edit    - someone changed a player on the site
   targets:
     - name: example
       enabled: false

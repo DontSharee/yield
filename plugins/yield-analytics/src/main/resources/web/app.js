@@ -17,26 +17,31 @@ const PAGES = {
   pets: { title: "Pets", refresh: 60, render: renderPets },
   performance: { title: "Performance", refresh: 10, render: renderPerformance },
   health: { title: "Server health", refresh: 10, render: renderHealth },
+  directory: { title: "All players", refresh: 60, render: renderDirectory },
   lookup: { title: "Player lookup", refresh: 0, render: renderLookup },
+  edits: { title: "Edit log", refresh: 30, editor: true, render: renderEdits },
 };
 
 const COLORS = ["#4bd9ff", "#55e28b", "#ffc83d", "#ff9f43", "#b15cff", "#ff5f5f", "#2a7fff", "#ff6fb5", "#8bd3a0", "#c9a7ff"];
-const state = { token: null, page: "overview", charts: [], timer: null, openZones: new Set(), showBots: false, filter: "", ranges: {} };
+const state = { token: null, me: null, page: "overview", charts: [], timer: null, signOutTimer: null, openZones: new Set(), showBots: false, filter: "", ranges: {}, dir: { q: "", sort: "lastSeen", dir: "desc", page: 1, online: false, bots: false } };
+
+/** A 401 - the code is missing, wrong, or has been replaced. */
+class AuthError extends Error {}
 
 // ------------------------------------------------------------------ boot
 
 document.addEventListener("DOMContentLoaded", () => {
-  state.token = storage("get", "yieldAnalyticsToken");
+  state.token = storage("get", "yieldAnalyticsCode");
   document.getElementById("login-form").addEventListener("submit", (event) => {
     event.preventDefault();
-    state.token = document.getElementById("token-input").value.trim();
-    storage("set", "yieldAnalyticsToken", state.token);
-    start();
+    state.token = document.getElementById("token-input").value.trim().toUpperCase();
+    storage("set", "yieldAnalyticsCode", state.token);
+    start(true);
   });
   document.getElementById("logout").addEventListener("click", () => {
-    storage("remove", "yieldAnalyticsToken");
+    storage("remove", "yieldAnalyticsCode");
     state.token = null;
-    showLogin();
+    showLogin("Signed out.");
   });
   document.getElementById("auto-refresh").addEventListener("change", schedule);
   // Chart.js loads on its own time; redraw once it's here so charts appear.
@@ -47,11 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
   window.addEventListener("hashchange", () => navigate());
-  if (state.token) {
-    start();
-  } else {
-    showLogin();
-  }
+  start(false);
 });
 
 function storage(op, key, value) {
@@ -60,35 +61,97 @@ function storage(op, key, value) {
     if (op === "set") window.localStorage.setItem(key, value);
     if (op === "remove") window.localStorage.removeItem(key);
   } catch (e) {
-    // Storage blocked - the token just won't be remembered.
+    // Storage blocked - the code just won't be remembered.
   }
   return null;
 }
 
 function showLogin(message) {
+  clearTimeout(state.timer);
+  clearTimeout(state.signOutTimer);
+  closeOverlays();
+  state.me = null;
   document.getElementById("app").hidden = true;
   document.getElementById("login").hidden = false;
   const error = document.getElementById("login-error");
   error.hidden = !message;
   error.textContent = message || "";
+  const input = document.getElementById("token-input");
+  input.value = "";
+  input.focus();
+  document.getElementById("login-ip").textContent = state.myIp
+    ? `Your address is ${state.myIp} - whitelisted addresses get in without a code and can edit.` : "";
 }
 
-async function start() {
+/** Whitelisted addresses get straight in; anyone else needs the viewer code. */
+async function start(typed) {
   try {
-    await api("overview");
+    state.me = await api("whoami");
   } catch (e) {
-    showLogin(e.message);
+    showLogin(typed || state.token ? e.message : "");
     return;
   }
   document.getElementById("login").hidden = true;
   document.getElementById("app").hidden = false;
+  applyRole();
   navigate();
 }
 
-async function api(path) {
-  const response = await fetch("/api/" + path, { headers: { Authorization: "Bearer " + state.token } });
+function applyRole() {
+  const editor = state.me.role === "editor";
+  document.body.classList.toggle("is-editor", editor);
+  document.querySelectorAll("[data-editor-only]").forEach((node) => { node.hidden = !editor; });
+  document.getElementById("logout").hidden = editor;
+  const role = document.getElementById("role-pill");
+  if (editor) {
+    role.replaceChildren(h("span", { class: "dot good" }), `Editor · ${state.me.name}`,
+      h("button", { class: "share-btn", onclick: openShare }, "Share"));
+  } else {
+    role.replaceChildren(h("span", { class: "dot warn" }), "View only · ", h("span", { id: "signout-in" }, ""));
+    tickSignOut();
+  }
+  // Signed out the moment the code changes: a viewer re-checks right then.
+  clearTimeout(state.signOutTimer);
+  if (!editor) {
+    const wait = Math.max(1000, state.me.codeExpiresAt - Date.now() + 1500);
+    state.signOutTimer = setTimeout(async () => {
+      try {
+        state.me = await api("whoami");
+        applyRole();
+      } catch (e) {
+        showLogin("The viewer code changed - ask for the new one.");
+      }
+    }, wait);
+  }
+}
+
+function tickSignOut() {
+  const label = document.getElementById("signout-in");
+  if (!label || !state.me || state.me.role === "editor") return;
+  const minutes = Math.max(0, Math.ceil((state.me.codeExpiresAt - Date.now()) / 60000));
+  label.textContent = minutes <= 1 ? "signs out in under a minute" : `signs out in ${minutes} min`;
+  setTimeout(tickSignOut, 20000);
+}
+
+async function api(path, body) {
+  const headers = {};
+  if (state.token) headers.Authorization = "Bearer " + state.token;
+  const options = { headers };
+  if (body !== undefined) {
+    options.method = "POST";
+    headers["Content-Type"] = "application/json";
+    headers["X-Yield-Request"] = "1";
+    options.body = JSON.stringify(body);
+  }
+  const response = await fetch("/api/" + path, options);
   if (response.status === 401) {
-    throw new Error("That token wasn't accepted.");
+    let message = "Enter the viewer code.";
+    try {
+      const body = await response.json();
+      message = body.error || message;
+      state.myIp = body.ip || state.myIp;
+    } catch (e) { /* not json */ }
+    throw new AuthError(message);
   }
   if (response.status === 429) {
     throw new Error("Too many attempts - wait a minute.");
@@ -102,8 +165,9 @@ async function api(path) {
 }
 
 function navigate() {
+  if (!state.me) return;
   const page = (location.hash || "#overview").slice(1);
-  state.page = PAGES[page] ? page : "overview";
+  state.page = PAGES[page] && (!PAGES[page].editor || state.me.role === "editor") ? page : "overview";
   document.querySelectorAll("#nav a").forEach((link) => link.classList.toggle("active", link.dataset.page === state.page));
   document.getElementById("page-title").textContent = PAGES[state.page].title;
   render(true);
@@ -131,8 +195,8 @@ async function render(first) {
   } catch (e) {
     state.charts.forEach((chart) => chart.destroy());
     state.charts = oldCharts;
-    if (e.message.includes("token")) {
-      showLogin(e.message);
+    if (e instanceof AuthError) {
+      showLogin("The viewer code changed - ask for the new one.");
       return;
     }
     if (first) {
@@ -146,8 +210,15 @@ async function render(first) {
 function schedule() {
   clearTimeout(state.timer);
   const seconds = PAGES[state.page].refresh;
+  // Never while a dialog is open or an edit is half-typed.
   if (seconds > 0 && document.getElementById("auto-refresh").checked) {
-    state.timer = setTimeout(() => render(false), seconds * 1000);
+    state.timer = setTimeout(() => {
+      if (document.querySelector(".overlay") || document.activeElement?.closest?.("#page input, #page select, #page textarea")) {
+        schedule();
+        return;
+      }
+      render(false);
+    }, seconds * 1000);
   }
 }
 
@@ -157,14 +228,108 @@ async function refreshPill() {
     const pill = document.getElementById("server-pill");
     pill.replaceChildren(h("span", { class: "dot good" }), `${live.online} online` + (live.bots ? ` · ${live.bots} bots` : ""));
   } catch (e) {
+    if (e instanceof AuthError) return;
     document.getElementById("server-pill").replaceChildren(h("span", { class: "dot bad" }), "unreachable");
   }
+}
+
+// ------------------------------------------------------------------ overlays: dialogs, toasts, sharing
+
+function closeOverlays() {
+  document.querySelectorAll(".overlay").forEach((node) => node.remove());
+}
+
+/** A modal dialog; resolves with whatever `build` hands to `done`, or null if dismissed. */
+function dialog(title, build) {
+  return new Promise((resolve) => {
+    const close = (value) => {
+      overlay.remove();
+      document.removeEventListener("keydown", onKey);
+      resolve(value);
+    };
+    const onKey = (event) => { if (event.key === "Escape") close(null); };
+    const box = h("div", { class: "dialog", role: "dialog", "aria-modal": "true" },
+      h("div", { class: "dialog-head" }, h("h3", {}, title), h("button", { class: "link", onclick: () => close(null), "aria-label": "Close" }, "✕")));
+    const overlay = h("div", { class: "overlay", onclick: (event) => { if (event.target === overlay) close(null); } }, box);
+    box.append(build(close));
+    document.body.append(overlay);
+    document.addEventListener("keydown", onKey);
+    const focus = box.querySelector("input, select, button.primary");
+    if (focus) focus.focus();
+  });
+}
+
+function confirmDialog(title, message, action, danger) {
+  return dialog(title, (done) => h("div", {},
+    h("p", { class: "muted" }, message),
+    h("div", { class: "dialog-actions" },
+      h("button", { onclick: () => done(false) }, "Cancel"),
+      h("button", { class: "primary" + (danger ? " danger" : ""), onclick: () => done(true) }, action))));
+}
+
+function toast(message, undoId) {
+  const note = h("div", { class: "toast" }, h("span", {}, message));
+  if (undoId) {
+    note.append(h("button", { class: "link", onclick: async () => {
+      note.remove();
+      try {
+        const result = await api("undo", { id: undoId });
+        toast("Undone - " + result.summary);
+        render(false);
+      } catch (e) {
+        toast("Couldn't undo: " + e.message);
+      }
+    } }, "Undo"));
+  }
+  let stack = document.getElementById("toasts");
+  if (!stack) {
+    stack = h("div", { id: "toasts" });
+    document.body.append(stack);
+  }
+  stack.append(note);
+  setTimeout(() => note.remove(), 9000);
+}
+
+async function openShare() {
+  try {
+    state.me = await api("whoami"); // the code may have changed since the page loaded
+  } catch (e) {
+    toast("Couldn't get the current code: " + e.message);
+    return;
+  }
+  dialog("Share read-only access", (done) => {
+    const code = h("div", { class: "share-code mono" }, state.me.viewerCode);
+    const expires = h("p", { class: "muted small" });
+    const update = () => {
+      const minutes = Math.max(0, Math.ceil((state.me.codeExpiresAt - Date.now()) / 60000));
+      expires.textContent = `Friends open this site and enter the code. It stops working in ${minutes} min - everyone using it is signed out then, and needs the new one.`;
+    };
+    update();
+    return h("div", {},
+      code, expires,
+      h("div", { class: "dialog-actions" },
+        h("button", { onclick: async () => {
+          try { await navigator.clipboard.writeText(state.me.viewerCode); toast("Code copied."); } catch (e) { toast("Copy it by hand - the browser blocked copying."); }
+        } }, "Copy code"),
+        h("button", { class: "danger", onclick: async () => {
+          if (!(await confirmDialog("New code now?", "Everyone signed in with the current code is signed out straight away.", "Replace code", true))) return;
+          state.me = await api("code/rotate", {});
+          code.textContent = state.me.viewerCode;
+          update();
+          toast("New code - everyone on the old one has been signed out.");
+        } }, "New code"),
+        h("button", { class: "primary", onclick: () => done(null) }, "Done")),
+      h("p", { class: "muted small" }, "Whitelisted addresses (/analytics whitelist) never need a code and are the only ones who can edit."));
+  });
 }
 
 // ------------------------------------------------------------------ helpers
 
 function h(tag, attrs, ...children) {
   const node = document.createElement(tag);
+  if (tag === "img" && String(attrs?.src || "").includes("mc-heads.net")) {
+    node.addEventListener("error", () => { node.style.visibility = "hidden"; });
+  }
   for (const [key, value] of Object.entries(attrs || {})) {
     if (value == null || value === false) continue;
     if (key === "class") node.className = value;
@@ -808,6 +973,116 @@ async function renderHealth(root) {
       { label: "Why", value: (f) => f.reason }], saves.recent || []))));
 }
 
+// ------------------------------------------------------------------ all players
+
+async function renderDirectory(root) {
+  const d = state.dir;
+  const body = h("div", {});
+  const count = h("span", { class: "muted small" });
+  const search = h("input", { type: "search", placeholder: "Search by name or UUID…", value: d.q, "aria-label": "Search players" });
+  let timer = null;
+  search.addEventListener("input", () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => { d.q = search.value.trim(); d.page = 1; load(); }, 250);
+  });
+  const toggle = (key, label) => {
+    const box = h("input", { type: "checkbox" });
+    box.checked = d[key];
+    box.addEventListener("change", () => { d[key] = box.checked; d.page = 1; load(); });
+    return h("label", { class: "toggle small" }, box, " " + label);
+  };
+  root.append(h("div", { class: "toolbar" }, search, toggle("online", "Online only"), toggle("bots", "Show load-test bots"), count));
+  root.append(card(null, body));
+
+  const columns = [
+    ["name", "Player"], ["level", "Level"], ["rebirths", "Rebirths"], ["coins", "Coins"], ["diamonds", "Diamonds"],
+    ["zones", "Zones"], ["pets", "Pets"], ["playtime", "Playtime"], ["firstSeen", "First joined"], ["lastSeen", "Last seen"],
+  ];
+  const cell = (row, key) => {
+    switch (key) {
+      case "name": return h("div", { class: "who-cell" },
+        h("img", { src: `https://mc-heads.net/avatar/${encodeURIComponent(row.name)}/24`, alt: "", loading: "lazy" }),
+        h("span", { class: "name" }, row.name),
+        row.online ? h("span", { class: "tag online" }, "online") : null,
+        row.bot ? h("span", { class: "tag bot" }, "bot") : null);
+      case "playtime": return duration(row.playtimeMs);
+      case "firstSeen": return row.firstSeen ? new Date(row.firstSeen).toLocaleDateString() : "–";
+      case "lastSeen": return row.online ? "now" : row.lastSeen ? ago(row.lastSeen) : "–";
+      default: return typeof row[key] === "number" ? fmt(row[key]) : row[key];
+    }
+  };
+
+  async function load() {
+    const params = new URLSearchParams({ q: d.q, sort: d.sort, dir: d.dir, page: d.page, size: 50, online: d.online ? "1" : "0", bots: d.bots ? "1" : "0" });
+    let data;
+    try {
+      data = await api("directory?" + params);
+    } catch (e) {
+      if (e instanceof AuthError) { showLogin("The viewer code changed - ask for the new one."); return; }
+      body.replaceChildren(empty("Couldn't load players: " + e.message));
+      return;
+    }
+    d.page = data.page;
+    count.textContent = `${fmt(data.matching)} of ${fmt(data.total)} players`;
+    const head = h("tr", {}, columns.map(([key, label]) => {
+      const active = d.sort === key;
+      return h("th", { class: (key === "name" ? "" : "num ") + "sortable" + (active ? " active" : ""),
+        "aria-sort": active ? (d.dir === "asc" ? "ascending" : "descending") : "none",
+        onclick: () => { d.dir = active && d.dir === "desc" ? "asc" : "desc"; d.sort = key; d.page = 1; load(); } },
+        label, active ? (d.dir === "asc" ? " ▲" : " ▼") : "");
+    }));
+    const rows = data.rows.map((row) => h("tr", { class: "clickable", tabindex: "0",
+      onclick: () => openPlayer(row.name), onkeydown: (event) => { if (event.key === "Enter") openPlayer(row.name); } },
+      columns.map(([key]) => h("td", { class: key === "name" ? "" : "num" }, cell(row, key)))));
+    const pager = h("div", { class: "pager" },
+      h("button", { disabled: d.page <= 1, onclick: () => { d.page--; load(); } }, "‹ Previous"),
+      h("span", { class: "muted small" }, `Page ${data.page} of ${data.pages}`),
+      h("button", { disabled: d.page >= data.pages, onclick: () => { d.page++; load(); } }, "Next ›"));
+    body.replaceChildren(data.rows.length
+      ? h("div", {}, h("div", { class: "table-wrap" }, h("table", { class: "directory" }, h("thead", {}, head), h("tbody", {}, rows))), pager)
+      : empty(d.q ? `Nobody matches "${d.q}".` : "No players yet."));
+  }
+  await load();
+}
+
+function openPlayer(name) {
+  state.lookup = name;
+  state.playerTab = state.playerTab || "overview";
+  if (location.hash === "#lookup") render(true); else location.hash = "#lookup";
+}
+
+// ------------------------------------------------------------------ edit log
+
+function editsTable(rows, showPlayer) {
+  const columns = [
+    { label: "When", value: (r) => h("span", { title: new Date(r.t).toLocaleString() }, ago(r.t)) },
+    { label: "By", value: (r) => r.actor },
+  ];
+  if (showPlayer) columns.push({ label: "Player", value: (r) => h("a", { href: "#lookup", onclick: (event) => { event.preventDefault(); openPlayer(r.player); } }, r.player) });
+  columns.push(
+    { label: "Change", value: (r) => h("span", { class: r.undone ? "struck" : "" }, r.summary) },
+    { label: "Applied to", value: (r) => r.where === "live" ? "live game" : "database" },
+    { label: "", num: true, value: (r) => r.canUndo
+      ? h("button", { class: "small-btn", onclick: async () => {
+          if (!(await confirmDialog("Undo this?", r.summary, "Undo"))) return;
+          try {
+            const result = await api("undo", { id: r.id });
+            toast("Undone - " + result.summary);
+            render(false);
+          } catch (e) { toast("Couldn't undo: " + e.message); }
+        } }, "Undo")
+      : r.undone ? h("span", { class: "muted small" }, "undone by " + r.undoneBy) : "" });
+  return table(columns, rows);
+}
+
+async function renderEdits(root) {
+  const rows = await api("edits?limit=200");
+  root.append(card("Every change made on this site, newest first", editsTable(rows, true),
+    h("p", { class: "muted small" }, "Also written to the server console, and to any webhook listening for the \"edit\" event.")));
+}
+
+// ------------------------------------------------------------------ player lookup
+
 async function renderLookup(root) {
   const input = h("input", { type: "search", placeholder: "Player name…", autocomplete: "off", value: state.lookup || "" });
   const suggestions = h("div", { class: "suggestions", hidden: true });
@@ -838,14 +1113,385 @@ async function renderLookup(root) {
     result.replaceChildren(empty("Loading…"));
     try {
       const p = await api("player?name=" + encodeURIComponent(name));
-      result.replaceChildren(profileView(p));
+      result.replaceChildren(playerPage(p));
     } catch (e) {
+      if (e instanceof AuthError) throw e;
       result.replaceChildren(card(null, empty(e.message.includes("404") || e.message.includes("No such") ? "No player called " + name + "." : e.message)));
     }
   }
 
   root.append(card("Find a player", h("div", { class: "lookup-bar" }, input, suggestions)), result);
-  if (state.lookup) show(state.lookup);
+  if (state.lookup) await show(state.lookup);
+}
+
+const PLAYER_TABS = [["overview", "Overview"], ["stats", "Stats"], ["pets", "Pets"], ["inventory", "Inventory"], ["history", "History"]];
+
+function playerPage(p) {
+  const editor = state.me.role === "editor";
+  const tabs = PLAYER_TABS.filter(([id]) => id !== "history" || editor);
+  if (!tabs.some(([id]) => id === state.playerTab)) state.playerTab = "overview";
+  const content = h("div", { class: "tab-body" });
+  const bar = h("div", { class: "tabs", role: "tablist" });
+  const select = (id) => {
+    state.playerTab = id;
+    bar.querySelectorAll("button").forEach((b) => { b.classList.toggle("active", b.dataset.tab === id); b.setAttribute("aria-selected", b.dataset.tab === id); });
+    loadTab(p, id, content);
+  };
+  tabs.forEach(([id, label]) => bar.append(h("button", { role: "tab", "data-tab": id, onclick: () => select(id) }, label)));
+
+  const actions = h("div", { class: "player-actions" });
+  if (editor && p.online) {
+    actions.append(h("button", { class: "danger", onclick: async () => {
+      const reason = await dialog("Kick " + p.name + "?", (done) => {
+        const input = h("input", { type: "text", placeholder: "Reason shown to them (optional)", maxlength: "200" });
+        return h("div", {}, input, h("div", { class: "dialog-actions" },
+          h("button", { onclick: () => done(null) }, "Cancel"),
+          h("button", { class: "primary danger", onclick: () => done(input.value) }, "Kick")));
+      });
+      if (reason === null) return;
+      try {
+        const result = await api("kick", { uuid: p.uuid, reason });
+        toast(result.summary);
+      } catch (e) { toast("Couldn't kick: " + e.message); }
+    } }, "Kick"));
+  }
+  const head = h("div", { class: "card player-head" },
+    h("img", { src: `https://mc-heads.net/avatar/${encodeURIComponent(p.name)}/64`, alt: "" }),
+    h("div", { class: "player-id" },
+      h("h3", {}, p.name, p.online ? h("span", { class: "tag online" }, "online" + (p.live?.zoneName ? " · " + p.live.zoneName : "")) : null),
+      h("div", { class: "muted small mono" }, p.uuid),
+      h("div", { class: "muted small" }, p.online ? "Changes apply to them in game right away." : `Offline - last seen ${ago(p.lastSeen)}. Changes are saved for their next join.`)),
+    actions);
+  const wrap = h("div", { class: "grid" }, head, bar, content);
+  select(state.playerTab);
+  return wrap;
+}
+
+async function loadTab(p, id, content) {
+  content.replaceChildren(empty("Loading…"));
+  try {
+    const view = id === "overview" ? profileView(p)
+      : id === "stats" ? await statsTab(p)
+      : id === "pets" ? await petsTab(p)
+      : id === "inventory" ? await inventoryTab(p)
+      : card("Changes made to " + p.name, editsTable(await api(`edits?uuid=${p.uuid}&limit=100`), false));
+    if (state.playerTab === id) content.replaceChildren(view);
+  } catch (e) {
+    if (e instanceof AuthError) { showLogin("The viewer code changed - ask for the new one."); return; }
+    content.replaceChildren(card(null, empty("Couldn't load: " + e.message)));
+  }
+}
+
+/** Re-opens the current player on the current tab - after an edit. */
+function reloadPlayer() {
+  render(false);
+}
+
+// ---- stats
+
+async function schema() {
+  if (!state.schema) state.schema = await api("schema");
+  return state.schema;
+}
+
+function showValue(stat, value) {
+  if (value == null || value === "") return "–";
+  if (stat.kind === "amount") return h("span", { title: String(value) }, fmtBig(value));
+  if (stat.kind === "choice") return (stat.options.find((o) => o.value === value) || {}).label || value;
+  return fmt(Number(value));
+}
+
+async function statsTab(p) {
+  const [stats, values] = await Promise.all([schema(), api("values?uuid=" + p.uuid)]);
+  const editor = state.me.role === "editor";
+  const groups = new Map();
+  for (const stat of stats) {
+    if (stat.kind === "action") continue;
+    if (!groups.has(stat.group)) groups.set(stat.group, []);
+    groups.get(stat.group).push(stat);
+  }
+  const cards = [];
+  for (const [group, list] of groups) {
+    cards.push(card(group, h("div", { class: "stat-list" }, list.map((stat) => h("div", { class: "stat-line" },
+      h("div", {}, h("div", { class: "stat-label" }, stat.label), stat.hint ? h("div", { class: "muted small" }, stat.hint) : null),
+      h("div", { class: "stat-value" }, showValue(stat, values[stat.id])),
+      editor ? h("button", { class: "small-btn", onclick: () => editStat(p, stat, values[stat.id]) }, "Edit") : null)))));
+  }
+  return h("div", { class: "grid cols-2" }, cards);
+}
+
+async function editStat(p, stat, current) {
+  const value = await dialog(`${stat.label} - ${p.name}`, (done) => {
+    let input;
+    let mode = "set";
+    const preview = h("div", { class: "edit-preview" });
+    const next = () => {
+      const raw = input.value.trim();
+      if (stat.kind !== "amount") return raw;
+      const delta = parseAmount(raw);
+      if (delta == null) return raw === "" ? "" : null;
+      if (mode === "set") return delta.toString();
+      const total = mode === "add" ? BigInt(current || "0") + delta : BigInt(current || "0") - delta;
+      return (total < 0n ? 0n : total).toString();
+    };
+    const update = () => {
+      const target = next();
+      const shown = target == null || target === "" ? "?" : stat.kind === "amount" && /^\d+$/.test(target) ? fmtBig(target) : showValue(stat, target);
+      preview.replaceChildren(h("span", { class: "muted" }, "Now "), h("strong", {}, showValue(stat, current)), h("span", { class: "muted" }, "  →  "), h("strong", { class: "accent-text" }, shown));
+    };
+    const parts = [];
+    if (stat.kind === "choice") {
+      input = h("select", {}, stat.options.map((o) => h("option", { value: o.value }, o.label)));
+      input.value = current || (stat.options[0] || {}).value;
+    } else {
+      input = h("input", { type: "text", inputmode: stat.kind === "number" ? "numeric" : "text",
+        placeholder: stat.kind === "amount" ? "e.g. 250k, 1.5m, 3b" : `${stat.min}–${stat.max}`, value: "" });
+      if (stat.kind === "amount") {
+        parts.push(h("div", { class: "segmented" }, [["set", "Set to"], ["add", "Add"], ["subtract", "Take away"]].map(([m, label]) => {
+          const b = h("button", { class: m === mode ? "active" : "", onclick: () => {
+            mode = m;
+            b.parentElement.querySelectorAll("button").forEach((x) => x.classList.toggle("active", x === b));
+            update();
+          } }, label);
+          return b;
+        })));
+      }
+    }
+    input.addEventListener("input", update);
+    input.addEventListener("change", update);
+    input.addEventListener("keydown", (event) => { if (event.key === "Enter") save(); });
+    const error = h("p", { class: "error", hidden: true });
+    const save = () => {
+      const target = next();
+      if (target == null || target === "") { error.hidden = false; error.textContent = stat.kind === "amount" ? "Enter an amount like 250k, 1.5m or 3b." : "Enter a value."; return; }
+      done(target);
+    };
+    update();
+    return h("div", {}, ...parts, input, preview, error,
+      h("p", { class: "muted small" }, p.online ? "They're online - it changes in game straight away." : "They're offline - it's written to their saved data."),
+      h("div", { class: "dialog-actions" }, h("button", { onclick: () => done(null) }, "Cancel"), h("button", { class: "primary", onclick: save }, "Save")));
+  });
+  if (value == null) return;
+  await applyEdit(p, stat.id, value);
+}
+
+async function applyEdit(p, statId, value) {
+  try {
+    const result = await api("edit", { uuid: p.uuid, stat: statId, value });
+    toast(result.summary + (result.where === "live" ? " (live)" : " (saved)"), result.id);
+    reloadPlayer();
+    return true;
+  } catch (e) {
+    if (e instanceof AuthError) throw e;
+    toast("Not changed: " + e.message);
+    return false;
+  }
+}
+
+/** "1.5m" → 1500000n; null if it isn't an amount. */
+function parseAmount(raw) {
+  const match = /^([0-9]+)(?:\.([0-9]+))?\s*([a-z]*)$/i.exec(raw.replace(/,/g, "").trim());
+  if (!match) return null;
+  const suffix = match[3].toLowerCase();
+  const tier = suffix ? SUFFIXES.findIndex((x) => x.toLowerCase() === suffix) : 0;
+  if (tier < 0) return null;
+  const fraction = (match[2] || "").slice(0, tier * 3);
+  const digits = match[1] + fraction.padEnd(tier * 3, "0");
+  return BigInt(digits);
+}
+
+/** A whole number of any size, shortened: "123456789" → "123.5M". */
+function fmtBig(value) {
+  const digits = String(value).replace(/^0+(?=\d)/, "");
+  if (!/^\d+$/.test(digits)) return String(value);
+  if (digits.length <= 15) return fmt(Number(digits));
+  const tier = Math.floor((digits.length - 1) / 3);
+  if (tier >= SUFFIXES.length) return `${digits[0]}.${digits.slice(1, 3)}e${digits.length - 1}`;
+  const whole = digits.slice(0, digits.length - tier * 3);
+  const rest = digits.slice(whole.length, whole.length + 1);
+  return (whole.length >= 3 || rest === "0" ? whole : `${whole}.${rest}`) + SUFFIXES[tier];
+}
+
+// ---- pets
+
+const ASSETS = "https://assets.mcasset.cloud/1.21.8/assets/minecraft/textures";
+
+/** Items whose picture isn't simply item/<name>.png - animated ones use their first frame. */
+const TEXTURE_NAMES = { compass: "compass_00", recovery_compass: "recovery_compass_00", clock: "clock_00", crossbow: "crossbow_standby", light: "light_15" };
+
+function itemIcon(material, size) {
+  const img = h("img", { class: "item-icon", alt: "", loading: "lazy", width: size || 32, height: size || 32,
+    src: `${ASSETS}/item/${TEXTURE_NAMES[material] || material}.png` });
+  img.addEventListener("error", () => {
+    if (!img.dataset.retried) {
+      img.dataset.retried = "1";
+      img.src = `${ASSETS}/block/${material}.png`;
+    } else {
+      img.replaceWith(h("span", { class: "item-fallback", title: material }, material.split("_").map((w) => w[0]).join("").slice(0, 3).toUpperCase()));
+    }
+  });
+  return img;
+}
+
+async function petsTab(p) {
+  const data = await api("pets?uuid=" + p.uuid);
+  const editor = state.me.role === "editor";
+  const pets = data.pets || [];
+  const f = state.petFilter || (state.petFilter = { q: "", rarity: "", equipped: false, shiny: false, huge: false, sort: "rarity" });
+  const grid = h("div", { class: "pet-grid" });
+  const count = h("span", { class: "muted small" });
+  let limit = 240;
+
+  const draw = () => {
+    const q = f.q.toLowerCase();
+    let list = pets.filter((pet) => (!q || pet.name.toLowerCase().includes(q))
+      && (!f.rarity || pet.rarity === f.rarity) && (!f.equipped || pet.equipped) && (!f.shiny || pet.shiny) && (!f.huge || pet.huge));
+    if (f.sort === "level") list = [...list].sort((a, b) => b.level - a.level);
+    if (f.sort === "name") list = [...list].sort((a, b) => a.name.localeCompare(b.name));
+    if (f.sort === "damage") list = [...list].sort((a, b) => b.damage - a.damage);
+    count.textContent = `${fmt(list.length)} of ${fmt(pets.length)} pets · ${data.equippedCount} equipped`;
+    grid.replaceChildren(...list.slice(0, limit).map((pet) => petCard(p, pet)));
+    if (list.length > limit) {
+      grid.append(h("button", { class: "pet-more", onclick: () => { limit += 240; draw(); } }, `Show ${fmt(Math.min(240, list.length - limit))} more`));
+    }
+    if (!list.length) grid.append(empty(pets.length ? "No pets match." : "No pets yet."));
+  };
+
+  const search = h("input", { type: "search", placeholder: "Search pets…", value: f.q });
+  search.addEventListener("input", () => { f.q = search.value; limit = 240; draw(); });
+  const rarities = Object.keys(data.rarityCounts || {}).sort();
+  const rarity = h("select", { "aria-label": "Rarity" }, h("option", { value: "" }, "All rarities"),
+    rarities.map((r) => h("option", { value: r }, `${r} (${data.rarityCounts[r]})`)));
+  rarity.value = f.rarity;
+  rarity.addEventListener("change", () => { f.rarity = rarity.value; draw(); });
+  const sort = h("select", { "aria-label": "Sort" }, [["rarity", "Rarest first"], ["level", "Highest level"], ["damage", "Strongest"], ["name", "Name"]]
+    .map(([v, l]) => h("option", { value: v }, l)));
+  sort.value = f.sort;
+  sort.addEventListener("change", () => { f.sort = sort.value; draw(); });
+  const check = (key, label) => {
+    const box = h("input", { type: "checkbox" });
+    box.checked = f[key];
+    box.addEventListener("change", () => { f[key] = box.checked; draw(); });
+    return h("label", { class: "toggle small" }, box, " " + label);
+  };
+  draw();
+  return card(null,
+    h("div", { class: "toolbar" }, search, rarity, sort, check("equipped", "Equipped"), check("shiny", "Shiny"), check("huge", "Huge"), count,
+      editor ? h("button", { class: "primary push-right", onclick: () => givePet(p) }, "+ Give pet") : null),
+    grid);
+}
+
+function petCard(p, pet) {
+  return h("button", { class: "pet-card" + (pet.equipped ? " equipped" : "") + (pet.shiny ? " shiny" : ""),
+    style: `--rarity:${pet.rarityColor}`, title: pet.name, onclick: () => petDetail(p, pet) },
+    h("div", { class: "pet-icon" }, itemIcon(pet.material, 40)),
+    h("div", { class: "pet-name" }, pet.name),
+    h("div", { class: "pet-meta" }, h("span", { class: "rarity-text" }, pet.rarity), ` · Lv ${pet.level}`),
+    h("div", { class: "pet-badges" },
+      pet.equipped ? h("span", { class: "tag online" }, "equipped") : null,
+      pet.shiny ? h("span", { class: "tag shiny" }, "shiny") : null,
+      pet.huge ? h("span", { class: "tag huge" }, "huge") : null,
+      pet.tier && pet.tier !== "normal" ? h("span", { class: "tag" }, pet.tier.replace("_", " ")) : null));
+}
+
+async function petDetail(p, pet) {
+  const editor = state.me.role === "editor";
+  const remove = await dialog(pet.name, (done) => h("div", {},
+    h("div", { class: "pet-detail", style: `--rarity:${pet.rarityColor}` },
+      h("div", { class: "pet-icon big" }, itemIcon(pet.material, 64)),
+      h("div", { class: "kv" },
+        h("div", {}, h("span", {}, "Rarity"), h("span", { class: "rarity-text" }, pet.rarity)),
+        h("div", {}, h("span", {}, "Level"), h("span", {}, String(pet.level))),
+        h("div", {}, h("span", {}, "Damage"), h("span", {}, fmt(pet.damage))),
+        h("div", {}, h("span", {}, "Tier"), h("span", {}, titleCase(pet.tier))),
+        h("div", {}, h("span", {}, "Shiny"), h("span", {}, pet.shiny ? "Yes" : "No")),
+        h("div", {}, h("span", {}, "Equipped"), h("span", {}, pet.equipped ? "Yes" : "No")))),
+    pet.enchants.length ? h("p", { class: "small" }, h("span", { class: "muted" }, "Enchants: "), pet.enchants.join(", ")) : null,
+    h("p", { class: "muted small mono" }, pet.id),
+    h("div", { class: "dialog-actions" },
+      h("button", { onclick: () => done(false) }, "Close"),
+      editor ? h("button", { class: "primary danger", onclick: () => done(true) }, "Remove pet") : null)));
+  if (!remove) return;
+  if (!(await confirmDialog(`Remove ${pet.name}?`,
+    `It's taken out of ${p.name}'s bag${pet.equipped ? " and unequipped" : ""}. You can undo it from the message that appears, or the History tab.`, "Remove", true))) return;
+  await applyEdit(p, "pets.remove", pet.id);
+}
+
+async function givePet(p) {
+  const stats = await schema();
+  const give = stats.find((s) => s.id === "pets.give");
+  if (!give) { toast("Giving pets isn't available."); return; }
+  const choice = await dialog("Give " + p.name + " a pet", (done) => {
+    const search = h("input", { type: "search", placeholder: "Search every pet…" });
+    const list = h("div", { class: "option-list", role: "listbox" });
+    const shiny = h("input", { type: "checkbox" });
+    let picked = null;
+    const draw = () => {
+      const q = search.value.toLowerCase();
+      const matches = give.options.filter((o) => !q || o.label.toLowerCase().includes(q) || o.value.includes(q)).slice(0, 200);
+      list.replaceChildren(...matches.map((o) => h("button", { role: "option", class: picked === o.value ? "picked" : "",
+        onclick: () => { picked = o.value; draw(); } }, o.label, h("span", { class: "muted small" }, " " + (o.group || "")))));
+      if (!matches.length) list.append(empty("No pet matches."));
+    };
+    search.addEventListener("input", draw);
+    draw();
+    return h("div", {}, search, list, h("label", { class: "toggle small" }, shiny, " Shiny"),
+      h("div", { class: "dialog-actions" },
+        h("button", { onclick: () => done(null) }, "Cancel"),
+        h("button", { class: "primary", onclick: () => { if (picked) done(picked + (shiny.checked ? ":shiny" : "")); } }, "Give")));
+  });
+  if (choice) await applyEdit(p, "pets.give", choice);
+}
+
+// ---- inventory
+
+const ARMOR_SLOTS = [[39, "Helmet"], [38, "Chestplate"], [37, "Leggings"], [36, "Boots"], [40, "Off hand"]];
+
+async function inventoryTab(p) {
+  const data = await api("inventory?uuid=" + p.uuid);
+  const editor = state.me.role === "editor";
+  const bySlot = new Map((data.items || []).map((item) => [Number(item.slot), item]));
+  const detail = h("div", { class: "slot-detail" }, h("p", { class: "muted small" }, "Click an item to see it" + (editor && data.live ? " or take it away." : ".")));
+  let selected = null;
+
+  const slot = (index, label) => {
+    const item = bySlot.get(index);
+    const node = h("button", { class: "slot" + (item ? " filled" : "") + (item?.glint ? " glint" : ""), title: item ? `${item.name}${item.amount > 1 ? " ×" + item.amount : ""}` : label || "",
+      "aria-label": item ? item.name : (label || "Empty slot") },
+      item ? itemIcon(item.material, 32) : (label ? h("span", { class: "slot-label" }, label[0]) : null),
+      item && item.amount > 1 ? h("span", { class: "amount" }, String(item.amount)) : null);
+    node.addEventListener("click", () => {
+      if (!item) return;
+      if (selected) selected.classList.remove("selected");
+      selected = node;
+      node.classList.add("selected");
+      detail.replaceChildren(
+        h("div", { class: "slot-detail-head" }, itemIcon(item.material, 48), h("div", {}, h("strong", {}, item.name), h("div", { class: "muted small mono" }, `${item.material} · slot ${index}` + (item.amount > 1 ? ` · ×${item.amount}` : "")))),
+        item.lore.length ? h("div", { class: "lore" }, item.lore.map((line) => h("div", {}, line || " "))) : null,
+        editor && data.live ? h("button", { class: "danger", onclick: async () => {
+          if (!(await confirmDialog(`Take away ${item.name}?`, `Removed from ${p.name}'s inventory right now. You can undo it while they're still online.`, "Take away", true))) return;
+          try {
+            const result = await api("inventory/remove", { uuid: p.uuid, slot: index });
+            toast(result.summary, result.id);
+            reloadPlayer();
+          } catch (e) { toast("Not removed: " + e.message); }
+        } }, "Take away") : null);
+    });
+    return node;
+  };
+  const range = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => slot(from + i));
+  const note = data.live ? h("span", { class: "tag online" }, "live")
+    : data.savedAt ? h("span", { class: "muted small" }, `As they logged out, ${ago(data.savedAt)} - read-only until they're back.`)
+    : h("span", { class: "muted small" }, "Not seen since the site started keeping inventories - it's saved each time they log out.");
+  return card(null,
+    h("div", { class: "toolbar" }, h("strong", {}, `${fmt(bySlot.size)} item stacks`), note),
+    h("div", { class: "inventory-layout" },
+      h("div", { class: "mc-inventory" },
+        h("div", { class: "armor-column" }, ARMOR_SLOTS.map(([i, label]) => slot(i, label))),
+        h("div", { class: "main-grid" },
+          h("div", { class: "slot-grid" }, range(9, 35)),
+          h("div", { class: "slot-grid hotbar" }, range(0, 8)))),
+      detail));
 }
 
 function profileView(p) {
@@ -865,10 +1511,7 @@ function profileView(p) {
   const reached = Object.entries(p.zoneReachedAt || {}).sort((a, b) => a[1] - b[1]);
   return h("div", { class: "grid" },
     h("div", { class: "card" },
-      h("div", { class: "profile-head" },
-        h("img", { src: `https://mc-heads.net/avatar/${encodeURIComponent(p.name)}/64`, alt: "" }),
-        h("div", {}, h("h3", {}, p.name), h("div", { class: "muted small mono" }, p.uuid))),
-      h("div", { class: "kv", style: "margin-top:16px" }, facts.map(([k, v]) => h("div", {}, h("span", {}, k), h("span", {}, v))))),
+      h("div", { class: "kv" }, facts.map(([k, v]) => h("div", {}, h("span", {}, k), h("span", {}, v))))),
     h("div", { class: "grid cols-2" },
       card("Equipped pets", table([{ label: "Pet", value: (r) => r.name + (r.shiny ? " ✦" : "") }, { label: "Rarity", value: (r) => titleCase(r.rarity) },
         { label: "Level", num: true, value: (r) => r.level }], p.equipped || [])),

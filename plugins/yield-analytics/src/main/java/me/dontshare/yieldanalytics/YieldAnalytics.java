@@ -1,6 +1,7 @@
 package me.dontshare.yieldanalytics;
 
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
@@ -43,7 +44,7 @@ import java.util.logging.Logger;
  * serves it as a dashboard website and JSON API - with webhooks for the
  * things worth hearing about as they happen.
  * <p>
- * See analytics.yml for the port, the access token and the webhooks, and
+ * See analytics.yml for the port, who may view and edit, and the webhooks, and
  * {@code /analytics} for the address and a test post.
  */
 public final class YieldAnalytics extends JavaPlugin {
@@ -60,6 +61,7 @@ public final class YieldAnalytics extends JavaPlugin {
     private WebhookService webhooks;
     private WebServer web;
     private ErrorLogHandler errorHandler;
+    private me.dontshare.yieldanalytics.web.Access access;
 
     @Override
     public void onEnable() {
@@ -112,11 +114,24 @@ public final class YieldAnalytics extends JavaPlugin {
         scheduler.runTaskTimer(this, this::summary, config.summaryIntervalMinutes() * 1200L,
                 config.summaryIntervalMinutes() * 1200L);
 
+        access = new me.dontshare.yieldanalytics.web.Access(config.whitelist(), config.trustedProxies(), config.viewerCodeMinutes());
+        me.dontshare.yieldanalytics.admin.PlayerDirectory directory = new me.dontshare.yieldanalytics.admin.PlayerDirectory(activity, this::onlineIds);
+        me.dontshare.yieldanalytics.admin.EditService editService = new me.dontshare.yieldanalytics.admin.EditService(
+                this, store, activity, directory, webhooks);
+        database.supplyAsync(() -> {
+            editService.ensureIndexes();
+            return null;
+        });
         if (config.webEnabled()) {
-            web = new WebServer(config, new ApiRoutes(live, stats, activity, packs, health), getLogger());
+            ApiRoutes routes = new ApiRoutes(live, stats, activity, packs, health);
+            routes.setAdmin(editService, directory, access);
+            web = new WebServer(config, routes, access, getLogger());
             try {
                 web.start();
-                getLogger().info("Analytics dashboard on port " + config.port() + " - /analytics for the address and token.");
+                getLogger().info("Analytics dashboard on port " + config.port() + " - /analytics for the address and viewer code.");
+                if (config.whitelist().isEmpty()) {
+                    getLogger().info("No whitelisted addresses yet, so nobody can edit players on the site - /analytics whitelist add <ip>.");
+                }
             } catch (IOException e) {
                 getLogger().log(Level.SEVERE, "Could not start the analytics website on " + config.bind() + ":" + config.port(), e);
                 web = null;
@@ -192,14 +207,32 @@ public final class YieldAnalytics extends JavaPlugin {
                     info(ctx.getSource().getSender());
                     return Command.SINGLE_SUCCESS;
                 })
-                .then(Commands.literal("token").executes(ctx -> {
-                    CommandSender sender = ctx.getSource().getSender();
-                    sender.sendMessage(Text.parse(HEADER + "<gray>Token (click to copy):</gray> <white><token></white>",
-                            net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.component("token",
-                                    net.kyori.adventure.text.Component.text(config.token())
-                                            .clickEvent(ClickEvent.copyToClipboard(config.token())))));
-                    return Command.SINGLE_SUCCESS;
-                }))
+                .then(Commands.literal("code")
+                        .executes(ctx -> {
+                            showCode(ctx.getSource().getSender());
+                            return Command.SINGLE_SUCCESS;
+                        })
+                        .then(Commands.literal("new").executes(ctx -> {
+                            access.rotate();
+                            reply(ctx.getSource().getSender(), "<gray>New viewer code - everyone on the old one has been signed out.</gray>");
+                            showCode(ctx.getSource().getSender());
+                            return Command.SINGLE_SUCCESS;
+                        })))
+                .then(Commands.literal("whitelist")
+                        .then(Commands.literal("list").executes(ctx -> {
+                            listWhitelist(ctx.getSource().getSender());
+                            return Command.SINGLE_SUCCESS;
+                        }))
+                        .then(Commands.literal("add")
+                                .then(Commands.argument("entry", StringArgumentType.greedyString()).executes(ctx -> {
+                                    changeWhitelist(ctx.getSource().getSender(), StringArgumentType.getString(ctx, "entry"), true);
+                                    return Command.SINGLE_SUCCESS;
+                                })))
+                        .then(Commands.literal("remove")
+                                .then(Commands.argument("entry", StringArgumentType.greedyString()).executes(ctx -> {
+                                    changeWhitelist(ctx.getSource().getSender(), StringArgumentType.getString(ctx, "entry"), false);
+                                    return Command.SINGLE_SUCCESS;
+                                }))))
                 .then(Commands.literal("refresh").executes(ctx -> {
                     stats.refreshAsync();
                     reply(ctx.getSource().getSender(), "<gray>Recomputing the player statistics now.</gray>");
@@ -219,7 +252,68 @@ public final class YieldAnalytics extends JavaPlugin {
         for (String line : statusLines()) {
             reply(sender, line);
         }
-        reply(sender, "<gray>/analytics token · refresh · webhooktest</gray>");
+        reply(sender, "<gray>/analytics code [new] · whitelist add|remove|list · refresh · webhooktest</gray>");
+    }
+
+    private java.util.Set<java.util.UUID> onlineIds() {
+        java.util.Set<java.util.UUID> ids = new java.util.HashSet<>();
+        if (live.snapshot().get("players") instanceof List<?> rows) {
+            for (Object row : rows) {
+                if (row instanceof Map<?, ?> map && map.get("uuid") != null) {
+                    ids.add(java.util.UUID.fromString(String.valueOf(map.get("uuid"))));
+                }
+            }
+        }
+        return ids;
+    }
+
+    private void showCode(CommandSender sender) {
+        String code = access.code();
+        long minutes = Math.max(0, (access.codeExpiresAt() - System.currentTimeMillis()) / 60_000L);
+        sender.sendMessage(Text.parse(HEADER + "<gray>Viewer code (click to copy):</gray> <white><bold><code></bold></white>"
+                        + " <dark_gray>- read-only, changes in " + (minutes < 1 ? "under a minute" : minutes + " min") + "</dark_gray>",
+                net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.component("code",
+                        net.kyori.adventure.text.Component.text(code).clickEvent(ClickEvent.copyToClipboard(code)))));
+    }
+
+    private void listWhitelist(CommandSender sender) {
+        List<String> entries = access.whitelist();
+        if (entries.isEmpty()) {
+            reply(sender, "<gray>Nobody is whitelisted - the site is read-only for everyone. /analytics whitelist add <ip> [= name]</gray>");
+            return;
+        }
+        reply(sender, "<gray>Whitelisted (can edit, no code needed):</gray>");
+        for (String entry : entries) {
+            sender.sendMessage(Text.parse(" <white>" + net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().escapeTags(entry) + "</white>"));
+        }
+    }
+
+    private void changeWhitelist(CommandSender sender, String raw, boolean add) {
+        List<String> entries = new ArrayList<>(access.whitelist());
+        String entry;
+        try {
+            entry = me.dontshare.yieldanalytics.web.Access.validate(raw);
+        } catch (IllegalArgumentException e) {
+            reply(sender, "<red>" + net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().escapeTags(e.getMessage()) + "</red>");
+            return;
+        }
+        String address = entry.split("=")[0].trim();
+        boolean had = entries.removeIf(existing -> existing.split("=")[0].trim().equals(address));
+        if (add) {
+            entries.add(entry);
+        } else if (!had) {
+            reply(sender, "<yellow>" + address + " wasn't on the whitelist.</yellow>");
+            return;
+        }
+        access.setWhitelist(entries);
+        try {
+            AnalyticsConfig.saveWhitelist(this, entries);
+        } catch (java.io.IOException e) {
+            getLogger().log(Level.WARNING, "Could not save the whitelist to analytics.yml", e);
+            reply(sender, "<yellow>Applied, but couldn't be saved to analytics.yml - it lasts until restart.</yellow>");
+        }
+        reply(sender, add ? "<green>" + address + " can now open the site and edit players.</green>"
+                : "<gray>" + address + " is no longer whitelisted.</gray>");
     }
 
     private static void reply(CommandSender sender, String miniMessage) {
