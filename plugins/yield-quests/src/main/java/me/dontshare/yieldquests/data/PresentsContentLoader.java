@@ -30,8 +30,19 @@ public final class PresentsContentLoader {
         File file = new File(plugin.getDataFolder(), "daily.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 
+        Map<String, String[]> rarities = new java.util.LinkedHashMap<>();
+        var raritySection = config.getConfigurationSection("gift-rarities");
+        if (raritySection != null) {
+            for (String key : raritySection.getKeys(false)) {
+                rarities.put(key.toLowerCase(java.util.Locale.ROOT), new String[]{
+                        raritySection.getString(key + ".name", key), raritySection.getString(key + ".head", "")});
+            }
+        }
+
         List<PresentDefinition> presents = new ArrayList<>();
+        int position = 0;
         for (Map<?, ?> entry : config.getMapList("presents")) {
+            position++;
             long unlockAfter = entry.get("unlock-after-minutes") instanceof Number n ? n.longValue() : -1;
             if (unlockAfter < 0) {
                 logger.warning("daily.yml present entry has an invalid 'unlock-after-minutes' - skipping entry.");
@@ -45,7 +56,17 @@ public final class PresentsContentLoader {
             }
             long coins = entry.get("coins") instanceof Number n ? n.longValue() : 0;
             long diamonds = entry.get("diamonds") instanceof Number n ? n.longValue() : 0;
-            presents.add(new PresentDefinition(unlockAfter, headId, fallback, Math.max(0, coins), Math.max(0, diamonds)));
+            // No rarity given: the reference layout's own - three common,
+            // four rare, three epic, then legendary.
+            String rarityKey = entry.get("rarity") instanceof String r ? r.toLowerCase(java.util.Locale.ROOT)
+                    : position <= 3 ? "common" : position <= 7 ? "rare" : position <= 10 ? "epic" : "legendary";
+            String[] rarity = rarities.get(rarityKey);
+            if (rarity == null) {
+                logger.warning("daily.yml present " + position + " has an unknown rarity '" + rarityKey + "'.");
+            }
+            String name = rarity != null ? rarity[0] : Character.toUpperCase(rarityKey.charAt(0)) + rarityKey.substring(1);
+            String texture = rarity != null && !rarity[1].isBlank() ? rarity[1] : null;
+            presents.add(new PresentDefinition(unlockAfter, headId, fallback, Math.max(0, coins), Math.max(0, diamonds), name, texture));
         }
         presents.sort((a, b) -> Long.compare(a.unlockAfterMinutes(), b.unlockAfterMinutes()));
         return new PresentsContent(presents);

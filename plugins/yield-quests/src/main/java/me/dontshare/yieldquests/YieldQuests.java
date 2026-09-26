@@ -62,7 +62,9 @@ public final class YieldQuests extends JavaPlugin {
                 "quests", QuestProfile.class, QuestProfile::new, "quest data");
         questService = new QuestService(() -> questContent, packs.getPlayerStore(), questStore, packs);
         RankQuestService rankQuestService = new RankQuestService(() -> rankQuestPool, packs.getPlayerStore(), questStore, packs);
-        PresentsService presentsService = new PresentsService(() -> presentsContent, packs);
+        PresentsService presentsService = new PresentsService(() -> presentsContent, packs, questStore);
+        getServer().getScheduler().runTaskTimer(this, me.dontshare.yieldcore.perf.PerfTracker.timed("gifts.playtime",
+                presentsService::bankAll), 300L, 300L);
         LoginStreakService loginStreakService = new LoginStreakService(packs, questStore);
 
         core.getListenerManager().register(new QuestEventListener(questService, rankQuestService));
@@ -100,10 +102,10 @@ public final class YieldQuests extends JavaPlugin {
 
         QuestGui questGui = new QuestGui(packs.getPlayerStore(), () -> questContent, questService, core.getGuiManager(),
                 packs::getItemRegistry);
-        PresentsGui presentsGui = new PresentsGui(presentsService, giftDisplay, core.getGuiManager());
+        PresentsGui presentsGui = new PresentsGui(this, presentsService, giftDisplay, core.getGuiManager(), packs);
 
         CommandManager.register(this, QuestCommand.build(questGui), "View and claim today's daily quests", List.of());
-        CommandManager.register(this, DailyCommand.build(presentsGui), "Claim your session's daily presents", List.of());
+        CommandManager.register(this, DailyCommand.build(presentsGui), "Open your Daily Gifts", List.of());
         core.getAdminCommandRegistry().register(QuestsAdminCommand.build(this, questService));
     }
 

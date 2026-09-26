@@ -6,7 +6,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-/** Starts/clears a player's /daily session clock - see PresentsService's own class javadoc for why this is deliberately never persisted. */
+/** Starts and stops counting a player's playtime toward today's /daily gifts - see PresentsService. */
 public final class PresentsSessionListener implements Listener {
 
     private final PresentsService presentsService;

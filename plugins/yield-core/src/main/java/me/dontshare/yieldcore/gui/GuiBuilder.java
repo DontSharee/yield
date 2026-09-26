@@ -39,6 +39,8 @@ public final class GuiBuilder {
     }
 
     /** A static, non-interactive slot (a border pane, decoration, info display, etc). */
+    private boolean plain;
+
     public GuiBuilder item(int slot, ItemStack item) {
         items.put(slot, item);
         return this;
@@ -104,13 +106,21 @@ public final class GuiBuilder {
         return this;
     }
 
+    /** No glass border - the menu shows only its own items on the plain chest background. */
+    public GuiBuilder plain() {
+        this.plain = true;
+        return this;
+    }
+
     public Gui build() {
         Gui gui = type != null ? new Gui(type, title, items, handlers) : new Gui(rows, title, items, handlers);
         gui.setCloseHandler(closeHandler);
         gui.setEditableSlots(editableSlots);
         gui.setEditableSlotChangeHandler(editableSlotChangeHandler);
         gui.setAllowPlayerInventoryInteraction(allowPlayerInventoryInteraction);
-        gui.applyFrame();
+        if (!plain) {
+            gui.applyFrame();
+        }
         return gui;
     }
 }

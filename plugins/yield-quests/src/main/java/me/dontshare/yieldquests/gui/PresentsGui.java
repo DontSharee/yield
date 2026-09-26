@@ -1,133 +1,175 @@
 package me.dontshare.yieldquests.gui;
 
-import me.arcaniax.hdb.api.HeadDatabaseAPI;
 import me.dontshare.yieldcore.gui.Gui;
-import me.dontshare.yieldcore.gui.GuiBuilder;
-import me.dontshare.yieldcore.gui.GuiIcons;
+import me.dontshare.yieldcore.gui.GuiClickHandler;
 import me.dontshare.yieldcore.gui.GuiManager;
+import me.dontshare.yieldcore.item.Heads;
 import me.dontshare.yieldcore.item.ItemBuilder;
 import me.dontshare.yieldcore.text.Formatting;
-import me.dontshare.yieldcore.text.MenuLore;
-import me.dontshare.yieldcore.text.Text;
+import me.dontshare.yieldpacks.YieldPacks;
+import me.dontshare.yieldquests.GiftDisplayService;
 import me.dontshare.yieldquests.PresentsService;
 import me.dontshare.yieldquests.data.PresentDefinition;
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.List;
-import java.util.stream.IntStream;
 
 /**
- * 10 presents in a 2x5 grid, each a HeadDatabase head (or its configured
- * fallback material) - see {@link PresentsService}'s own javadoc for the
- * per-session unlock/claim rules this renders.
+ * /daily - "Daily Gifts": the refresh clock at the top, and the day's gifts
+ * below it, seven to a row and centred, each a present head stacked to its
+ * number. Every countdown ticks down live while the menu is open.
+ * <p>
+ * The text is the reference design's, line for line - see {@link #giftIcon}.
  */
 public final class PresentsGui {
 
-    private static final String ACCENT = "<#4BD9FF>";
-    private static final int INFO_SLOT = 4;
-    /** Up to fourteen, seven to a row, each row centred. */
-    private static final int MAX_PRESENTS = 14;
-    private static final int CLOSE_SLOT = 31;
+    private static final String TITLE = "&nDaily Gifts";
+    private static final int REFRESH_SLOT = 4;
+    private static final int PER_ROW = 7;
+    private static final int MAX_GIFTS = PER_ROW * 2;
+    private static final String SUBTITLE = "&8" + Formatting.fancyFont("daily reward");
 
+    private final JavaPlugin plugin;
     private final PresentsService presentsService;
-    private final me.dontshare.yieldquests.GiftDisplayService giftDisplay;
+    private final GiftDisplayService giftDisplay;
     private final GuiManager guiManager;
-    private final HeadDatabaseAPI headDatabaseApi;
+    private final YieldPacks packs;
 
-    public PresentsGui(PresentsService presentsService, me.dontshare.yieldquests.GiftDisplayService giftDisplay,
-                       GuiManager guiManager) {
+    public PresentsGui(JavaPlugin plugin, PresentsService presentsService, GiftDisplayService giftDisplay,
+                       GuiManager guiManager, YieldPacks packs) {
+        this.plugin = plugin;
         this.presentsService = presentsService;
         this.giftDisplay = giftDisplay;
         this.guiManager = guiManager;
-        this.headDatabaseApi = Bukkit.getPluginManager().getPlugin("HeadDatabase") != null ? new HeadDatabaseAPI() : null;
+        this.packs = packs;
     }
 
     public void open(Player player) {
-        GuiBuilder builder = Gui.builder(4, "Daily Presents")
-                .fill(IntStream.range(0, 36), GuiIcons.filler())
-                .item(INFO_SLOT, buildInfoIcon())
-                .item(CLOSE_SLOT, GuiIcons.closeButton(), (clicker, event) -> clicker.closeInventory());
-
         List<PresentDefinition> presents = presentsService.presents();
-        int shown = Math.min(presents.size(), MAX_PRESENTS);
-        int[] slots = me.dontshare.yieldcore.gui.GuiLayout.centered(1, shown);
-        for (int i = 0; i < shown; i++) {
-            int index = i;
-            builder.item(slots[i], buildPresentIcon(player, presents.get(index), index),
-                    (clicker, event) -> attemptClaim(clicker, index));
-        }
+        int shown = Math.min(presents.size(), MAX_GIFTS);
+        int[] slots = slots(shown);
+        Gui gui = Gui.builder(4, TITLE).plain().build();
+        render(gui, player, presents, slots);
+        guiManager.open(player, gui);
 
-        guiManager.open(player, builder.build());
+        // The countdowns tick while it's open; the task ends when it closes.
+        BukkitTask[] task = new BukkitTask[1];
+        task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            if (!player.isOnline() || player.getOpenInventory().getTopInventory().getHolder() != gui) {
+                task[0].cancel();
+                return;
+            }
+            render(gui, player, presentsService.presents(), slots);
+        }, 20L, 20L);
+    }
+
+    private void render(Gui gui, Player player, List<PresentDefinition> presents, int[] slots) {
+        gui.set(REFRESH_SLOT, refreshIcon(), null);
+        for (int i = 0; i < slots.length && i < presents.size(); i++) {
+            int index = i;
+            GuiClickHandler click = (clicker, event) -> attemptClaim(clicker, index);
+            gui.set(slots[i], giftIcon(player, presents.get(i), i), click);
+        }
+    }
+
+    /** Seven to a row from the second row down, each row centred: twelve gifts sit in 10-16 and 20-24. */
+    static int[] slots(int count) {
+        int[] slots = new int[count];
+        int first = Math.min(PER_ROW, count);
+        int second = count - first;
+        for (int i = 0; i < first; i++) {
+            slots[i] = 9 + (9 - first) / 2 + i;
+        }
+        for (int i = 0; i < second; i++) {
+            slots[first + i] = 18 + (9 - second) / 2 + i;
+        }
+        return slots;
     }
 
     /**
-     * Claiming from the menu doesn't pay into the balance directly any more:
-     * the menu closes and the present drops in front of the player and
-     * bursts open there, spraying its loot - the same moment as smacking one
-     * that fell on its own (see GiftDisplayService).
+     * Opening from the menu closes it and drops the present in front of the
+     * player, where it bursts and sprays its loot (see GiftDisplayService).
      */
     private void attemptClaim(Player player, int index) {
-        if (presentsService.isClaimed(player, index)) {
-            player.sendMessage(Text.parse("<gray>Already claimed this session.</gray>"));
-            return;
-        }
-        if (!presentsService.isUnlocked(player, index)) {
+        if (presentsService.isClaimed(player, index) || !presentsService.isUnlocked(player, index)) {
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
-            player.sendMessage(Text.parse("<red>Not unlocked yet - keep playing!</red>"));
             return;
         }
         player.closeInventory();
         giftDisplay.openFromMenu(player, index);
     }
 
-    private ItemStack buildInfoIcon() {
-        ItemBuilder builder = ItemBuilder.of(Material.KNOWLEDGE_BOOK).name(MenuLore.infoName(ACCENT, "HOW THIS WORKS"));
-        List<String> description = List.of(
-                "&7Presents unlock the longer you stay",
-                "&7online THIS session - open them any time,",
-                "&7in any order, no rush.");
-        MenuLore.info("info", description, ACCENT, List.of("&cLogging out re-locks everything.")).forEach(builder::lore);
-        return builder.hideAttributes().build();
+    private ItemStack refreshIcon() {
+        return ItemBuilder.of(Material.CLOCK)
+                .name("&6&lGifts &e&lRefresh")
+                .lore("&7You'll be able to claim these gifts")
+                .lore("&7again in &f" + countdown(presentsService.millisUntilReset()) + "&7..")
+                .lore("&e&oMake sure to come back tomorrow!")
+                .hideAttributes()
+                .build();
     }
 
-    private ItemStack buildPresentIcon(Player player, PresentDefinition present, int index) {
-        boolean claimed = presentsService.isClaimed(player, index);
-        boolean unlocked = presentsService.isUnlocked(player, index);
-
-        ItemBuilder builder = ItemBuilder.of(resolveIcon(present));
-        List<String> data = List.of(
-                "&7Unlocks at: &f" + present.unlockAfterMinutes() + "m online",
-                "&7Reward: &a$" + Formatting.format(present.coins())
-                        + (present.diamonds() > 0 ? " &7+ &b" + present.diamonds() + " diamond(s)" : "")
-        );
-
-        if (claimed) {
-            builder.name(MenuLore.name("&a", "Present") + " &7[Claimed]");
-            MenuLore.info("present", List.of(), ACCENT, data).forEach(builder::lore);
-        } else if (unlocked) {
-            builder.name(MenuLore.buttonName(ACCENT, "PRESENT"));
-            MenuLore.button("present", data, ACCENT, "Click to Claim").forEach(builder::lore);
+    private ItemStack giftIcon(Player player, PresentDefinition present, int index) {
+        ItemBuilder builder = ItemBuilder.of(icon(present)).amount(index + 1);
+        String rarity = present.rarity();
+        if (presentsService.isClaimed(player, index)) {
+            builder.name("&8&l" + rarity + " &7&lGift")
+                    .lore(SUBTITLE)
+                    .lore("")
+                    .lore("&7&oYou already claimed this gift.")
+                    .lore("&7&oIt returns in &f" + countdown(presentsService.millisUntilReset()) + ".")
+                    .lore("")
+                    .lore("&8&lCLAIMED");
+        } else if (presentsService.isUnlocked(player, index)) {
+            builder.name("&2&l" + rarity + " &a&lGift")
+                    .lore(SUBTITLE)
+                    .lore("")
+                    .lore("&7&oThis gift is ready to claim.")
+                    .lore("&7&oClick to open it!")
+                    .lore("")
+                    .lore("&a&lCLICK TO CLAIM");
         } else {
-            builder.name(MenuLore.name("&7", "Locked Present"));
-            List<String> lockedData = new java.util.ArrayList<>(data);
-            lockedData.add("&7Unlocks in: &c" + presentsService.minutesUntilUnlock(player, index) + "m");
-            MenuLore.info("present", List.of(), "&7", lockedData).forEach(builder::lore);
+            builder.name("&4&l" + rarity + " &c&lGift")
+                    .lore(SUBTITLE)
+                    .lore("")
+                    .lore("&7&oYou cannot claim this gift yet.")
+                    .lore("&7&oUnlocks in &f" + countdown(presentsService.millisUntilUnlock(player, index)) + ".")
+                    .lore("")
+                    .lore("&c&lLOCKED");
         }
         return builder.hideAttributes().build();
     }
 
-    private ItemStack resolveIcon(PresentDefinition present) {
-        if (present.headDatabaseId() != null && headDatabaseApi != null) {
-            ItemStack head = headDatabaseApi.getItemHead(present.headDatabaseId());
-            if (head != null) {
-                return head;
-            }
+    /** The rarity's present head, else the present's own HeadDatabase head or material. */
+    public static ItemStack icon(PresentDefinition present, YieldPacks packs) {
+        if (present.headTexture() != null) {
+            return Heads.texture(present.headTexture());
         }
-        return new ItemStack(present.fallbackMaterial());
+        return packs.getIconFactory().headOrFallback(present.headDatabaseId(), present.fallbackMaterial());
+    }
+
+    private ItemStack icon(PresentDefinition present) {
+        return icon(present, packs);
+    }
+
+    /** {@code 2h 47m 8s}, {@code 4m 23s}, {@code 55s}. */
+    static String countdown(long millis) {
+        long seconds = Math.max(0, (millis + 999) / 1000);
+        long hours = seconds / 3600;
+        long minutes = (seconds % 3600) / 60;
+        long secs = seconds % 60;
+        if (hours > 0) {
+            return hours + "h " + minutes + "m " + secs + "s";
+        }
+        if (minutes > 0) {
+            return minutes + "m " + secs + "s";
+        }
+        return secs + "s";
     }
 }

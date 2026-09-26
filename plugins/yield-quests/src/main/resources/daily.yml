@@ -1,19 +1,21 @@
-# /daily is a per-SESSION reward chain, not a calendar streak - 10
-# presents, each unlocking once you've been online THIS session for at
-# least "unlock-after-minutes". Once unlocked, a present stays claimable
-# any time (no rush, no order requirement) for as long as you stay
-# connected - but logging out re-locks everything: nothing here is saved
-# across a relog, by design, to reward longer sessions rather than just
-# logging in and out.
+# /daily - a chain of gifts that unlock with the time you've played TODAY
+# (across any number of sessions: relogging doesn't reset the timers) and
+# reset at midnight, server time - the same moment daily quests reset.
+# Opened gifts stay opened until then.
 #
-# "head" is a HeadDatabase texture id (find one in-game via /hdb, or from
-# https://minecraft-heads.com - the URL's own numeric id works) - leave it
-# blank to use "fallback-material" instead (also used automatically if
-# HeadDatabase isn't installed).
+# Each gift has a rarity from gift-rarities below: the name its item shows
+# ("Common Gift") and the present head it's drawn as ("head" is the base64
+# texture value from minecraft-heads.com). A present's own "head" (a
+# HeadDatabase id) and "fallback-material" are only used when its rarity
+# has no head texture.
 #
-# Run /admin quests reload after editing this file - already-online players
-# keep their current session progress either way, only the reward numbers/
-# thresholds themselves change.
+# Run /admin quests reload after editing this file.
+gift-rarities:
+  common:    { name: "Common",    head: "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjhkYzNjODQ0OTFjNGZmMTAzZGU2ZWEwMTg4MGUyZDgzNDMyY2Q0ODc4Yjg0ZDZiNDMyNTNjYzUxZmQ5NzhlNyJ9fX0=" }
+  rare:      { name: "Rare",      head: "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTllMzlkOTFjMDRjMzBjYzFmNTMwZmVlNzk4ZWVkMjc5ZGRlNjBmOTVjMmUxZDE1NWMwZmRkMzYxZDA5NjJlZCJ9fX0=" }
+  epic:      { name: "Epic",      head: "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNWI4NWUyOWYyOWVjOWE5MGU0ODJlYTViODM5MWJjYjQ1NjBiYmFlMGRjZDE1ZDdjZTFkODYwMTZiNDM1NmU5OCJ9fX0=" }
+  legendary: { name: "Legendary", head: "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYWJkOTg3OTJkZDkyZDk3MTk4OTQzNDFhYzkwMTJhNTg0YzQ0Mjg1NThmZDJjNzEyZjc4ZTVmMGQ0ZGE4NTQ3MCJ9fX0=" }
+
 # BALANCE - one present every five minutes for the first hour of a
 # session, like Pet Simulator's free gifts: frequent enough that there's
 # nearly always one on the way, each a little bigger than the last. The
@@ -24,15 +26,15 @@
 # real (client-side) present they smack open - it bursts and sprays its
 # coins/diamonds as collectable loot. /daily still lists them all.
 presents:
-  - { unlock-after-minutes: 5, head: "", fallback-material: WHITE_SHULKER_BOX, coins: 500000, diamonds: 50 }
-  - { unlock-after-minutes: 10, head: "", fallback-material: ORANGE_SHULKER_BOX, coins: 1000000, diamonds: 75 }
-  - { unlock-after-minutes: 15, head: "", fallback-material: MAGENTA_SHULKER_BOX, coins: 1500000, diamonds: 120 }
-  - { unlock-after-minutes: 20, head: "", fallback-material: LIGHT_BLUE_SHULKER_BOX, coins: 2500000, diamonds: 150 }
-  - { unlock-after-minutes: 25, head: "", fallback-material: YELLOW_SHULKER_BOX, coins: 4000000, diamonds: 250 }
-  - { unlock-after-minutes: 30, head: "", fallback-material: LIME_SHULKER_BOX, coins: 7500000, diamonds: 400 }
-  - { unlock-after-minutes: 35, head: "", fallback-material: PINK_SHULKER_BOX, coins: 12000000, diamonds: 500 }
-  - { unlock-after-minutes: 40, head: "", fallback-material: CYAN_SHULKER_BOX, coins: 20000000, diamonds: 750 }
-  - { unlock-after-minutes: 45, head: "", fallback-material: PURPLE_SHULKER_BOX, coins: 40000000, diamonds: 1000 }
-  - { unlock-after-minutes: 50, head: "", fallback-material: BLUE_SHULKER_BOX, coins: 60000000, diamonds: 1500 }
-  - { unlock-after-minutes: 55, head: "", fallback-material: GREEN_SHULKER_BOX, coins: 100000000, diamonds: 2500 }
-  - { unlock-after-minutes: 60, head: "", fallback-material: RED_SHULKER_BOX, coins: 150000000, diamonds: 3000 }
+  - { rarity: common, unlock-after-minutes: 5, head: "", fallback-material: WHITE_SHULKER_BOX, coins: 500000, diamonds: 50 }
+  - { rarity: common, unlock-after-minutes: 10, head: "", fallback-material: ORANGE_SHULKER_BOX, coins: 1000000, diamonds: 75 }
+  - { rarity: common, unlock-after-minutes: 15, head: "", fallback-material: MAGENTA_SHULKER_BOX, coins: 1500000, diamonds: 120 }
+  - { rarity: rare, unlock-after-minutes: 20, head: "", fallback-material: LIGHT_BLUE_SHULKER_BOX, coins: 2500000, diamonds: 150 }
+  - { rarity: rare, unlock-after-minutes: 25, head: "", fallback-material: YELLOW_SHULKER_BOX, coins: 4000000, diamonds: 250 }
+  - { rarity: rare, unlock-after-minutes: 30, head: "", fallback-material: LIME_SHULKER_BOX, coins: 7500000, diamonds: 400 }
+  - { rarity: rare, unlock-after-minutes: 35, head: "", fallback-material: PINK_SHULKER_BOX, coins: 12000000, diamonds: 500 }
+  - { rarity: epic, unlock-after-minutes: 40, head: "", fallback-material: CYAN_SHULKER_BOX, coins: 20000000, diamonds: 750 }
+  - { rarity: epic, unlock-after-minutes: 45, head: "", fallback-material: PURPLE_SHULKER_BOX, coins: 40000000, diamonds: 1000 }
+  - { rarity: epic, unlock-after-minutes: 50, head: "", fallback-material: BLUE_SHULKER_BOX, coins: 60000000, diamonds: 1500 }
+  - { rarity: legendary, unlock-after-minutes: 55, head: "", fallback-material: GREEN_SHULKER_BOX, coins: 100000000, diamonds: 2500 }
+  - { rarity: legendary, unlock-after-minutes: 60, head: "", fallback-material: RED_SHULKER_BOX, coins: 150000000, diamonds: 3000 }

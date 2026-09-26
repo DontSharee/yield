@@ -178,6 +178,38 @@ public final class YieldLoadTest extends JavaPlugin {
                             reply(ctx.getSource().getSender(), "<gray>Leak test cleared.</gray>");
                             return Command.SINGLE_SUCCESS;
                         })))
+                .then(Commands.literal("peek")
+                        .then(Commands.argument("player", StringArgumentType.word()).then(Commands.argument("command", StringArgumentType.greedyString()).executes(ctx -> {
+                            Player target = Bukkit.getPlayerExact(StringArgumentType.getString(ctx, "player"));
+                            if (target != null) {
+                                target.performCommand(StringArgumentType.getString(ctx, "command"));
+                            }
+                            CommandSender sender = ctx.getSource().getSender();
+                            if (target == null) {
+                                reply(sender, "<red>Not online.</red>");
+                                return Command.SINGLE_SUCCESS;
+                            }
+                            // What their open menu shows, codes and all - for checking designs.
+                            var serializer = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacyAmpersand();
+                            var view = target.getOpenInventory();
+                            getLogger().info("PEEK title: " + serializer.serialize(view.title()));
+                            var top = view.getTopInventory();
+                            for (int slot = 0; slot < top.getSize(); slot++) {
+                                var item = top.getItem(slot);
+                                if (item == null || item.getType().isAir()) {
+                                    continue;
+                                }
+                                var meta = item.getItemMeta();
+                                getLogger().info("PEEK " + slot + " x" + item.getAmount() + " " + item.getType()
+                                        + " | " + (meta != null && meta.hasDisplayName() ? serializer.serialize(meta.displayName()) : "-"));
+                                if (meta != null && meta.lore() != null) {
+                                    for (var line : meta.lore()) {
+                                        getLogger().info("PEEK      " + serializer.serialize(line));
+                                    }
+                                }
+                            }
+                            return Command.SINGLE_SUCCESS;
+                        }))))
                 .then(Commands.literal("cleanup")
                         .executes(ctx -> {
                             CommandSender sender = ctx.getSource().getSender();

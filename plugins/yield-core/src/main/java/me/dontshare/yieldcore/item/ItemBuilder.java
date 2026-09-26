@@ -111,7 +111,12 @@ public final class ItemBuilder {
         return item;
     }
 
+    /**
+     * Not italic unless the text asks to be. Setting it outright would also
+     * undo a line that is italic as a whole - "&7&oYou cannot claim this
+     * gift yet." parses to one component with italic already on it.
+     */
     private static Component style(Component component) {
-        return component.decoration(TextDecoration.ITALIC, false);
+        return component.decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
     }
 }

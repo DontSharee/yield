@@ -37,6 +37,12 @@ public final class QuestProfile implements PlayerRecord {
     private Map<String, Long> rankQuestProgress = new HashMap<>();
     /** Subset of activeRankQuestIds already completed this cycle - cleared together with activeRankQuestIds on reroll. */
     private Set<String> completedRankQuestIds = new HashSet<>();
+    /** The day (epoch day, server time) the gift fields below are for - see PresentsService. */
+    private long giftEpochDay = -1;
+    /** Time played on {@link #giftEpochDay} in sessions that have ended. */
+    private long giftPlayMs;
+    /** Which of that day's gifts are opened, by position. */
+    private Set<Integer> giftsClaimed = new HashSet<>();
 
     public QuestProfile() {
     }
@@ -124,5 +130,29 @@ public final class QuestProfile implements PlayerRecord {
 
     public void setCompletedRankQuestIds(Set<String> completedRankQuestIds) {
         this.completedRankQuestIds = completedRankQuestIds;
+    }
+
+    public long getGiftEpochDay() {
+        return giftEpochDay;
+    }
+
+    public void setGiftEpochDay(long giftEpochDay) {
+        this.giftEpochDay = giftEpochDay;
+    }
+
+    public long getGiftPlayMs() {
+        return giftPlayMs;
+    }
+
+    public void setGiftPlayMs(long giftPlayMs) {
+        this.giftPlayMs = giftPlayMs;
+    }
+
+    public Set<Integer> getGiftsClaimed() {
+        return giftsClaimed;
+    }
+
+    public void setGiftsClaimed(Set<Integer> giftsClaimed) {
+        this.giftsClaimed = giftsClaimed != null ? giftsClaimed : new HashSet<>();
     }
 }

@@ -202,7 +202,7 @@ public final class GiftDisplayService implements Listener {
         }
         PresentDefinition present = list.get(index);
         Gift gift = new Gift(index, openOnLanding);
-        gift.icon = packs.getIconFactory().headOrFallback(present.headDatabaseId(), present.fallbackMaterial());
+        gift.icon = me.dontshare.yieldquests.gui.PresentsGui.icon(present, packs);
         place(player, gift);
     }
 
