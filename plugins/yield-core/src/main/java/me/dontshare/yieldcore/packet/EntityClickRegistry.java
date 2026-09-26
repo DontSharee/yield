@@ -34,8 +34,10 @@ import java.util.function.Consumer;
  * (it carries the precise hit position on the entity's hitbox), not the
  * bare {@code INTERACT} variant; treating only {@code INTERACT} as "a right-
  * click happened" (an earlier version of this class did) silently drops
- * every real click. The client sends exactly one of the two per interaction,
- * never both, so accepting either never double-dispatches a single click.
+ * every real click (a later one did it again, and broke every right-click
+ * on 26.x - where the packet is always the {@code INTERACT_AT} shape). The
+ * client sends one per hand, never both actions, so only the main hand's is
+ * dispatched.
  * Both dispatch to whichever fake entity id they name, if any caller has
  * registered one.
  * <p>
@@ -76,15 +78,17 @@ public final class EntityClickRegistry {
                     return;
                 }
                 WrapperPlayClientInteractEntity wrapper = new WrapperPlayClientInteractEntity(event);
-                // One right-click is up to FOUR packets: the client sends an
-                // INTERACT_AT then an INTERACT for the main hand, and - since
-                // a fake entity never "consumes" the click client-side - the
-                // same pair again for the off hand. Handing every one of them
-                // on ran each handler up to four times: an upgrade station
-                // bought up to four levels per click. Exactly one survives:
-                // the main hand's INTERACT.
-                if (wrapper.getAction() != WrapperPlayClientInteractEntity.InteractAction.INTERACT
-                        || wrapper.getHand() != com.github.retrooper.packetevents.protocol.player.InteractionHand.MAIN_HAND) {
+                // One right-click arrives once per hand: a fake entity never
+                // "consumes" the click client-side, so the off hand gets the
+                // same interaction straight after the main hand's. Only the
+                // main hand's is dispatched - otherwise an upgrade station
+                // bought two levels per click.
+                //
+                // The action is deliberately NOT filtered on: from 26.1 every
+                // right-click reads as INTERACT_AT (the packet always carries
+                // the hit position), so keeping only INTERACT - as a previous
+                // fix did - dropped every right-click on every fake entity.
+                if (wrapper.getHand() != com.github.retrooper.packetevents.protocol.player.InteractionHand.MAIN_HAND) {
                     return;
                 }
                 dispatch(plugin, interactHandlers, wrapper.getEntityId(), player);
