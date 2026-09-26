@@ -474,7 +474,7 @@ public final class BagGui {
         if (entry.stack()) {
             data.add("&7Owned: &f" + entry.count());
         } else {
-            data.add("&7Level: &f" + pet.getLevel());
+            data.add("&7Level: &f" + pet.getLevel() + " &8(" + petLevelingService.cappedMaxLevel(pet) + ")");
             data.add(petLevelingService.buildXpLine(pet));
         }
         for (String statKey : FORGE_STAT_ORDER) {

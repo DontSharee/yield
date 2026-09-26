@@ -83,7 +83,7 @@ public final class PetWithdrawItem {
         } else {
             data.add("&7Damage: &4❤&c" + Formatting.format(effectiveDamage));
         }
-        data.add("&7Level: &f" + pet.getLevel());
+        data.add("&7Level: &f" + pet.getLevel() + " &8(" + petLevelingService.cappedMaxLevel(pet) + ")");
         data.add(petLevelingService.buildXpLine(pet));
         for (Map.Entry<String, Double> entry : pet.getForgeBonuses().entrySet()) {
             if (entry.getValue() != 0.0) {

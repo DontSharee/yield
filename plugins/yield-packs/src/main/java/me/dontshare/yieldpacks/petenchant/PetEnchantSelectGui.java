@@ -15,6 +15,7 @@ import me.dontshare.yieldpacks.data.Rarity;
 import me.dontshare.yieldpacks.data.RarityRegistry;
 import me.dontshare.yieldpacks.economy.EquipmentService;
 import me.dontshare.yieldpacks.item.ItemIconFactory;
+import me.dontshare.yieldpacks.leveling.PetLevelingService;
 import me.dontshare.yieldpacks.pet.PetInstance;
 import me.dontshare.yieldpacks.petenchant.PetEnchantContentLoader.PetEnchantContent;
 import me.dontshare.yieldpacks.player.PackPlayerProfile;
@@ -54,6 +55,7 @@ public final class PetEnchantSelectGui {
     private final PetEnchantService enchantService;
     private final Supplier<PetEnchantContent> content;
     private final GuiManager guiManager;
+    private final PetLevelingService petLevelingService;
     private PetEnchantTableGui tableGui;
 
     private final Map<UUID, Integer> pageIndex = new ConcurrentHashMap<>();
@@ -61,7 +63,8 @@ public final class PetEnchantSelectGui {
     public PetEnchantSelectGui(PlayerDataStore<PackPlayerProfile> store, Supplier<ItemRegistry> itemRegistry,
                                 Supplier<RarityRegistry> rarityRegistry, EquipmentService equipmentService,
                                 ItemIconFactory iconFactory, PetEnchantService enchantService,
-                                Supplier<PetEnchantContent> content, GuiManager guiManager) {
+                                Supplier<PetEnchantContent> content, GuiManager guiManager,
+                                PetLevelingService petLevelingService) {
         this.store = store;
         this.itemRegistry = itemRegistry;
         this.rarityRegistry = rarityRegistry;
@@ -69,6 +72,7 @@ public final class PetEnchantSelectGui {
         this.iconFactory = iconFactory;
         this.enchantService = enchantService;
         this.content = content;
+        this.petLevelingService = petLevelingService;
         this.guiManager = guiManager;
     }
 
@@ -127,7 +131,7 @@ public final class PetEnchantSelectGui {
         List<String> data = new ArrayList<>();
         data.add("&7Rarity: " + (rarity != null ? rarity.displayName() : "&7Unknown"));
         data.add("&7Damage: &4❤&c" + Formatting.format(equipmentService.effectiveDamage(profile, pet)));
-        data.add("&7Level: &f" + pet.getLevel());
+        data.add("&7Level: &f" + pet.getLevel() + " &8(" + petLevelingService.cappedMaxLevel(pet) + ")");
         if (equipped) {
             data.add("&a✓ Currently Equipped");
         }

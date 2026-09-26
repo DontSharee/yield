@@ -401,7 +401,8 @@ public final class YieldPacks extends JavaPlugin {
         indexGui.setHugeIndexGui(hugeIndexGui);
 
         PetEnchantSelectGui petEnchantSelectGui = new PetEnchantSelectGui(playerStore, () -> content.items(),
-                () -> content.rarities(), equipmentService, iconFactory, petEnchantService, () -> petEnchantContent, core.getGuiManager());
+                () -> content.rarities(), equipmentService, iconFactory, petEnchantService, () -> petEnchantContent,
+                core.getGuiManager(), petLevelingService);
         PetEnchantTableGui petEnchantTableGui = new PetEnchantTableGui(playerStore, () -> content.items(), () -> content.rarities(),
                 equipmentService, iconFactory, petEnchantService, () -> petEnchantContent, core.getGuiManager(), this, masteryService);
         AutoEnchantGui autoEnchantGui = new AutoEnchantGui(petEnchantService, () -> petEnchantContent, core.getGuiManager());
